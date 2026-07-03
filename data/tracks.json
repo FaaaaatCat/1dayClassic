@@ -1,0 +1,36 @@
+{
+  "tracks": [
+    {
+      "id": "1",
+      "title": "Symphony No. 5 in C minor",
+      "composer": "Ludwig van Beethoven",
+      "duration": "7:20",
+      "uri": "https://upload.wikimedia.org/wikipedia/commons/2/26/Beethoven_Symphony_No._5_in_C_minor%2C_Op._67_-_I._Allegro_con_brio.ogg",
+      "description": "운명의 교향곡 1악장"
+    },
+    {
+      "id": "2",
+      "title": "Eine kleine Nachtmusik",
+      "composer": "Wolfgang Amadeus Mozart",
+      "duration": "5:45",
+      "uri": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Mozart_-_Eine_kleine_Nachtmusik_-_1._Allegro.ogg",
+      "description": "작은 별야음 1악장"
+    },
+    {
+      "id": "3",
+      "title": "The Four Seasons - Spring",
+      "composer": "Antonio Vivaldi",
+      "duration": "3:30",
+      "uri": "https://upload.wikimedia.org/wikipedia/commons/7/70/Vivaldi_-_Four_Seasons_-_Spring_mvt_1_Allegro.ogg",
+      "description": "사계 중 봄 1악장"
+    },
+    {
+      "id": "4",
+      "title": "Canon in D",
+      "composer": "Johann Pachelbel",
+      "duration": "4:10",
+      "uri": "https://upload.wikimedia.org/wikipedia/commons/2/27/Pachelbel%27s_Canon.ogg",
+      "description": "캐논 변주곡"
+    }
+  ]
+}
