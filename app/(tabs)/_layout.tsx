@@ -1,51 +1,54 @@
-import { SymbolView } from 'expo-symbols';
+import { SymbolView, SymbolViewProps } from 'expo-symbols';
 import { Tabs } from 'expo-router';
+import type { ColorValue } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { Palette } from '@/constants/theme';
+
+function tabIcon(name: SymbolViewProps['name']) {
+  return ({ color }: { color: ColorValue }) => (
+    <SymbolView name={name} tintColor={color} size={26} />
+  );
+}
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false,
+        tabBarActiveTintColor: Palette.primary,
+        tabBarInactiveTintColor: Palette.subText,
+        tabBarStyle: {
+          backgroundColor: Palette.card,
+          borderTopColor: Palette.divider,
+        },
+        sceneStyle: { backgroundColor: Palette.background },
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: '음악',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'music.note',
-                android: 'music_note',
-                web: 'music_note',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
+          title: '오늘',
+          tabBarIcon: tabIcon({ ios: 'sun.max', android: 'wb_sunny', web: 'wb_sunny' }),
         }}
       />
       <Tabs.Screen
-        name="notifications"
+        name="library"
         options={{
-          title: '알림',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'bell',
-                android: 'notifications',
-                web: 'notifications',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
+          title: '보관함',
+          tabBarIcon: tabIcon({ ios: 'heart', android: 'favorite', web: 'favorite' }),
+        }}
+      />
+      <Tabs.Screen
+        name="alarm"
+        options={{
+          title: '알람',
+          tabBarIcon: tabIcon({ ios: 'alarm', android: 'alarm', web: 'alarm' }),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: '설정',
+          tabBarIcon: tabIcon({ ios: 'gearshape', android: 'settings', web: 'settings' }),
         }}
       />
     </Tabs>

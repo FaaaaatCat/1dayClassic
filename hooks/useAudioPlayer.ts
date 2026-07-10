@@ -3,11 +3,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { Track } from '@/types';
 
+/** 데모 샘플은 30초까지만 재생한다. */
+const SAMPLE_LIMIT_MILLIS = 30_000;
+
 export function useAudioPlayer() {
   const soundRef = useRef<Audio.Sound | null>(null);
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const loadedTrackIdRef = useRef<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const [positionMillis, setPositionMillis] = useState(0);
   const [durationMillis, setDurationMillis] = useState(0);
 
@@ -31,75 +35,63 @@ export function useAudioPlayer() {
     setPositionMillis(status.positionMillis);
     setDurationMillis(status.durationMillis ?? 0);
 
-    if (status.didJustFinish) {
+    const reachedSampleEnd =
+      status.didJustFinish || status.positionMillis >= SAMPLE_LIMIT_MILLIS;
+    if (reachedSampleEnd) {
       setIsPlaying(false);
       setPositionMillis(0);
+      soundRef.current?.stopAsync();
     }
   }, []);
 
-  const unloadCurrentSound = useCallback(async () => {
-    if (soundRef.current) {
-      await soundRef.current.unloadAsync();
-      soundRef.current = null;
-    }
-  }, []);
-
-  const playTrack = useCallback(
+  /** 재생 ↔ 일시정지 토글. 처음 누르면 로드 후 재생. */
+  const togglePlay = useCallback(
     async (track: Track) => {
+      setHasError(false);
       try {
-        setIsLoading(true);
-
-        if (currentTrack?.id !== track.id) {
-          await unloadCurrentSound();
+        if (loadedTrackIdRef.current !== track.id) {
+          setIsLoading(true);
+          if (soundRef.current) {
+            await soundRef.current.unloadAsync();
+            soundRef.current = null;
+          }
           const { sound } = await Audio.Sound.createAsync(
-            { uri: track.uri },
-            { shouldPlay: true },
+            { uri: track.audio },
+            { shouldPlay: true, progressUpdateIntervalMillis: 250 },
             onPlaybackStatusUpdate
           );
           soundRef.current = sound;
-          setCurrentTrack(track);
-        } else if (soundRef.current) {
-          await soundRef.current.playAsync();
+          loadedTrackIdRef.current = track.id;
+          return;
         }
 
-        setIsPlaying(true);
+        const status = await soundRef.current?.getStatusAsync();
+        if (!status?.isLoaded) return;
+
+        if (status.isPlaying) {
+          await soundRef.current?.pauseAsync();
+        } else {
+          await soundRef.current?.playAsync();
+        }
+      } catch {
+        setHasError(true);
+        setIsPlaying(false);
+        loadedTrackIdRef.current = null;
       } finally {
         setIsLoading(false);
       }
     },
-    [currentTrack?.id, onPlaybackStatusUpdate, unloadCurrentSound]
+    [onPlaybackStatusUpdate]
   );
 
-  const togglePlayback = useCallback(async () => {
-    if (!soundRef.current) return;
-
-    const status = await soundRef.current.getStatusAsync();
-    if (!status.isLoaded) return;
-
-    if (status.isPlaying) {
-      await soundRef.current.pauseAsync();
-    } else {
-      await soundRef.current.playAsync();
-    }
-  }, []);
-
-  const stopPlayback = useCallback(async () => {
-    if (!soundRef.current) return;
-
-    await soundRef.current.stopAsync();
-    await soundRef.current.setPositionAsync(0);
-    setIsPlaying(false);
-    setPositionMillis(0);
-  }, []);
+  const sampleDuration = Math.min(durationMillis || SAMPLE_LIMIT_MILLIS, SAMPLE_LIMIT_MILLIS);
 
   return {
-    currentTrack,
     isPlaying,
     isLoading,
-    positionMillis,
-    durationMillis,
-    playTrack,
-    togglePlayback,
-    stopPlayback,
+    hasError,
+    /** 0~1 — 30초 샘플 기준 진행률 */
+    progress: sampleDuration > 0 ? positionMillis / sampleDuration : 0,
+    togglePlay,
   };
 }
