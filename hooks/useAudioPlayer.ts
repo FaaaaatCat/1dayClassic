@@ -1,97 +1,82 @@
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import {
+  setAudioModeAsync,
+  useAudioPlayer as useExpoAudioPlayer,
+  useAudioPlayerStatus,
+} from 'expo-audio';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { MEDIA_HEADERS } from '@/lib/data';
 import type { Track } from '@/types';
 
 /** 데모 샘플은 30초까지만 재생한다. */
-const SAMPLE_LIMIT_MILLIS = 30_000;
+const SAMPLE_LIMIT_SECONDS = 30;
 
 export function useAudioPlayer() {
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const player = useExpoAudioPlayer(undefined, { updateInterval: 250 });
+  const status = useAudioPlayerStatus(player);
   const loadedTrackIdRef = useRef<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [positionMillis, setPositionMillis] = useState(0);
-  const [durationMillis, setDurationMillis] = useState(0);
 
   useEffect(() => {
-    Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: true,
+    setAudioModeAsync({
+      allowsRecording: false,
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: 'duckOthers',
     });
-
-    return () => {
-      soundRef.current?.unloadAsync();
-    };
   }, []);
 
-  const onPlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
+  // 샘플 한도(30초)에 도달하거나 재생이 끝나면 처음으로 되감고 멈춘다.
+  useEffect(() => {
     if (!status.isLoaded) return;
-
-    setIsPlaying(status.isPlaying);
-    setPositionMillis(status.positionMillis);
-    setDurationMillis(status.durationMillis ?? 0);
-
     const reachedSampleEnd =
-      status.didJustFinish || status.positionMillis >= SAMPLE_LIMIT_MILLIS;
-    if (reachedSampleEnd) {
-      setIsPlaying(false);
-      setPositionMillis(0);
-      soundRef.current?.stopAsync();
+      status.didJustFinish || status.currentTime >= SAMPLE_LIMIT_SECONDS;
+    if (reachedSampleEnd && (status.playing || status.didJustFinish)) {
+      player.pause();
+      player.seekTo(0);
     }
-  }, []);
+  }, [player, status.isLoaded, status.playing, status.didJustFinish, status.currentTime]);
 
   /** 재생 ↔ 일시정지 토글. 처음 누르면 로드 후 재생. */
   const togglePlay = useCallback(
-    async (track: Track) => {
+    (track: Track) => {
       setHasError(false);
       try {
-        if (loadedTrackIdRef.current !== track.id) {
-          setIsLoading(true);
-          if (soundRef.current) {
-            await soundRef.current.unloadAsync();
-            soundRef.current = null;
-          }
-          const { sound } = await Audio.Sound.createAsync(
-            { uri: track.audio },
-            { shouldPlay: true, progressUpdateIntervalMillis: 250 },
-            onPlaybackStatusUpdate
-          );
-          soundRef.current = sound;
+        // 새 곡이거나 직전 로드가 실패한 경우 소스를 다시 교체한다.
+        if (loadedTrackIdRef.current !== track.id || status.error != null) {
+          player.replace({ uri: track.audio, headers: MEDIA_HEADERS });
           loadedTrackIdRef.current = track.id;
+          player.play();
           return;
         }
 
-        const status = await soundRef.current?.getStatusAsync();
-        if (!status?.isLoaded) return;
-
-        if (status.isPlaying) {
-          await soundRef.current?.pauseAsync();
+        if (status.playing) {
+          player.pause();
         } else {
-          await soundRef.current?.playAsync();
+          player.play();
         }
       } catch {
         setHasError(true);
-        setIsPlaying(false);
         loadedTrackIdRef.current = null;
-      } finally {
-        setIsLoading(false);
       }
     },
-    [onPlaybackStatusUpdate]
+    [player, status.playing, status.error]
   );
 
-  const sampleDuration = Math.min(durationMillis || SAMPLE_LIMIT_MILLIS, SAMPLE_LIMIT_MILLIS);
+  const sampleDuration = Math.min(status.duration || SAMPLE_LIMIT_SECONDS, SAMPLE_LIMIT_SECONDS);
+  const loadFailed = hasError || status.error != null;
+  const isLoading =
+    !loadFailed &&
+    loadedTrackIdRef.current !== null &&
+    (!status.isLoaded || status.isBuffering);
 
   return {
-    isPlaying,
+    isPlaying: status.playing,
     isLoading,
-    hasError,
+    hasError: loadFailed,
     /** 0~1 — 30초 샘플 기준 진행률 */
-    progress: sampleDuration > 0 ? positionMillis / sampleDuration : 0,
+    progress:
+      sampleDuration > 0 ? Math.min(status.currentTime / sampleDuration, 1) : 0,
     togglePlay,
   };
 }

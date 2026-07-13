@@ -4,6 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import ProgressBar from '@/components/ProgressBar';
 import ScaleButton from '@/components/ScaleButton';
 import { Palette, Radius, Shadow, Spacing, Typography } from '@/constants/theme';
+import { getCoverImageSource } from '@/lib/data';
 import type { Track } from '@/types';
 
 interface TodayCardProps {
@@ -28,7 +29,7 @@ export default function TodayCard({
   return (
     <View style={styles.card}>
       <Image
-        source={{ uri: track.coverImage }}
+        source={getCoverImageSource(track)}
         style={styles.cover}
         resizeMode="cover"
         accessibilityIgnoresInvertColors
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
   },
   cover: {
     width: '100%',
-    aspectRatio: 1,
+    height: 320,
     borderRadius: Radius.image,
     backgroundColor: Palette.primary,
   },

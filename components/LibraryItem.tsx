@@ -1,6 +1,7 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { Palette, Radius, Shadow, Spacing, Typography } from '@/constants/theme';
+import { getCoverImageSource } from '@/lib/data';
 import type { Track } from '@/types';
 
 interface LibraryItemProps {
@@ -12,7 +13,7 @@ export default function LibraryItem({ track }: LibraryItemProps) {
   return (
     <View style={styles.item}>
       <Image
-        source={{ uri: track.coverImage }}
+        source={getCoverImageSource(track)}
         style={styles.cover}
         resizeMode="cover"
         accessibilityIgnoresInvertColors

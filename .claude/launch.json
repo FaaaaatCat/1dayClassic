@@ -4,7 +4,16 @@
     {
       "name": "expo-web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web", "--port", "8081"],
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8085"],
+      "port": 8085
+    },
+    {
+      "name": "expo-localhost",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set NODE_OPTIONS=--dns-result-order=ipv4first&&npx expo start --localhost --port 8081"
+      ],
       "port": 8081
     }
   ]

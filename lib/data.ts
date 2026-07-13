@@ -1,5 +1,34 @@
+import type { ImageSourcePropType } from 'react-native';
+
 import tracksData from '@/data/tracks.json';
 import type { Track, TracksData } from '@/types';
+
+/**
+ * Wikimedia는 okhttp 등 네이티브 기본 User-Agent를 403으로 차단하므로,
+ * 커버 이미지·음원 요청에는 식별 가능한 UA를 명시해야 한다.
+ */
+export const MEDIA_HEADERS: Record<string, string> = {
+  'User-Agent': 'HaruClassicDemo/1.0 (Expo demo app)',
+};
+
+/**
+ * 로컬 커버 이미지 — assets/images/musicians/ 에 파일을 넣고 여기에 등록한다.
+ * Metro의 require는 정적 경로만 허용되어 자동 매핑이 불가능하다.
+ */
+const LOCAL_COVER_IMAGES: Record<string, ImageSourcePropType> = {
+  'beethoven-symphony-5': require('../assets/images/musicians/beethoven.jpg'),
+  'mozart-nachtmusik': require('../assets/images/musicians/mozart.jpg'),
+  'vivaldi-spring': require('../assets/images/musicians/vivaldi.jpg'),
+  'pachelbel-canon': require('../assets/images/musicians/pachelbel.jpg'),
+  'satie-gymnopedie-1': require('../assets/images/musicians/satie.jpg'),
+};
+
+/** 로컬 커버가 있으면 로컬을, 없으면 원격 URL(+UA 헤더)을 반환한다. */
+export function getCoverImageSource(track: Track): ImageSourcePropType {
+  return (
+    LOCAL_COVER_IMAGES[track.id] ?? { uri: track.coverImage, headers: MEDIA_HEADERS }
+  );
+}
 
 export function getTracks(): Track[] {
   return (tracksData as TracksData).tracks;

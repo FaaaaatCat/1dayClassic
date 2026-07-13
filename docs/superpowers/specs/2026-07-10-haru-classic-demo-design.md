@@ -12,7 +12,7 @@
 
 | 항목 | 결정 | 근거 |
 |---|---|---|
-| 오디오 | **expo-av 유지** (16.0.8 설치됨) | 스펙이 Expo AV를 명시. SDK 57 문서는 expo-audio로 이관 중이나, 데모 범위에서는 이미 동작하는 expo-av 훅을 확장하는 것이 리스크가 낮음 |
+| 오디오 | **expo-audio** (~57.0.0) | 당초 expo-av 유지로 결정했으나, SDK 57 Expo Go에 ExponentAV 네이티브 모듈이 빠져 기기에서 크래시 (`Cannot find native module 'ExponentAV'`). 2026-07-10 expo-audio로 마이그레이션 |
 | 테마 | **라이트 단일 테마** (스펙 팔레트 고정) | 스펙의 차분한 출판 감성은 단일 톤. 다크모드 분기 제거로 단순화 |
 | 애니메이션 | react-native-reanimated 4.5 (설치됨) — entering 애니메이션 + press scale | 스펙: 카드 슬라이드업, 텍스트 페이드인, 버튼 스케일 |
 | 좋아요 상태 | React Context, 인메모리, 예시 2곡 시드 | 데모용 — 영속화 불필요, 보관함에 2~3곡 기본 노출 |
