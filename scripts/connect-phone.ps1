@@ -1,4 +1,4 @@
-# USB로 연결된 안드로이드 기기에서 앱을 실행한다.
+﻿# USB로 연결된 안드로이드 기기에서 앱을 실행한다.
 # 전제: Metro가 localhost 모드로 8081에서 실행 중
 #   cmd /c "set NODE_OPTIONS=--dns-result-order=ipv4first&&npx expo start --localhost"
 # USB를 뽑았다 꽂으면 reverse 포워딩이 초기화되므로 이 스크립트를 다시 실행하면 된다.

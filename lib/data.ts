@@ -30,6 +30,11 @@ export function getCoverImageSource(track: Track): ImageSourcePropType {
   );
 }
 
+/** DJ 나레이션 스크립트 — 곡 소개 후 '오늘의 이야기'를 낭독한다. */
+export function buildNarrationScript(track: Track): string {
+  return `${track.composer}의 ${track.title}. ${track.description}`;
+}
+
 export function getTracks(): Track[] {
   return (tracksData as TracksData).tracks;
 }
