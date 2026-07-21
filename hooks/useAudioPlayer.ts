@@ -229,6 +229,28 @@ export function useAudioPlayer() {
     [player, phase, status.playing, status.error, status.currentTime, cancelDjFlow, startDjFlow]
   );
 
+  /** 다시듣기 — 처음부터 오프닝(진동+멘트) 포함 전체 플로우를 다시 태운다. */
+  const restart = useCallback(
+    (track: Track) => {
+      setHasError(false);
+      try {
+        if (loadedTrackIdRef.current !== track.id || status.error != null) {
+          player.replace({ uri: track.audio, headers: MEDIA_HEADERS });
+          loadedTrackIdRef.current = track.id;
+        } else {
+          player.pause();
+          player.seekTo(0);
+        }
+        startDjFlow(track);
+      } catch {
+        setHasError(true);
+        loadedTrackIdRef.current = null;
+        setPhase('idle');
+      }
+    },
+    [player, status.error, startDjFlow]
+  );
+
   const sampleDuration = Math.min(status.duration || SAMPLE_LIMIT_SECONDS, SAMPLE_LIMIT_SECONDS);
   const loadFailed = hasError || status.error != null;
   // 오프닝(진동+멘트) 중에는 음악이 백그라운드에서 로드되는 중이어도
@@ -251,5 +273,6 @@ export function useAudioPlayer() {
     progress:
       sampleDuration > 0 ? Math.min(status.currentTime / sampleDuration, 1) : 0,
     togglePlay,
+    restart,
   };
 }

@@ -30,6 +30,14 @@ export function getCoverImageSource(track: Track): ImageSourcePropType {
   );
 }
 
+/** 오늘의 클래식 히어로 이미지 — mainImage가 있으면 우선 사용한다. */
+export function getMainImageSource(track: Track): ImageSourcePropType {
+  if (track.mainImage) {
+    return { uri: track.mainImage, headers: MEDIA_HEADERS };
+  }
+  return getCoverImageSource(track);
+}
+
 /** DJ 나레이션 스크립트 — 곡 소개 후 '오늘의 이야기'를 낭독한다. */
 export function buildNarrationScript(track: Track): string {
   return `${track.composer}의 ${track.title}. ${track.description}`;
@@ -43,9 +51,11 @@ export function getTrackById(id: string): Track | undefined {
   return getTracks().find((track) => track.id === id);
 }
 
-/** 날짜 기준으로 오늘의 곡을 선정한다 — 매일 자동 로테이션. */
+/** 날짜 기준으로 오늘의 곡을 선정한다. featured 곡이 있으면 데모용으로 고정한다. */
 export function getTodayTrack(date: Date = new Date()): Track {
   const tracks = getTracks();
+  const featured = tracks.find((track) => track.featured);
+  if (featured) return featured;
   const start = new Date(date.getFullYear(), 0, 0);
   const dayOfYear = Math.floor((date.getTime() - start.getTime()) / 86_400_000);
   return tracks[dayOfYear % tracks.length];

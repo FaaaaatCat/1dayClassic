@@ -16,7 +16,8 @@ export default function TabLayout() {
         header: () => <AppHeader title={TITLES[route.name] ?? ''} />,
         sceneStyle: { backgroundColor: Palette.background },
       })}>
-      <Tabs.Screen name="index" options={{ title: '오늘' }} />
+      {/* 오늘 화면은 피그마 시안의 자체 고정 헤더를 렌더링한다 */}
+      <Tabs.Screen name="index" options={{ title: '오늘', headerShown: false }} />
       <Tabs.Screen name="library" options={{ title: '보관함' }} />
       <Tabs.Screen name="alarm" options={{ title: '알람' }} />
       <Tabs.Screen name="settings" options={{ title: '설정' }} />

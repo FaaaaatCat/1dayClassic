@@ -6,6 +6,35 @@ import { Platform } from 'react-native';
  */
 
 /**
+ * 지정 팔레트(global.css) 전체 — 화면에서 세부 색이 필요할 때 사용한다.
+ * 새 색이 필요하면 global.css에 먼저 등록할 것.
+ */
+export const Colors = {
+  white: '#FFFFFF', // --white
+  yellow: '#FEB836', // --yellow
+  bg: '#FAF6EE', // --bg
+  brown100: '#030303', // --brown-100
+  brown50: '#827F7A', // --brown-50
+  brown10: '#E0DBD5', // --brown-10
+  beige100: '#8B6C42', // --beige-100
+  beige50: '#D6C4A7', // --beige-50
+  beige10: '#F2E8DA', // --beige-10
+  blue100: '#07127E', // --blue-100
+  blue50: '#8E96D7', // --blue-50
+  blue10: '#EDEDFD', // --blue-10
+  red100: '#EB5757', // --red-100
+  red50: '#F5ABAB', // --red-50
+  red10: '#FEF3F4', // --red-10
+} as const;
+
+/** 번들된 서체 — 을유1945(기본), DM Serif Display(인용문 전용·라틴만 지원) */
+export const Fonts = {
+  regular: 'Eulyoo1945-Regular',
+  semiBold: 'Eulyoo1945-SemiBold',
+  serifDisplay: 'DMSerifDisplay_400Regular',
+} as const;
+
+/**
  * 지정 팔레트(global.css)의 색만 사용한다. 새 색이 필요하면 global.css에
  * 먼저 등록된 것인지 확인할 것. 주석은 global.css의 변수 이름.
  */
