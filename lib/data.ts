@@ -1,6 +1,7 @@
 import type { ImageSourcePropType } from 'react-native';
 
 import tracksData from '@/data/tracks.json';
+import { getStorageDownloadUrl, isStoragePath } from '@/lib/firebase';
 import type { Track, TracksData } from '@/types';
 
 /**
@@ -23,24 +24,31 @@ const LOCAL_COVER_IMAGES: Record<string, ImageSourcePropType> = {
   'satie-gymnopedie-1': require('../assets/images/musicians/satie.jpg'),
 };
 
-/** 로컬 커버가 있으면 로컬을, 없으면 원격 URL(+UA 헤더)을 반환한다. */
+/**
+ * 로컬 커버가 있으면 로컬을, 없으면 원격 URL(+UA 헤더)을 반환한다.
+ * 보관함 썸네일과 오늘의 클래식 히어로 이미지에 공용으로 쓰인다.
+ */
 export function getCoverImageSource(track: Track): ImageSourcePropType {
   return (
     LOCAL_COVER_IMAGES[track.id] ?? { uri: track.coverImage, headers: MEDIA_HEADERS }
   );
 }
 
-/** 오늘의 클래식 히어로 이미지 — mainImage가 있으면 우선 사용한다. */
-export function getMainImageSource(track: Track): ImageSourcePropType {
-  if (track.mainImage) {
-    return { uri: track.mainImage, headers: MEDIA_HEADERS };
+/**
+ * 재생 가능한 오디오 URL로 변환한다. 마이그레이션이 트랙별로 진행 중이라
+ * track.audio는 Firebase Storage 경로일 수도, 기존 Wikimedia 직결 URL일 수도 있다 —
+ * 둘 다 이 함수 하나로 처리한다.
+ */
+export async function resolveTrackAudioUrl(track: Track): Promise<string> {
+  if (!isStoragePath(track.audio)) {
+    return track.audio;
   }
-  return getCoverImageSource(track);
+  return getStorageDownloadUrl(track.audio);
 }
 
-/** DJ 나레이션 스크립트 — 곡 소개 후 '오늘의 이야기'를 낭독한다. */
+/** DJ 나레이션 스크립트 — 곡 소개 후 '오늘의 이야기'(story) 전 문단을 낭독한다. */
 export function buildNarrationScript(track: Track): string {
-  return `${track.composer}의 ${track.title}. ${track.description}`;
+  return `${track.composer}의 ${track.title}. ${track.story.join(' ')}`;
 }
 
 export function getTracks(): Track[] {

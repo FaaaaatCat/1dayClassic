@@ -18,7 +18,7 @@ import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts } from '@/constants/theme';
 import { useLikes } from '@/context/LikesContext';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
-import { getMainImageSource, getTodayTrack } from '@/lib/data';
+import { getCoverImageSource, getTodayTrack } from '@/lib/data';
 
 interface Note {
   id: string;
@@ -55,7 +55,7 @@ export default function TodayScreen() {
 
   const today = new Date();
   const liked = isLiked(track.id);
-  const paragraphs = track.story ?? [track.description];
+  const paragraphs = track.story;
 
   const addNote = () => {
     const text = draft.trim();
@@ -142,7 +142,7 @@ export default function TodayScreen() {
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}>
         <Image
-          source={getMainImageSource(track)}
+          source={getCoverImageSource(track)}
           style={styles.hero}
           resizeMode="cover"
           accessibilityIgnoresInvertColors

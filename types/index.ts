@@ -14,17 +14,14 @@ export interface Track {
   quote?: string;
   /** 인용문 출처 */
   quoteBy?: string;
-  /** 본문 문단들 — 없으면 description 한 문단으로 대체 */
-  story?: string[];
-  /** 오늘의 이야기 — 300~500자. 나레이션 낭독에도 사용 */
-  description: string;
-  /** 오늘의 감상 포인트 — 한 문장 */
-  listeningPoint: string;
-  /** 커버 이미지 URL */
+  /** 본문 문단들 — 오늘의 이야기 본문이자 나레이션 낭독 대상 */
+  story: string[];
+  /** 커버 이미지 URL — 보관함 썸네일과 오늘의 클래식 히어로 이미지에 공용으로 쓰인다 */
   coverImage: string;
-  /** 오늘의 클래식 메인(히어로) 이미지 URL — 없으면 coverImage */
-  mainImage?: string;
-  /** 샘플 음원 URL (30초까지만 재생) */
+  /**
+   * 샘플 음원 (30초까지만 재생). Firebase Storage 경로("musics/foo.mp3")
+   * 또는 완성된 http(s) URL(예: Wikimedia) 둘 다 허용된다 — resolveTrackAudioUrl로 변환해서 쓸 것.
+   */
   audio: string;
   /** 데모: true면 로테이션 대신 오늘의 곡으로 고정 */
   featured?: boolean;
