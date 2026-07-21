@@ -5,6 +5,7 @@ import {
 } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Vibration } from 'react-native';
 
 import { buildNarrationScript, MEDIA_HEADERS } from '@/lib/data';
 import { fadeVolume, type FadeHandle } from '@/lib/fade';
@@ -20,12 +21,19 @@ const INTRO_SECONDS = 5;
 const DUCK_VOLUME = 0.25;
 /** 덕킹/복구 페이드 길이 */
 const FADE_MS = 800;
+/** 재생 시작을 알리는 진동 길이 */
+const OPENING_VIBRATION_MS = 500;
+/** 진동 직후, 음악 시작 전에 읽어 주는 오프닝 멘트 */
+const OPENING_NARRATION = '하루 클래식 공부의 시간입니다.';
+/** TTS가 onDone/onError를 안 주는 환경(일부 웹 등)에서도 음악이 반드시 시작되도록 하는 최대 대기 */
+const OPENING_MAX_WAIT_MS = 8000;
 
 /**
- * 라디오 DJ 플로우: intro(음악 100%) → 5초 후 덕킹 → narration(TTS) →
- * onDone 시 볼륨 복구 → music. 정지·곡 전환·30초 컷은 어디서든 idle로 전이.
+ * 라디오 DJ 플로우: opening(0.5초 진동 → 오프닝 멘트) → 음악 시작과 함께
+ * intro(음악 100%) → 5초 후 덕킹 → narration(TTS) → onDone 시 볼륨 복구 → music.
+ * 정지·곡 전환·30초 컷은 어디서든 idle로 전이.
  */
-export type DjPhase = 'idle' | 'intro' | 'narration' | 'music';
+export type DjPhase = 'idle' | 'opening' | 'intro' | 'narration' | 'music';
 
 export function useAudioPlayer() {
   const player = useExpoAudioPlayer(undefined, { updateInterval: 250 });
@@ -82,6 +90,7 @@ export function useAudioPlayer() {
     }
     fadeRef.current?.cancel();
     fadeRef.current = null;
+    Vibration.cancel();
     Speech.stop();
   }, []);
 
@@ -91,10 +100,10 @@ export function useAudioPlayer() {
       const session = sessionRef.current;
       sampleDeadlineRef.current = SAMPLE_LIMIT_SECONDS;
       player.volume = 1;
-      setPhase('intro');
+      setPhase('opening');
 
-      introTimerRef.current = setTimeout(() => {
-        if (session !== sessionRef.current) return;
+      /** 인트로 5초가 지난 뒤 실행: 덕킹 → 곡 해설 나레이션 → 볼륨 복구 */
+      const runDuckAndNarration = () => {
         fadeRef.current = fadeVolume(player, DUCK_VOLUME, FADE_MS);
         fadeRef.current.done.then((completed) => {
           if (!completed || session !== sessionRef.current) return;
@@ -123,7 +132,38 @@ export function useAudioPlayer() {
             onError: restore,
           });
         });
-      }, INTRO_SECONDS * 1000);
+      };
+
+      // 오프닝: 0.5초 진동 → 진동이 끝나면 오프닝 멘트 → 멘트가 끝나면 음악 시작.
+      Vibration.vibrate(OPENING_VIBRATION_MS);
+      introTimerRef.current = setTimeout(() => {
+        if (session !== sessionRef.current) return;
+        let musicStarted = false;
+        const beginMusic = () => {
+          if (musicStarted || session !== sessionRef.current) return;
+          musicStarted = true;
+          // 최대 대기로 진입한 경우 걸려 있는 멘트를 정리한다.
+          // (onStopped 경로라 onDone/onError를 다시 부르지 않는다.)
+          Speech.stop();
+          player.play();
+          setPhase('intro');
+          introTimerRef.current = setTimeout(() => {
+            if (session !== sessionRef.current) return;
+            runDuckAndNarration();
+          }, INTRO_SECONDS * 1000);
+        };
+        Speech.speak(OPENING_NARRATION, {
+          language: 'ko-KR',
+          voice: voiceRef.current,
+          pitch: 1.0,
+          rate: 1.0,
+          onDone: beginMusic,
+          onError: beginMusic,
+        });
+        // 멘트가 끝나지 않는 환경에서도 음악이 반드시 시작되도록 하는 안전장치.
+        // 정상 종료 시에는 musicStarted 플래그와 세션 검사로 무시된다.
+        setTimeout(beginMusic, OPENING_MAX_WAIT_MS);
+      }, OPENING_VIBRATION_MS);
     },
     [cancelDjFlow, player]
   );
@@ -151,22 +191,22 @@ export function useAudioPlayer() {
       setHasError(false);
       try {
         // 새 곡이거나 직전 로드가 실패한 경우: 기존 플로우 취소 후 새로 시작.
+        // 음악은 오프닝(진동+멘트)이 끝난 뒤 DJ 플로우가 직접 시작한다.
         if (loadedTrackIdRef.current !== track.id || status.error != null) {
           player.replace({ uri: track.audio, headers: MEDIA_HEADERS });
           loadedTrackIdRef.current = track.id;
-          player.play();
           startDjFlow(track);
           return;
         }
 
-        if (status.playing) {
+        if (status.playing || phase === 'opening') {
           // 정지: 음악과 TTS를 즉시 함께 멈춘다.
+          // 오프닝 중에는 음악이 아직 안 나오지만(playing=false) 진동·멘트를 멈춰야 한다.
           cancelDjFlow();
           player.pause();
           setPhase('idle');
         } else if (status.currentTime < 0.5) {
           // 곡 처음부터의 재생(30초 컷 후 재시작 등): DJ 플로우 전체를 다시 태운다.
-          player.play();
           startDjFlow(track);
         } else {
           // 중간 재개: 나레이션은 다시 재생하지 않고 원래 볼륨의 음악만 잇는다.
@@ -186,18 +226,22 @@ export function useAudioPlayer() {
         setPhase('idle');
       }
     },
-    [player, status.playing, status.error, status.currentTime, cancelDjFlow, startDjFlow]
+    [player, phase, status.playing, status.error, status.currentTime, cancelDjFlow, startDjFlow]
   );
 
   const sampleDuration = Math.min(status.duration || SAMPLE_LIMIT_SECONDS, SAMPLE_LIMIT_SECONDS);
   const loadFailed = hasError || status.error != null;
+  // 오프닝(진동+멘트) 중에는 음악이 백그라운드에서 로드되는 중이어도
+  // 시퀀스가 진행되고 있으므로 로딩 스피너 대신 일시정지 버튼을 보여 준다.
   const isLoading =
     !loadFailed &&
+    phase !== 'opening' &&
     loadedTrackIdRef.current !== null &&
     (!status.isLoaded || status.isBuffering);
 
   return {
-    isPlaying: status.playing,
+    // 오프닝 중에는 음악이 아직 재생 전이지만 사용자 입장에선 '재생 중'이다.
+    isPlaying: status.playing || phase === 'opening',
     isLoading,
     hasError: loadFailed,
     /** DJ 플로우 현재 단계 — UI에서 나레이션 중임을 표시할 때 사용 */
