@@ -1,0 +1,26 @@
+:root {
+  /* Base */
+  --white: #FFFFFF;
+  --yellow: #FEB836;
+  --bg: #FAF6EE;
+
+  /* Brown */
+  --brown-100: #030303;
+  --brown-50:  #827F7A;
+  --brown-10:  #E0DBD5;
+
+  /* Beige */
+  --beige-100: #8B6C42;
+  --beige-50:  #D6C4A7;
+  --beige-10:  #F2E8DA;
+
+  /* Blue */
+  --blue-100: #07127E;
+  --blue-50:  #8E96D7;
+  --blue-10:  #EDEDFD;
+
+  /* Red */
+  --red-100: #EB5757;
+  --red-50:  #F5ABAB;
+  --red-10:  #FEF3F4;
+}

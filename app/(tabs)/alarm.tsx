@@ -20,7 +20,6 @@ export default function AlarmScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
       <Animated.View entering={FadeIn.duration(600)}>
-        <Text style={styles.header}>알람</Text>
         <Text style={styles.caption}>매일 아침, 클래식 한 곡으로 하루를 시작하세요</Text>
       </Animated.View>
 
@@ -61,15 +60,11 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxxl + Spacing.lg,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.xxxl,
-  },
-  header: {
-    ...Typography.display,
   },
   caption: {
     ...Typography.caption,
-    marginTop: Spacing.xs,
   },
   card: {
     marginTop: Spacing.xl,

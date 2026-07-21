@@ -11,7 +11,6 @@ export default function LibraryScreen() {
   return (
     <View style={styles.screen}>
       <Animated.View entering={FadeIn.duration(600)}>
-        <Text style={styles.header}>보관함</Text>
         <Text style={styles.caption}>좋아요를 누른 곡들이 담깁니다</Text>
       </Animated.View>
 
@@ -38,14 +37,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Palette.background,
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxxl + Spacing.lg,
-  },
-  header: {
-    ...Typography.display,
+    paddingTop: Spacing.sm,
   },
   caption: {
     ...Typography.caption,
-    marginTop: Spacing.xs,
   },
   list: {
     paddingTop: Spacing.xl,

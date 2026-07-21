@@ -10,10 +10,6 @@ export default function SettingsScreen() {
       style={styles.screen}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
-      <Animated.View entering={FadeIn.duration(600)}>
-        <Text style={styles.header}>설정</Text>
-      </Animated.View>
-
       <Animated.View entering={FadeIn.duration(700).delay(200)} style={styles.card}>
         <Text style={styles.appName}>하루 클래식</Text>
         <Text style={styles.slogan}>매일 아침, 클래식 한 곡으로 하루를 시작하세요.</Text>
@@ -37,14 +33,11 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxxl + Spacing.lg,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.xxxl,
   },
-  header: {
-    ...Typography.display,
-  },
   card: {
-    marginTop: Spacing.xl,
+    marginTop: Spacing.md,
     backgroundColor: Palette.card,
     borderRadius: Radius.card,
     padding: Spacing.xl,

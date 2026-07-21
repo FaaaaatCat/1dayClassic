@@ -28,12 +28,13 @@ export default function Root({ children }: { children: ReactNode }) {
   );
 }
 
+// 지정 팔레트(global.css): 라이트 --bg, 다크는 가장 어두운 --brown-100.
 const responsiveBackground = `
 body {
-  background-color: #fff;
+  background-color: #FAF6EE;
 }
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #000;
+    background-color: #030303;
   }
 }`;

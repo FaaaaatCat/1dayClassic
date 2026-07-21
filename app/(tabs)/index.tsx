@@ -21,7 +21,6 @@ export default function TodayScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
       <Animated.View entering={FadeIn.duration(600)}>
-        <Text style={styles.header}>오늘의 클래식</Text>
         <Text style={styles.date}>{formatTodayDate()}</Text>
       </Animated.View>
 
@@ -67,15 +66,11 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxxl + Spacing.lg,
+    paddingTop: Spacing.sm,
     paddingBottom: Spacing.xxxl,
-  },
-  header: {
-    ...Typography.display,
   },
   date: {
     ...Typography.caption,
-    marginTop: Spacing.xs,
   },
   card: {
     marginTop: Spacing.xl,

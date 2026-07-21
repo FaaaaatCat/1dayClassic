@@ -5,14 +5,18 @@ import { Platform } from 'react-native';
  * 단일 라이트 테마 — 차분하고 고급스러운 출판 감성.
  */
 
+/**
+ * 지정 팔레트(global.css)의 색만 사용한다. 새 색이 필요하면 global.css에
+ * 먼저 등록된 것인지 확인할 것. 주석은 global.css의 변수 이름.
+ */
 export const Palette = {
-  background: '#F8F6F2',
-  primary: '#2D3A4A',
-  accent: '#B88A44',
-  text: '#1E1E1E',
-  subText: '#7A7A7A',
-  card: '#FFFFFF',
-  divider: 'rgba(45, 58, 74, 0.08)',
+  background: '#FAF6EE', // --bg
+  primary: '#07127E', // --blue-100
+  accent: '#8B6C42', // --beige-100
+  text: '#030303', // --brown-100
+  subText: '#827F7A', // --brown-50
+  card: '#FFFFFF', // --white
+  divider: '#E0DBD5', // --brown-10
 } as const;
 
 export const Spacing = {
