@@ -10,6 +10,7 @@ import { Palette, Spacing, Typography } from '@/constants/theme';
 const MENU_ITEMS = [
   { title: '홈', caption: '매일 한 곡, 연간 캘린더', href: '/' },
   { title: '보관함', caption: '좋아요를 누른 곡들', href: '/library' },
+  { title: '하루 서점', caption: '유유 하루 시리즈 모아보기', href: '/bookstore' },
   { title: '설정', caption: '앱 소개와 정보', href: '/settings' },
 ] as const;
 
