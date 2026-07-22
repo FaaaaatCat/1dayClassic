@@ -1,7 +1,7 @@
 import {
   setAudioModeAsync,
-  useAudioPlayer as useExpoAudioPlayer,
   useAudioPlayerStatus,
+  useAudioPlayer as useExpoAudioPlayer,
 } from "expo-audio";
 import * as Speech from "expo-speech";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -16,18 +16,20 @@ const DEFAULT_DURATION_FALLBACK_SECONDS = 30;
 /** 재생 시작을 알리는 진동 길이 */
 const OPENING_VIBRATION_MS = 1000;
 /** 진동 직후, 오프닝 멘트 전까지 음악만 들려주는 길이 */
-const PRE_NARRATION_MUSIC_MS = 5000;
+const PRE_NARRATION_MUSIC_MS = 8000;
 /** 오프닝 음악이 시작될 때의 볼륨 — 오프닝 멘트 후 VOLUME_RAMP_MS에 걸쳐 100%로 올라간다. */
 const OPENING_MUSIC_VOLUME = 0.5;
 /** 오프닝 멘트가 끝난 뒤 볼륨을 100%로 올리는 데 걸리는 시간 */
-const VOLUME_RAMP_MS = 3000;
+const VOLUME_RAMP_MS = 6000;
 /** 이야기(story) 문단 사이사이, 음악만 들려주는 간격 */
-const STORY_GAP_MS = 3000;
+const STORY_GAP_MS = 6000;
+/** story[1]이 끝나고 마무리 멘트 전까지, 음악만 들려주는 간격 */
+const CLOSING_GAP_MS = 4000;
 /** 진동 직후 읽는 오프닝 멘트 */
 const OPENING_NARRATION = "하루 클래식 공부의 시간입니다.";
 /** 이야기 낭독이 모두 끝난 뒤 읽는 마무리 멘트 */
 function buildClosingNarration(track: Track): string {
-  return `오늘의 음악 '${track.title}' 였습니다. 이제 감상해보세요`;
+  return `오늘의 음악 '${track.title}' 어떠셨나요. 이제 감상해보세요`;
 }
 /** TTS가 onDone/onError를 안 주는 환경(일부 웹 등)에서도 플로우가 반드시 진행되도록 하는 최대 대기 */
 const NARRATION_MAX_WAIT_MS = 8000;
@@ -35,7 +37,7 @@ const NARRATION_MAX_WAIT_MS = 8000;
 /**
  * 라디오 DJ 플로우 (컷오프 없이 곡이 끝날 때까지 재생):
  * 진동 1초 → 음악 5초(50%) → 오프닝 멘트 → 음악 3초(50%→100% 램프) →
- * story[0] → 음악 3초 → story[1] → 음악 3초 → 마무리 멘트 → 나머지 곡 전체.
+ * story[0] → 음악 3초 → story[1] → 음악 2초 → 마무리 멘트 → 나머지 곡 전체.
  * 음악은 진동이 끝난 뒤 한 번 시작되면 곡이 끝날 때까지 멈추지 않고, 멘트는 배경에 깔린 음악 위로 낭독된다.
  * 정지·곡 전환·자연 종료는 어디서든 idle로 전이.
  */
@@ -162,10 +164,10 @@ export function useAudioPlayer() {
         speakThenContinue(buildClosingNarration(track), restOfSong);
       };
 
-      // 8. 음악 3초
+      // 8. 음악 2초
       const musicGapBeforeClosing = () => {
         setPhase("music");
-        waitThenContinue(STORY_GAP_MS, closingNarration);
+        waitThenContinue(CLOSING_GAP_MS, closingNarration);
       };
 
       // 7. story[1] — 문단이 없는 트랙은 건너뛴다.
@@ -214,7 +216,8 @@ export function useAudioPlayer() {
 
       // 2. 음악 5초 (볼륨 50%) — 진동이 끝나면 음악이 시작된다.
       const preNarrationMusic = () => {
-        openingDurationRef.current = (Date.now() - openingStartedAtRef.current) / 1000;
+        openingDurationRef.current =
+          (Date.now() - openingStartedAtRef.current) / 1000;
         player.volume = OPENING_MUSIC_VOLUME;
         player.play();
         setPhase("music");
@@ -258,7 +261,7 @@ export function useAudioPlayer() {
         setIsResolvingSource(false);
       }
     },
-    [player]
+    [player],
   );
 
   /** 재생 ↔ 일시정지 토글. 처음 누르면 로드 후 DJ 플로우 시작. */
@@ -336,7 +339,8 @@ export function useAudioPlayer() {
   // status.duration은 곡 로드가 끝나기 전엔 0/undefined이므로 그동안은 기본값으로 대체한다.
   // openingDurationRef는 음악이 실제로 시작되는 순간 확정되고, 그 전까지는 0이다.
   const totalSeconds =
-    openingDurationRef.current + (status.duration || DEFAULT_DURATION_FALLBACK_SECONDS);
+    openingDurationRef.current +
+    (status.duration || DEFAULT_DURATION_FALLBACK_SECONDS);
   const elapsedSeconds = Math.min(
     openingDurationRef.current + status.currentTime,
     totalSeconds,
