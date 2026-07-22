@@ -70,13 +70,24 @@ Task 3의 `resizeMode="cover"`가 어차피 종횡비를 셀 크기에 맞춰 �
 
 - [ ] **Step 3: 장식용 타원 이미지 1장 다운로드 (피그마)**
 
-```bash
-curl -sSL -o assets/images/bookstore/ellipse-decoration.png "https://www.figma.com/api/mcp/asset/08b5a07d-27a7-4ace-894d-546fa32914f3"
+`get_design_context`가 돌려주는 `imgEllipse8` asset URL은 실제로는 SVG 콘텐츠다 (`.png`
+확장자와 무관하게 `file`로 확인하면 "SVG Scalable Vector Graphics image"). 이 프로젝트에는
+`react-native-svg`가 설치되어 있지 않아 `<Image>`로 SVG를 렌더링할 수 없다 — 반드시
+`get_screenshot` 도구로 해당 노드를 래스터 PNG로 캡처해서 받아야 한다:
+
+```
+mcp__<figma-connector>__get_screenshot(fileKey: "i3NY8GgoNa9LQcxuHNEyvm", nodeId: "2076:1087", maxDimension: 780)
 ```
 
-이 URL이 HTML 에러 페이지를 반환하면(2026-07-22 기준 약 7일 후 만료), Figma MCP
-`get_design_context` 도구를 파일 `i3NY8GgoNa9LQcxuHNEyvm`, 노드 `2076:463`으로 다시 호출해
-새 URL을 받아 재다운로드한다.
+응답의 `image_url`을 다운로드한다:
+
+```bash
+curl -sSL -o assets/images/bookstore/ellipse-decoration.png "<get_screenshot이 반환한 image_url>"
+```
+
+다운로드 후 반드시 `file assets/images/bookstore/ellipse-decoration.png`로 실제
+"PNG image data"인지 확인한다 — "SVG"라고 나오면 `get_design_context`의 asset URL을 그대로
+받은 것이니 위 `get_screenshot` 경로로 다시 받는다.
 
 - [ ] **Step 4: 파일 검증**
 
