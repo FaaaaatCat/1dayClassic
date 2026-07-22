@@ -46,11 +46,6 @@ export async function resolveTrackAudioUrl(track: Track): Promise<string> {
   return getStorageDownloadUrl(track.audio);
 }
 
-/** DJ 나레이션 스크립트 — 곡 소개 후 '오늘의 이야기'(story) 전 문단을 낭독한다. */
-export function buildNarrationScript(track: Track): string {
-  return `${track.composer}의 ${track.title}. ${track.story.join(' ')}`;
-}
-
 export function getTracks(): Track[] {
   return (tracksData as TracksData).tracks;
 }

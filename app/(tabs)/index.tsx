@@ -42,12 +42,28 @@ function formatNoteDate(date: Date = new Date()): string {
   return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} (${pad(date.getHours())}:${pad(date.getMinutes())})`;
 }
 
+/** 초 → "0:07" 형태의 mm:ss */
+function formatPlaybackTime(seconds: number): string {
+  const total = Math.max(0, Math.round(seconds));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
 export default function TodayScreen() {
   const track = getTodayTrack();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isPlaying, isLoading, hasError, progress, togglePlay, restart } =
-    useAudioPlayer();
+  const {
+    isPlaying,
+    isLoading,
+    hasError,
+    progress,
+    elapsedSeconds,
+    totalSeconds,
+    togglePlay,
+    restart,
+  } = useAudioPlayer();
   const { isLiked, toggleLike } = useLikes();
 
   const [notes, setNotes] = useState<Note[]>(SEED_NOTES);
@@ -302,8 +318,14 @@ export default function TodayScreen() {
             />
           </ScaleButton>
         </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        <View style={styles.progressGroup}>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          </View>
+          <View style={styles.progressTimeRow}>
+            <Text style={styles.progressTimeText}>{formatPlaybackTime(elapsedSeconds)}</Text>
+            <Text style={styles.progressTimeText}>{formatPlaybackTime(totalSeconds)}</Text>
+          </View>
         </View>
       </View>
     </View>
@@ -617,5 +639,17 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 100,
     backgroundColor: Colors.beige100,
+  },
+  progressGroup: {
+    gap: 4,
+  },
+  progressTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  progressTimeText: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
+    color: Colors.beige50,
   },
 });

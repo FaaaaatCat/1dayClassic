@@ -7,33 +7,39 @@ import * as Speech from "expo-speech";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Vibration } from "react-native";
 
-import { buildNarrationScript, MEDIA_HEADERS, resolveTrackAudioUrl } from "@/lib/data";
+import { MEDIA_HEADERS, resolveTrackAudioUrl } from "@/lib/data";
 import { fadeVolume, type FadeHandle } from "@/lib/fade";
 import type { Track } from "@/types";
 
-/** 데모 샘플은 30초까지만 재생한다. 단, 나레이션 중에는 컷을 유예한다. */
-const SAMPLE_LIMIT_SECONDS = 30;
-/** 나레이션이 30초를 넘겨 끝난 경우, 볼륨 복구 후 이만큼 더 들려주고 멈춘다. */
-const OUTRO_SECONDS = 15;
-/** 나레이션 시작 전 음악만 들려주는 인트로 길이 */
-const INTRO_SECONDS = 5;
-/** 나레이션 중 음악 배경 볼륨 */
-const DUCK_VOLUME = 0.25;
-/** 덕킹/복구 페이드 길이 */
-const FADE_MS = 800;
+/** 곡 길이(status.duration)를 아직 모를 때 총 재생시간 표시에 쓰는 기본값 */
+const DEFAULT_DURATION_FALLBACK_SECONDS = 30;
 /** 재생 시작을 알리는 진동 길이 */
-const OPENING_VIBRATION_MS = 500;
-/** 진동 직후, 음악 시작 전에 읽어 주는 오프닝 멘트 */
+const OPENING_VIBRATION_MS = 1000;
+/** 진동 직후, 오프닝 멘트 전까지 음악만 들려주는 길이 */
+const PRE_NARRATION_MUSIC_MS = 5000;
+/** 오프닝 음악이 시작될 때의 볼륨 — 오프닝 멘트 후 VOLUME_RAMP_MS에 걸쳐 100%로 올라간다. */
+const OPENING_MUSIC_VOLUME = 0.5;
+/** 오프닝 멘트가 끝난 뒤 볼륨을 100%로 올리는 데 걸리는 시간 */
+const VOLUME_RAMP_MS = 3000;
+/** 이야기(story) 문단 사이사이, 음악만 들려주는 간격 */
+const STORY_GAP_MS = 3000;
+/** 진동 직후 읽는 오프닝 멘트 */
 const OPENING_NARRATION = "하루 클래식 공부의 시간입니다.";
-/** TTS가 onDone/onError를 안 주는 환경(일부 웹 등)에서도 음악이 반드시 시작되도록 하는 최대 대기 */
-const OPENING_MAX_WAIT_MS = 8000;
+/** 이야기 낭독이 모두 끝난 뒤 읽는 마무리 멘트 */
+function buildClosingNarration(track: Track): string {
+  return `오늘의 음악 '${track.title}' 였습니다. 이제 감상해보세요`;
+}
+/** TTS가 onDone/onError를 안 주는 환경(일부 웹 등)에서도 플로우가 반드시 진행되도록 하는 최대 대기 */
+const NARRATION_MAX_WAIT_MS = 8000;
 
 /**
- * 라디오 DJ 플로우: opening(0.5초 진동 → 오프닝 멘트) → 음악 시작과 함께
- * intro(음악 100%) → 5초 후 덕킹 → narration(TTS) → onDone 시 볼륨 복구 → music.
- * 정지·곡 전환·30초 컷은 어디서든 idle로 전이.
+ * 라디오 DJ 플로우 (컷오프 없이 곡이 끝날 때까지 재생):
+ * 진동 1초 → 음악 5초(50%) → 오프닝 멘트 → 음악 3초(50%→100% 램프) →
+ * story[0] → 음악 3초 → story[1] → 음악 3초 → 마무리 멘트 → 나머지 곡 전체.
+ * 음악은 진동이 끝난 뒤 한 번 시작되면 곡이 끝날 때까지 멈추지 않고, 멘트는 배경에 깔린 음악 위로 낭독된다.
+ * 정지·곡 전환·자연 종료는 어디서든 idle로 전이.
  */
-export type DjPhase = "idle" | "opening" | "intro" | "narration" | "music";
+export type DjPhase = "idle" | "opening" | "narration" | "music";
 
 export function useAudioPlayer() {
   const player = useExpoAudioPlayer(undefined, { updateInterval: 250 });
@@ -49,10 +55,13 @@ export function useAudioPlayer() {
   // 세션 토큰 — 재생 시작/정지/곡 전환 때마다 증가한다. 타이머·페이드·TTS 콜백 등
   // 모든 비동기 연쇄는 실행 시점에 자기 세션이 아직 유효한지 확인하고 아니면 죽는다.
   const sessionRef = useRef(0);
-  const introTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** DJ 플로우 각 단계 사이의 대기(setTimeout) — 한 번에 하나만 걸려 있다. */
+  const flowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeRef = useRef<FadeHandle | null>(null);
-  /** 정지 기준 시각 — 나레이션이 30초를 넘기면 복구 시점에 뒤로 밀린다. */
-  const sampleDeadlineRef = useRef(SAMPLE_LIMIT_SECONDS);
+  /** 오프닝(진동+멘트)이 실제로 걸린 시간(초) — 전체 재생시간에 더해진다. 음악 시작 시 확정된다. */
+  const openingDurationRef = useRef(0);
+  /** 오프닝 시작 시각(ms) — 음악이 시작되는 순간 이 값과의 차이로 오프닝 길이를 확정한다. */
+  const openingStartedAtRef = useRef(0);
   /** 시스템 TTS 엔진에서 고른 최적 한국어 목소리 identifier */
   const voiceRef = useRef<string | undefined>(undefined);
 
@@ -88,9 +97,9 @@ export function useAudioPlayer() {
   /** 진행 중인 DJ 플로우(타이머·페이드·TTS)를 전부 무효화한다. 음악은 건드리지 않는다. */
   const cancelDjFlow = useCallback(() => {
     sessionRef.current += 1;
-    if (introTimerRef.current != null) {
-      clearTimeout(introTimerRef.current);
-      introTimerRef.current = null;
+    if (flowTimerRef.current != null) {
+      clearTimeout(flowTimerRef.current);
+      flowTimerRef.current = null;
     }
     fadeRef.current?.cancel();
     fadeRef.current = null;
@@ -102,72 +111,119 @@ export function useAudioPlayer() {
     (track: Track) => {
       cancelDjFlow();
       const session = sessionRef.current;
-      sampleDeadlineRef.current = SAMPLE_LIMIT_SECONDS;
-      player.volume = 1;
+      const isCurrentSession = () => session === sessionRef.current;
+      openingDurationRef.current = 0;
+      openingStartedAtRef.current = Date.now();
       setPhase("opening");
 
-      /** 인트로 5초가 지난 뒤 실행: 덕킹 → 곡 해설 나레이션 → 볼륨 복구 */
-      const runDuckAndNarration = () => {
-        fadeRef.current = fadeVolume(player, DUCK_VOLUME, FADE_MS);
-        fadeRef.current.done.then((completed) => {
-          if (!completed || session !== sessionRef.current) return;
-          setPhase("narration");
+      /** text를 읽고 onDone/onError 또는 최대 대기 시간이 지나면 next로 진행한다. */
+      const speakThenContinue = (text: string, next: () => void) => {
+        let advanced = false;
+        const advance = () => {
+          if (advanced || !isCurrentSession()) return;
+          advanced = true;
+          if (flowTimerRef.current != null) {
+            clearTimeout(flowTimerRef.current);
+            flowTimerRef.current = null;
+          }
+          next();
+        };
+        Speech.speak(text, {
+          language: "ko-KR",
+          voice: voiceRef.current,
+          // 시스템 TTS 설정(음높이·속도)에 좌우되지 않도록 고정한다.
+          // 기기 음높이가 비정상(예: 186%)이면 목소리가 짓눌린 것처럼 들린다.
+          pitch: 1.0,
+          rate: 1.0,
+          onDone: advance,
+          onError: advance,
+        });
+        // 멘트가 끝나지 않는 환경(일부 웹 등)에서도 플로우가 반드시 진행되도록 하는 안전장치.
+        flowTimerRef.current = setTimeout(advance, NARRATION_MAX_WAIT_MS);
+      };
 
-          // 자연 종료(onDone)와 오류(onError)만 볼륨을 복구한다.
-          // Speech.stop()에 의한 onStopped는 정지/곡 전환 경로라 복구하지 않는다.
-          const restore = () => {
-            if (session !== sessionRef.current) return;
-            // 이야기가 30초를 넘겨 끝났으면 아웃트로만큼 더 듣고 멈추도록 연장한다.
-            sampleDeadlineRef.current = Math.max(
-              SAMPLE_LIMIT_SECONDS,
-              player.currentTime + OUTRO_SECONDS,
-            );
-            setPhase("music");
-            fadeRef.current = fadeVolume(player, 1, FADE_MS);
-          };
-          Speech.speak(buildNarrationScript(track), {
-            language: "ko-KR",
-            voice: voiceRef.current,
-            // 시스템 TTS 설정(음높이·속도)에 좌우되지 않도록 고정한다.
-            // 기기 음높이가 비정상(예: 186%)이면 목소리가 짓눌린 것처럼 들린다.
-            pitch: 1.0,
-            rate: 1.0,
-            onDone: restore,
-            onError: restore,
-          });
+      /** ms만큼 음악만 재생한 뒤 next로 진행한다. */
+      const waitThenContinue = (ms: number, next: () => void) => {
+        flowTimerRef.current = setTimeout(() => {
+          if (!isCurrentSession()) return;
+          flowTimerRef.current = null;
+          next();
+        }, ms);
+      };
+
+      // 10. 나머지 음악 전부 재생 — 이후로는 자연 종료까지 그대로 흘러간다.
+      const restOfSong = () => {
+        setPhase("music");
+      };
+
+      // 9. 마무리 멘트
+      const closingNarration = () => {
+        setPhase("narration");
+        speakThenContinue(buildClosingNarration(track), restOfSong);
+      };
+
+      // 8. 음악 3초
+      const musicGapBeforeClosing = () => {
+        setPhase("music");
+        waitThenContinue(STORY_GAP_MS, closingNarration);
+      };
+
+      // 7. story[1] — 문단이 없는 트랙은 건너뛴다.
+      const story1Narration = () => {
+        const text = track.story[1];
+        if (!text) {
+          musicGapBeforeClosing();
+          return;
+        }
+        setPhase("narration");
+        speakThenContinue(text, musicGapBeforeClosing);
+      };
+
+      // 6. 음악 3초
+      const musicGapBeforeStory1 = () => {
+        setPhase("music");
+        waitThenContinue(STORY_GAP_MS, story1Narration);
+      };
+
+      // 5. story[0] — 문단이 없는 트랙은 건너뛴다.
+      const story0Narration = () => {
+        const text = track.story[0];
+        if (!text) {
+          musicGapBeforeStory1();
+          return;
+        }
+        setPhase("narration");
+        speakThenContinue(text, musicGapBeforeStory1);
+      };
+
+      // 4. 음악 3초 — 볼륨을 50%에서 100%로 서서히 올린다.
+      const volumeRampUp = () => {
+        setPhase("music");
+        fadeRef.current = fadeVolume(player, 1, VOLUME_RAMP_MS);
+        fadeRef.current.done.then((completed) => {
+          if (!completed || !isCurrentSession()) return;
+          story0Narration();
         });
       };
 
-      // 오프닝: 0.5초 진동 → 진동이 끝나면 오프닝 멘트 → 멘트가 끝나면 음악 시작.
+      // 3. 오프닝 멘트
+      const openingNarration = () => {
+        setPhase("narration");
+        speakThenContinue(OPENING_NARRATION, volumeRampUp);
+      };
+
+      // 2. 음악 5초 (볼륨 50%) — 진동이 끝나면 음악이 시작된다.
+      const preNarrationMusic = () => {
+        openingDurationRef.current = (Date.now() - openingStartedAtRef.current) / 1000;
+        player.volume = OPENING_MUSIC_VOLUME;
+        player.play();
+        setPhase("music");
+        waitThenContinue(PRE_NARRATION_MUSIC_MS, openingNarration);
+      };
+
+      // 1. 진동
       Vibration.vibrate(OPENING_VIBRATION_MS);
-      introTimerRef.current = setTimeout(() => {
-        if (session !== sessionRef.current) return;
-        let musicStarted = false;
-        const beginMusic = () => {
-          if (musicStarted || session !== sessionRef.current) return;
-          musicStarted = true;
-          // 최대 대기로 진입한 경우 걸려 있는 멘트를 정리한다.
-          // (onStopped 경로라 onDone/onError를 다시 부르지 않는다.)
-          Speech.stop();
-          player.play();
-          setPhase("intro");
-          introTimerRef.current = setTimeout(() => {
-            if (session !== sessionRef.current) return;
-            runDuckAndNarration();
-          }, INTRO_SECONDS * 1000);
-        };
-        Speech.speak(OPENING_NARRATION, {
-          language: "ko-KR",
-          voice: voiceRef.current,
-          pitch: 1.0,
-          rate: 1.0,
-          onDone: beginMusic,
-          onError: beginMusic,
-        });
-        // 멘트가 끝나지 않는 환경에서도 음악이 반드시 시작되도록 하는 안전장치.
-        // 정상 종료 시에는 musicStarted 플래그와 세션 검사로 무시된다.
-        setTimeout(beginMusic, OPENING_MAX_WAIT_MS);
-      }, OPENING_VIBRATION_MS);
+      waitThenContinue(OPENING_VIBRATION_MS, preNarrationMusic);
     },
     [cancelDjFlow, player],
   );
@@ -175,27 +231,14 @@ export function useAudioPlayer() {
   // 언마운트 시 TTS와 타이머 정리
   useEffect(() => cancelDjFlow, [cancelDjFlow]);
 
-  // 샘플 한도에 도달하거나 재생이 끝나면 처음으로 되감고 멈춘다.
-  // 나레이션 중에는 이야기가 끊기지 않도록 컷을 유예한다.
+  // 곡이 끝까지 재생되면(자연 종료) 처음으로 되감고 멈춘다.
   useEffect(() => {
-    if (!status.isLoaded || phase === "narration") return;
-    const reachedSampleEnd =
-      status.didJustFinish || status.currentTime >= sampleDeadlineRef.current;
-    if (reachedSampleEnd && (status.playing || status.didJustFinish)) {
-      cancelDjFlow();
-      player.pause();
-      player.seekTo(0);
-      setPhase("idle");
-    }
-  }, [
-    player,
-    cancelDjFlow,
-    phase,
-    status.isLoaded,
-    status.playing,
-    status.didJustFinish,
-    status.currentTime,
-  ]);
+    if (!status.isLoaded || !status.didJustFinish) return;
+    cancelDjFlow();
+    player.pause();
+    player.seekTo(0);
+    setPhase("idle");
+  }, [player, cancelDjFlow, status.isLoaded, status.didJustFinish]);
 
   /**
    * track.audio(Storage 경로 또는 완성된 URL)를 실제 재생 URL로 바꿔 플레이어에 로드한다.
@@ -226,7 +269,7 @@ export function useAudioPlayer() {
       if (resolvingRef.current) return;
       try {
         // 새 곡이거나 직전 로드가 실패한 경우: 기존 플로우 취소 후 새로 시작.
-        // 음악은 오프닝(진동+멘트)이 끝난 뒤 DJ 플로우가 직접 시작한다.
+        // 음악은 진동이 끝난 뒤 DJ 플로우가 직접 시작한다.
         if (loadedTrackIdRef.current !== track.id || status.error != null) {
           await loadTrackSource(track);
           startDjFlow(track);
@@ -240,16 +283,11 @@ export function useAudioPlayer() {
           player.pause();
           setPhase("idle");
         } else if (status.currentTime < 0.5) {
-          // 곡 처음부터의 재생(30초 컷 후 재시작 등): DJ 플로우 전체를 다시 태운다.
+          // 곡 처음부터의 재생: DJ 플로우 전체를 다시 태운다.
           startDjFlow(track);
         } else {
           // 중간 재개: 나레이션은 다시 재생하지 않고 원래 볼륨의 음악만 잇는다.
-          // 나레이션 중 정지했다 재개한 경우 즉시 컷되지 않도록 데드라인을 보정한다.
           cancelDjFlow();
-          sampleDeadlineRef.current = Math.max(
-            sampleDeadlineRef.current,
-            status.currentTime + OUTRO_SECONDS,
-          );
           player.volume = 1;
           player.play();
           setPhase("music");
@@ -294,9 +332,14 @@ export function useAudioPlayer() {
     [player, status.error, startDjFlow, loadTrackSource],
   );
 
-  const sampleDuration = Math.min(
-    status.duration || SAMPLE_LIMIT_SECONDS,
-    SAMPLE_LIMIT_SECONDS,
+  // 전체 재생시간 = 오프닝(진동+멘트) 실제 소요 시간 + 곡 실제 길이.
+  // status.duration은 곡 로드가 끝나기 전엔 0/undefined이므로 그동안은 기본값으로 대체한다.
+  // openingDurationRef는 음악이 실제로 시작되는 순간 확정되고, 그 전까지는 0이다.
+  const totalSeconds =
+    openingDurationRef.current + (status.duration || DEFAULT_DURATION_FALLBACK_SECONDS);
+  const elapsedSeconds = Math.min(
+    openingDurationRef.current + status.currentTime,
+    totalSeconds,
   );
   const loadFailed = hasError || status.error != null;
   // 오프닝(진동+멘트) 중에는 음악이 백그라운드에서 로드되는 중이어도
@@ -318,9 +361,12 @@ export function useAudioPlayer() {
     /** DJ 플로우 현재 단계 — UI에서 나레이션 중임을 표시할 때 사용 */
     phase,
     isNarrating: phase === "narration",
-    /** 0~1 — 30초 샘플 기준 진행률 */
-    progress:
-      sampleDuration > 0 ? Math.min(status.currentTime / sampleDuration, 1) : 0,
+    /** 0~1 — 오프닝+곡 전체 길이 기준 진행률 */
+    progress: totalSeconds > 0 ? elapsedSeconds / totalSeconds : 0,
+    /** 경과 시간(초) — 오프닝 포함 */
+    elapsedSeconds,
+    /** 전체 재생 시간(초) = 오프닝 소요 시간 + 곡 길이. 곡 로드 전엔 기본값으로 대체 표시됨 */
+    totalSeconds,
     togglePlay,
     restart,
   };
