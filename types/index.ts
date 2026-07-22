@@ -14,6 +14,8 @@ export interface Track {
   quote?: string;
   /** 인용문 출처 */
   quoteBy?: string;
+  /** 오늘의 곡으로 노출되는 날짜 — "1월 1일" 형태 */
+  date?: string;
   /** 본문 문단들 — 오늘의 이야기 본문이자 나레이션 낭독 대상 */
   story: string[];
   /** 커버 이미지 URL — 보관함 썸네일과 오늘의 클래식 히어로 이미지에 공용으로 쓰인다 */

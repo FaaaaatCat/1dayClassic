@@ -24,15 +24,20 @@ const VOLUME_RAMP_MS = 6000;
 /** 이야기(story) 문단 사이사이, 음악만 들려주는 간격 */
 const STORY_GAP_MS = 6000;
 /** story[1]이 끝나고 마무리 멘트 전까지, 음악만 들려주는 간격 */
-const CLOSING_GAP_MS = 4000;
+const CLOSING_GAP_MS = 3000;
 /** 진동 직후 읽는 오프닝 멘트 */
 const OPENING_NARRATION = "하루 클래식 공부의 시간입니다.";
 /** 이야기 낭독이 모두 끝난 뒤 읽는 마무리 멘트 */
 function buildClosingNarration(track: Track): string {
   return `오늘의 음악 '${track.title}' 어떠셨나요. 이제 감상해보세요`;
 }
-/** TTS가 onDone/onError를 안 주는 환경(일부 웹 등)에서도 플로우가 반드시 진행되도록 하는 최대 대기 */
-const NARRATION_MAX_WAIT_MS = 8000;
+/**
+ * TTS가 onDone/onError를 안 주는 환경(일부 웹 등)에서도 플로우가 반드시 진행되도록 하는 최대 대기.
+ * story 문단 낭독은 실측 30초 안팎이 걸릴 수 있어 넉넉하게 잡는다 — 이보다 짧으면 실제 낭독이
+ * 끝나기 전에 다음 단계(다음 멘트 전 음악 간격)로 넘어가버려서, 간격이 낭독 뒤가 아니라
+ * 낭독 도중에 흘러가 버리고 다음 멘트가 이어 붙는 것처럼 들린다.
+ */
+const NARRATION_MAX_WAIT_MS = 60000;
 
 /**
  * 라디오 DJ 플로우 (컷오프 없이 곡이 끝날 때까지 재생):

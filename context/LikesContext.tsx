@@ -12,7 +12,7 @@ interface LikesContextValue {
 const LikesContext = createContext<LikesContextValue | null>(null);
 
 /** 데모용 시드 — 보관함에 미리 담겨 있는 곡들 */
-const SEED_LIKED_IDS = ['satie-gymnopedie-1', 'pachelbel-canon'];
+const SEED_LIKED_IDS = ['classic_3_humoreske', 'classic_6_sextet'];
 
 export function LikesProvider({ children }: { children: React.ReactNode }) {
   const [likedIds, setLikedIds] = useState<string[]>(SEED_LIKED_IDS);

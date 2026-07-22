@@ -13,25 +13,11 @@ export const MEDIA_HEADERS: Record<string, string> = {
 };
 
 /**
- * 로컬 커버 이미지 — assets/images/musicians/ 에 파일을 넣고 여기에 등록한다.
- * Metro의 require는 정적 경로만 허용되어 자동 매핑이 불가능하다.
- */
-const LOCAL_COVER_IMAGES: Record<string, ImageSourcePropType> = {
-  'beethoven-symphony-5': require('../assets/images/musicians/beethoven.jpg'),
-  'mozart-nachtmusik': require('../assets/images/musicians/mozart.jpg'),
-  'vivaldi-spring': require('../assets/images/musicians/vivaldi.jpg'),
-  'pachelbel-canon': require('../assets/images/musicians/pachelbel.jpg'),
-  'satie-gymnopedie-1': require('../assets/images/musicians/satie.jpg'),
-};
-
-/**
- * 로컬 커버가 있으면 로컬을, 없으면 원격 URL(+UA 헤더)을 반환한다.
+ * 커버 이미지 소스(원격 URL + UA 헤더)를 반환한다.
  * 보관함 썸네일과 오늘의 클래식 히어로 이미지에 공용으로 쓰인다.
  */
 export function getCoverImageSource(track: Track): ImageSourcePropType {
-  return (
-    LOCAL_COVER_IMAGES[track.id] ?? { uri: track.coverImage, headers: MEDIA_HEADERS }
-  );
+  return { uri: track.coverImage, headers: MEDIA_HEADERS };
 }
 
 /**
