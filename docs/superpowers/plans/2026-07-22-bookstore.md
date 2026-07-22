@@ -25,57 +25,67 @@
 
 ---
 
-### Task 1: 피그마 이미지 자산 다운로드
+### Task 1: 이미지 자산 다운로드
 
 **Files:**
-- Create: `assets/images/bookstore/cover-classic.png`
-- Create: `assets/images/bookstore/cover-latin.png`
-- Create: `assets/images/bookstore/cover-quote.png`
-- Create: `assets/images/bookstore/cover-hanja.png`
-- Create: `assets/images/bookstore/cover-liberal.png`
-- Create: `assets/images/bookstore/cover-psychology.png`
-- Create: `assets/images/bookstore/cover-writing.png`
-- Create: `assets/images/bookstore/cover-hanmun.png`
-- Create: `assets/images/bookstore/cover-english.png`
+- Create: `assets/images/bookstore/cover-classic.jpg`
+- Create: `assets/images/bookstore/cover-latin.jpg`
+- Create: `assets/images/bookstore/cover-quote.jpg`
+- Create: `assets/images/bookstore/cover-hanja.jpg`
+- Create: `assets/images/bookstore/cover-liberal.jpg`
+- Create: `assets/images/bookstore/cover-psychology.jpg`
+- Create: `assets/images/bookstore/cover-writing.jpg`
+- Create: `assets/images/bookstore/cover-hanmun.jpg`
+- Create: `assets/images/bookstore/cover-english.jpg`
 - Create: `assets/images/bookstore/ellipse-decoration.png`
 
 **Interfaces:**
 - Consumes: 없음
-- Produces: `assets/images/bookstore/*.png` 파일 10개 — Task 2에서
-  `require('@/assets/images/bookstore/<name>.png')`로 참조한다.
+- Produces: `assets/images/bookstore/cover-*.jpg` 9개 + `ellipse-decoration.png` 1개 —
+  Task 2에서 `require('@/assets/images/bookstore/<name>')`로 참조한다.
 
 - [ ] **Step 1: 디렉터리 생성**
 
 Run: `mkdir -p assets/images/bookstore`
 
-- [ ] **Step 2: 이미지 10개 다운로드**
+- [ ] **Step 2: 책표지 9장 다운로드 (교보문고 실제 표지, 사용자 제공 URL)**
 
 Run (git bash / Bash tool):
 ```bash
 cd "D:\github\personal\1dayClassic"
-curl -sSL -o assets/images/bookstore/cover-classic.png "https://www.figma.com/api/mcp/asset/2d029756-5ab9-4352-b28a-b97b5e0e0ace"
-curl -sSL -o assets/images/bookstore/cover-latin.png "https://www.figma.com/api/mcp/asset/729f2a9c-3d4f-4a7f-bdad-6cf96d3376dc"
-curl -sSL -o assets/images/bookstore/cover-quote.png "https://www.figma.com/api/mcp/asset/71315af7-5224-434e-869a-88bab51e844e"
-curl -sSL -o assets/images/bookstore/cover-hanja.png "https://www.figma.com/api/mcp/asset/ff44e8f8-5f06-4132-afd2-d55e01dbf416"
-curl -sSL -o assets/images/bookstore/cover-liberal.png "https://www.figma.com/api/mcp/asset/3a486e5e-65f5-4732-b7db-cf3dff23e2c7"
-curl -sSL -o assets/images/bookstore/cover-psychology.png "https://www.figma.com/api/mcp/asset/bdf31a70-9ed6-490d-ba9d-7819010cfae2"
-curl -sSL -o assets/images/bookstore/cover-writing.png "https://www.figma.com/api/mcp/asset/1662c989-1404-4280-8880-50722b354926"
-curl -sSL -o assets/images/bookstore/cover-hanmun.png "https://www.figma.com/api/mcp/asset/7ddff5cd-aa8d-4b35-8a6d-9989ee5ab97a"
-curl -sSL -o assets/images/bookstore/cover-english.png "https://www.figma.com/api/mcp/asset/207fcea0-91cd-4ee0-91ca-f5e6dde3f538"
+curl -sSL -o assets/images/bookstore/cover-classic.jpg "https://contents.kyobobook.co.kr/sih/fit-in/225x325/pdt/9791167700223.jpg"
+curl -sSL -o assets/images/bookstore/cover-latin.jpg "https://contents.kyobobook.co.kr/sih/fit-in/225x325/pdt/9791167701121.jpg"
+curl -sSL -o assets/images/bookstore/cover-quote.jpg "https://contents.kyobobook.co.kr/sih/fit-in/225x325/pdt/9791189683306.jpg"
+curl -sSL -o assets/images/bookstore/cover-hanja.jpg "https://contents.kyobobook.co.kr/sih/fit-in/225x325/pdt/9791185152158.jpg"
+curl -sSL -o assets/images/bookstore/cover-liberal.jpg "https://contents.kyobobook.co.kr/sih/fit-in/225x325/pdt/9791167700506.jpg"
+curl -sSL -o assets/images/bookstore/cover-psychology.jpg "https://contents.kyobobook.co.kr/sih/fit-in/225x325/pdt/9791167700797.jpg"
+curl -sSL -o assets/images/bookstore/cover-writing.jpg "https://contents.kyobobook.co.kr/sih/fit-in/458x0/pdt/9791189683764.jpg"
+curl -sSL -o assets/images/bookstore/cover-hanmun.jpg "https://contents.kyobobook.co.kr/sih/fit-in/225x325/pdt/9791167700537.jpg"
+curl -sSL -o assets/images/bookstore/cover-english.jpg "https://contents.kyobobook.co.kr/sih/fit-in/225x325/pdt/9791167700216.jpg"
+```
+
+Note: `cover-writing.jpg`만 소스 URL이 `458x0`(다른 종횡비)이다 — 사용자가 제공한 그대로 쓴다.
+Task 3의 `resizeMode="cover"`가 어차피 종횡비를 셀 크기에 맞춰 크롭하므로 레이아웃에는
+영향이 없다.
+
+- [ ] **Step 3: 장식용 타원 이미지 1장 다운로드 (피그마)**
+
+```bash
 curl -sSL -o assets/images/bookstore/ellipse-decoration.png "https://www.figma.com/api/mcp/asset/08b5a07d-27a7-4ace-894d-546fa32914f3"
 ```
 
-If any of these URLs return an HTML error page instead of a PNG (expired after ~7 days from
-2026-07-22), re-fetch the asset via the Figma MCP `get_design_context` tool on node `2076:463`
-in file `i3NY8GgoNa9LQcxuHNEyvm` to get a fresh URL, then retry the download for that file only.
+이 URL이 HTML 에러 페이지를 반환하면(2026-07-22 기준 약 7일 후 만료), Figma MCP
+`get_design_context` 도구를 파일 `i3NY8GgoNa9LQcxuHNEyvm`, 노드 `2076:463`으로 다시 호출해
+새 URL을 받아 재다운로드한다.
 
-- [ ] **Step 3: 파일 검증**
+- [ ] **Step 4: 파일 검증**
 
 Run: `ls -la assets/images/bookstore/`
-Expected: 10개 파일 모두 존재하고 각각 크기가 0바이트보다 커야 한다 (0바이트면 다운로드 실패 —
-URL 만료 가능성, Step 2의 재발급 절차를 따른다).
+Expected: 파일 10개(`cover-*.jpg` 9개 + `ellipse-decoration.png` 1개) 모두 존재하고 각각
+크기가 0바이트보다 커야 한다. 0바이트거나 HTML 내용이 담겨 있으면 해당 URL을 다시 확인한다
+(`file assets/images/bookstore/cover-classic.jpg`로 실제 JPEG인지 확인 가능).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add assets/images/bookstore/
@@ -90,7 +100,7 @@ git commit -m "하루 서점 이미지 자산 추가"
 - Create: `lib/bookstore.ts`
 
 **Interfaces:**
-- Consumes: `assets/images/bookstore/*.png` (Task 1의 산출물)
+- Consumes: `assets/images/bookstore/cover-*.jpg` (Task 1의 산출물)
 - Produces: `export interface BookstoreBook { id: string; title: string; author: string; coverImage: ImageSourcePropType; isCurrent?: boolean }`
   및 `export const BOOKSTORE_BOOKS: BookstoreBook[]` (9개 항목, 순서대로 하루 클래식 공부
   [isCurrent: true] → 라틴어 → 명언 → 한자 → 교양 → 심리 → 쓰기 → 한문 → 영어교양) —
@@ -116,56 +126,56 @@ export const BOOKSTORE_BOOKS: BookstoreBook[] = [
     id: 'classic',
     title: '하루 클래식 공부',
     author: '글릿 [유유]',
-    coverImage: require('@/assets/images/bookstore/cover-classic.png'),
+    coverImage: require('@/assets/images/bookstore/cover-classic.jpg'),
     isCurrent: true,
   },
   {
     id: 'latin',
     title: '하루 라틴어 공부',
     author: '김태권 [유유]',
-    coverImage: require('@/assets/images/bookstore/cover-latin.png'),
+    coverImage: require('@/assets/images/bookstore/cover-latin.jpg'),
   },
   {
     id: 'quote',
     title: '하루 명언 공부',
     author: '김영수 [유유]',
-    coverImage: require('@/assets/images/bookstore/cover-quote.png'),
+    coverImage: require('@/assets/images/bookstore/cover-quote.jpg'),
   },
   {
     id: 'hanja',
     title: '하루 한자 공부',
     author: '이인호 [유유]',
-    coverImage: require('@/assets/images/bookstore/cover-hanja.png'),
+    coverImage: require('@/assets/images/bookstore/cover-hanja.jpg'),
   },
   {
     id: 'liberal',
     title: '하루 교양 공부',
     author: '전성원 [유유]',
-    coverImage: require('@/assets/images/bookstore/cover-liberal.png'),
+    coverImage: require('@/assets/images/bookstore/cover-liberal.jpg'),
   },
   {
     id: 'psychology',
     title: '하루 심리 공부',
     author: '신고은 [유유]',
-    coverImage: require('@/assets/images/bookstore/cover-psychology.png'),
+    coverImage: require('@/assets/images/bookstore/cover-psychology.jpg'),
   },
   {
     id: 'writing',
     title: '하루 쓰기 공부',
     author: '브라이언 로빈슨 [유유]',
-    coverImage: require('@/assets/images/bookstore/cover-writing.png'),
+    coverImage: require('@/assets/images/bookstore/cover-writing.jpg'),
   },
   {
     id: 'hanmun',
     title: '하루 한문 공부',
     author: '임자헌 [유유]',
-    coverImage: require('@/assets/images/bookstore/cover-hanmun.png'),
+    coverImage: require('@/assets/images/bookstore/cover-hanmun.jpg'),
   },
   {
     id: 'english',
     title: '하루 영어 교양',
     author: '서미석 [유유]',
-    coverImage: require('@/assets/images/bookstore/cover-english.png'),
+    coverImage: require('@/assets/images/bookstore/cover-english.jpg'),
   },
 ];
 ```

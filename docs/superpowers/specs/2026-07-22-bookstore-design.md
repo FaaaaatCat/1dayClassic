@@ -82,20 +82,22 @@ export const BOOKSTORE_BOOKS: BookstoreBook[] = [
 
 ### 자산
 
-피그마에서 다운로드해 `assets/images/bookstore/`에 저장:
+책표지 9장은 실제 표지 이미지를 쓰기 위해 교보문고 상품 이미지 CDN에서 다운로드해
+`assets/images/bookstore/`에 저장한다 (사용자가 직접 URL 제공, 피그마 목업 이미지 대체).
+장식용 타원 이미지만 피그마에서 그대로 가져온다.
 
-| 파일명 | 피그마 노드 |
+| 파일명 | 출처 |
 |---|---|
-| `cover-classic.png` | imgImage2 (2076:1169) |
-| `cover-latin.png` | imgImage3 (2076:1149) |
-| `cover-quote.png` | imgImage4 (2076:1173) |
-| `cover-hanja.png` | imgImage5 (2076:1181) |
-| `cover-liberal.png` | imgImage6 (2076:1189) |
-| `cover-psychology.png` | imgImage7 (2076:1214) |
-| `cover-writing.png` | imgImage8 (2076:1221) |
-| `cover-hanmun.png` | imgImage9 (2076:1198) |
-| `cover-english.png` | imgImage10 (2076:1205) |
-| `ellipse-decoration.png` | imgEllipse8 (2076:1087) |
+| `cover-classic.jpg` | 교보문고 `9791167700223` (하루 클래식 공부) |
+| `cover-latin.jpg` | 교보문고 `9791167701121` (하루 라틴어 공부) |
+| `cover-quote.jpg` | 교보문고 `9791189683306` (하루 명언 공부) |
+| `cover-hanja.jpg` | 교보문고 `9791185152158` (하루 한자 공부) |
+| `cover-liberal.jpg` | 교보문고 `9791167700506` (하루 교양 공부) |
+| `cover-psychology.jpg` | 교보문고 `9791167700797` (하루 심리 공부) |
+| `cover-writing.jpg` | 교보문고 `9791189683764` (하루 쓰기 공부) |
+| `cover-hanmun.jpg` | 교보문고 `9791167700537` (하루 한문 공부) |
+| `cover-english.jpg` | 교보문고 `9791167700216` (하루 영어 교양) |
+| `ellipse-decoration.png` | 피그마 imgEllipse8 (2076:1087) |
 
 ## 디자인 토큰 매핑
 
