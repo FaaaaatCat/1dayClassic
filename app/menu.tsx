@@ -8,9 +8,8 @@ import ScaleButton from '@/components/ScaleButton';
 import { Palette, Spacing, Typography } from '@/constants/theme';
 
 const MENU_ITEMS = [
-  { title: '오늘의 클래식', caption: '매일 한 곡, 오늘의 이야기', href: '/' },
+  { title: '홈', caption: '매일 한 곡, 연간 캘린더', href: '/' },
   { title: '보관함', caption: '좋아요를 누른 곡들', href: '/library' },
-  { title: '알람', caption: '아침을 여는 클래식', href: '/alarm' },
   { title: '설정', caption: '앱 소개와 정보', href: '/settings' },
 ] as const;
 

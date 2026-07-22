@@ -16,10 +16,10 @@ export default function TabLayout() {
         header: () => <AppHeader title={TITLES[route.name] ?? ''} />,
         sceneStyle: { backgroundColor: Palette.background },
       })}>
-      {/* 오늘 화면은 피그마 시안의 자체 고정 헤더를 렌더링한다 */}
-      <Tabs.Screen name="index" options={{ title: '오늘', headerShown: false }} />
+      {/* 홈과 오늘의 클래식 화면은 각자 자체 고정 헤더를 렌더링한다 */}
+      <Tabs.Screen name="index" options={{ title: '홈', headerShown: false }} />
+      <Tabs.Screen name="today" options={{ title: '오늘의 클래식', headerShown: false }} />
       <Tabs.Screen name="library" options={{ title: '보관함' }} />
-      <Tabs.Screen name="alarm" options={{ title: '알람' }} />
       <Tabs.Screen name="settings" options={{ title: '설정' }} />
     </Tabs>
   );
@@ -27,8 +27,8 @@ export default function TabLayout() {
 
 /** 헤더 왼쪽에 표시되는 페이지 타이틀 */
 const TITLES: Record<string, string> = {
-  index: '오늘의 클래식',
+  index: '홈',
+  today: '오늘의 클래식',
   library: '보관함',
-  alarm: '알람',
   settings: '설정',
 };

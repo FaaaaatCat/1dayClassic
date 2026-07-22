@@ -38,13 +38,18 @@ function buildClosingNarration(track: Track): string {
  * 낭독 도중에 흘러가 버리고 다음 멘트가 이어 붙는 것처럼 들린다.
  */
 const NARRATION_MAX_WAIT_MS = 60000;
+/** 곡이 이보다 길면 이 지점에서 페이드아웃하며 멈춘다(예: 피아노 편곡 전곡처럼 지나치게 긴 녹음). */
+const MAX_TRACK_SECONDS = 300;
+/** 5분 컷 직전 페이드아웃에 걸리는 시간 */
+const TRACK_FADE_OUT_MS = 5000;
 
 /**
- * 라디오 DJ 플로우 (컷오프 없이 곡이 끝날 때까지 재생):
+ * 라디오 DJ 플로우:
  * 진동 1초 → 음악 5초(50%) → 오프닝 멘트 → 음악 3초(50%→100% 램프) →
  * story[0] → 음악 3초 → story[1] → 음악 2초 → 마무리 멘트 → 나머지 곡 전체.
- * 음악은 진동이 끝난 뒤 한 번 시작되면 곡이 끝날 때까지 멈추지 않고, 멘트는 배경에 깔린 음악 위로 낭독된다.
- * 정지·곡 전환·자연 종료는 어디서든 idle로 전이.
+ * 음악은 진동이 끝난 뒤 한 번 시작되면 멈추지 않고 이어지며, 멘트는 배경에 깔린 음악 위로 낭독된다.
+ * 다만 곡이 5분보다 길면 5분 지점에서 5초 페이드아웃 후 멈춘다(MAX_TRACK_SECONDS).
+ * 정지·곡 전환·자연 종료·5분 컷은 어디서든 idle로 전이.
  */
 export type DjPhase = "idle" | "opening" | "narration" | "music";
 
@@ -69,6 +74,8 @@ export function useAudioPlayer() {
   const openingDurationRef = useRef(0);
   /** 오프닝 시작 시각(ms) — 음악이 시작되는 순간 이 값과의 차이로 오프닝 길이를 확정한다. */
   const openingStartedAtRef = useRef(0);
+  /** 5분 컷 페이드아웃을 이미 시작했는지 — 재생 세션마다 초기화된다. */
+  const trackCutoffTriggeredRef = useRef(false);
   /** 시스템 TTS 엔진에서 고른 최적 한국어 목소리 identifier */
   const voiceRef = useRef<string | undefined>(undefined);
 
@@ -121,6 +128,7 @@ export function useAudioPlayer() {
       const isCurrentSession = () => session === sessionRef.current;
       openingDurationRef.current = 0;
       openingStartedAtRef.current = Date.now();
+      trackCutoffTriggeredRef.current = false;
       setPhase("opening");
 
       /** text를 읽고 onDone/onError 또는 최대 대기 시간이 지나면 next로 진행한다. */
@@ -248,6 +256,26 @@ export function useAudioPlayer() {
     setPhase("idle");
   }, [player, cancelDjFlow, status.isLoaded, status.didJustFinish]);
 
+  // 곡이 5분보다 길면 5분 지점에서 5초에 걸쳐 페이드아웃하며 멈춘다.
+  useEffect(() => {
+    if (!status.isLoaded || !status.duration) return;
+    if (status.duration <= MAX_TRACK_SECONDS) return;
+    if (trackCutoffTriggeredRef.current) return;
+    if (status.currentTime < MAX_TRACK_SECONDS - TRACK_FADE_OUT_MS / 1000) return;
+
+    trackCutoffTriggeredRef.current = true;
+    const session = sessionRef.current;
+    fadeRef.current?.cancel();
+    fadeRef.current = fadeVolume(player, 0, TRACK_FADE_OUT_MS);
+    fadeRef.current.done.then(() => {
+      if (session !== sessionRef.current) return;
+      player.pause();
+      player.seekTo(0);
+      player.volume = 1;
+      setPhase("idle");
+    });
+  }, [player, status.isLoaded, status.duration, status.currentTime]);
+
   /**
    * track.audio(Storage 경로 또는 완성된 URL)를 실제 재생 URL로 바꿔 플레이어에 로드한다.
    * Storage 경로 조회는 네트워크 요청이라 실패할 수 있다(파일 미업로드, 권한 규칙 미설정 등) —
@@ -340,12 +368,14 @@ export function useAudioPlayer() {
     [player, status.error, startDjFlow, loadTrackSource],
   );
 
-  // 전체 재생시간 = 오프닝(진동+멘트) 실제 소요 시간 + 곡 실제 길이.
+  // 전체 재생시간 = 오프닝(진동+멘트) 실제 소요 시간 + 곡 실제 길이(5분 컷 적용).
   // status.duration은 곡 로드가 끝나기 전엔 0/undefined이므로 그동안은 기본값으로 대체한다.
   // openingDurationRef는 음악이 실제로 시작되는 순간 확정되고, 그 전까지는 0이다.
-  const totalSeconds =
-    openingDurationRef.current +
-    (status.duration || DEFAULT_DURATION_FALLBACK_SECONDS);
+  const cappedSongSeconds = Math.min(
+    status.duration || DEFAULT_DURATION_FALLBACK_SECONDS,
+    MAX_TRACK_SECONDS,
+  );
+  const totalSeconds = openingDurationRef.current + cappedSongSeconds;
   const elapsedSeconds = Math.min(
     openingDurationRef.current + status.currentTime,
     totalSeconds,

@@ -40,18 +40,11 @@ export function getTrackById(id: string): Track | undefined {
   return getTracks().find((track) => track.id === id);
 }
 
-/** 날짜 기준으로 오늘의 곡을 선정한다. featured 곡이 있으면 데모용으로 고정한다. */
-export function getTodayTrack(date: Date = new Date()): Track {
+/**
+ * 오늘의 곡 — 데모 범위에서는 실제 시스템 날짜를 읽지 않고 featured 트랙(1월 1일)으로 고정한다.
+ * '오늘의 클래식' 화면에 트랙 id가 안 넘어온 경우의 기본값으로 쓰인다.
+ */
+export function getTodayTrack(): Track {
   const tracks = getTracks();
-  const featured = tracks.find((track) => track.featured);
-  if (featured) return featured;
-  const start = new Date(date.getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((date.getTime() - start.getTime()) / 86_400_000);
-  return tracks[dayOfYear % tracks.length];
-}
-
-/** "7월 10일 목요일" 형태의 오늘 날짜 문자열. */
-export function formatTodayDate(date: Date = new Date()): string {
-  const days = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${days[date.getDay()]}요일`;
+  return tracks.find((track) => track.featured) ?? tracks[0];
 }
