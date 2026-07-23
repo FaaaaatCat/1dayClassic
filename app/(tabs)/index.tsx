@@ -1,57 +1,18 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useRef, useState } from 'react';
-import {
-  Image,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts } from '@/constants/theme';
-import {
-  buildCalendarYear,
-  CALENDAR_MONTHS,
-  TODAY_DAY,
-  TODAY_MONTH,
-  type CalendarDay,
-} from '@/lib/calendar';
+import { TODAY_DAY, TODAY_MONTH } from '@/lib/calendar';
 import { getCoverImageSource, getTodayTrack } from '@/lib/data';
 import type { Track } from '@/types';
 
 const imgAlarmBook = require('@/assets/images/home/alarm-book.png');
-
-/** 무한 스크롤 착시를 위해 같은 365일을 두 벌 이어붙인다 — 작년/올해 구분(연도 표기) 없이 완전히 동일하게. */
-type Row =
-  | { kind: 'header'; month: number; copy: 0 | 1 }
-  | { kind: 'entry'; entry: CalendarDay; copy: 0 | 1 };
-
-function buildRows(days: CalendarDay[], copy: 0 | 1): Row[] {
-  const rows: Row[] = [];
-  let lastMonth = -1;
-  for (const entry of days) {
-    if (entry.month !== lastMonth) {
-      rows.push({ kind: 'header', month: entry.month, copy });
-      lastMonth = entry.month;
-    }
-    rows.push({ kind: 'entry', entry, copy });
-  }
-  return rows;
-}
-
-const CALENDAR_DAYS = buildCalendarYear();
-const ALL_ROWS: Row[] = [...buildRows(CALENDAR_DAYS, 0), ...buildRows(CALENDAR_DAYS, 1)];
-
-/** 스크롤이 복사본 경계 근처에 오면 반대편으로 조용히 점프시키는 여유 구간(px) */
-const LOOP_EDGE_MARGIN = 600;
 
 /**
  * '오늘' 카드 — 헤더 바로 아래 고정되는 별개 컴포넌트(리스트에 안 섞여 스크롤되지 않는다).
@@ -124,100 +85,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [notifOn, setNotifOn] = useState(true);
 
-  const scrollRef = useRef<ScrollView>(null);
-  /** 한 사본의 실제 렌더링 높이(px) — 초기 스크롤 위치와 무한 루프 경계 점프량 계산에 쓰인다. */
-  const copy0HeightRef = useRef(0);
-  const didInitialScroll = useRef(false);
-  const jumping = useRef(false);
-
-  const onContentSizeChange = useCallback((_width: number, height: number) => {
-    copy0HeightRef.current = height / 2;
-    if (!didInitialScroll.current && copy0HeightRef.current > 0) {
-      didInitialScroll.current = true;
-      // copy 1의 시작(1월 1일)으로 바로 이동 — 두 사본이 완전히 동일하므로 이 위치가 곧 '오늘'이다.
-      scrollRef.current?.scrollTo({ y: copy0HeightRef.current, animated: false });
-    }
-  }, []);
-
-  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (jumping.current) return;
-    const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
-    const copyHeight = copy0HeightRef.current;
-    if (copyHeight > 0) {
-      if (contentOffset.y < LOOP_EDGE_MARGIN) {
-        jumping.current = true;
-        scrollRef.current?.scrollTo({ y: contentOffset.y + copyHeight, animated: false });
-        jumping.current = false;
-      } else if (contentOffset.y + layoutMeasurement.height > contentSize.height - LOOP_EDGE_MARGIN) {
-        jumping.current = true;
-        scrollRef.current?.scrollTo({ y: contentOffset.y - copyHeight, animated: false });
-        jumping.current = false;
-      }
-    }
-  }, []);
-
-  const openTrack = useCallback(
-    (trackId: string) => {
-      router.push({ pathname: '/today', params: { trackId } });
-    },
-    [router],
-  );
-
-  const renderEntry = (entry: CalendarDay, copy: 0 | 1) => {
-    if (entry.locked) {
-      return (
-        <View key={`${copy}-${entry.month}-${entry.day}`} style={styles.row}>
-          <Text style={styles.rowDayLocked}>
-            {entry.month} · {entry.day}
-          </Text>
-          <SymbolView
-            name={{ ios: 'lock.fill', android: 'lock', web: 'lock' }}
-            tintColor={Colors.brown10}
-            size={22}
-            style={styles.rowLockIcon}
-          />
-          <View style={styles.rowContent}>
-            <Text style={styles.rowTitleLocked} numberOfLines={1}>
-              {entry.title}
-            </Text>
-            <Text style={styles.rowComposerLocked} numberOfLines={1}>
-              {entry.composer}
-            </Text>
-          </View>
-        </View>
-      );
-    }
-
-    return (
-      <ScaleButton
-        key={`${copy}-${entry.month}-${entry.day}`}
-        accessibilityLabel={`${entry.title} 보기`}
-        style={styles.row}
-        onPress={() => entry.trackId && openTrack(entry.trackId)}>
-        <Text style={styles.rowDay}>
-          {entry.month} · {entry.day}
-        </Text>
-        <View style={styles.rowContent}>
-          <Text style={styles.rowTitle} numberOfLines={1}>
-            {entry.title}
-          </Text>
-          <Text style={styles.rowComposer} numberOfLines={1}>
-            {entry.composer}
-          </Text>
-        </View>
-      </ScaleButton>
-    );
-  };
-
-  const renderRow = (row: Row) => {
-    if (row.kind === 'header') {
-      return (
-        <View key={`${row.copy}-h${row.month}`} style={styles.monthHeader}>
-          <Text style={styles.monthHeaderText}>{CALENDAR_MONTHS[row.month - 1]}</Text>
-        </View>
-      );
-    }
-    return renderEntry(row.entry, row.copy);
+  const openTrack = (trackId: string) => {
+    router.push({ pathname: '/today', params: { trackId } });
   };
 
   const todayTrack = getTodayTrack();
@@ -244,18 +113,8 @@ export default function HomeScreen() {
       {/* '오늘' 카드 — 헤더 바로 아래 고정, 스크롤과 무관 */}
       <TodayFixedCard track={todayTrack} onPress={() => openTrack(todayTrack.id)} />
 
-      {/* 연간 타임라인 */}
-      <View style={styles.timelineArea}>
-        <ScrollView
-          ref={scrollRef}
-          onScroll={handleScroll}
-          onContentSizeChange={onContentSizeChange}
-          scrollEventThrottle={32}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.timelineContent}>
-          {ALL_ROWS.map((row) => renderRow(row))}
-        </ScrollView>
-      </View>
+      {/* 목차는 '하루 클래식 공부' 상세 페이지로 이동했다 — 남은 공간은 알람 카드를 하단에 고정시키는 여백. */}
+      <View style={styles.timelineArea} />
 
       {/* 알람 카드 — 화면 가장 하단에 고정 */}
       <View style={[styles.alarmCard, { paddingBottom: insets.bottom + 12 }]}>
@@ -435,86 +294,9 @@ const styles = StyleSheet.create({
     transform: [{ translateX: 20 }],
   },
 
-  // 타임라인
+  // 타임라인 — 목차가 상세 페이지로 이동해 이제는 알람 카드를 하단에 고정시키는 여백 역할만 한다.
   timelineArea: {
     flex: 1,
-    position: 'relative',
-  },
-  timelineContent: {
-    paddingBottom: 40,
-  },
-  monthHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.brown10,
-    backgroundColor: Colors.bg,
-  },
-  monthHeaderText: {
-    fontFamily: Fonts.serifDisplay,
-    fontSize: 11,
-    letterSpacing: 1.2,
-    color: Colors.beige100,
-    textTransform: 'uppercase',
-  },
-
-  // 일반 행
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.brown10,
-    backgroundColor: Colors.bg,
-  },
-  rowDay: {
-    width: 44,
-    textAlign: 'left',
-    fontFamily: Fonts.serifDisplay,
-    fontSize: 14,
-    color: Colors.beige100,
-  },
-  rowDayLocked: {
-    width: 44,
-    textAlign: 'left',
-    fontFamily: Fonts.serifDisplay,
-    fontSize: 14,
-    color: Colors.beige50,
-  },
-  rowLockIcon: {
-    width: 22,
-  },
-  rowContent: {
-    flex: 1,
-    minWidth: 0,
-  },
-  rowTitle: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    letterSpacing: -0.26,
-    color: Colors.brown100,
-  },
-  rowTitleLocked: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    letterSpacing: -0.26,
-    color: Colors.brown50,
-  },
-  rowComposer: {
-    fontFamily: Fonts.regular,
-    fontSize: 11,
-    color: Colors.beige100,
-    marginTop: 2,
-  },
-  rowComposerLocked: {
-    fontFamily: Fonts.regular,
-    fontSize: 11,
-    color: Colors.beige50,
-    marginTop: 2,
   },
 
   // 오늘 고정 카드

@@ -1,15 +1,16 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
+import TableOfContents from '@/components/TableOfContents';
 import { Colors, Fonts } from '@/constants/theme';
 import { getTodayDayOfYear, TOTAL_DAYS_IN_YEAR } from '@/lib/calendar';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 
-/** 하루 서점의 "현재 선택중" 책 상세 페이지. 목차박스는 다음 지시를 기다리는 빈 자리표시자. */
+/** 하루 서점의 "현재 선택중" 책 상세 페이지. 목차는 화면의 남은 높이를 전부 차지한다. */
 export default function BookstoreDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -35,39 +36,34 @@ export default function BookstoreDetailScreen() {
         </ScaleButton>
       </View>
 
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={styles.bodyContent}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <LinearGradient
-            colors={[Colors.blue100, Colors.blue50]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.badge}>
-            <SymbolView
-              name={{ ios: 'checkmark', android: 'check', web: 'check' }}
-              tintColor={Colors.white}
-              size={14}
-            />
-            <Text style={styles.badgeText}>현재 선택중</Text>
-          </LinearGradient>
-          <Image source={currentBook.coverImage} style={styles.cover} resizeMode="cover" />
-          <Text style={styles.title}>{currentBook.title}</Text>
-          <Text style={styles.author}>{currentBook.author}</Text>
-        </View>
+      <View style={styles.hero}>
+        <LinearGradient
+          colors={[Colors.blue100, Colors.blue50]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.badge}>
+          <SymbolView
+            name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+            tintColor={Colors.white}
+            size={14}
+          />
+          <Text style={styles.badgeText}>현재 선택중</Text>
+        </LinearGradient>
+        <Image source={currentBook.coverImage} style={styles.cover} resizeMode="cover" />
+        <Text style={styles.title}>{currentBook.title}</Text>
+        <Text style={styles.author}>{currentBook.author}</Text>
+      </View>
 
-        <View style={styles.progressSection}>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-          </View>
-          <Text style={styles.progressText}>
-            {dayOfYear}/{TOTAL_DAYS_IN_YEAR}
-          </Text>
+      <View style={styles.progressSection}>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
+        <Text style={styles.progressText}>
+          {dayOfYear}/{TOTAL_DAYS_IN_YEAR}
+        </Text>
+      </View>
 
-        <View style={styles.tocBox} />
-      </ScrollView>
+      <TableOfContents style={styles.toc} />
     </View>
   );
 }
@@ -89,16 +85,10 @@ const styles = StyleSheet.create({
     height: 41,
     borderRadius: 20.5,
   },
-  body: {
-    flex: 1,
-  },
-  bodyContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
   hero: {
     alignItems: 'center',
     gap: 12,
+    paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 32,
   },
@@ -140,7 +130,8 @@ const styles = StyleSheet.create({
   },
   progressSection: {
     gap: 8,
-    paddingBottom: 32,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
   },
   progressTrack: {
     height: 4,
@@ -159,10 +150,7 @@ const styles = StyleSheet.create({
     color: Colors.brown50,
     textAlign: 'right',
   },
-  tocBox: {
-    minHeight: 200,
-    borderWidth: 1,
-    borderColor: Colors.brown10,
-    borderRadius: 8,
+  toc: {
+    flex: 1,
   },
 });
