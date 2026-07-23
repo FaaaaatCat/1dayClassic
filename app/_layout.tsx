@@ -43,10 +43,6 @@ export default function RootLayout() {
       <LikesProvider>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="menu"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
         </Stack>
       </LikesProvider>
     </ThemeProvider>

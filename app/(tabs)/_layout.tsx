@@ -1,38 +1,77 @@
 import { Tabs } from 'expo-router';
+import { SymbolView, SymbolViewProps } from 'expo-symbols';
+import type { ColorValue } from 'react-native';
 
 import AppHeader from '@/components/AppHeader';
-import { Palette } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
+
+function tabIcon(name: SymbolViewProps['name']) {
+  return ({ color }: { color: ColorValue }) => (
+    <SymbolView name={name} tintColor={color} size={24} />
+  );
+}
 
 /**
- * 하단 탭바 없이 화면들을 유지하는 레이아웃.
- * 페이지 이동은 상단 헤더의 메뉴 버튼 → 메뉴 페이지에서만 이루어진다.
+ * 하단 탭바(알람/하루 서점/기록/설정) 레이아웃.
+ * today, bookstore-detail은 탭바에는 안 보이지만(href: null) 이 네비게이터 안에서
+ * 목록 화면을 탭했을 때 라우팅되는 상세 화면이다 — 각자 자체 헤더(X 닫기 버튼)를 그린다.
  */
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={() => null}
       screenOptions={({ route }) => ({
         headerShown: true,
         header: () => <AppHeader title={TITLES[route.name] ?? ''} />,
-        sceneStyle: { backgroundColor: Palette.background },
+        sceneStyle: { backgroundColor: Colors.bg },
+        tabBarActiveTintColor: Colors.brown100,
+        tabBarInactiveTintColor: Colors.brown50,
+        tabBarStyle: {
+          backgroundColor: Colors.bg,
+          borderTopColor: Colors.brown10,
+        },
+        tabBarLabelStyle: {
+          fontFamily: Fonts.regular,
+          fontSize: 11,
+        },
       })}>
-      {/* 홈과 오늘의 클래식 화면은 각자 자체 고정 헤더를 렌더링한다 */}
-      <Tabs.Screen name="index" options={{ title: '홈', headerShown: false }} />
-      <Tabs.Screen name="today" options={{ title: '오늘의 클래식', headerShown: false }} />
-      <Tabs.Screen name="library" options={{ title: '보관함' }} />
-      <Tabs.Screen name="bookstore" options={{ title: '하루 서점' }} />
-      <Tabs.Screen name="bookstore-detail" options={{ title: '하루 클래식 공부', headerShown: false }} />
-      <Tabs.Screen name="settings" options={{ title: '설정' }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: '알람',
+          headerShown: false,
+          tabBarIcon: tabIcon({ ios: 'alarm', android: 'alarm', web: 'alarm' }),
+        }}
+      />
+      <Tabs.Screen name="today" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen
+        name="bookstore"
+        options={{
+          title: '하루 서점',
+          tabBarIcon: tabIcon({ ios: 'book', android: 'book_2', web: 'book_2' }),
+        }}
+      />
+      <Tabs.Screen name="bookstore-detail" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen
+        name="library"
+        options={{
+          title: '기록',
+          tabBarIcon: tabIcon({ ios: 'bookmark', android: 'bookmark', web: 'bookmark' }),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: '설정',
+          tabBarIcon: tabIcon({ ios: 'gearshape', android: 'settings', web: 'settings' }),
+        }}
+      />
     </Tabs>
   );
 }
 
-/** 헤더 왼쪽에 표시되는 페이지 타이틀 */
+/** 헤더에 표시되는 페이지 타이틀 — 자체 헤더를 그리는 화면(index, today, bookstore-detail)은 제외 */
 const TITLES: Record<string, string> = {
-  index: '홈',
-  today: '오늘의 클래식',
-  library: '보관함',
   bookstore: '하루 서점',
-  'bookstore-detail': '하루 클래식 공부',
+  library: '기록',
   settings: '설정',
 };

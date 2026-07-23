@@ -97,16 +97,6 @@ export default function HomeScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.titleRow}>
           <Text style={styles.appTitle}>오늘의 클래식</Text>
-          <ScaleButton
-            accessibilityLabel="메뉴"
-            style={styles.menuButton}
-            onPress={() => router.push({ pathname: '/menu', params: { from: '/' } })}>
-            <SymbolView
-              name={{ ios: 'line.3.horizontal', android: 'menu', web: 'menu' }}
-              tintColor={Colors.brown100}
-              size={22}
-            />
-          </ScaleButton>
         </View>
       </View>
 
@@ -181,19 +171,12 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   appTitle: {
     fontFamily: Fonts.semiBold,
     fontSize: 17,
     letterSpacing: -0.68,
     color: Colors.brown100,
-  },
-  menuButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   // 알람 카드
