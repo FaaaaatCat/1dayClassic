@@ -20,13 +20,18 @@ import { Colors, Fonts } from '@/constants/theme';
 import { getTodayDayOfYear, TOTAL_DAYS_IN_YEAR } from '@/lib/calendar';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 
-/** 미니박스의 완전히 펼쳐진 높이(px) */
+/** 미니박스 높이(px) — 고정값, 애니메이션 대상이 아니다 */
 const MINI_BOX_HEIGHT = 80;
+/** 미니박스가 나타날 때 위에서 살짝 내려오는 느낌을 주는 시작 오프셋(px) */
+const MINI_BOX_SLIDE_OFFSET = 10;
 
 /**
  * 하루 서점의 "현재 선택중" 책 상세 페이지.
  * 상단 인포(라벨/표지/제목/진행바)는 목차와 함께 스크롤되다가 화면 밖으로 사라지면,
- * 헤더 바로 아래 미니박스(표지+제목+라벨 한 줄)가 위에서 펼쳐지듯 나타난다.
+ * 헤더 바로 아래 미니박스(표지+제목+라벨 한 줄)가 위에서 살짝 내려오듯 나타난다.
+ * 미니박스는 position:absolute 오버레이라 크기가 바뀌지 않고, 목차가 담긴 ScrollView의
+ * 레이아웃에는 전혀 영향을 주지 않는다 (높이 애니메이션이던 이전 버전은 이 때문에
+ * 스크롤 중 목차가 살짝 밀렸다가 복귀하는 버벅임이 있었다).
  */
 export default function BookstoreDetailScreen() {
   const router = useRouter();
@@ -37,15 +42,17 @@ export default function BookstoreDetailScreen() {
   const progress = dayOfYear / TOTAL_DAYS_IN_YEAR;
 
   const infoHeightRef = useRef(0);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const [showMiniBox, setShowMiniBox] = useState(false);
-  const miniBoxHeight = useSharedValue(0);
+  const miniBoxProgress = useSharedValue(0);
 
   useEffect(() => {
-    miniBoxHeight.value = withTiming(showMiniBox ? MINI_BOX_HEIGHT : 0, { duration: 240 });
-  }, [showMiniBox, miniBoxHeight]);
+    miniBoxProgress.value = withTiming(showMiniBox ? 1 : 0, { duration: 240 });
+  }, [showMiniBox, miniBoxProgress]);
 
   const miniBoxAnimatedStyle = useAnimatedStyle(() => ({
-    height: miniBoxHeight.value,
+    opacity: miniBoxProgress.value,
+    transform: [{ translateY: (1 - miniBoxProgress.value) * -MINI_BOX_SLIDE_OFFSET }],
   }));
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -58,7 +65,9 @@ export default function BookstoreDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View
+        style={[styles.header, { paddingTop: insets.top + 12 }]}
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
         <ScaleButton
           accessibilityLabel="닫기"
           style={styles.headerIconButton}
@@ -71,7 +80,9 @@ export default function BookstoreDetailScreen() {
         </ScaleButton>
       </View>
 
-      <Animated.View style={[styles.miniBox, miniBoxAnimatedStyle]}>
+      <Animated.View
+        pointerEvents={showMiniBox ? 'auto' : 'none'}
+        style={[styles.miniBox, { top: headerHeight }, miniBoxAnimatedStyle]}>
         <Image source={currentBook.coverImage} style={styles.miniCover} resizeMode="cover" />
         <Text style={styles.miniTitle} numberOfLines={1}>
           {currentBook.title}
@@ -151,14 +162,18 @@ const styles = StyleSheet.create({
     borderRadius: 20.5,
   },
   miniBox: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: MINI_BOX_HEIGHT,
+    zIndex: 10,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 12,
     paddingHorizontal: 20,
     backgroundColor: Colors.bg,
     borderBottomWidth: 1,
     borderBottomColor: Colors.brown10,
-    overflow: 'hidden',
   },
   miniCover: {
     width: 40,
