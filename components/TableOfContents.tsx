@@ -1,7 +1,7 @@
+import { Fragment } from 'react';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts } from '@/constants/theme';
@@ -25,15 +25,12 @@ function buildRows(days: CalendarDay[]): Row[] {
 const CALENDAR_DAYS = buildCalendarYear();
 const ROWS: Row[] = buildRows(CALENDAR_DAYS);
 
-interface TableOfContentsProps {
-  /** 목록 컨테이너(ScrollView)에 적용할 스타일 — 높이를 부모가 결정할 때 flex:1 등을 전달한다. */
-  style?: ViewStyle;
-}
-
-/** 365일 목차 — 월별 헤더 + 날짜 행. 한 번만 렌더링되며 무한 스크롤은 없다. */
-export default function TableOfContents({ style }: TableOfContentsProps) {
+/**
+ * 365일 목차 — 월별 헤더 + 날짜 행. 한 번만 렌더링되며 무한 스크롤은 없다.
+ * 자체 ScrollView를 갖지 않는다 — 부모가 소유한 스크롤 컨테이너 안에 바로 넣어서 쓴다.
+ */
+export default function TableOfContents() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const openTrack = (trackId: string) => {
     router.push({ pathname: '/today', params: { trackId } });
@@ -96,20 +93,10 @@ export default function TableOfContents({ style }: TableOfContentsProps) {
     return renderEntry(row.entry);
   };
 
-  return (
-    <ScrollView
-      style={style}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]}>
-      {ROWS.map((row) => renderRow(row))}
-    </ScrollView>
-  );
+  return <Fragment>{ROWS.map((row) => renderRow(row))}</Fragment>;
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingBottom: 40,
-  },
   monthHeader: {
     paddingHorizontal: 20,
     paddingTop: 14,
