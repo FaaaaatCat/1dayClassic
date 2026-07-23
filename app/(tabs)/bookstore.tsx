@@ -7,8 +7,6 @@ import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts } from '@/constants/theme';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 
-const ellipseDecoration = require('@/assets/images/bookstore/ellipse-decoration.png');
-
 /** 하루 서점 — 유유 출판사 "하루 시리즈" 카탈로그. 현재 선택중인 책만 상세로 진입, 나머지는 탭 동작 없음. */
 export default function BookstoreScreen() {
   const router = useRouter();
@@ -25,7 +23,6 @@ export default function BookstoreScreen() {
           accessibilityLabel={`${currentBook.title} 상세 보기`}
           style={styles.featured}
           onPress={() => router.push('/bookstore-detail')}>
-          <Image source={ellipseDecoration} style={styles.featuredEllipse} resizeMode="cover" />
           <Image source={currentBook.coverImage} style={styles.featuredCover} resizeMode="cover" />
           <View style={styles.featuredInfo}>
             <LinearGradient
@@ -75,16 +72,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 24,
     backgroundColor: Colors.beige10,
-    overflow: 'hidden',
-  },
-  featuredEllipse: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    width: '100%',
-    height: 160,
-    opacity: 0.5,
   },
   featuredCover: {
     width: 68,
