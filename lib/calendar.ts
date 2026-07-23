@@ -12,6 +12,18 @@ export const CALENDAR_MONTHS = [
 
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
+/** 1년 총 일수 (365) */
+export const TOTAL_DAYS_IN_YEAR = DAYS_IN_MONTH.reduce((sum, days) => sum + days, 0);
+
+/** 1월 1일부터 '오늘'(TODAY_MONTH/TODAY_DAY)까지의 누적 일수 — 1부터 시작 */
+export function getTodayDayOfYear(): number {
+  let count = 0;
+  for (let month = 1; month < TODAY_MONTH; month++) {
+    count += DAYS_IN_MONTH[month - 1];
+  }
+  return count + TODAY_DAY;
+}
+
 /** 실제 트랙이 아직 없는 날짜를 채우는 자리표시 곡 목록. 재생되지 않으며 순환 사용된다. */
 const PLACEHOLDER_PIECES: { title: string; composer: string; composerLatin: string }[] = [
   { title: '사계 중 「봄」 1악장', composer: '안토니오 비발디', composerLatin: 'A. Vivaldi' },

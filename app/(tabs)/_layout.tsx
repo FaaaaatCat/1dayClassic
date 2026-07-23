@@ -21,6 +21,7 @@ export default function TabLayout() {
       <Tabs.Screen name="today" options={{ title: '오늘의 클래식', headerShown: false }} />
       <Tabs.Screen name="library" options={{ title: '보관함' }} />
       <Tabs.Screen name="bookstore" options={{ title: '하루 서점' }} />
+      <Tabs.Screen name="bookstore-detail" options={{ title: '하루 클래식 공부', headerShown: false }} />
       <Tabs.Screen name="settings" options={{ title: '설정' }} />
     </Tabs>
   );
@@ -32,5 +33,6 @@ const TITLES: Record<string, string> = {
   today: '오늘의 클래식',
   library: '보관함',
   bookstore: '하루 서점',
+  'bookstore-detail': '하루 클래식 공부',
   settings: '설정',
 };

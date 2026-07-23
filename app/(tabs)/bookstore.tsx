@@ -1,14 +1,17 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts } from '@/constants/theme';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 
 const ellipseDecoration = require('@/assets/images/bookstore/ellipse-decoration.png');
 
-/** 하루 서점 — 유유 출판사 "하루 시리즈" 카탈로그. 순수 디스플레이용, 탭 동작 없음. */
+/** 하루 서점 — 유유 출판사 "하루 시리즈" 카탈로그. 현재 선택중인 책만 상세로 진입, 나머지는 탭 동작 없음. */
 export default function BookstoreScreen() {
+  const router = useRouter();
   const currentBook = BOOKSTORE_BOOKS.find((book) => book.isCurrent);
   const otherBooks = BOOKSTORE_BOOKS.filter((book) => !book.isCurrent);
 
@@ -18,7 +21,10 @@ export default function BookstoreScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
       {currentBook && (
-        <View style={styles.featured}>
+        <ScaleButton
+          accessibilityLabel={`${currentBook.title} 상세 보기`}
+          style={styles.featured}
+          onPress={() => router.push('/bookstore-detail')}>
           <Image source={ellipseDecoration} style={styles.featuredEllipse} resizeMode="cover" />
           <Image source={currentBook.coverImage} style={styles.featuredCover} resizeMode="cover" />
           <View style={styles.featuredInfo}>
@@ -37,7 +43,7 @@ export default function BookstoreScreen() {
             <Text style={styles.featuredTitle}>{currentBook.title}</Text>
             <Text style={styles.featuredAuthor}>{currentBook.author}</Text>
           </View>
-        </View>
+        </ScaleButton>
       )}
 
       <View style={styles.grid}>
@@ -64,6 +70,7 @@ const styles = StyleSheet.create({
   featured: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     gap: 20,
     paddingHorizontal: 20,
     paddingVertical: 24,
