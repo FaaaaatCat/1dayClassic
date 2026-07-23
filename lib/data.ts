@@ -1,5 +1,3 @@
-import type { ImageSourcePropType } from 'react-native';
-
 import tracksData from '@/data/tracks.json';
 import { getStorageDownloadUrl, isStoragePath } from '@/lib/firebase';
 import type { Track, TracksData } from '@/types';
@@ -13,14 +11,6 @@ export const MEDIA_HEADERS: Record<string, string> = {
 };
 
 /**
- * 커버 이미지 소스(원격 URL + UA 헤더)를 반환한다.
- * 보관함 썸네일과 오늘의 클래식 히어로 이미지에 공용으로 쓰인다.
- */
-export function getCoverImageSource(track: Track): ImageSourcePropType {
-  return { uri: track.coverImage, headers: MEDIA_HEADERS };
-}
-
-/**
  * 재생 가능한 오디오 URL로 변환한다. 마이그레이션이 트랙별로 진행 중이라
  * track.audio는 Firebase Storage 경로일 수도, 기존 Wikimedia 직결 URL일 수도 있다 —
  * 둘 다 이 함수 하나로 처리한다.
@@ -30,6 +20,18 @@ export async function resolveTrackAudioUrl(track: Track): Promise<string> {
     return track.audio;
   }
   return getStorageDownloadUrl(track.audio);
+}
+
+/**
+ * 커버 이미지 URL로 변환한다. track.coverImage는 Firebase Storage 경로("musics/foo.jpg")일
+ * 수도, 완성된 http(s) URL(Wikimedia 등)일 수도 있다 — resolveTrackAudioUrl과 동일한 패턴.
+ * Storage 경로는 UA 차단 문제가 없고, 이미 다운로드 URL 캐시(lib/firebase.ts)도 공유한다.
+ */
+export async function resolveCoverImageUrl(track: Track): Promise<string> {
+  if (!isStoragePath(track.coverImage)) {
+    return track.coverImage;
+  }
+  return getStorageDownloadUrl(track.coverImage);
 }
 
 export function getTracks(): Track[] {

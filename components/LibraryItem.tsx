@@ -1,7 +1,7 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import TrackCoverImage from '@/components/TrackCoverImage';
 import { Palette, Radius, Shadow, Spacing, Typography } from '@/constants/theme';
-import { getCoverImageSource } from '@/lib/data';
 import type { Track } from '@/types';
 
 interface LibraryItemProps {
@@ -12,12 +12,7 @@ interface LibraryItemProps {
 export default function LibraryItem({ track }: LibraryItemProps) {
   return (
     <View style={styles.item}>
-      <Image
-        source={getCoverImageSource(track)}
-        style={styles.cover}
-        resizeMode="cover"
-        accessibilityIgnoresInvertColors
-      />
+      <TrackCoverImage track={track} style={styles.cover} resizeMode="cover" />
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>
           {track.title}

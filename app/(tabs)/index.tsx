@@ -1,13 +1,14 @@
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
+import TrackCoverImage from '@/components/TrackCoverImage';
 import { Colors, Fonts } from '@/constants/theme';
 import { getTomorrowTrack, TODAY_DAY, TODAY_MONTH } from '@/lib/calendar';
-import { getCoverImageSource, getTodayTrack } from '@/lib/data';
+import { getTodayTrack } from '@/lib/data';
 
 const ALARM_DAYS: { label: string; dimmed: boolean }[] = [
   { label: '일', dimmed: true },
@@ -54,7 +55,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}>
         <View style={styles.todayCard}>
-          <Image source={getCoverImageSource(todayTrack)} style={styles.todayImage} resizeMode="cover" />
+          <TrackCoverImage track={todayTrack} style={styles.todayImage} resizeMode="cover" />
           <ScaleButton
             accessibilityLabel={`${todayTrack.title} 상세 보기`}
             style={styles.todayCardBody}
@@ -125,11 +126,7 @@ export default function HomeScreen() {
                 {tomorrowTrack.composer}
               </Text>
             </View>
-            <Image
-              source={getCoverImageSource(tomorrowTrack)}
-              style={styles.tomorrowCover}
-              resizeMode="cover"
-            />
+            <TrackCoverImage track={tomorrowTrack} style={styles.tomorrowCover} resizeMode="cover" />
           </View>
         )}
       </ScrollView>

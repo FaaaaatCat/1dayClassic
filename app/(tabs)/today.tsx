@@ -3,7 +3,6 @@ import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   Share,
   StyleSheet,
@@ -15,10 +14,11 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
+import TrackCoverImage from '@/components/TrackCoverImage';
 import { Colors, Fonts } from '@/constants/theme';
 import { useLikes } from '@/context/LikesContext';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
-import { getCoverImageSource, getTodayTrack, getTrackById } from '@/lib/data';
+import { getTodayTrack, getTrackById } from '@/lib/data';
 
 interface Note {
   id: string;
@@ -162,12 +162,7 @@ export default function TodayScreen() {
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}>
-        <Image
-          source={getCoverImageSource(track)}
-          style={styles.hero}
-          resizeMode="cover"
-          accessibilityIgnoresInvertColors
-        />
+        <TrackCoverImage track={track} style={styles.hero} resizeMode="cover" />
 
         <Animated.View entering={FadeIn.duration(600)} style={styles.content}>
           {/* 곡 정보 */}
