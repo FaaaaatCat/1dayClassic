@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Image,
   NativeScrollEvent,
@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
@@ -20,10 +20,13 @@ import { Colors, Fonts } from '@/constants/theme';
 import { getTodayDayOfYear, TOTAL_DAYS_IN_YEAR } from '@/lib/calendar';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 
+/** 미니박스의 완전히 펼쳐진 높이(px) */
+const MINI_BOX_HEIGHT = 80;
+
 /**
  * 하루 서점의 "현재 선택중" 책 상세 페이지.
  * 상단 인포(라벨/표지/제목/진행바)는 목차와 함께 스크롤되다가 화면 밖으로 사라지면,
- * 헤더 바로 아래 80px짜리 미니박스(표지+제목+라벨 한 줄)로 대체된다.
+ * 헤더 바로 아래 미니박스(표지+제목+라벨 한 줄)가 위에서 펼쳐지듯 나타난다.
  */
 export default function BookstoreDetailScreen() {
   const router = useRouter();
@@ -35,6 +38,15 @@ export default function BookstoreDetailScreen() {
 
   const infoHeightRef = useRef(0);
   const [showMiniBox, setShowMiniBox] = useState(false);
+  const miniBoxHeight = useSharedValue(0);
+
+  useEffect(() => {
+    miniBoxHeight.value = withTiming(showMiniBox ? MINI_BOX_HEIGHT : 0, { duration: 240 });
+  }, [showMiniBox, miniBoxHeight]);
+
+  const miniBoxAnimatedStyle = useAnimatedStyle(() => ({
+    height: miniBoxHeight.value,
+  }));
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const infoHeight = infoHeightRef.current;
@@ -59,29 +71,24 @@ export default function BookstoreDetailScreen() {
         </ScaleButton>
       </View>
 
-      {showMiniBox && (
-        <Animated.View
-          entering={FadeIn.duration(220)}
-          exiting={FadeOut.duration(180)}
-          style={styles.miniBox}>
-          <Image source={currentBook.coverImage} style={styles.miniCover} resizeMode="cover" />
-          <Text style={styles.miniTitle} numberOfLines={1}>
-            {currentBook.title}
-          </Text>
-          <LinearGradient
-            colors={[Colors.blue100, Colors.blue50]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.miniBadge}>
-            <SymbolView
-              name={{ ios: 'checkmark', android: 'check', web: 'check' }}
-              tintColor={Colors.white}
-              size={12}
-            />
-            <Text style={styles.miniBadgeText}>현재 선택중</Text>
-          </LinearGradient>
-        </Animated.View>
-      )}
+      <Animated.View style={[styles.miniBox, miniBoxAnimatedStyle]}>
+        <Image source={currentBook.coverImage} style={styles.miniCover} resizeMode="cover" />
+        <Text style={styles.miniTitle} numberOfLines={1}>
+          {currentBook.title}
+        </Text>
+        <LinearGradient
+          colors={[Colors.blue100, Colors.blue50]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.miniBadge}>
+          <SymbolView
+            name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+            tintColor={Colors.white}
+            size={12}
+          />
+          <Text style={styles.miniBadgeText}>현재 선택중</Text>
+        </LinearGradient>
+      </Animated.View>
 
       <ScrollView
         onScroll={handleScroll}
@@ -144,17 +151,17 @@ const styles = StyleSheet.create({
     borderRadius: 20.5,
   },
   miniBox: {
-    height: 80,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
     paddingHorizontal: 20,
     backgroundColor: Colors.bg,
     borderBottomWidth: 1,
     borderBottomColor: Colors.brown10,
+    overflow: 'hidden',
   },
   miniCover: {
-    width: 32,
+    width: 40,
     height: 60,
     borderRadius: 2,
   },
