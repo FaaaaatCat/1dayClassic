@@ -55,7 +55,10 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}>
         <View style={styles.todayCard}>
           <Image source={getCoverImageSource(todayTrack)} style={styles.todayImage} resizeMode="cover" />
-          <View style={styles.todayCardBody}>
+          <ScaleButton
+            accessibilityLabel={`${todayTrack.title} 상세 보기`}
+            style={styles.todayCardBody}
+            onPress={() => openTrack(todayTrack.id)}>
             <Text style={styles.todayLabel}>오늘의 알람</Text>
             <View style={styles.todayRow}>
               <View style={styles.todayInfo}>
@@ -66,18 +69,15 @@ export default function HomeScreen() {
                   {todayTrack.composer}
                 </Text>
               </View>
-              <ScaleButton
-                accessibilityLabel={`${todayTrack.title} 상세 보기`}
-                style={styles.todayButton}
-                onPress={() => openTrack(todayTrack.id)}>
+              <View style={styles.todayButton}>
                 <SymbolView
                   name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
                   tintColor={Colors.brown100}
                   size={20}
                 />
-              </ScaleButton>
+              </View>
             </View>
-          </View>
+          </ScaleButton>
         </View>
 
         <View style={styles.alarmCard}>
@@ -201,6 +201,7 @@ const styles = StyleSheet.create({
     height: 200,
   },
   todayCardBody: {
+    alignItems: 'stretch',
     paddingHorizontal: 16,
     paddingVertical: 20,
     gap: 16,

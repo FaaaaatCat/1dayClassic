@@ -42,7 +42,10 @@ export default function TabLayout() {
           tabBarIcon: tabIcon({ ios: 'alarm', android: 'alarm', web: 'alarm' }),
         }}
       />
-      <Tabs.Screen name="today" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen
+        name="today"
+        options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' } }}
+      />
       <Tabs.Screen
         name="bookstore"
         options={{
@@ -50,7 +53,10 @@ export default function TabLayout() {
           tabBarIcon: tabIcon({ ios: 'book', android: 'book_2', web: 'book_2' }),
         }}
       />
-      <Tabs.Screen name="bookstore-detail" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen
+        name="bookstore-detail"
+        options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' } }}
+      />
       <Tabs.Screen
         name="library"
         options={{
