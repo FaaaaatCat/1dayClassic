@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
@@ -59,7 +60,10 @@ export default function BookstoreDetailScreen() {
       </View>
 
       {showMiniBox && (
-        <View style={styles.miniBox}>
+        <Animated.View
+          entering={FadeIn.duration(220)}
+          exiting={FadeOut.duration(180)}
+          style={styles.miniBox}>
           <Image source={currentBook.coverImage} style={styles.miniCover} resizeMode="cover" />
           <Text style={styles.miniTitle} numberOfLines={1}>
             {currentBook.title}
@@ -76,7 +80,7 @@ export default function BookstoreDetailScreen() {
             />
             <Text style={styles.miniBadgeText}>현재 선택중</Text>
           </LinearGradient>
-        </View>
+        </Animated.View>
       )}
 
       <ScrollView
@@ -150,7 +154,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.brown10,
   },
   miniCover: {
-    width: 60,
+    width: 32,
     height: 60,
     borderRadius: 2,
   },
