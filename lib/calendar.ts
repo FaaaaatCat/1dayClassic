@@ -24,6 +24,18 @@ export function getTodayDayOfYear(): number {
   return count + TODAY_DAY;
 }
 
+/** '내일'(TODAY_MONTH/TODAY_DAY + 1일)에 해당하는 실제 트랙 — 없으면 undefined. */
+export function getTomorrowTrack(): Track | undefined {
+  let month = TODAY_MONTH;
+  let day = TODAY_DAY + 1;
+  if (day > DAYS_IN_MONTH[month - 1]) {
+    day = 1;
+    month = month === 12 ? 1 : month + 1;
+  }
+  const dateStr = `${month}월 ${day}일`;
+  return getTracks().find((track) => track.date === dateStr);
+}
+
 /** 실제 트랙이 아직 없는 날짜를 채우는 자리표시 곡 목록. 재생되지 않으며 순환 사용된다. */
 const PLACEHOLDER_PIECES: { title: string; composer: string; composerLatin: string }[] = [
   { title: '사계 중 「봄」 1악장', composer: '안토니오 비발디', composerLatin: 'A. Vivaldi' },
