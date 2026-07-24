@@ -6,7 +6,16 @@ import { getTodayTrack } from '@/lib/data';
 
 type NotificationsApi = typeof NotificationsModule;
 
-const ALARM_CHANNEL_ID = 'alarm';
+/**
+ * 커스텀 알람 사운드 파일 — app.json의 expo-notifications 플러그인 sounds 배열에 등록된
+ * assets/music/alarm_1.mp3를 파일명으로 참조한다. 이 설정은 config plugin이라 개발
+ * 빌드(prebuild)에서만 실제로 반영되고, Expo Go에서는 애초에 알림 자체가 꺼져 있다.
+ */
+const CUSTOM_ALARM_SOUND_FILE = 'alarm_1.mp3';
+
+/** Android 채널은 한 번 만들면 sound를 못 바꾸기 때문에, 기본음/커스텀음마다 채널을 따로 둔다. */
+const ALARM_CHANNEL_ID_DEFAULT = 'alarm-default';
+const ALARM_CHANNEL_ID_CUSTOM = 'alarm-custom';
 
 /**
  * Expo Go(storeClient)에서는 expo-notifications를 require만 해도 그 모듈이 내부적으로
@@ -58,17 +67,27 @@ function ensureNotificationHandler(api: NotificationsApi) {
   });
 }
 
-/** Android에서 알람다운 고중요도(헤드업+소리+진동) 채널을 한 번만 만든다. */
-async function ensureAlarmChannel(api: NotificationsApi) {
+/** Android에서 알람다운 고중요도(헤드업+소리+진동) 채널 2개(기본음/커스텀음)를 한 번만 만든다. */
+async function ensureAlarmChannels(api: NotificationsApi) {
   if (channelConfigured) return;
   channelConfigured = true;
-  await api.setNotificationChannelAsync(ALARM_CHANNEL_ID, {
-    name: '알람',
+  const base = {
     importance: api.AndroidImportance.MAX,
-    sound: 'default',
     vibrationPattern: [0, 250, 250, 250],
     lockscreenVisibility: api.AndroidNotificationVisibility.PUBLIC,
-  });
+  };
+  await Promise.all([
+    api.setNotificationChannelAsync(ALARM_CHANNEL_ID_DEFAULT, {
+      ...base,
+      name: '알람 (기본음)',
+      sound: 'default',
+    }),
+    api.setNotificationChannelAsync(ALARM_CHANNEL_ID_CUSTOM, {
+      ...base,
+      name: '알람 (커스텀 사운드)',
+      sound: CUSTOM_ALARM_SOUND_FILE,
+    }),
+  ]);
 }
 
 /** 알림 권한을 확인하고, 없으면 요청한다. expo-notifications를 못 쓰는 환경이면 false. */
@@ -78,7 +97,7 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 
   try {
     ensureNotificationHandler(api);
-    await ensureAlarmChannel(api);
+    await ensureAlarmChannels(api);
 
     const current = await api.getPermissionsAsync();
     if (current.granted) return true;
@@ -134,17 +153,13 @@ export async function cancelAlarmNotifications(ids: string[]): Promise<void> {
   await Promise.all(ids.map((id) => api.cancelScheduledNotificationAsync(id).catch(() => {})));
 }
 
-/**
- * 커스텀 알람 사운드 파일명 — 아직 파이어베이스에 업로드되지 않아 비어 있다. 채워지면
- * alarm.sound === 'custom'일 때 이 값을 쓰도록 아래 scheduleAlarmNotifications만 고치면 된다.
- * (알림 사운드는 OS가 앱에 번들된 파일만 재생할 수 있어, 원격 URL을 그대로 쓸 수는 없다 —
- * 다운로드해 기기에 저장한 뒤 그 로컬 파일명을 등록하는 방식이 필요하다.)
- */
-const CUSTOM_ALARM_SOUND_FILE: string | null = null;
-
 function resolveAlarmSoundName(alarm: AlarmState): string {
-  if (alarm.sound === 'custom' && CUSTOM_ALARM_SOUND_FILE) return CUSTOM_ALARM_SOUND_FILE;
-  return 'default';
+  return alarm.sound === 'custom' ? CUSTOM_ALARM_SOUND_FILE : 'default';
+}
+
+/** iOS는 content.sound로, Android는 채널의 sound로 실제 재생음이 정해진다 — 둘 다 맞춰준다. */
+function resolveAlarmChannelId(alarm: AlarmState): string {
+  return alarm.sound === 'custom' ? ALARM_CHANNEL_ID_CUSTOM : ALARM_CHANNEL_ID_DEFAULT;
 }
 
 /**
@@ -185,7 +200,7 @@ export async function scheduleAlarmNotifications(alarm: AlarmState): Promise<str
             weekday,
             hour: alarm.hour,
             minute: alarm.minute,
-            channelId: ALARM_CHANNEL_ID,
+            channelId: resolveAlarmChannelId(alarm),
           },
         }),
       ),

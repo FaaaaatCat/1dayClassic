@@ -40,7 +40,8 @@
       [
         "expo-notifications",
         {
-          "color": "#2f95dc"
+          "color": "#2f95dc",
+          "sounds": ["./assets/music/alarm_1.mp3"]
         }
       ],
       "expo-audio"
