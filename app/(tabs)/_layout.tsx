@@ -47,6 +47,10 @@ export default function TabLayout() {
         options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' } }}
       />
       <Tabs.Screen
+        name="alarm-detail"
+        options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' } }}
+      />
+      <Tabs.Screen
         name="bookstore"
         options={{
           title: '하루 서점',

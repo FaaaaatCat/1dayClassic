@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,7 +7,7 @@ import Animated, {
 
 interface ScaleButtonProps {
   onPress?: () => void;
-  style?: ViewStyle | ViewStyle[];
+  style?: StyleProp<ViewStyle>;
   children: React.ReactNode;
   accessibilityLabel?: string;
 }

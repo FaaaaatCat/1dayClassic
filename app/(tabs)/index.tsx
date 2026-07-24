@@ -1,36 +1,50 @@
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import TrackCoverImage from '@/components/TrackCoverImage';
 import { Colors, Fonts } from '@/constants/theme';
+import { useAlarm } from '@/context/AlarmContext';
 import { getTomorrowTrack, TODAY_DAY, TODAY_MONTH } from '@/lib/calendar';
 import { getTodayTrack } from '@/lib/data';
+import { getAlarmCountdown } from '@/lib/notifications';
 
-const ALARM_DAYS: { label: string; dimmed: boolean }[] = [
-  { label: '일', dimmed: true },
-  { label: '월', dimmed: false },
-  { label: '화', dimmed: false },
-  { label: '수', dimmed: false },
-  { label: '목', dimmed: false },
-  { label: '금', dimmed: false },
-  { label: '토', dimmed: true },
-];
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
-/** 알람(홈) 화면 — 알람 기능 자체는 아직 미구현, UI만 피그마 디자인대로 구성한다. */
+/** hour(0~23) → "오전"/"오후" + 12시간제 표시 */
+function formatAlarmTime(hour: number, minute: number): { meridiem: string; time: string } {
+  const meridiem = hour < 12 ? '오전' : '오후';
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return { meridiem, time: `${hour12}:${String(minute).padStart(2, '0')}` };
+}
+
+/** 알람(홈) 화면. */
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [notifOn, setNotifOn] = useState(true);
+  const { alarm, toggleEnabled } = useAlarm();
+
+  // 카운트다운이 실제 시간 기준이라 1분마다 다시 계산해 화면을 갱신한다.
+  const [countdown, setCountdown] = useState(() => getAlarmCountdown(alarm));
+  useEffect(() => {
+    setCountdown(getAlarmCountdown(alarm));
+    const interval = setInterval(() => setCountdown(getAlarmCountdown(alarm)), 30000);
+    return () => clearInterval(interval);
+  }, [alarm]);
 
   const todayTrack = getTodayTrack();
   const tomorrowTrack = getTomorrowTrack();
+  const { meridiem, time } = formatAlarmTime(alarm.hour, alarm.minute);
 
   const openTrack = (trackId: string) => {
     router.push({ pathname: '/today', params: { trackId } });
+  };
+
+  const openAlarmDetail = () => {
+    router.push('/alarm-detail');
   };
 
   return (
@@ -82,32 +96,37 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.alarmCard}>
-          <View style={styles.alarmInfo}>
+          <ScaleButton
+            accessibilityLabel="알람 편집"
+            style={styles.alarmInfo}
+            onPress={openAlarmDetail}>
             <View style={styles.alarmCountdownRow}>
-              <Text style={styles.alarmCountdownBold}>4시간 22분 후 </Text>
-              <Text style={styles.alarmCountdownRegular}>알람이 울립니다</Text>
+              {countdown.prefix.length > 0 && (
+                <Text style={styles.alarmCountdownBold}>{countdown.prefix}</Text>
+              )}
+              <Text style={styles.alarmCountdownRegular}>{countdown.suffix}</Text>
             </View>
             <View style={styles.alarmTimeBlock}>
               <View style={styles.alarmTimeRow}>
-                <Text style={styles.alarmMeridiem}>오전</Text>
-                <Text style={styles.alarmTimeValue}>7:00</Text>
+                <Text style={styles.alarmMeridiem}>{meridiem}</Text>
+                <Text style={styles.alarmTimeValue}>{time}</Text>
               </View>
               <View style={styles.alarmDaysRow}>
-                {ALARM_DAYS.map(({ label, dimmed }) => (
+                {DAY_LABELS.map((label, index) => (
                   <Text
                     key={label}
-                    style={[styles.alarmDayText, dimmed && styles.alarmDayTextDimmed]}>
+                    style={[styles.alarmDayText, !alarm.repeatDays[index] && styles.alarmDayTextDimmed]}>
                     {label}
                   </Text>
                 ))}
               </View>
             </View>
-          </View>
+          </ScaleButton>
           <ScaleButton
-            accessibilityLabel={notifOn ? '알람 끄기' : '알람 켜기'}
-            onPress={() => setNotifOn((v) => !v)}>
-            <View style={[styles.alarmToggle, notifOn && styles.alarmToggleOn]}>
-              <View style={[styles.alarmToggleKnob, notifOn && styles.alarmToggleKnobOn]} />
+            accessibilityLabel={alarm.enabled ? '알람 끄기' : '알람 켜기'}
+            onPress={toggleEnabled}>
+            <View style={[styles.alarmToggle, alarm.enabled && styles.alarmToggleOn]}>
+              <View style={[styles.alarmToggleKnob, alarm.enabled && styles.alarmToggleKnobOn]} />
             </View>
           </ScaleButton>
         </View>
@@ -249,6 +268,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   alarmInfo: {
+    alignItems: 'stretch',
     flex: 1,
     minWidth: 0,
     gap: 16,

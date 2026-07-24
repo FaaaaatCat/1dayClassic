@@ -3,6 +3,7 @@ import { useFonts } from 'expo-font';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import 'react-native-reanimated';
 
+import { AlarmProvider } from '@/context/AlarmContext';
 import { LikesProvider } from '@/context/LikesContext';
 import { Palette } from '@/constants/theme';
 
@@ -40,11 +41,13 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={AppTheme}>
-      <LikesProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-      </LikesProvider>
+      <AlarmProvider>
+        <LikesProvider>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </Stack>
+        </LikesProvider>
+      </AlarmProvider>
     </ThemeProvider>
   );
 }
