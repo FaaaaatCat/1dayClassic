@@ -1,17 +1,42 @@
-import * as Notifications from 'expo-notifications';
+import type * as NotificationsModule from 'expo-notifications';
 
 import type { AlarmState } from '@/context/AlarmContext';
 
+type NotificationsApi = typeof NotificationsModule;
+
 const ALARM_CHANNEL_ID = 'alarm';
+
+/**
+ * expo-notifications는 Expo Go(Android, SDK 53+)에서 import되는 순간 자체적으로 예외를
+ * 던진다 — 원격 푸시 네이티브 모듈이 빠지면서 모듈 초기화 코드 자체가 깨져 있다.
+ * 정적 import 대신 지연 require + try/catch로 감싸서, 이 환경에서 실패해도 앱 전체가
+ * 죽지 않고 "알림 없이 UI만" 동작하도록 한다.
+ */
+let notificationsApi: NotificationsApi | null | undefined; // undefined = 아직 시도 안 함
+
+function getNotificationsApi(): NotificationsApi | null {
+  if (notificationsApi !== undefined) return notificationsApi;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    notificationsApi = require('expo-notifications') as NotificationsApi;
+  } catch (error) {
+    console.warn(
+      '[alarm] expo-notifications를 사용할 수 없는 환경입니다 — 실제 알림 없이 UI만 동작합니다.',
+      error,
+    );
+    notificationsApi = null;
+  }
+  return notificationsApi;
+}
 
 let handlerConfigured = false;
 let channelConfigured = false;
 
 /** 앱이 포그라운드에 있어도 알림 배너가 뜨도록 핸들러를 한 번만 등록한다. */
-function ensureNotificationHandler() {
+function ensureNotificationHandler(api: NotificationsApi) {
   if (handlerConfigured) return;
   handlerConfigured = true;
-  Notifications.setNotificationHandler({
+  api.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
       shouldShowList: true,
@@ -22,30 +47,38 @@ function ensureNotificationHandler() {
 }
 
 /** Android에서 알람다운 고중요도(헤드업+소리+진동) 채널을 한 번만 만든다. */
-async function ensureAlarmChannel() {
+async function ensureAlarmChannel(api: NotificationsApi) {
   if (channelConfigured) return;
   channelConfigured = true;
-  await Notifications.setNotificationChannelAsync(ALARM_CHANNEL_ID, {
+  await api.setNotificationChannelAsync(ALARM_CHANNEL_ID, {
     name: '알람',
-    importance: Notifications.AndroidImportance.MAX,
+    importance: api.AndroidImportance.MAX,
     sound: 'default',
     vibrationPattern: [0, 250, 250, 250],
-    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    lockscreenVisibility: api.AndroidNotificationVisibility.PUBLIC,
   });
 }
 
-/** 알림 권한을 확인하고, 없으면 요청한다. */
+/** 알림 권한을 확인하고, 없으면 요청한다. expo-notifications를 못 쓰는 환경이면 false. */
 export async function ensureNotificationPermission(): Promise<boolean> {
-  ensureNotificationHandler();
-  await ensureAlarmChannel();
+  const api = getNotificationsApi();
+  if (!api) return false;
 
-  const current = await Notifications.getPermissionsAsync();
-  if (current.granted) return true;
+  try {
+    ensureNotificationHandler(api);
+    await ensureAlarmChannel(api);
 
-  const requested = await Notifications.requestPermissionsAsync({
-    ios: { allowAlert: true, allowBadge: true, allowSound: true },
-  });
-  return requested.granted;
+    const current = await api.getPermissionsAsync();
+    if (current.granted) return true;
+
+    const requested = await api.requestPermissionsAsync({
+      ios: { allowAlert: true, allowBadge: true, allowSound: true },
+    });
+    return requested.granted;
+  } catch (error) {
+    console.warn('[alarm] 알림 권한 확인/요청 실패:', error);
+    return false;
+  }
 }
 
 export interface AlarmCountdown {
@@ -84,16 +117,20 @@ export function getAlarmCountdown(alarm: AlarmState): AlarmCountdown {
 }
 
 export async function cancelAlarmNotifications(ids: string[]): Promise<void> {
-  await Promise.all(
-    ids.map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => {})),
-  );
+  const api = getNotificationsApi();
+  if (!api || ids.length === 0) return;
+  await Promise.all(ids.map((id) => api.cancelScheduledNotificationAsync(id).catch(() => {})));
 }
 
 /**
  * 활성화된 요일마다 주간 반복 알림을 하나씩 예약한다 (expo-notifications는 트리거 하나당
- * 요일 하나만 지원). 권한이 없거나 반복 요일이 하나도 없으면 빈 배열을 반환한다.
+ * 요일 하나만 지원). expo-notifications를 못 쓰는 환경이거나 권한이 없거나 반복 요일이
+ * 하나도 없으면 빈 배열을 반환한다.
  */
 export async function scheduleAlarmNotifications(alarm: AlarmState): Promise<string[]> {
+  const api = getNotificationsApi();
+  if (!api) return [];
+
   const granted = await ensureNotificationPermission();
   if (!granted) return [];
 
@@ -104,22 +141,27 @@ export async function scheduleAlarmNotifications(alarm: AlarmState): Promise<str
 
   if (enabledWeekdays.length === 0) return [];
 
-  return Promise.all(
-    enabledWeekdays.map((weekday) =>
-      Notifications.scheduleNotificationAsync({
-        content: {
-          title: alarm.label || '알람',
-          body: '설정한 시간이 되었습니다.',
-          sound: 'default',
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-          weekday,
-          hour: alarm.hour,
-          minute: alarm.minute,
-          channelId: ALARM_CHANNEL_ID,
-        },
-      }),
-    ),
-  );
+  try {
+    return await Promise.all(
+      enabledWeekdays.map((weekday) =>
+        api.scheduleNotificationAsync({
+          content: {
+            title: alarm.label || '알람',
+            body: '설정한 시간이 되었습니다.',
+            sound: 'default',
+          },
+          trigger: {
+            type: api.SchedulableTriggerInputTypes.WEEKLY,
+            weekday,
+            hour: alarm.hour,
+            minute: alarm.minute,
+            channelId: ALARM_CHANNEL_ID,
+          },
+        }),
+      ),
+    );
+  } catch (error) {
+    console.warn('[alarm] 알림 예약 실패:', error);
+    return [];
+  }
 }
