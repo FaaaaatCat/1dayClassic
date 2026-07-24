@@ -8,6 +8,9 @@ import {
   scheduleAlarmNotifications,
 } from '@/lib/notifications';
 
+/** 'custom'은 사용자가 지정한 사운드 파일 — 아직 파일이 없어 실제 예약 시에는 'default'로 대체된다. */
+export type AlarmSound = 'default' | 'custom';
+
 export interface AlarmState {
   /** 0~23 */
   hour: number;
@@ -16,7 +19,7 @@ export interface AlarmState {
   enabled: boolean;
   /** index 0=일 ... 6=토 */
   repeatDays: boolean[];
-  label: string;
+  sound: AlarmSound;
 }
 
 interface AlarmContextValue {
@@ -33,7 +36,7 @@ const DEFAULT_ALARM: AlarmState = {
   minute: 0,
   enabled: true,
   repeatDays: [false, true, true, true, true, true, false],
-  label: '알람',
+  sound: 'default',
 };
 
 export function AlarmProvider({ children }: { children: React.ReactNode }) {

@@ -1,17 +1,21 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import WheelPicker from '@/components/WheelPicker';
 import { Colors, Fonts } from '@/constants/theme';
-import { useAlarm } from '@/context/AlarmContext';
+import { type AlarmSound, useAlarm } from '@/context/AlarmContext';
 
 const MERIDIEMS = ['오전', '오후'];
 const HOUR_LABELS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const MINUTE_LABELS = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+const SOUND_OPTIONS: { value: AlarmSound; label: string }[] = [
+  { value: 'default', label: '기본음' },
+  { value: 'custom', label: '커스텀 사운드' },
+];
 
 function to12Hour(hour24: number): { meridiemIndex: number; hour12: number } {
   const meridiemIndex = hour24 < 12 ? 0 : 1;
@@ -35,7 +39,7 @@ export default function AlarmDetailScreen() {
   const [hour12, setHour12] = useState(initial.hour12);
   const [minute, setMinute] = useState(alarm.minute);
   const [repeatDays, setRepeatDays] = useState<boolean[]>(alarm.repeatDays);
-  const [label, setLabel] = useState(alarm.label);
+  const [sound, setSound] = useState<AlarmSound>(alarm.sound);
 
   const toggleDay = (index: number) => {
     setRepeatDays((prev) => prev.map((value, i) => (i === index ? !value : value)));
@@ -49,7 +53,7 @@ export default function AlarmDetailScreen() {
       hour: to24Hour(meridiemIndex, hour12),
       minute,
       repeatDays,
-      label: label.trim() || '알람',
+      sound,
     });
     goHome();
   };
@@ -94,15 +98,24 @@ export default function AlarmDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>이름</Text>
-          <TextInput
-            style={styles.labelInput}
-            value={label}
-            onChangeText={setLabel}
-            placeholder="알람"
-            placeholderTextColor={Colors.brown50}
-            maxLength={20}
-          />
+          <Text style={styles.sectionTitle}>소리</Text>
+          <View style={styles.soundRow}>
+            {SOUND_OPTIONS.map((option) => (
+              <ScaleButton
+                key={option.value}
+                accessibilityLabel={`${option.label} 선택`}
+                style={[styles.soundOption, sound === option.value && styles.soundOptionActive]}
+                onPress={() => setSound(option.value)}>
+                <Text
+                  style={[
+                    styles.soundOptionText,
+                    sound === option.value && styles.soundOptionTextActive,
+                  ]}>
+                  {option.label}
+                </Text>
+              </ScaleButton>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -185,14 +198,29 @@ const styles = StyleSheet.create({
   dayCircleTextActive: {
     color: Colors.white,
   },
-  labelInput: {
+  soundRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  soundOption: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.brown10,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontFamily: Fonts.regular,
-    fontSize: 16,
+  },
+  soundOptionActive: {
+    backgroundColor: Colors.beige100,
+    borderColor: Colors.beige100,
+  },
+  soundOptionText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
     color: Colors.brown100,
+  },
+  soundOptionTextActive: {
+    color: Colors.white,
   },
 });

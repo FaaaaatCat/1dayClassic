@@ -135,6 +135,19 @@ export async function cancelAlarmNotifications(ids: string[]): Promise<void> {
 }
 
 /**
+ * 커스텀 알람 사운드 파일명 — 아직 파이어베이스에 업로드되지 않아 비어 있다. 채워지면
+ * alarm.sound === 'custom'일 때 이 값을 쓰도록 아래 scheduleAlarmNotifications만 고치면 된다.
+ * (알림 사운드는 OS가 앱에 번들된 파일만 재생할 수 있어, 원격 URL을 그대로 쓸 수는 없다 —
+ * 다운로드해 기기에 저장한 뒤 그 로컬 파일명을 등록하는 방식이 필요하다.)
+ */
+const CUSTOM_ALARM_SOUND_FILE: string | null = null;
+
+function resolveAlarmSoundName(alarm: AlarmState): string {
+  if (alarm.sound === 'custom' && CUSTOM_ALARM_SOUND_FILE) return CUSTOM_ALARM_SOUND_FILE;
+  return 'default';
+}
+
+/**
  * 활성화된 요일마다 주간 반복 알림을 하나씩 예약한다 (expo-notifications는 트리거 하나당
  * 요일 하나만 지원). expo-notifications를 못 쓰는 환경이거나 권한이 없거나 반복 요일이
  * 하나도 없으면 빈 배열을 반환한다.
@@ -164,7 +177,7 @@ export async function scheduleAlarmNotifications(alarm: AlarmState): Promise<str
           content: {
             title: todayTrack.title,
             body: `${todayTrack.composer} · 지금 들어보세요`,
-            sound: 'default',
+            sound: resolveAlarmSoundName(alarm),
             data: { trackId: todayTrack.id },
           },
           trigger: {
