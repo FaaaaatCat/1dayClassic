@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import WheelPicker from '@/components/WheelPicker';
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, tracking } from '@/constants/theme';
 import { type AlarmSound, useAlarm } from '@/context/AlarmContext';
 
 const MERIDIEMS = ['오전', '오후'];
@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
   headerButtonText: {
     fontFamily: Fonts.regular,
     fontSize: 16,
+    letterSpacing: tracking(16),
     color: Colors.brown50,
   },
   headerSaveText: {
@@ -147,6 +148,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: Fonts.semiBold,
     fontSize: 16,
+    letterSpacing: tracking(16),
     color: Colors.brown100,
   },
   body: {
@@ -171,6 +173,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
+    letterSpacing: tracking(14),
     color: Colors.brown50,
   },
   daysRow: {
@@ -193,6 +196,7 @@ const styles = StyleSheet.create({
   dayCircleText: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
+    letterSpacing: tracking(14),
     color: Colors.brown100,
   },
   dayCircleTextActive: {
@@ -218,6 +222,7 @@ const styles = StyleSheet.create({
   soundOptionText: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
+    letterSpacing: tracking(14),
     color: Colors.brown100,
   },
   soundOptionTextActive: {

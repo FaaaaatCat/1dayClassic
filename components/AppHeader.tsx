@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, tracking } from '@/constants/theme';
 
 interface AppHeaderProps {
   /** 헤더에 표시할 페이지 타이틀 */
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: Fonts.semiBold,
     fontSize: 17,
-    letterSpacing: -0.68,
+    letterSpacing: tracking(17),
     color: Colors.brown100,
   },
 });

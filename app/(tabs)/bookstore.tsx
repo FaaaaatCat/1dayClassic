@@ -4,7 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, tracking } from '@/constants/theme';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 
 /** 하루 서점 — 유유 출판사 "하루 시리즈" 카탈로그. 현재 선택중인 책만 상세로 진입, 나머지는 탭 동작 없음. */
@@ -99,16 +99,19 @@ const styles = StyleSheet.create({
   featuredBadgeText: {
     fontFamily: Fonts.semiBold,
     fontSize: 12,
+    letterSpacing: tracking(12),
     color: Colors.white,
   },
   featuredTitle: {
     fontFamily: Fonts.semiBold,
     fontSize: 20,
+    letterSpacing: tracking(20),
     color: Colors.brown100,
   },
   featuredAuthor: {
     fontFamily: Fonts.regular,
     fontSize: 14,
+    letterSpacing: tracking(14),
     color: Colors.brown100,
   },
   grid: {
@@ -137,12 +140,14 @@ const styles = StyleSheet.create({
   gridTitle: {
     fontFamily: Fonts.semiBold,
     fontSize: 16,
+    letterSpacing: tracking(16),
     color: Colors.brown100,
     textAlign: 'center',
   },
   gridAuthor: {
     fontFamily: Fonts.regular,
     fontSize: 12,
+    letterSpacing: tracking(12),
     color: Colors.brown50,
     textAlign: 'center',
   },

@@ -35,6 +35,14 @@ export const Fonts = {
 } as const;
 
 /**
+ * 자간(letterSpacing) 공통 규칙 — fontSize의 -2%.
+ * 숫자만 표시하는 텍스트(시계, 날짜, 진행률 등)에는 적용하지 않는다.
+ */
+export function tracking(fontSize: number): number {
+  return Math.round(fontSize * -2) / 100;
+}
+
+/**
  * 지정 팔레트(global.css)의 색만 사용한다. 새 색이 필요하면 global.css에
  * 먼저 등록된 것인지 확인할 것. 주석은 global.css의 변수 이름.
  */
@@ -70,6 +78,7 @@ export const Typography = {
     fontFamily: serif,
     fontSize: 28,
     lineHeight: 36,
+    letterSpacing: tracking(28),
     color: Palette.text,
   },
   /** 곡 제목 */
@@ -77,6 +86,7 @@ export const Typography = {
     fontFamily: serif,
     fontSize: 22,
     lineHeight: 30,
+    letterSpacing: tracking(22),
     color: Palette.text,
   },
   /** 섹션 라벨 — "오늘의 이야기" */
@@ -91,12 +101,14 @@ export const Typography = {
   body: {
     fontSize: 15,
     lineHeight: 26,
+    letterSpacing: tracking(15),
     color: Palette.text,
   },
   /** 보조 텍스트 — 날짜, 작곡가 */
   caption: {
     fontSize: 14,
     lineHeight: 20,
+    letterSpacing: tracking(14),
     color: Palette.subText,
   },
   /** 감상 포인트 — 인용문 느낌의 세리프 (한글 이탤릭은 렌더링이 불안정해 쓰지 않는다) */
@@ -104,6 +116,7 @@ export const Typography = {
     fontFamily: serif,
     fontSize: 16,
     lineHeight: 26,
+    letterSpacing: tracking(16),
     color: Palette.primary,
   },
 } as const;

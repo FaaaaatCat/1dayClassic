@@ -2,7 +2,7 @@ import { StyleSheet, Text } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 
 import ScaleButton from '@/components/ScaleButton';
-import { Palette, Radius, Spacing } from '@/constants/theme';
+import { Palette, Radius, Spacing, tracking } from '@/constants/theme';
 
 /** "책으로 더 읽기" CTA — 데모에서는 동작하지 않는 시각적 마무리. */
 export default function ReadMoreButton() {
@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
   text: {
     color: Palette.card,
     fontSize: 16,
+    letterSpacing: tracking(16),
     fontWeight: '600',
   },
 });

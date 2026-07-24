@@ -4,7 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, tracking } from '@/constants/theme';
 import { buildCalendarYear, CALENDAR_MONTHS, type CalendarDay } from '@/lib/calendar';
 
 type Row = { kind: 'header'; month: number } | { kind: 'entry'; entry: CalendarDay };
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   monthHeaderText: {
     fontFamily: Fonts.serifDisplay,
     fontSize: 11,
-    letterSpacing: 1.2,
+    letterSpacing: tracking(11),
     color: Colors.beige100,
     textTransform: 'uppercase',
   },
@@ -147,24 +147,26 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    letterSpacing: -0.26,
+    letterSpacing: tracking(13),
     color: Colors.brown100,
   },
   rowTitleLocked: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    letterSpacing: -0.26,
+    letterSpacing: tracking(13),
     color: Colors.brown50,
   },
   rowComposer: {
     fontFamily: Fonts.regular,
     fontSize: 11,
+    letterSpacing: tracking(11),
     color: Colors.beige100,
     marginTop: 2,
   },
   rowComposerLocked: {
     fontFamily: Fonts.regular,
     fontSize: 11,
+    letterSpacing: tracking(11),
     color: Colors.beige50,
     marginTop: 2,
   },

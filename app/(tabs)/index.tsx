@@ -1,16 +1,14 @@
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import TrackCoverImage from '@/components/TrackCoverImage';
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, Radius, Shadow, tracking } from '@/constants/theme';
 import { useAlarm } from '@/context/AlarmContext';
 import { getTomorrowTrack, TODAY_DAY, TODAY_MONTH } from '@/lib/calendar';
 import { getTodayTrack } from '@/lib/data';
-import { getAlarmCountdown } from '@/lib/notifications';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -27,14 +25,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { alarm, toggleEnabled } = useAlarm();
 
-  // 카운트다운이 실제 시간 기준이라 1분마다 다시 계산해 화면을 갱신한다.
-  const [countdown, setCountdown] = useState(() => getAlarmCountdown(alarm));
-  useEffect(() => {
-    setCountdown(getAlarmCountdown(alarm));
-    const interval = setInterval(() => setCountdown(getAlarmCountdown(alarm)), 30000);
-    return () => clearInterval(interval);
-  }, [alarm]);
-
   const todayTrack = getTodayTrack();
   const tomorrowTrack = getTomorrowTrack();
   const { meridiem, time } = formatAlarmTime(alarm.hour, alarm.minute);
@@ -49,32 +39,25 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <View style={styles.headerRow}>
-          <Text style={styles.appTitle}>하루 알람</Text>
-          <View style={styles.dateRow}>
-            <View style={styles.dateGroup}>
-              <Text style={styles.dateNumber}>{TODAY_MONTH}</Text>
-              <Text style={styles.dateUnit}>월</Text>
-            </View>
-            <View style={styles.dateGroup}>
-              <Text style={styles.dateNumber}>{TODAY_DAY}</Text>
-              <Text style={styles.dateUnit}>일</Text>
-            </View>
+      <ScrollView
+        contentContainerStyle={[styles.body, { paddingTop: insets.top }]}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.pageTitle}>
+          <Text style={styles.pageTitleText}>하루 클래식 공부</Text>
+          <View style={styles.pageTitleDateRow}>
+            <Text style={styles.pageTitleDateNumber}>{TODAY_MONTH}</Text>
+            <Text style={styles.pageTitleDateStar}>✦</Text>
+            <Text style={styles.pageTitleDateNumber}>{TODAY_DAY}</Text>
           </View>
         </View>
-      </View>
 
-      <ScrollView
-        contentContainerStyle={styles.body}
-        showsVerticalScrollIndicator={false}>
         <View style={styles.todayCard}>
           <TrackCoverImage track={todayTrack} style={styles.todayImage} resizeMode="cover" />
           <ScaleButton
             accessibilityLabel={`${todayTrack.title} 상세 보기`}
             style={styles.todayCardBody}
             onPress={() => openTrack(todayTrack.id)}>
-            <Text style={styles.todayLabel}>오늘의 알람</Text>
+            <Text style={styles.todayLabel}>오늘의 공부</Text>
             <View style={styles.todayRow}>
               <View style={styles.todayInfo}>
                 <Text style={styles.todayTitle} numberOfLines={1}>
@@ -88,59 +71,66 @@ export default function HomeScreen() {
                 <SymbolView
                   name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
                   tintColor={Colors.brown100}
-                  size={20}
+                  size={28}
                 />
               </View>
             </View>
           </ScaleButton>
-        </View>
 
-        <View style={styles.alarmCard}>
-          <ScaleButton
-            accessibilityLabel="알람 편집"
-            style={styles.alarmInfo}
-            onPress={openAlarmDetail}>
-            <View style={styles.alarmCountdownRow}>
-              {countdown.prefix.length > 0 && (
-                <Text style={styles.alarmCountdownBold}>{countdown.prefix}</Text>
-              )}
-              <Text style={styles.alarmCountdownRegular}>{countdown.suffix}</Text>
+          <View style={styles.cardDivider}>
+            <Text style={styles.cardDividerStar}>✦</Text>
+            <View style={styles.cardDividerLine} />
+            <Text style={styles.cardDividerStar}>✦</Text>
+          </View>
+
+          <View style={styles.alarmRow}>
+            <View style={styles.alarmIconBadge}>
+              <SymbolView
+                name={{ ios: 'alarm', android: 'alarm', web: 'alarm' }}
+                tintColor={Colors.beige100}
+                size={17}
+              />
             </View>
-            <View style={styles.alarmTimeBlock}>
-              <View style={styles.alarmTimeRow}>
-                <Text style={styles.alarmMeridiem}>{meridiem}</Text>
-                <Text style={styles.alarmTimeValue}>{time}</Text>
+            <View style={styles.alarmInfoWrap}>
+              <ScaleButton
+                accessibilityLabel="알람 편집"
+                style={styles.alarmInfo}
+                onPress={openAlarmDetail}>
+                <View style={styles.alarmDaysRow}>
+                  {DAY_LABELS.map((label, index) => (
+                    <Text
+                      key={label}
+                      style={[styles.alarmDayText, !alarm.repeatDays[index] && styles.alarmDayTextDimmed]}>
+                      {label}
+                    </Text>
+                  ))}
+                </View>
+                <View style={styles.alarmTimeRow}>
+                  <Text style={styles.alarmMeridiem}>{meridiem}</Text>
+                  <Text style={styles.alarmTimeValue}>{time}</Text>
+                </View>
+              </ScaleButton>
+            </View>
+            <ScaleButton
+              accessibilityLabel={alarm.enabled ? '알람 끄기' : '알람 켜기'}
+              onPress={toggleEnabled}>
+              <View style={[styles.alarmToggle, alarm.enabled && styles.alarmToggleOn]}>
+                <View style={[styles.alarmToggleKnob, alarm.enabled && styles.alarmToggleKnobOn]} />
               </View>
-              <View style={styles.alarmDaysRow}>
-                {DAY_LABELS.map((label, index) => (
-                  <Text
-                    key={label}
-                    style={[styles.alarmDayText, !alarm.repeatDays[index] && styles.alarmDayTextDimmed]}>
-                    {label}
-                  </Text>
-                ))}
-              </View>
-            </View>
-          </ScaleButton>
-          <ScaleButton
-            accessibilityLabel={alarm.enabled ? '알람 끄기' : '알람 켜기'}
-            onPress={toggleEnabled}>
-            <View style={[styles.alarmToggle, alarm.enabled && styles.alarmToggleOn]}>
-              <View style={[styles.alarmToggleKnob, alarm.enabled && styles.alarmToggleKnobOn]} />
-            </View>
-          </ScaleButton>
+            </ScaleButton>
+          </View>
         </View>
 
         {tomorrowTrack && (
           <View style={styles.tomorrowRow}>
-            <Text style={styles.tomorrowLabel}>
-              <Text style={styles.tomorrowLabelStar}>✦ </Text>
-              내일의 알람
-            </Text>
-            <View style={styles.tomorrowInfo}>
-              <Text style={styles.tomorrowTitle} numberOfLines={1}>
-                {tomorrowTrack.title}
-              </Text>
+            <View style={styles.tomorrowColumn}>
+              <View style={styles.tomorrowTitleRow}>
+                <Text style={styles.tomorrowLabel}>내일은?</Text>
+                <View style={styles.tomorrowDivider} />
+                <Text style={styles.tomorrowTitle} numberOfLines={1}>
+                  {tomorrowTrack.title}
+                </Text>
+              </View>
               <Text style={styles.tomorrowComposer} numberOfLines={1}>
                 {tomorrowTrack.composer}
               </Text>
@@ -159,45 +149,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
   },
 
-  // 헤더
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-    backgroundColor: Colors.bg,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  appTitle: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 20,
-    lineHeight: 24,
-    color: Colors.brown100,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  dateGroup: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  dateNumber: {
-    fontFamily: Fonts.serifDisplay,
-    fontSize: 34,
-    lineHeight: 34,
-    color: Colors.brown100,
-  },
-  dateUnit: {
-    fontFamily: Fonts.regular,
-    fontSize: 20,
-    color: Colors.brown100,
-  },
-
   // 본문
   body: {
     padding: 8,
@@ -205,16 +156,52 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 
-  // 오늘의 알람 카드
+  // 페이지 타이틀 — 헤더가 아니라 스크롤되는 본문의 일부
+  pageTitle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 40,
+    paddingBottom: 16,
+  },
+  pageTitleText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 20,
+    lineHeight: 24,
+    letterSpacing: tracking(20),
+    color: Colors.brown100,
+  },
+  pageTitleDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pageTitleDateNumber: {
+    fontFamily: Fonts.serifDisplay,
+    fontSize: 34,
+    lineHeight: 34,
+    letterSpacing: -0.85,
+    color: Colors.brown100,
+  },
+  pageTitleDateStar: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    letterSpacing: tracking(14),
+    color: Colors.brown100,
+  },
+
+  // 오늘의 알람 카드 (곡 정보 + 알람 시간 통합)
   todayCard: {
     backgroundColor: Colors.white,
-    borderRadius: 10,
+    borderRadius: Radius.card,
     overflow: 'hidden',
     width: '100%',
+    ...Shadow.card,
   },
   todayImage: {
     width: '100%',
-    height: 200,
+    height: 160,
   },
   todayCardBody: {
     alignItems: 'stretch',
@@ -225,6 +212,7 @@ const styles = StyleSheet.create({
   todayLabel: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
+    letterSpacing: tracking(14),
     color: Colors.brown50,
   },
   todayRow: {
@@ -240,55 +228,67 @@ const styles = StyleSheet.create({
   todayTitle: {
     fontFamily: Fonts.semiBold,
     fontSize: 24,
+    letterSpacing: tracking(24),
     color: Colors.brown100,
   },
   todayComposer: {
     fontFamily: Fonts.semiBold,
     fontSize: 15,
+    letterSpacing: tracking(15),
     color: Colors.brown100,
   },
   todayButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    borderWidth: 1,
-    borderColor: Colors.brown10,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // 알람 시간 카드
-  alarmCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+  // 곡 정보 / 알람 시간 구분선
+  cardDivider: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 2,
+  },
+  cardDividerStar: {
+    fontFamily: Fonts.regular,
+    fontSize: 8,
+    letterSpacing: tracking(8),
+    color: Colors.brown10,
+  },
+  cardDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.brown10,
+  },
+
+  // 알람 시간
+  alarmRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  alarmIconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: Colors.beige10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alarmInfoWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   alarmInfo: {
     alignItems: 'stretch',
-    flex: 1,
-    minWidth: 0,
-    gap: 16,
-  },
-  alarmCountdownRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  alarmCountdownBold: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 14,
-    color: Colors.brown100,
-  },
-  alarmCountdownRegular: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    color: Colors.brown50,
-  },
-  alarmTimeBlock: {
-    gap: 8,
+    width: '100%',
+    gap: 4,
   },
   alarmTimeRow: {
     flexDirection: 'row',
@@ -298,6 +298,7 @@ const styles = StyleSheet.create({
   alarmMeridiem: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
+    letterSpacing: tracking(13),
     color: Colors.brown100,
   },
   alarmTimeValue: {
@@ -313,7 +314,8 @@ const styles = StyleSheet.create({
     width: 15,
     textAlign: 'center',
     fontFamily: Fonts.semiBold,
-    fontSize: 12,
+    fontSize: 10,
+    letterSpacing: tracking(10),
     color: Colors.brown100,
   },
   alarmDayTextDimmed: {
@@ -351,33 +353,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingVertical: 12,
+  },
+  tomorrowColumn: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  tomorrowTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    width: '100%',
   },
   tomorrowLabel: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
+    letterSpacing: tracking(14),
     color: Colors.brown100,
   },
-  tomorrowLabelStar: {
-    fontFamily: Fonts.regular,
-  },
-  tomorrowInfo: {
+  tomorrowDivider: {
     flex: 1,
-    minWidth: 0,
-    gap: 4,
-    alignItems: 'flex-end',
+    height: 1,
+    backgroundColor: Colors.brown10,
   },
   tomorrowTitle: {
     fontFamily: Fonts.semiBold,
     fontSize: 16,
+    letterSpacing: tracking(16),
     color: Colors.brown100,
-    textAlign: 'right',
   },
   tomorrowComposer: {
     fontFamily: Fonts.semiBold,
     fontSize: 10,
+    letterSpacing: tracking(10),
     color: Colors.brown100,
     textAlign: 'right',
+    width: '100%',
   },
   tomorrowCover: {
     width: 40,

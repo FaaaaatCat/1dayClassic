@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import TrackCoverImage from '@/components/TrackCoverImage';
-import { Palette, Radius, Shadow, Spacing, Typography } from '@/constants/theme';
+import { Palette, Radius, Shadow, Spacing, Typography, tracking } from '@/constants/theme';
 import type { Track } from '@/types';
 
 interface LibraryItemProps {
@@ -46,6 +46,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
+    letterSpacing: tracking(16),
     color: Palette.text,
     fontWeight: '500',
   },

@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import TrackCoverImage from '@/components/TrackCoverImage';
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, tracking } from '@/constants/theme';
 import { useLikes } from '@/context/LikesContext';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { getTodayTrack, getTrackById } from '@/lib/data';
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   tagText: {
     fontFamily: Fonts.semiBold,
     fontSize: 12,
-    letterSpacing: -0.24,
+    letterSpacing: tracking(12),
     color: Colors.beige100,
   },
   titles: {
@@ -425,13 +425,13 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: Fonts.semiBold,
     fontSize: 28,
-    letterSpacing: -1.12,
+    letterSpacing: tracking(28),
     color: Colors.brown100,
   },
   composer: {
     fontFamily: Fonts.semiBold,
     fontSize: 16,
-    letterSpacing: -0.64,
+    letterSpacing: tracking(16),
     color: Colors.brown100,
   },
   englishRow: {
@@ -442,12 +442,13 @@ const styles = StyleSheet.create({
   englishText: {
     fontFamily: Fonts.semiBold,
     fontSize: 12,
-    letterSpacing: -0.24,
+    letterSpacing: tracking(12),
     color: Colors.brown100,
   },
   englishStar: {
     fontFamily: Fonts.regular,
     fontSize: 8,
+    letterSpacing: tracking(8),
     color: Colors.beige100,
   },
 
@@ -469,7 +470,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.serifDisplay,
     fontSize: 14,
     lineHeight: 26,
-    letterSpacing: -0.28,
+    letterSpacing: tracking(14),
     color: Colors.blue100,
   },
 
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     fontSize: 16,
     lineHeight: 31,
-    letterSpacing: -0.32,
+    letterSpacing: tracking(16),
     color: Colors.brown100,
   },
 
@@ -495,7 +496,7 @@ const styles = StyleSheet.create({
   notesTitle: {
     fontFamily: Fonts.semiBold,
     fontSize: 16,
-    letterSpacing: -0.64,
+    letterSpacing: tracking(16),
     color: Colors.brown100,
   },
   noteBox: {
@@ -511,7 +512,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     fontSize: 16,
     lineHeight: 26,
-    letterSpacing: -0.32,
+    letterSpacing: tracking(16),
     color: Colors.brown100,
     textAlignVertical: 'top',
   },
@@ -524,7 +525,7 @@ const styles = StyleSheet.create({
   noteSubmitText: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
-    letterSpacing: -0.28,
+    letterSpacing: tracking(14),
     color: Colors.beige100,
   },
   noteList: {
@@ -539,7 +540,7 @@ const styles = StyleSheet.create({
   noteCount: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    letterSpacing: -0.26,
+    letterSpacing: tracking(13),
     color: Colors.beige100,
   },
   noteCountLine: {
@@ -570,7 +571,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.regular,
     fontSize: 16,
     lineHeight: 31,
-    letterSpacing: -0.32,
+    letterSpacing: tracking(16),
     color: Colors.brown100,
   },
   noteItemMeta: {
@@ -588,7 +589,7 @@ const styles = StyleSheet.create({
   noteItemAction: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
-    letterSpacing: -0.26,
+    letterSpacing: tracking(13),
     color: Colors.beige50,
   },
 
@@ -604,6 +605,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: Fonts.regular,
     fontSize: 12,
+    letterSpacing: tracking(12),
     color: Colors.red50,
     textAlign: 'center',
   },
@@ -629,7 +631,7 @@ const styles = StyleSheet.create({
   playPillText: {
     fontFamily: Fonts.semiBold,
     fontSize: 18,
-    letterSpacing: -0.72,
+    letterSpacing: tracking(18),
     color: Colors.white,
   },
   replayButton: {

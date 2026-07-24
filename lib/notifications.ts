@@ -112,41 +112,6 @@ export async function ensureNotificationPermission(): Promise<boolean> {
   }
 }
 
-export interface AlarmCountdown {
-  /** "3시간 22분 후 " 같은 굵게 표시할 부분 — 꺼져 있으면 빈 문자열 */
-  prefix: string;
-  /** "알람이 울립니다" / "알람이 꺼져 있습니다" */
-  suffix: string;
-}
-
-/**
- * 다음 알람까지 남은 시간을 계산한다. 실제 현재 시각(Date)을 기준으로 하며,
- * 앱이 고정해둔 '오늘' 날짜(TODAY_MONTH/TODAY_DAY)와는 무관하다.
- */
-export function getAlarmCountdown(alarm: AlarmState): AlarmCountdown {
-  if (!alarm.enabled || !alarm.repeatDays.some(Boolean)) {
-    return { prefix: '', suffix: '알람이 꺼져 있습니다' };
-  }
-
-  const now = new Date();
-  for (let offset = 0; offset < 8; offset++) {
-    const candidate = new Date(now);
-    candidate.setDate(now.getDate() + offset);
-    candidate.setHours(alarm.hour, alarm.minute, 0, 0);
-
-    const weekday = candidate.getDay(); // 0=일 ... 6=토, repeatDays와 인덱스가 같다.
-    if (!alarm.repeatDays[weekday] || candidate.getTime() <= now.getTime()) continue;
-
-    const diffMinutes = Math.round((candidate.getTime() - now.getTime()) / 60000);
-    const hours = Math.floor(diffMinutes / 60);
-    const minutes = diffMinutes % 60;
-    const prefix = hours > 0 ? `${hours}시간 ${minutes}분 후 ` : `${minutes}분 후 `;
-    return { prefix, suffix: '알람이 울립니다' };
-  }
-
-  return { prefix: '', suffix: '알람이 꺼져 있습니다' };
-}
-
 export async function cancelAlarmNotifications(ids: string[]): Promise<void> {
   const api = getNotificationsApi();
   if (!api || ids.length === 0) return;

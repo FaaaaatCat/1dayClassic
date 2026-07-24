@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import TableOfContents from '@/components/TableOfContents';
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, tracking } from '@/constants/theme';
 import { getTodayDayOfYear, TOTAL_DAYS_IN_YEAR } from '@/lib/calendar';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 
@@ -184,6 +184,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: Fonts.semiBold,
     fontSize: 16,
+    letterSpacing: tracking(16),
     color: Colors.brown100,
   },
   miniBadge: {
@@ -198,6 +199,7 @@ const styles = StyleSheet.create({
   miniBadgeText: {
     fontFamily: Fonts.semiBold,
     fontSize: 12,
+    letterSpacing: tracking(12),
     color: Colors.white,
   },
   bodyContent: {
@@ -222,6 +224,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontFamily: Fonts.semiBold,
     fontSize: 12,
+    letterSpacing: tracking(12),
     color: Colors.white,
   },
   cover: {
@@ -237,12 +240,14 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: Fonts.semiBold,
     fontSize: 22,
+    letterSpacing: tracking(22),
     color: Colors.brown100,
     textAlign: 'center',
   },
   author: {
     fontFamily: Fonts.regular,
     fontSize: 14,
+    letterSpacing: tracking(14),
     color: Colors.brown50,
     textAlign: 'center',
   },
