@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import type * as NotificationsModule from 'expo-notifications';
 
 import type { AlarmState } from '@/context/AlarmContext';
@@ -7,15 +8,25 @@ type NotificationsApi = typeof NotificationsModule;
 const ALARM_CHANNEL_ID = 'alarm';
 
 /**
- * expo-notifications는 Expo Go(Android, SDK 53+)에서 import되는 순간 자체적으로 예외를
- * 던진다 — 원격 푸시 네이티브 모듈이 빠지면서 모듈 초기화 코드 자체가 깨져 있다.
- * 정적 import 대신 지연 require + try/catch로 감싸서, 이 환경에서 실패해도 앱 전체가
- * 죽지 않고 "알림 없이 UI만" 동작하도록 한다.
+ * Expo Go(storeClient)에서는 expo-notifications를 require만 해도 그 모듈이 내부적으로
+ * 기기 푸시 토큰을 비동기로 자동 등록하려 시도하다 못 잡히는 예외를 던진다 — require를
+ * try/catch로 감싸도 이 실패는 동기적으로 일어나지 않아 못 잡는다. 그래서 애초에 Expo Go일
+ * 때는 require 자체를 하지 않는다. 개발 빌드(dev client)/프로덕션 빌드에서는 정상 동작한다.
  */
+const isExpoGo =
+  Constants.executionEnvironment === 'storeClient' && Constants.expoGoConfig != null;
+
 let notificationsApi: NotificationsApi | null | undefined; // undefined = 아직 시도 안 함
 
 function getNotificationsApi(): NotificationsApi | null {
   if (notificationsApi !== undefined) return notificationsApi;
+
+  if (isExpoGo) {
+    console.warn('[alarm] Expo Go에서는 알림을 사용할 수 없습니다 — 실제 알림 없이 UI만 동작합니다.');
+    notificationsApi = null;
+    return notificationsApi;
+  }
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     notificationsApi = require('expo-notifications') as NotificationsApi;
