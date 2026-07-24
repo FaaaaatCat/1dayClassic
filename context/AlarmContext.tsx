@@ -1,6 +1,12 @@
+import { useRouter } from 'expo-router';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { cancelAlarmNotifications, scheduleAlarmNotifications } from '@/lib/notifications';
+import {
+  addAlarmNotificationTapListener,
+  cancelAlarmNotifications,
+  getLaunchNotificationPayload,
+  scheduleAlarmNotifications,
+} from '@/lib/notifications';
 
 export interface AlarmState {
   /** 0~23 */
@@ -31,6 +37,7 @@ const DEFAULT_ALARM: AlarmState = {
 };
 
 export function AlarmProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [alarm, setAlarm] = useState<AlarmState>(DEFAULT_ALARM);
   const scheduledIdsRef = useRef<string[]>([]);
 
@@ -47,6 +54,25 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
     };
   }, [alarm]);
+
+  // 알람 알림을 탭해서 오늘의 클래식 상세로 진입 + 자동 재생. autoplay 값은 매번 새로운
+  // 타임스탬프라 같은 trackId로 다시 탭해도(반복 알림) today.tsx에서 매번 새로 트리거된다.
+  useEffect(() => {
+    const openFromNotification = (trackId: string) => {
+      router.push({
+        pathname: '/today',
+        params: { trackId, autoplay: String(Date.now()) },
+      });
+    };
+
+    getLaunchNotificationPayload().then((payload) => {
+      if (payload) openFromNotification(payload.trackId);
+    });
+
+    return addAlarmNotificationTapListener((payload) => {
+      openFromNotification(payload.trackId);
+    });
+  }, [router]);
 
   const updateAlarm = useCallback((patch: Partial<AlarmState>) => {
     setAlarm((prev) => ({ ...prev, ...patch }));

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -58,7 +58,7 @@ function formatHeaderDate(dateStr: string | undefined): string {
 }
 
 export default function TodayScreen() {
-  const { trackId } = useLocalSearchParams<{ trackId?: string }>();
+  const { trackId, autoplay } = useLocalSearchParams<{ trackId?: string; autoplay?: string }>();
   const track = (trackId ? getTrackById(trackId) : undefined) ?? getTodayTrack();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -73,6 +73,16 @@ export default function TodayScreen() {
     restart,
   } = useAudioPlayer();
   const { isLiked, toggleLike } = useLikes();
+
+  // 알람 알림을 탭해서 들어온 경우(autoplay=타임스탬프) 자동으로 노래 듣기를 시작한다.
+  // autoplay 값은 탭마다 새로 생성돼서, 같은 트랙이어도(반복 알람) 매번 다시 트리거된다.
+  const handledAutoplayRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoplay || handledAutoplayRef.current === autoplay) return;
+    handledAutoplayRef.current = autoplay;
+    togglePlay(track);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplay]);
 
   const [notes, setNotes] = useState<Note[]>(SEED_NOTES);
   const [draft, setDraft] = useState('');

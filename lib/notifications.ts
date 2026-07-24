@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import type * as NotificationsModule from 'expo-notifications';
 
 import type { AlarmState } from '@/context/AlarmContext';
+import { getTodayTrack } from '@/lib/data';
 
 type NotificationsApi = typeof NotificationsModule;
 
@@ -152,14 +153,19 @@ export async function scheduleAlarmNotifications(alarm: AlarmState): Promise<str
 
   if (enabledWeekdays.length === 0) return [];
 
+  // '오늘의 곡'은 실제 날짜와 무관하게 항상 고정 트랙이라(getTodayTrack), 예약 시점에
+  // 트랙 id를 넣어둬도 알림이 실제로 울리는 시점과 어긋날 일이 없다.
+  const todayTrack = getTodayTrack();
+
   try {
     return await Promise.all(
       enabledWeekdays.map((weekday) =>
         api.scheduleNotificationAsync({
           content: {
-            title: alarm.label || '알람',
-            body: '설정한 시간이 되었습니다.',
+            title: todayTrack.title,
+            body: `${todayTrack.composer} · 지금 들어보세요`,
             sound: 'default',
+            data: { trackId: todayTrack.id },
           },
           trigger: {
             type: api.SchedulableTriggerInputTypes.WEEKLY,
@@ -175,4 +181,49 @@ export async function scheduleAlarmNotifications(alarm: AlarmState): Promise<str
     console.warn('[alarm] 알림 예약 실패:', error);
     return [];
   }
+}
+
+export interface AlarmNotificationPayload {
+  trackId: string;
+}
+
+function extractPayload(
+  response: NotificationModuleResponse | null | undefined,
+): AlarmNotificationPayload | null {
+  const trackId = response?.notification.request.content.data?.trackId;
+  return typeof trackId === 'string' ? { trackId } : null;
+}
+
+type NotificationModuleResponse = NotificationsModule.NotificationResponse;
+
+/**
+ * 알림 탭으로 앱이 콜드 스타트(완전 종료 상태에서 실행)됐다면 그 알림의 데이터를 반환한다.
+ * 그런 게 아니면(그냥 홈 화면 아이콘으로 열었다면) null.
+ */
+export async function getLaunchNotificationPayload(): Promise<AlarmNotificationPayload | null> {
+  const api = getNotificationsApi();
+  if (!api) return null;
+  try {
+    const response = await api.getLastNotificationResponseAsync();
+    return extractPayload(response);
+  } catch (error) {
+    console.warn('[alarm] 콜드 스타트 알림 정보 조회 실패:', error);
+    return null;
+  }
+}
+
+/**
+ * 앱이 이미 떠 있는 동안 알림을 탭했을 때 호출된다. 구독 해제 함수를 반환한다.
+ * expo-notifications를 못 쓰는 환경이면 아무것도 하지 않는 빈 해제 함수를 반환한다.
+ */
+export function addAlarmNotificationTapListener(
+  onTap: (payload: AlarmNotificationPayload) => void,
+): () => void {
+  const api = getNotificationsApi();
+  if (!api) return () => {};
+  const subscription = api.addNotificationResponseReceivedListener((response) => {
+    const payload = extractPayload(response);
+    if (payload) onTap(payload);
+  });
+  return () => subscription.remove();
 }
