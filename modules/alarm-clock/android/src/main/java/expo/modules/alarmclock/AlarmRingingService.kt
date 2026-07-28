@@ -10,7 +10,7 @@ import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.RingtoneManager
-import android.os.Build
+import android.net.Uri
 import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
@@ -88,11 +88,35 @@ class AlarmRingingService : Service() {
     if (mediaPlayer != null) return
 
     val config = AlarmPrefs.load(this)
-    val uri = if (config.sound == "custom") {
-      android.net.Uri.parse("android.resource://$packageName/${R.raw.alarm_1}")
-    } else {
-      RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-    }
+
+    // 기기에 기본 알람음이 설정돼 있지 않으면 getDefaultUri가 null을 반환한다. 그대로 두면
+    // 소리 없이 진동/알림만 울려 "알람이 안 울렸다"가 되므로, 번들 음원으로 폴백한다.
+    val primaryUri = if (config.sound == "custom") bundledAlarmUri() else systemAlarmUri()
+    val fallbackUri = bundledAlarmUri()
+
+    mediaPlayer = startPlaying(primaryUri)
+      ?: if (primaryUri != fallbackUri) {
+        Log.w(TAG, "기본 알람음 재생 실패 — 번들 음원으로 폴백합니다")
+        startPlaying(fallbackUri)
+      } else {
+        null
+      }
+  }
+
+  private fun bundledAlarmUri(): Uri =
+    Uri.parse("android.resource://$packageName/${R.raw.alarm_1}")
+
+  private fun systemAlarmUri(): Uri? =
+    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+
+  /**
+   * 지정한 음원으로 재생을 시작하고 MediaPlayer를 반환한다. 실패하면 null.
+   *
+   * 실패 시 이미 생성된 MediaPlayer를 반드시 release() 한다 — 그냥 버리면 필드에 담기지
+   * 않아 stopEverything()이 회수하지 못하고 네이티브 리소스가 파이널라이저까지 남는다.
+   */
+  private fun startPlaying(uri: Uri?): MediaPlayer? {
+    if (uri == null) return null
 
     // USAGE_ALARM으로 지정하면 ALARM 스트림을 타게 되어, 별도 알람 볼륨으로 제어되고
     // 방해금지(Zen) 정책이 알람을 기본 허용 카테고리로 취급한다.
@@ -101,16 +125,17 @@ class AlarmRingingService : Service() {
       .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
       .build()
 
-    mediaPlayer = try {
-      MediaPlayer().apply {
-        setAudioAttributes(attributes)
-        setDataSource(this@AlarmRingingService, uri)
-        isLooping = true
-        prepare()
-        start()
-      }
+    val player = MediaPlayer()
+    return try {
+      player.setAudioAttributes(attributes)
+      player.setDataSource(this, uri)
+      player.isLooping = true
+      player.prepare()
+      player.start()
+      player
     } catch (e: Exception) {
-      Log.e(TAG, "알람 음원 재생 실패", e)
+      Log.e(TAG, "알람 음원 재생 실패: $uri", e)
+      player.release()
       null
     }
   }

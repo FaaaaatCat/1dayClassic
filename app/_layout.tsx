@@ -1,12 +1,19 @@
 import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import { useFonts } from 'expo-font';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { useEffect } from 'react';
+import { Alert } from 'react-native';
 import 'react-native-reanimated';
 
 import { AlarmProvider } from '@/context/AlarmContext';
 import { LikesProvider } from '@/context/LikesContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { Palette } from '@/constants/theme';
+import {
+  getPermissionStatus,
+  hasAllAlarmPermissions,
+  openAlarmPermissionSettings,
+} from '@/modules/alarm-clock';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -35,6 +42,26 @@ export default function RootLayout() {
     'Eulyoo1945-SemiBold': require('../assets/fonts/Eulyoo1945-SemiBold.ttf'),
     DMSerifDisplay_400Regular,
   });
+
+  // 앱 시작 시 한 번만 확인한다. 권한이 모두 있으면 아무것도 표시하지 않는다.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await getPermissionStatus();
+        if (cancelled || hasAllAlarmPermissions(status)) return;
+        Alert.alert('알람 권한 필요', '알람을 위해 필요한 권한을 허용해 주세요.', [
+          { text: '나중에', style: 'cancel' },
+          { text: '설정 열기', onPress: () => void openAlarmPermissionSettings() },
+        ]);
+      } catch (error) {
+        console.warn('[alarm] 권한 상태 확인 실패:', error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!fontsLoaded) {
     return null;

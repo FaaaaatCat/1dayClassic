@@ -1,13 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import {
-  addAlarmNotificationTapListener,
-  cancelAllAlarmNotifications,
-  getLaunchNotificationPayload,
-  scheduleAlarmNotifications,
-} from '@/lib/notifications';
+import { cancelAlarm, scheduleAlarm } from '@/modules/alarm-clock';
 
 /** 'custom'은 사용자가 지정한 사운드 파일 — 아직 파일이 없어 실제 예약 시에는 'default'로 대체된다. */
 export type AlarmSound = 'default' | 'custom';
@@ -44,7 +38,6 @@ const DEFAULT_ALARM: AlarmState = {
 const STORAGE_KEY = 'alarm-state-v1';
 
 export function AlarmProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [alarm, setAlarm] = useState<AlarmState>(DEFAULT_ALARM);
   /** 저장된 값을 불러오기 전까지는 DEFAULT_ALARM으로 예약/저장을 하지 않기 위한 플래그. */
   const [hydrated, setHydrated] = useState(false);
@@ -73,40 +66,34 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
     });
   }, [alarm, hydrated]);
 
-  // 알람이 바뀔 때마다 이 앱이 예약한 모든 알림을 전부 지우고 다시 예약한다. id 목록을 메모리에
-  // 들고 있다가 취소하는 방식은 앱 재시작으로 그 목록이 사라지면 이전 세션이 남긴 예약이
-  // 그대로 방치되는 문제가 있었다 — 그래서 매번 "전체 취소 후 재예약"으로 통일한다.
+  // 알람이 바뀔 때마다 네이티브에 통째로 다시 예약한다. 네이티브가 SharedPreferences에
+  // 사본을 들고 있어서, JS가 죽어도(앱 종료·재부팅) 스스로 반복·복원할 수 있다.
+  // 알람이 울린 뒤 '오늘의 곡'으로 이동하는 것도 네이티브가 딥링크로 직접 처리한다.
   useEffect(() => {
     if (!hydrated) return;
     let cancelled = false;
     (async () => {
-      await cancelAllAlarmNotifications();
-      if (cancelled || !alarm.enabled) return;
-      await scheduleAlarmNotifications(alarm);
+      try {
+        if (cancelled) return;
+        if (alarm.enabled) {
+          await scheduleAlarm({
+            hour: alarm.hour,
+            minute: alarm.minute,
+            repeatDays: alarm.repeatDays,
+            sound: alarm.sound,
+            enabled: true,
+          });
+        } else {
+          await cancelAlarm();
+        }
+      } catch (error) {
+        console.warn('[alarm] 알람 예약 실패:', error);
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, [alarm, hydrated]);
-
-  // 알람 알림을 탭해서 오늘의 클래식 상세로 진입 + 자동 재생. autoplay 값은 매번 새로운
-  // 타임스탬프라 같은 trackId로 다시 탭해도(반복 알림) today.tsx에서 매번 새로 트리거된다.
-  useEffect(() => {
-    const openFromNotification = (trackId: string) => {
-      router.push({
-        pathname: '/today',
-        params: { trackId, autoplay: String(Date.now()) },
-      });
-    };
-
-    getLaunchNotificationPayload().then((payload) => {
-      if (payload) openFromNotification(payload.trackId);
-    });
-
-    return addAlarmNotificationTapListener((payload) => {
-      openFromNotification(payload.trackId);
-    });
-  }, [router]);
 
   const updateAlarm = useCallback((patch: Partial<AlarmState>) => {
     setAlarm((prev) => ({ ...prev, ...patch }));
