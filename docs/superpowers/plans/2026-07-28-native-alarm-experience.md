@@ -403,7 +403,6 @@ object AlarmScheduler {
 
   private const val TAG = "AlarmScheduler"
   private const val DAYS_IN_WEEK = 7
-  private const val MILLIS_PER_DAY = 24L * 60L * 60L * 1000L
 
   /**
    * 다음 발동 시각(epoch millis). 알람이 꺼져 있거나 반복 요일이 하나도 없으면 null.
@@ -424,22 +423,32 @@ object AlarmScheduler {
       val dayIndex = (todayIndex + offset) % DAYS_IN_WEEK
       if (!config.repeatDays[dayIndex]) continue
 
-      val candidate = Calendar.getInstance().apply {
-        timeInMillis = nowMillis
-        add(Calendar.DAY_OF_YEAR, offset)
-        set(Calendar.HOUR_OF_DAY, config.hour)
-        set(Calendar.MINUTE, config.minute)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-      }.timeInMillis
+      val candidate = triggerAtDayOffset(nowMillis, offset, config.hour, config.minute)
 
       // 이미 지났거나 정확히 지금이면 다음 주 같은 요일로.
-      val resolved = if (candidate <= nowMillis) candidate + DAYS_IN_WEEK * MILLIS_PER_DAY else candidate
+      // raw 밀리초를 더하면 그 사이 DST 전환이 있을 때 시각이 한 시간 어긋나므로,
+      // Calendar.add(DAY_OF_YEAR, ...)로 다시 계산해 벽시계 시/분을 유지한다.
+      val resolved = if (candidate <= nowMillis) {
+        triggerAtDayOffset(nowMillis, offset + DAYS_IN_WEEK, config.hour, config.minute)
+      } else {
+        candidate
+      }
 
       if (best == null || resolved < best!!) best = resolved
     }
     return best
   }
+
+  /** nowMillis 기준 dayOffset 일 뒤, 설정된 시/분으로 맞춘 epoch millis. DST 전환에도 벽시계 시각을 유지한다. */
+  private fun triggerAtDayOffset(nowMillis: Long, dayOffset: Int, hour: Int, minute: Int): Long =
+    Calendar.getInstance().apply {
+      timeInMillis = nowMillis
+      add(Calendar.DAY_OF_YEAR, dayOffset)
+      set(Calendar.HOUR_OF_DAY, hour)
+      set(Calendar.MINUTE, minute)
+      set(Calendar.SECOND, 0)
+      set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
   /** AlarmPrefs에 저장된 설정 기준으로 다음 주간 알람을 예약한다. 조건이 안 맞으면 취소만 한다. */
   fun scheduleNextWeeklyAlarm(context: Context) {
