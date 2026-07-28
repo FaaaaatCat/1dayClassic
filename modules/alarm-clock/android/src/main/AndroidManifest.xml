@@ -10,6 +10,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <application>
+        <service
+            android:name=".AlarmRingingService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
+
         <receiver
             android:name=".AlarmReceiver"
             android:exported="false">
