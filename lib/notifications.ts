@@ -112,10 +112,19 @@ export async function ensureNotificationPermission(): Promise<boolean> {
   }
 }
 
-export async function cancelAlarmNotifications(ids: string[]): Promise<void> {
+/**
+ * 이 앱이 예약한 모든 알림을 OS 레벨에서 통째로 취소한다. 알람 변경 시마다 전체를 지우고
+ * 다시 예약하는 방식이라, JS 메모리(state)가 리셋되는 앱 재시작 이후에도 이전 세션이 남긴
+ * 잔여 예약이 그대로 쌓여있지 않도록 보장한다.
+ */
+export async function cancelAllAlarmNotifications(): Promise<void> {
   const api = getNotificationsApi();
-  if (!api || ids.length === 0) return;
-  await Promise.all(ids.map((id) => api.cancelScheduledNotificationAsync(id).catch(() => {})));
+  if (!api) return;
+  try {
+    await api.cancelAllScheduledNotificationsAsync();
+  } catch (error) {
+    console.warn('[alarm] 알림 전체 취소 실패:', error);
+  }
 }
 
 function resolveAlarmSoundName(alarm: AlarmState): string {

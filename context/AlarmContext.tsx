@@ -1,9 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
   addAlarmNotificationTapListener,
-  cancelAlarmNotifications,
+  cancelAllAlarmNotifications,
   getLaunchNotificationPayload,
   scheduleAlarmNotifications,
 } from '@/lib/notifications';
@@ -39,24 +40,54 @@ const DEFAULT_ALARM: AlarmState = {
   sound: 'default',
 };
 
+/** 알람 설정을 앱 재시작 후에도 유지하기 위한 AsyncStorage 키. */
+const STORAGE_KEY = 'alarm-state-v1';
+
 export function AlarmProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [alarm, setAlarm] = useState<AlarmState>(DEFAULT_ALARM);
-  const scheduledIdsRef = useRef<string[]>([]);
+  /** 저장된 값을 불러오기 전까지는 DEFAULT_ALARM으로 예약/저장을 하지 않기 위한 플래그. */
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      await cancelAlarmNotifications(scheduledIdsRef.current);
-      scheduledIdsRef.current = [];
-      if (cancelled || !alarm.enabled) return;
-      const ids = await scheduleAlarmNotifications(alarm);
-      if (!cancelled) scheduledIdsRef.current = ids;
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (!cancelled && raw) setAlarm(JSON.parse(raw) as AlarmState);
+      } catch (error) {
+        console.warn('[alarm] 저장된 알람 불러오기 실패:', error);
+      } finally {
+        if (!cancelled) setHydrated(true);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [alarm]);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(alarm)).catch((error) => {
+      console.warn('[alarm] 알람 저장 실패:', error);
+    });
+  }, [alarm, hydrated]);
+
+  // 알람이 바뀔 때마다 이 앱이 예약한 모든 알림을 전부 지우고 다시 예약한다. id 목록을 메모리에
+  // 들고 있다가 취소하는 방식은 앱 재시작으로 그 목록이 사라지면 이전 세션이 남긴 예약이
+  // 그대로 방치되는 문제가 있었다 — 그래서 매번 "전체 취소 후 재예약"으로 통일한다.
+  useEffect(() => {
+    if (!hydrated) return;
+    let cancelled = false;
+    (async () => {
+      await cancelAllAlarmNotifications();
+      if (cancelled || !alarm.enabled) return;
+      await scheduleAlarmNotifications(alarm);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [alarm, hydrated]);
 
   // 알람 알림을 탭해서 오늘의 클래식 상세로 진입 + 자동 재생. autoplay 값은 매번 새로운
   // 타임스탬프라 같은 trackId로 다시 탭해도(반복 알림) today.tsx에서 매번 새로 트리거된다.

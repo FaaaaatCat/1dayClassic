@@ -20,7 +20,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.VIBRATE"]
+      "permissions": [
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -41,13 +48,21 @@
         "expo-notifications",
         {
           "color": "#2f95dc",
-          "sounds": ["./assets/music/alarm_1.mp3"]
+          "sounds": [
+            "./assets/music/alarm_1.mp3"
+          ]
         }
       ],
       "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "863e6207-8a15-4586-bf9e-e7f568dd2c31"
+      }
     }
   }
 }

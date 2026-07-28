@@ -7,6 +7,8 @@ import ScaleButton from '@/components/ScaleButton';
 import WheelPicker from '@/components/WheelPicker';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { type AlarmSound, useAlarm } from '@/context/AlarmContext';
+import { useToast } from '@/context/ToastContext';
+import { getNextAlarmMessage } from '@/lib/alarmTime';
 
 const MERIDIEMS = ['오전', '오후'];
 const HOUR_LABELS = Array.from({ length: 12 }, (_, i) => String(i + 1));
@@ -33,6 +35,7 @@ export default function AlarmDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { alarm, updateAlarm } = useAlarm();
+  const { showToast } = useToast();
 
   const initial = to12Hour(alarm.hour);
   const [meridiemIndex, setMeridiemIndex] = useState(initial.meridiemIndex);
@@ -49,12 +52,14 @@ export default function AlarmDetailScreen() {
   const goHome = () => router.replace('/');
 
   const handleSave = () => {
-    updateAlarm({
-      hour: to24Hour(meridiemIndex, hour12),
-      minute,
-      repeatDays,
-      sound,
-    });
+    const hour = to24Hour(meridiemIndex, hour12);
+    updateAlarm({ hour, minute, repeatDays, sound });
+
+    if (alarm.enabled) {
+      const message = getNextAlarmMessage({ hour, minute, repeatDays });
+      if (message) showToast(message);
+    }
+
     goHome();
   };
 
