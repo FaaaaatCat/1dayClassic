@@ -74,6 +74,7 @@ object AlarmScheduler {
     val triggerAt = nextTriggerAtMillis(config, System.currentTimeMillis())
 
     if (triggerAt == null) {
+      Log.i(TAG, "예약할 알람 없음 (enabled=${config.enabled}, 반복요일=${config.repeatDays}) — 기존 예약 취소")
       cancel(context, REQUEST_CODE_WEEKLY)
       return
     }
@@ -94,6 +95,11 @@ object AlarmScheduler {
   private fun setAlarm(context: Context, triggerAtMillis: Long, requestCode: Int) {
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     val operation = firePendingIntent(context, requestCode)
+
+    val kind = if (requestCode == REQUEST_CODE_SNOOZE) "스누즈" else "주간"
+    val at = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.KOREA)
+      .format(java.util.Date(triggerAtMillis))
+    Log.i(TAG, "$kind 알람 예약: $at (정확한알람=${canScheduleExact(alarmManager)})")
 
     if (canScheduleExact(alarmManager)) {
       // 알람 아이콘 탭 시 앱을 열도록 show 인텐트도 함께 넘긴다.
