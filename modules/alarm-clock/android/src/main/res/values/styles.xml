@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AlarmFullScreen" parent="android:Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/alarm_bg</item>
+        <item name="android:statusBarColor">@color/alarm_bg</item>
+        <item name="android:navigationBarColor">@color/alarm_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

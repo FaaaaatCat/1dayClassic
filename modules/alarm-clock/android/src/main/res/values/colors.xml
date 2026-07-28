@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="alarm_bg">#FAF6EE</color>
+    <color name="alarm_text_primary">#030303</color>
+    <color name="alarm_text_secondary">#827F7A</color>
+    <color name="alarm_accent">#8B6C42</color>
+    <color name="alarm_on_accent">#FFFFFF</color>
+    <color name="alarm_border">#E0DBD5</color>
+</resources>

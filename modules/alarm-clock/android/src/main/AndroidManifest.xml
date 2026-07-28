@@ -10,6 +10,15 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <application>
+        <activity
+            android:name=".AlarmActivity"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:enableOnBackInvokedCallback="false"
+            android:taskAffinity=""
+            android:theme="@style/Theme.AlarmFullScreen" />
+
         <service
             android:name=".AlarmRingingService"
             android:foregroundServiceType="mediaPlayback"
