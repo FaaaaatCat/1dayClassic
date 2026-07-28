@@ -40,5 +40,9 @@ yarn-error.*
 /ios
 /android
 
+# Gradle build output inside local Expo modules
+modules/*/android/build/
+modules/*/android/.gradle/
+
 # superpowers subagent-driven-development scratch state
 .superpowers/
