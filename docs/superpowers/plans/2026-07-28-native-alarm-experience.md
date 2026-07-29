@@ -55,7 +55,7 @@
 - Consumes: 없음
 - Produces: `expo.modules.alarmclock` Kotlin 네임스페이스, `modules/alarm-clock/index.ts` 진입점
 
-- [ ] **Step 1: 모듈 생성**
+- [x] **Step 1: 모듈 생성**
 
 ```bash
 npx create-expo-module@latest --local
@@ -65,13 +65,13 @@ npx create-expo-module@latest --local
 - name: `alarm-clock`
 - package: `expo.modules.alarmclock`
 
-- [ ] **Step 2: iOS 디렉터리 제거 (Android 전용)**
+- [x] **Step 2: iOS 디렉터리 제거 (Android 전용)**
 
 ```bash
 rm -rf modules/alarm-clock/ios
 ```
 
-- [ ] **Step 3: `expo-module.config.json`에서 iOS 항목 제거**
+- [x] **Step 3: `expo-module.config.json`에서 iOS 항목 제거**
 
 `modules/alarm-clock/expo-module.config.json`:
 
@@ -84,7 +84,7 @@ rm -rf modules/alarm-clock/ios
 }
 ```
 
-- [ ] **Step 4: 생성된 샘플 코드 정리**
+- [x] **Step 4: 생성된 샘플 코드 정리**
 
 `modules/alarm-clock/index.ts`를 빈 상태로 비운다 (Task 8에서 실제 API를 채운다):
 
@@ -101,7 +101,7 @@ export {};
 ls modules/alarm-clock/src modules/alarm-clock/android/src/main/java/expo/modules/alarmclock
 ```
 
-- [ ] **Step 5: 빌드가 통과하는지 확인**
+- [x] **Step 5: 빌드가 통과하는지 확인**
 
 ```bash
 npx expo prebuild --clean --platform android
@@ -111,7 +111,7 @@ Expected: 에러 없이 완료. `android/` 폴더가 생성되고 모듈이 auto
 
 > `android/`는 생성물이므로 커밋하지 않는다. `.gitignore`에 이미 포함되어 있는지 확인하고, 없으면 추가한다.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add modules/alarm-clock .gitignore
@@ -132,7 +132,7 @@ git commit -m "feat(alarm): 로컬 Expo 모듈 alarm-clock 스캐폴딩"
   - `data class AlarmConfig(val enabled: Boolean, val hour: Int, val minute: Int, val repeatDays: List<Boolean>, val sound: String)`
   - `object AlarmPrefs { fun save(context: Context, config: AlarmConfig); fun load(context: Context): AlarmConfig; fun encodeRepeatDays(days: List<Boolean>): String; fun decodeRepeatDays(encoded: String): List<Boolean> }`
 
-- [ ] **Step 1: 테스트 인프라 확인 및 추가**
+- [x] **Step 1: 테스트 인프라 확인 및 추가**
 
 `modules/alarm-clock/android/build.gradle`의 `dependencies` 블록에 추가:
 
@@ -140,7 +140,7 @@ git commit -m "feat(alarm): 로컬 Expo 모듈 alarm-clock 스캐폴딩"
 testImplementation 'junit:junit:4.13.2'
 ```
 
-- [ ] **Step 2: 요일 인코딩 실패 테스트 작성**
+- [x] **Step 2: 요일 인코딩 실패 테스트 작성**
 
 `modules/alarm-clock/android/src/test/java/expo/modules/alarmclock/AlarmPrefsTest.kt`:
 
@@ -173,7 +173,7 @@ class AlarmPrefsTest {
 }
 ```
 
-- [ ] **Step 3: 테스트 실패 확인**
+- [x] **Step 3: 테스트 실패 확인**
 
 ```bash
 npx expo prebuild --platform android && cd android && ./gradlew :alarm-clock:testDebugUnitTest --tests "expo.modules.alarmclock.AlarmPrefsTest"
@@ -181,7 +181,7 @@ npx expo prebuild --platform android && cd android && ./gradlew :alarm-clock:tes
 
 Expected: FAIL — `Unresolved reference: AlarmPrefs`
 
-- [ ] **Step 4: AlarmPrefs 구현**
+- [x] **Step 4: AlarmPrefs 구현**
 
 `modules/alarm-clock/android/src/main/java/expo/modules/alarmclock/AlarmPrefs.kt`:
 
@@ -254,7 +254,7 @@ object AlarmPrefs {
 }
 ```
 
-- [ ] **Step 5: 테스트 통과 확인**
+- [x] **Step 5: 테스트 통과 확인**
 
 ```bash
 cd android && ./gradlew :alarm-clock:testDebugUnitTest --tests "expo.modules.alarmclock.AlarmPrefsTest"
@@ -262,7 +262,7 @@ cd android && ./gradlew :alarm-clock:testDebugUnitTest --tests "expo.modules.ala
 
 Expected: PASS (3 tests)
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add modules/alarm-clock/android
@@ -289,7 +289,7 @@ git commit -m "feat(alarm): AlarmPrefs 알람 상태 저장소 추가"
 > 같은 규칙(오늘부터 7일 훑기, 0 이하면 다음 주)을 따르도록 유지하되, 별도의 JS 테스트
 > 하네스는 만들지 않는다 — 어긋나도 토스트 문구만 부정확해지고 알람 자체는 정상 동작한다.
 
-- [ ] **Step 1: 발동 시각 계산 실패 테스트 작성**
+- [x] **Step 1: 발동 시각 계산 실패 테스트 작성**
 
 `modules/alarm-clock/android/src/test/java/expo/modules/alarmclock/AlarmSchedulerTest.kt`:
 
@@ -367,7 +367,7 @@ class AlarmSchedulerTest {
 }
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **Step 2: 테스트 실패 확인**
 
 ```bash
 cd android && ./gradlew :alarm-clock:testDebugUnitTest --tests "expo.modules.alarmclock.AlarmSchedulerTest"
@@ -375,7 +375,7 @@ cd android && ./gradlew :alarm-clock:testDebugUnitTest --tests "expo.modules.ala
 
 Expected: FAIL — `Unresolved reference: AlarmScheduler`
 
-- [ ] **Step 3: AlarmScheduler 구현**
+- [x] **Step 3: AlarmScheduler 구현**
 
 `modules/alarm-clock/android/src/main/java/expo/modules/alarmclock/AlarmScheduler.kt`:
 
@@ -520,7 +520,7 @@ object AlarmScheduler {
 
 > 이 코드는 Task 4의 `AlarmReceiver`와 Task 6의 `MainActivityIntent`를 참조한다. 그 타입들이 아직 없으면 컴파일되지 않으므로, Step 4에서 최소 스텁을 먼저 만든다.
 
-- [ ] **Step 4: 컴파일을 위한 최소 스텁 추가**
+- [x] **Step 4: 컴파일을 위한 최소 스텁 추가**
 
 `modules/alarm-clock/android/src/main/java/expo/modules/alarmclock/AlarmReceiver.kt` (Task 4에서 완성):
 
@@ -575,7 +575,7 @@ object MainActivityIntent {
 }
 ```
 
-- [ ] **Step 5: 테스트 통과 확인**
+- [x] **Step 5: 테스트 통과 확인**
 
 ```bash
 cd android && ./gradlew :alarm-clock:testDebugUnitTest --tests "expo.modules.alarmclock.AlarmSchedulerTest"
@@ -583,7 +583,7 @@ cd android && ./gradlew :alarm-clock:testDebugUnitTest --tests "expo.modules.ala
 
 Expected: PASS (6 tests)
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add modules/alarm-clock/android
@@ -602,7 +602,7 @@ git commit -m "feat(alarm): AlarmScheduler 발동 시각 계산 및 setAlarmCloc
 - Consumes: `AlarmScheduler.scheduleNextWeeklyAlarm()` (Task 3), `AlarmRingingService.start()` (Task 5)
 - Produces: `AlarmReceiver.ACTION_FIRE` 상수
 
-- [ ] **Step 1: AlarmReceiver 구현**
+- [x] **Step 1: AlarmReceiver 구현**
 
 `modules/alarm-clock/android/src/main/java/expo/modules/alarmclock/AlarmReceiver.kt`:
 
@@ -647,7 +647,7 @@ class AlarmReceiver : BroadcastReceiver() {
 }
 ```
 
-- [ ] **Step 2: 매니페스트에 리시버 등록**
+- [x] **Step 2: 매니페스트에 리시버 등록**
 
 `modules/alarm-clock/android/src/main/AndroidManifest.xml` 전체를 다음으로 교체:
 
@@ -679,7 +679,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
 > `POST_NOTIFICATIONS`는 지금까지 `expo-notifications` 플러그인이 자동으로 넣어주던 권한이다. Task 9에서 그 플러그인을 제거하므로 여기서 명시적으로 선언해야 한다.
 
-- [ ] **Step 3: 컴파일 확인**
+- [x] **Step 3: 컴파일 확인**
 
 ```bash
 npx expo prebuild --platform android && cd android && ./gradlew :alarm-clock:compileDebugKotlin
@@ -687,7 +687,7 @@ npx expo prebuild --platform android && cd android && ./gradlew :alarm-clock:com
 
 Expected: `AlarmRingingService`가 아직 없어 FAIL. Task 5에서 해소된다. 그때까지 `AlarmRingingService.start(context)` 줄을 임시 주석 처리하고 컴파일이 통과하는지만 확인한 뒤, Task 5 완료 후 주석을 해제한다.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add modules/alarm-clock/android
@@ -710,7 +710,7 @@ git commit -m "feat(alarm): AlarmReceiver 발동/부팅 복원 처리 추가"
   - `AlarmRingingService.ACTION_DISMISS`, `ACTION_SNOOZE`
   - `AlarmRingingService.dismissIntent(context): Intent`, `snoozeIntent(context): Intent`
 
-- [ ] **Step 1: 알람 음원을 모듈 리소스로 복사**
+- [x] **Step 1: 알람 음원을 모듈 리소스로 복사**
 
 ```bash
 mkdir -p modules/alarm-clock/android/src/main/res/raw
@@ -719,7 +719,7 @@ cp assets/music/alarm_1.mp3 modules/alarm-clock/android/src/main/res/raw/alarm_1
 
 > `res/raw` 파일명은 소문자·숫자·밑줄만 허용된다. `alarm_1.mp3`는 규칙에 맞다.
 
-- [ ] **Step 2: AlarmRingingService 구현**
+- [x] **Step 2: AlarmRingingService 구현**
 
 `modules/alarm-clock/android/src/main/java/expo/modules/alarmclock/AlarmRingingService.kt`:
 
@@ -918,7 +918,7 @@ class AlarmRingingService : Service() {
 }
 ```
 
-- [ ] **Step 3: 매니페스트에 서비스 등록**
+- [x] **Step 3: 매니페스트에 서비스 등록**
 
 `modules/alarm-clock/android/src/main/AndroidManifest.xml`의 `<application>` 안, `<receiver>` 앞에 추가:
 
@@ -929,11 +929,11 @@ class AlarmRingingService : Service() {
             android:exported="false" />
 ```
 
-- [ ] **Step 4: Task 4에서 주석 처리했던 호출 복구**
+- [x] **Step 4: Task 4에서 주석 처리했던 호출 복구**
 
 `AlarmReceiver.kt`의 `ACTION_FIRE` 분기에서 `AlarmRingingService.start(context)` 주석을 해제한다.
 
-- [ ] **Step 5: 컴파일 확인**
+- [x] **Step 5: 컴파일 확인**
 
 ```bash
 npx expo prebuild --platform android && cd android && ./gradlew :alarm-clock:compileDebugKotlin
@@ -941,7 +941,7 @@ npx expo prebuild --platform android && cd android && ./gradlew :alarm-clock:com
 
 Expected: `AlarmActivity`가 아직 없어 FAIL. Task 6에서 해소된다.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add modules/alarm-clock/android
@@ -963,7 +963,7 @@ git commit -m "feat(alarm): AlarmRingingService 소리 재생 및 FSI 알림 추
 - Consumes: `AlarmRingingService.dismissIntent()/snoozeIntent()` (Task 5), `MainActivityIntent.create()` (Task 3)
 - Produces: `AlarmActivity` (Task 5의 FSI 타겟)
 
-- [ ] **Step 0: androidx.activity 의존성 확인**
+- [x] **Step 0: androidx.activity 의존성 확인**
 
 `ComponentActivity`와 `onBackPressedDispatcher`를 쓰려면 `androidx.activity`가 필요하다.
 `modules/alarm-clock/android/build.gradle`의 `dependencies`에 없으면 추가:
@@ -972,7 +972,7 @@ git commit -m "feat(alarm): AlarmRingingService 소리 재생 및 FSI 알림 추
 implementation 'androidx.activity:activity-ktx:1.9.3'
 ```
 
-- [ ] **Step 1: 색상 리소스 정의**
+- [x] **Step 1: 색상 리소스 정의**
 
 `modules/alarm-clock/android/src/main/res/values/colors.xml` — 지정 팔레트(`constants/theme.ts`)의 값만 사용:
 
@@ -988,7 +988,7 @@ implementation 'androidx.activity:activity-ktx:1.9.3'
 </resources>
 ```
 
-- [ ] **Step 2: 테마 정의**
+- [x] **Step 2: 테마 정의**
 
 `modules/alarm-clock/android/src/main/res/values/styles.xml`:
 
@@ -1004,7 +1004,7 @@ implementation 'androidx.activity:activity-ktx:1.9.3'
 </resources>
 ```
 
-- [ ] **Step 3: 레이아웃 작성**
+- [x] **Step 3: 레이아웃 작성**
 
 `modules/alarm-clock/android/src/main/res/layout/activity_alarm.xml`:
 
@@ -1070,7 +1070,7 @@ implementation 'androidx.activity:activity-ktx:1.9.3'
 
 > 루트 태그에 `xmlns:tools="http://schemas.android.com/tools"` 를 추가해야 `tools:text`가 유효하다. 추가하거나 `tools:text` 줄을 삭제한다.
 
-- [ ] **Step 4: AlarmActivity 구현**
+- [x] **Step 4: AlarmActivity 구현**
 
 `modules/alarm-clock/android/src/main/java/expo/modules/alarmclock/AlarmActivity.kt`:
 
@@ -1152,7 +1152,7 @@ class AlarmActivity : ComponentActivity() {
 }
 ```
 
-- [ ] **Step 5: 매니페스트에 액티비티 등록**
+- [x] **Step 5: 매니페스트에 액티비티 등록**
 
 `modules/alarm-clock/android/src/main/AndroidManifest.xml`의 `<application>` 안에 추가:
 
@@ -1167,7 +1167,7 @@ class AlarmActivity : ComponentActivity() {
             android:theme="@style/Theme.AlarmFullScreen" />
 ```
 
-- [ ] **Step 6: 전체 컴파일 확인**
+- [x] **Step 6: 전체 컴파일 확인**
 
 ```bash
 npx expo prebuild --platform android && cd android && ./gradlew :alarm-clock:compileDebugKotlin
@@ -1175,7 +1175,7 @@ npx expo prebuild --platform android && cd android && ./gradlew :alarm-clock:com
 
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 7: 커밋**
+- [x] **Step 7: 커밋**
 
 ```bash
 git add modules/alarm-clock/android
@@ -1193,7 +1193,7 @@ git commit -m "feat(alarm): AlarmActivity 전체화면 알람 UI 추가"
 - Consumes: `AlarmPrefs` (Task 2), `AlarmScheduler` (Task 3)
 - Produces: JS에서 호출 가능한 네이티브 함수 — `scheduleAlarm`, `cancelAlarm`, `getPermissionStatus`, `openAlarmPermissionSettings`
 
-- [ ] **Step 1: AlarmClockModule 구현**
+- [x] **Step 1: AlarmClockModule 구현**
 
 `modules/alarm-clock/android/src/main/java/expo/modules/alarmclock/AlarmClockModule.kt`:
 
@@ -1296,7 +1296,7 @@ class AlarmClockModule : Module() {
 }
 ```
 
-- [ ] **Step 2: 컴파일 확인**
+- [x] **Step 2: 컴파일 확인**
 
 ```bash
 cd android && ./gradlew :alarm-clock:compileDebugKotlin
@@ -1304,7 +1304,7 @@ cd android && ./gradlew :alarm-clock:compileDebugKotlin
 
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 
 ```bash
 git add modules/alarm-clock/android
@@ -1330,7 +1330,7 @@ git commit -m "feat(alarm): AlarmClockModule JS 브리지 추가"
   - `openAlarmPermissionSettings(): Promise<void>`
   - `hasAllAlarmPermissions(status: AlarmPermissionStatus): boolean`
 
-- [ ] **Step 1: 타입 정의**
+- [x] **Step 1: 타입 정의**
 
 `modules/alarm-clock/src/AlarmClock.types.ts`:
 
@@ -1355,7 +1355,7 @@ export interface AlarmPermissionStatus {
 }
 ```
 
-- [ ] **Step 2: JS API 작성**
+- [x] **Step 2: JS API 작성**
 
 `modules/alarm-clock/index.ts`:
 
@@ -1404,7 +1404,7 @@ export function hasAllAlarmPermissions(status: AlarmPermissionStatus): boolean {
 }
 ```
 
-- [ ] **Step 3: AlarmContext를 네이티브 API로 교체**
+- [x] **Step 3: AlarmContext를 네이티브 API로 교체**
 
 `context/AlarmContext.tsx`에서 `@/lib/notifications` import를 제거하고 다음으로 교체:
 
@@ -1446,7 +1446,7 @@ import { cancelAlarm, scheduleAlarm } from '@/modules/alarm-clock';
 
 알림 탭 리스너 `useEffect`(`getLaunchNotificationPayload` / `addAlarmNotificationTapListener`를 쓰는 블록) 전체를 삭제한다. 네이티브 `AlarmActivity`가 딥링크로 직접 처리하므로 불필요하다. `useRouter` import도 다른 곳에서 쓰지 않으면 함께 제거한다.
 
-- [ ] **Step 4: 앱 시작 시 권한 확인 팝업 추가**
+- [x] **Step 4: 앱 시작 시 권한 확인 팝업 추가**
 
 `app/_layout.tsx`에 추가:
 
@@ -1489,7 +1489,7 @@ import {
   }, []);
 ```
 
-- [ ] **Step 5: 타입 체크**
+- [x] **Step 5: 타입 체크**
 
 ```bash
 npx tsc --noEmit -p .
@@ -1497,7 +1497,7 @@ npx tsc --noEmit -p .
 
 Expected: 에러 없음
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add modules/alarm-clock context/AlarmContext.tsx app/_layout.tsx
@@ -1520,7 +1520,7 @@ git commit -m "feat(alarm): JS API 추가 및 AlarmContext를 네이티브 알�
 
 > **선행 조건:** Task 10의 실기기 검증이 통과한 뒤에 수행한다. 그 전에 제거하면 알람 기능이 아예 없는 구간이 생긴다.
 
-- [ ] **Step 1: 남은 참조가 없는지 확인**
+- [x] **Step 1: 남은 참조가 없는지 확인**
 
 ```bash
 grep -rn "expo-notifications\|lib/notifications" --include="*.ts" --include="*.tsx" --include="*.json" . --exclude-dir=node_modules --exclude=package-lock.json
@@ -1528,19 +1528,19 @@ grep -rn "expo-notifications\|lib/notifications" --include="*.ts" --include="*.t
 
 Expected: `package.json`과 `app.json`만 남아 있어야 한다. 다른 파일이 나오면 먼저 정리한다.
 
-- [ ] **Step 2: 래퍼 파일 삭제**
+- [x] **Step 2: 래퍼 파일 삭제**
 
 ```bash
 rm lib/notifications.ts
 ```
 
-- [ ] **Step 3: 패키지 제거**
+- [x] **Step 3: 패키지 제거**
 
 ```bash
 npm uninstall expo-notifications
 ```
 
-- [ ] **Step 4: app.json에서 플러그인 설정 제거**
+- [x] **Step 4: app.json에서 플러그인 설정 제거**
 
 `app.json`의 `plugins` 배열에서 다음 블록 전체를 삭제한다:
 
@@ -1558,7 +1558,7 @@ npm uninstall expo-notifications
 
 또한 `android.permissions`에서 `"android.permission.SCHEDULE_EXACT_ALARM"`을 제거한다 — 이 권한은 이제 모듈 매니페스트가 선언한다.
 
-- [ ] **Step 5: 사용하지 않는 음원 삭제**
+- [x] **Step 5: 사용하지 않는 음원 삭제**
 
 ```bash
 rm assets/music/alarm_1.mp3
@@ -1566,7 +1566,7 @@ rm assets/music/alarm_1.mp3
 
 > `assets/music/` 안의 다른 음원 파일은 곡 재생에 쓰이므로 건드리지 않는다. 디렉터리에 다른 파일이 있는지 먼저 확인할 것.
 
-- [ ] **Step 6: 타입 체크 및 빌드 확인**
+- [x] **Step 6: 타입 체크 및 빌드 확인**
 
 ```bash
 npx tsc --noEmit -p . && npx expo prebuild --clean --platform android
@@ -1574,7 +1574,7 @@ npx tsc --noEmit -p . && npx expo prebuild --clean --platform android
 
 Expected: 에러 없음
 
-- [ ] **Step 7: 커밋**
+- [x] **Step 7: 커밋**
 
 ```bash
 git add -A
@@ -1593,21 +1593,21 @@ git commit -m "refactor(alarm): expo-notifications 제거 — 네이티브 알�
 
 네이티브 알람은 에뮬레이터와 실기기의 동작이 다르고(특히 Doze, 잠금화면, 제조사 커스터마이징) 자동화 테스트가 어렵다. Development Build를 실기기에 설치해 직접 확인한다.
 
-- [ ] **Step 1: Development Build 설치**
+- [x] **Step 1: Development Build 설치**
 
 ```bash
 npx expo prebuild --clean
 npx expo run:android --device
 ```
 
-- [ ] **Step 2: 권한 팝업 확인**
+- [x] **Step 2: 권한 팝업 확인**
 
 앱을 처음 실행했을 때:
 - 권한이 부족하면 "알람을 위해 필요한 권한을 허용해 주세요." 팝업이 뜬다
 - [설정 열기]를 누르면 해당 권한의 시스템 설정 화면으로 이동한다
 - 권한을 모두 허용한 뒤 앱을 재시작하면 **팝업이 뜨지 않는다**
 
-- [ ] **Step 3: 잠금화면 전체화면 알람 확인 (핵심 시나리오)**
+- [x] **Step 3: 잠금화면 전체화면 알람 확인 (핵심 시나리오)**
 
 1. 현재 시각 기준 2분 뒤로 알람 설정, 오늘 요일 켜기
 2. 화면 끄기
@@ -1619,7 +1619,7 @@ npx expo run:android --device
 - 알람 소리가 반복 재생된다
 - 뒤로가기 제스처로 화면이 닫히지 않는다
 
-- [ ] **Step 4: 기기 사용 중일 때 헤드업 알림 확인**
+- [x] **Step 4: 기기 사용 중일 때 헤드업 알림 확인**
 
 1. 2분 뒤로 알람 설정
 2. 화면을 켜둔 채 앱을 사용하거나 다른 앱을 사용
@@ -1630,14 +1630,14 @@ npx expo run:android --device
 - 알림에 [스누즈] [끄기] 버튼이 있다
 - 소리는 동일하게 재생된다
 
-- [ ] **Step 5: 서비스 지속성 확인**
+- [x] **Step 5: 서비스 지속성 확인**
 
 알람이 울리는 중:
 1. 전체화면 알람 화면을 최근 앱에서 밀어 닫거나 홈 버튼을 누른다
 
 확인: **소리가 계속 재생된다.** 알림도 상단에 남아 있다.
 
-- [ ] **Step 6: 끄기 동작 확인**
+- [x] **Step 6: 끄기 동작 확인**
 
 [끄기]를 누른다.
 
@@ -1647,7 +1647,7 @@ npx expo run:android --device
 - 앱의 '오늘의 곡' 화면이 열리고 곡이 자동 재생된다
 - 앱이 중복 실행되지 않는다 (최근 앱에 하나만)
 
-- [ ] **Step 7: 스누즈 동작 확인**
+- [x] **Step 7: 스누즈 동작 확인**
 
 1. 알람을 다시 울리게 한 뒤 [스누즈]를 누른다
 
@@ -1656,7 +1656,7 @@ npx expo run:android --device
 - 앱이 열리지 않는다
 - **5분 뒤 다시 울린다**
 
-- [ ] **Step 8: 프로세스 종료 후 동작 확인**
+- [x] **Step 8: 프로세스 종료 후 동작 확인**
 
 1. 2분 뒤로 알람 설정
 2. 최근 앱에서 앱을 스와이프해 종료
@@ -1664,7 +1664,7 @@ npx expo run:android --device
 
 확인: 알람이 정상적으로 울린다.
 
-- [ ] **Step 9: 재부팅 복원 확인**
+- [x] **Step 9: 재부팅 복원 확인**
 
 1. 10분 뒤로 알람 설정
 2. 기기 재부팅
@@ -1672,16 +1672,38 @@ npx expo run:android --device
 
 확인: 알람이 정상적으로 울린다.
 
-- [ ] **Step 10: 알람 설정 영속화 확인**
+- [x] **Step 10: 알람 설정 영속화 확인**
 
 1. 알람을 오전 7시가 아닌 다른 시각으로 변경 후 저장
 2. 앱을 완전히 종료 후 재실행
 
 확인: 변경한 시각이 그대로 표시된다 (디폴트로 돌아가지 않는다).
 
-- [ ] **Step 11: 검증 결과 기록**
+- [x] **Step 11: 검증 결과 기록**
 
 실패한 항목이 있으면 원인을 조사해 수정하고 재검증한다. 모두 통과하면 Task 9(expo-notifications 제거)를 진행한다.
+
+#### 검증 결과 (2026-07-29, Galaxy SM-S942N / Android 16, 앱 targetSdk 36)
+
+Task 9(expo-notifications 제거)를 먼저 커밋한 뒤 그 최종 빌드로 재검증했다. 아래 "빌드" 열의
+**최종**은 expo-notifications 제거 후 빌드, **이전**은 제거 전 빌드에서만 확인한 항목이다.
+
+| Step | 결과 | 빌드 | 근거 |
+|---|---|---|---|
+| 1. Development Build 설치 | 통과 | 최종 | `BUILD SUCCESSFUL`, `adb install -r` Success |
+| 2. 권한 팝업 | 통과 | 최종 | 권한이 모두 허용된 상태에서 앱 실행 시 팝업 없음 |
+| 3. 잠금/화면꺼짐 전체화면 | 통과 | 최종 | 화면 꺼짐(`mWakefulness=Dozing`) 상태에서 10:57:00 발동 → 전체화면 알람 표시(사용자 육안 확인) |
+| 4. 기기 사용 중 헤드업 알림 | 통과 | 최종 | 10:48:00 발동 시 전체화면 없이 헤드업 알림만, 끄기/스누즈 액션 포함 |
+| 5. 서비스 지속성 | 통과 | 이전 | 알람 화면을 닫아도 소리 유지 |
+| 6. 끄기 → 오늘의 곡 | 통과 | 최종 | 10:57:05 `AlarmActivity` 종료 직후 `ResumedActivity: com.onedayalarm.app/.MainActivity` |
+| 7. 스누즈 5분 | 통과 | 이전 | 10:00:00 발동 → 10:05:04 재발동 (dumpsys alarm 이력) |
+| 8. 프로세스 종료 후 발동 | 통과 | 최종 | `pidof` 없음(프로세스 종료) 상태에서 10:48:00 정상 발동 |
+| 9. 재부팅 복원 | 통과 | 최종 | 부팅 42초 후 `AlarmReceiver: 부팅/업데이트 감지` → `AlarmScheduler: 주간 알람 예약` (앱 미실행 상태) |
+| 10. 설정 영속화 | 통과 | 최종 | 재부팅 + 재설치 후에도 변경한 시각(10:00) 유지 |
+
+**확정한 설계 판단:** 헤드업 알림의 [끄기]는 소리만 멈추고 앱을 열지 않는다. 전체화면 경로에서만
+'오늘의 곡'으로 이동한다 — 사용자가 다른 앱을 쓰는 중에 화면을 빼앗지 않기 위함. 설계 문서
+흐름도를 이에 맞게 수정했다.
 
 ---
 
