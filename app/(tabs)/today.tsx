@@ -78,7 +78,7 @@ export default function TodayScreen() {
   // autoplay 값은 탭마다 새로 생성돼서, 같은 트랙이어도(반복 알람) 매번 다시 트리거된다.
   const handledAutoplayRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!autoplay || handledAutoplayRef.current === autoplay) return;
+    if (!autoplay || !track || handledAutoplayRef.current === autoplay) return;
     handledAutoplayRef.current = autoplay;
     togglePlay(track);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,6 +86,9 @@ export default function TodayScreen() {
 
   const [notes, setNotes] = useState<Note[]>(SEED_NOTES);
   const [draft, setDraft] = useState('');
+
+  // 데이터가 비면 보여 줄 곡이 없다. 훅은 위에서 모두 호출한 뒤이므로 안전하다.
+  if (!track) return null;
 
   const liked = isLiked(track.id);
   const paragraphs = track.story;

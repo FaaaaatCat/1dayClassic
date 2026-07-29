@@ -29,6 +29,9 @@ export default function HomeScreen() {
   const tomorrowTrack = getTomorrowTrack();
   const { meridiem, time } = formatAlarmTime(alarm.hour, alarm.minute);
 
+  // 데이터가 비면 홈 화면이 성립하지 않는다. 훅은 위에서 모두 호출한 뒤이므로 안전하다.
+  if (!todayTrack) return null;
+
   const openTrack = (trackId: string) => {
     router.push({ pathname: '/today', params: { trackId } });
   };

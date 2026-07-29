@@ -36,3 +36,15 @@ export function getStorageDownloadUrl(path: string): Promise<string> {
   downloadUrlCache.set(path, promise);
   return promise;
 }
+
+/**
+ * 음원·이미지 필드를 실제로 불러올 수 있는 URL로 바꾼다.
+ * Storage 경로면 다운로드 URL로 변환하고, 이미 완성된 http(s) URL이면 그대로 돌려준다.
+ * 클래식(Track)과 하루 시리즈(DailyLesson)가 이 한 함수를 공유한다.
+ */
+export function resolveMediaUrl(source: string): Promise<string> {
+  if (!isStoragePath(source)) {
+    return Promise.resolve(source);
+  }
+  return getStorageDownloadUrl(source);
+}

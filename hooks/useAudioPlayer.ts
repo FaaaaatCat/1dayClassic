@@ -7,7 +7,7 @@ import * as Speech from "expo-speech";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Vibration } from "react-native";
 
-import { MEDIA_HEADERS, resolveTrackAudioUrl } from "@/lib/data";
+import { MEDIA_HEADERS, resolveLessonAudioUrl } from "@/lib/lessons";
 import { fadeVolume, type FadeHandle } from "@/lib/fade";
 import type { Track } from "@/types";
 
@@ -280,13 +280,19 @@ export function useAudioPlayer() {
    * track.audio(Storage 경로 또는 완성된 URL)를 실제 재생 URL로 바꿔 플레이어에 로드한다.
    * Storage 경로 조회는 네트워크 요청이라 실패할 수 있다(파일 미업로드, 권한 규칙 미설정 등) —
    * 실패하면 호출부의 catch가 hasError로 잡는다.
+   *
+   * 음원이 아예 없는 트랙(미준비 또는 무료 회원)도 같은 경로로 hasError가 된다.
+   * story를 TTS로 읽어 주는 대체 재생은 아직 없다.
    */
   const loadTrackSource = useCallback(
     async (track: Track) => {
       resolvingRef.current = true;
       setIsResolvingSource(true);
       try {
-        const uri = await resolveTrackAudioUrl(track);
+        const uri = await resolveLessonAudioUrl(track);
+        if (!uri) {
+          throw new Error(`음원이 없는 트랙입니다: ${track.id}`);
+        }
         player.replace({ uri, headers: MEDIA_HEADERS });
         loadedTrackIdRef.current = track.id;
       } finally {
