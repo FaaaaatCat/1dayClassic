@@ -11,8 +11,6 @@ import { MEDIA_HEADERS, resolveLessonAudioUrl } from "@/lib/lessons";
 import { fadeVolume, type FadeHandle } from "@/lib/fade";
 import type { DailyLesson } from "@/types";
 
-/** 곡 길이(status.duration)를 아직 모를 때 총 재생시간 표시에 쓰는 기본값 */
-const DEFAULT_DURATION_FALLBACK_SECONDS = 30;
 /** 재생 시작을 알리는 진동 길이 */
 const OPENING_VIBRATION_MS = 1000;
 /** 진동 직후, 오프닝 멘트 전까지 음악만 들려주는 길이 */
@@ -96,10 +94,6 @@ export function useAudioPlayer() {
   /** DJ 플로우 각 단계 사이의 대기(setTimeout) — 한 번에 하나만 걸려 있다. */
   const flowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeRef = useRef<FadeHandle | null>(null);
-  /** 오프닝(진동+멘트)이 실제로 걸린 시간(초) — 전체 재생시간에 더해진다. 음악 시작 시 확정된다. */
-  const openingDurationRef = useRef(0);
-  /** 오프닝 시작 시각(ms) — 음악이 시작되는 순간 이 값과의 차이로 오프닝 길이를 확정한다. */
-  const openingStartedAtRef = useRef(0);
   /** 5분 컷 페이드아웃을 이미 시작했는지 — 재생 세션마다 초기화된다. */
   const trackCutoffTriggeredRef = useRef(false);
   /** 시스템 TTS 엔진에서 고른 최적 한국어 목소리 identifier */
@@ -193,8 +187,6 @@ export function useAudioPlayer() {
       cancelDjFlow();
       const session = sessionRef.current;
       const isCurrentSession = () => session === sessionRef.current;
-      openingDurationRef.current = 0;
-      openingStartedAtRef.current = Date.now();
       trackCutoffTriggeredRef.current = false;
       setIsNarrationOnly(false);
       setPhase("opening");
@@ -252,8 +244,6 @@ export function useAudioPlayer() {
 
       // 2. 음악 5초 (볼륨 50%) — 진동이 끝나면 음악이 시작된다.
       const preNarrationMusic = () => {
-        openingDurationRef.current =
-          (Date.now() - openingStartedAtRef.current) / 1000;
         player.volume = OPENING_MUSIC_VOLUME;
         player.play();
         setPhase("music");
@@ -484,18 +474,6 @@ export function useAudioPlayer() {
     setPhase("idle");
   }, [cancelDjFlow, player]);
 
-  // 전체 재생시간 = 오프닝(진동+멘트) 실제 소요 시간 + 곡 실제 길이(5분 컷 적용).
-  // status.duration은 곡 로드가 끝나기 전엔 0/undefined이므로 그동안은 기본값으로 대체한다.
-  // openingDurationRef는 음악이 실제로 시작되는 순간 확정되고, 그 전까지는 0이다.
-  const cappedSongSeconds = Math.min(
-    status.duration || DEFAULT_DURATION_FALLBACK_SECONDS,
-    MAX_TRACK_SECONDS,
-  );
-  const totalSeconds = openingDurationRef.current + cappedSongSeconds;
-  const elapsedSeconds = Math.min(
-    openingDurationRef.current + status.currentTime,
-    totalSeconds,
-  );
   const loadFailed = hasError || status.error != null;
   // 오프닝(진동+멘트) 중에는 음악이 백그라운드에서 로드되는 중이어도
   // 시퀀스가 진행되고 있으므로 로딩 스피너 대신 일시정지 버튼을 보여 준다.
@@ -512,19 +490,11 @@ export function useAudioPlayer() {
     // 오프닝 중에는 음악이 아직 재생 전이지만 사용자 입장에선 '재생 중'이다.
     // 낭독만 하는 항목은 player가 놀고 있으므로 플로우가 돌고 있는지로 판정한다.
     isPlaying: status.playing || phase === "opening" || (isNarrationOnly && phase !== "idle"),
-    /** 음원 없이 낭독만 하는 중 — 진행바처럼 곡 길이에 기대는 UI는 숨겨야 한다. */
-    isNarrationOnly,
     isLoading,
     hasError: loadFailed,
     /** DJ 플로우 현재 단계 — UI에서 나레이션 중임을 표시할 때 사용 */
     phase,
     isNarrating: phase === "narration",
-    /** 0~1 — 오프닝+곡 전체 길이 기준 진행률 */
-    progress: totalSeconds > 0 ? elapsedSeconds / totalSeconds : 0,
-    /** 경과 시간(초) — 오프닝 포함 */
-    elapsedSeconds,
-    /** 전체 재생 시간(초) = 오프닝 소요 시간 + 곡 길이. 곡 로드 전엔 기본값으로 대체 표시됨 */
-    totalSeconds,
     togglePlay,
     restart,
     stop,
