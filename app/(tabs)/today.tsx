@@ -1,26 +1,23 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import LessonCoverImage from '@/components/LessonCoverImage';
+import AudioListenSheet from '@/components/lesson/AudioListenSheet';
+import HeaderMoreMenu from '@/components/lesson/HeaderMoreMenu';
 import LessonHeading from '@/components/lesson/LessonHeading';
+import LessonCoverImage from '@/components/LessonCoverImage';
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { useLikes } from '@/context/LikesContext';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { getBookLesson, getBookName, getLessonHeading } from '@/lib/books';
 import type { BookId } from '@/types';
+
+/** 음원 위치를 옮기는 단위(초) — '10초 전/후' 버튼용. 음원이 없는 항목은 문장 단위로 옮긴다. */
+const SEEK_SECONDS = 10;
 
 interface Note {
   id: string;
@@ -57,7 +54,9 @@ function formatHeaderDate(dateStr: string | undefined): string {
 /**
  * 하루 시리즈 9권이 공유하는 항목 상세 화면.
  *
- * 히어로·본문·감상 노트·재생바는 책과 무관하게 같고, 표제부만 LessonHeading이 책별로 갈라진다.
+ * 히어로·본문·감상 노트는 책과 무관하게 같고, 표제부만 LessonHeading이 책별로 갈라진다.
+ * 재생 컨트롤은 하단 고정바 대신 헤더의 '오디오 듣기' 버튼 하나로 들어가며, 실제 컨트롤은
+ * AudioListenSheet 팝업에 모여 있다.
  *
  * 파라미터를 주지 않으면 클래식의 오늘 항목을 보여 준다 — 네이티브 알람이 항목을 지정하지 않고
  * `1dayclassic://today?autoplay=…`로 열기 때문에 이 기본값이 필요하다.
@@ -82,8 +81,11 @@ export default function TodayScreen() {
     togglePlay,
     restart,
     stop,
+    seekBy,
+    skipSentence,
   } = useAudioPlayer();
   const { isLiked, toggleLike } = useLikes();
+  const [sheetVisible, setSheetVisible] = useState(false);
 
   // 낭독 멘트에 쓸 이름 — 항목만으로는 못 만든다(표제 필드가 책마다 다르고 책 이름은 카탈로그에 있다).
   const bookName = getBookName(bookId);
@@ -115,6 +117,7 @@ export default function TodayScreen() {
     if (shownLessonKeyRef.current === shownLessonKey) return;
     shownLessonKeyRef.current = shownLessonKey;
     stop();
+    setSheetVisible(false);
     setNotes(bookId === 'classic' ? SEED_NOTES : []);
     setDraft('');
   }, [shownLessonKey, bookId, stop]);
@@ -125,9 +128,23 @@ export default function TodayScreen() {
   const lesson = bookLesson.lesson;
   const liked = isLiked(lesson.id);
   const paragraphs = lesson.story;
-  // 음원이 없는 항목은 이야기 낭독만 한다 — 곡 길이가 없어 진행바를 그릴 수 없다.
+  // 음원이 없는 항목은 이야기 낭독만 한다 — '10초 전/후' 대신 문장 단위로 옮긴다.
   const hasAudio = Boolean(lesson.audio);
-  const playLabel = hasAudio ? '노래 듣기' : '이야기 듣기';
+
+  /** 헤더의 '오디오 듣기' — 기존 재생 버튼과 같은 토글을 실행하고 팝업을 띄운다. */
+  const openAudioSheet = () => {
+    togglePlay(lesson, narrationLabels);
+    setSheetVisible(true);
+  };
+
+  /** 팝업 닫기 — 재생도 함께 멈춘다. */
+  const closeAudioSheet = () => {
+    stop();
+    setSheetVisible(false);
+  };
+
+  const seekBack = () => (hasAudio ? seekBy(-SEEK_SECONDS) : skipSentence(-1));
+  const seekForward = () => (hasAudio ? seekBy(SEEK_SECONDS) : skipSentence(1));
 
   const addNote = () => {
     const text = draft.trim();
@@ -177,33 +194,23 @@ export default function TodayScreen() {
           <Text style={styles.headerDate}>{formatHeaderDate(lesson.date)}</Text>
         </View>
         <View style={styles.headerRight}>
+          <HeaderMoreMenu
+            liked={liked}
+            onToggleBookmark={() => toggleLike(lesson.id)}
+            onShare={shareLesson}
+          />
           <ScaleButton
-            accessibilityLabel={liked ? '보관함에서 빼기' : '보관함에 담기'}
-            style={styles.headerIconButton}
-            onPress={() => toggleLike(lesson.id)}>
-            <SymbolView
-              name={
-                liked
-                  ? { ios: 'bookmark.fill', android: 'bookmark', web: 'bookmark' }
-                  : {
-                      ios: 'bookmark',
-                      android: 'bookmark_border',
-                      web: 'bookmark_border',
-                    }
-              }
-              tintColor={liked ? Colors.beige100 : Colors.brown100}
-              size={24}
-            />
-          </ScaleButton>
-          <ScaleButton
-            accessibilityLabel="공유"
-            style={styles.headerIconButton}
-            onPress={shareLesson}>
-            <SymbolView
-              name={{ ios: 'square.and.arrow.up', android: 'share', web: 'share' }}
-              tintColor={Colors.brown100}
-              size={24}
-            />
+            accessibilityLabel="오디오 듣기"
+            style={styles.listenButton}
+            onPress={openAudioSheet}>
+            <View style={styles.listenButtonInner}>
+              <SymbolView
+                name={{ ios: 'headphones', android: 'headset', web: 'headset' }}
+                tintColor={Colors.white}
+                size={16}
+              />
+              <Text style={styles.listenButtonText}>오디오 듣기</Text>
+            </View>
           </ScaleButton>
         </View>
       </View>
@@ -307,63 +314,24 @@ export default function TodayScreen() {
         </Animated.View>
       </ScrollView>
 
-      {/* 고정 하단 재생 바 */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing16 }]}>
-        {hasError && (
-          <Text style={styles.errorText}>
-            음원을 불러오지 못했습니다. 다시 시도해 주세요.
-          </Text>
-        )}
-        <View style={styles.bottomRow}>
-          {/* Pressable은 row에서 내용 크기로 줄어들므로 flex:1 래퍼로 가로를 채운다 */}
-          <View style={styles.playPillWrap}>
-            <ScaleButton
-              accessibilityLabel={isPlaying ? '일시정지' : playLabel}
-              style={styles.playPill}
-              onPress={() => togglePlay(lesson, narrationLabels)}>
-              <View style={styles.playPillInner}>
-                {isLoading ? (
-                  <ActivityIndicator color={Colors.white} size="small" />
-                ) : (
-                  <SymbolView
-                    name={
-                      isPlaying
-                        ? { ios: 'pause.fill', android: 'pause', web: 'pause' }
-                        : { ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' }
-                    }
-                    tintColor={Colors.white}
-                    size={18}
-                  />
-                )}
-                <Text style={styles.playPillText}>
-                  {isPlaying ? '일시정지' : playLabel}
-                </Text>
-              </View>
-            </ScaleButton>
-          </View>
-          <ScaleButton
-            accessibilityLabel="다시듣기"
-            style={styles.replayButton}
-            onPress={() => restart(lesson, narrationLabels)}>
-            <SymbolView
-              name={{
-                ios: 'arrow.counterclockwise',
-                android: 'replay',
-                web: 'replay',
-              }}
-              tintColor={Colors.white}
-              size={18}
-            />
-          </ScaleButton>
-        </View>
-      </View>
+      <AudioListenSheet
+        visible={sheetVisible}
+        hasAudio={hasAudio}
+        isPlaying={isPlaying}
+        isLoading={isLoading}
+        hasError={hasError}
+        onTogglePlay={() => togglePlay(lesson, narrationLabels)}
+        onRestart={() => restart(lesson, narrationLabels)}
+        onSeekBack={seekBack}
+        onSeekForward={seekForward}
+        onClose={closeAudioSheet}
+      />
     </View>
   );
 }
 
 /** 피그마 시안 고정 수치 */
 const Spacing12 = 12;
-const Spacing16 = 16;
 
 const styles = StyleSheet.create({
   screen: {
@@ -388,7 +356,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 10,
   },
   headerIconButton: {
     width: 41,
@@ -560,52 +528,22 @@ const styles = StyleSheet.create({
     color: Colors.beige50,
   },
 
-  // Bottom_btn — 하단 고정
-  bottomBar: {
+  // 헤더의 '오디오 듣기' 버튼
+  listenButton: {
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: 18,
     backgroundColor: Colors.brown100,
-    borderTopWidth: 1,
-    borderTopColor: Colors.brown50,
-    paddingHorizontal: 12,
-    paddingTop: 13,
-    gap: 16,
   },
-  errorText: {
-    fontFamily: Fonts.regular,
-    fontSize: 12,
-    letterSpacing: tracking(12),
-    color: Colors.red50,
-    textAlign: 'center',
-  },
-  bottomRow: {
+  listenButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
-  playPillWrap: {
-    flex: 1,
-  },
-  playPill: {
-    width: '100%',
-    height: 48,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  playPillInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  playPillText: {
+  listenButtonText: {
     fontFamily: Fonts.semiBold,
-    fontSize: 18,
-    letterSpacing: tracking(18),
+    fontSize: 13,
+    letterSpacing: tracking(13),
     color: Colors.white,
-  },
-  replayButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
