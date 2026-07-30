@@ -1,4 +1,30 @@
 /**
+ * '하루 시리즈' 9권의 식별자 — 하루 서점 카탈로그와 책별 데이터 모듈을 잇는 키.
+ * 라우트 파라미터(/book/[id])로도 그대로 쓰인다.
+ */
+export type BookId =
+  | 'classic'
+  | 'latin'
+  | 'quote'
+  | 'hanja'
+  | 'liberal'
+  | 'psychology'
+  | 'writing'
+  | 'hanmun'
+  | 'english';
+
+/**
+ * 목차 한 행에 노출되는 표제. 어느 필드에서 뽑는지는 책마다 다르므로
+ * (곡명/작곡가 vs 라틴어/뜻 vs 한자/훈음) 책별 getHeading 함수가 이 모양으로 맞춰 준다.
+ */
+export interface LessonHeading {
+  /** 첫 줄 — 그 날을 식별하는 표제 */
+  title: string;
+  /** 둘째 줄 — 없는 책도 있다(교양·심리). 없으면 행이 한 줄로 그려진다. */
+  subtitle?: string;
+}
+
+/**
  * '하루 시리즈' 책들이 공유하는 하루치 항목의 공통부.
  *
  * 표제부(곡 제목, 라틴어 원문, 한문 구절, 한자 …)는 책마다 다르므로 여기 두지 않는다.

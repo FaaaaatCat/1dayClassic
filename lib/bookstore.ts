@@ -1,7 +1,9 @@
 import type { ImageSourcePropType } from 'react-native';
 
+import type { BookId } from '@/types';
+
 export interface BookstoreBook {
-  id: string;
+  id: BookId;
   title: string;
   author: string;
   coverImage: ImageSourcePropType;

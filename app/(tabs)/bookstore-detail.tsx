@@ -138,7 +138,7 @@ export default function BookstoreDetailScreen() {
           </View>
         </View>
 
-        <TableOfContents />
+        <TableOfContents bookId={currentBook.id} />
       </ScrollView>
     </View>
   );

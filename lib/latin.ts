@@ -1,6 +1,6 @@
 import latinData from '@/data/latin.json';
 import { pickTodayLesson } from '@/lib/lessons';
-import type { LatinData, LatinLesson } from '@/types';
+import type { LatinData, LatinLesson, LessonHeading } from '@/types';
 
 export function getLatinLessons(): LatinLesson[] {
   return (latinData as LatinData).lessons;
@@ -13,4 +13,9 @@ export function getLatinLessonById(id: string): LatinLesson | undefined {
 /** 오늘의 문장 — 데모 범위에서는 시스템 날짜 대신 featured 항목(1월 1일)으로 고정한다. */
 export function getTodayLatinLesson(): LatinLesson | undefined {
   return pickTodayLesson(getLatinLessons());
+}
+
+/** 목차 표제 — 라틴어 원문과 우리말 뜻. */
+export function getLatinHeading(lesson: LatinLesson): LessonHeading {
+  return { title: lesson.latin, subtitle: lesson.meaning };
 }

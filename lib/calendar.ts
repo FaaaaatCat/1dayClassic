@@ -1,5 +1,5 @@
 import { getTracks } from '@/lib/data';
-import type { Track } from '@/types';
+import type { DailyLesson, LessonHeading, Track } from '@/types';
 
 /** 홈 화면에서 '오늘'로 고정 표시할 날짜 — 실제 시스템 날짜는 읽지 않는다. */
 export const TODAY_MONTH = 1;
@@ -36,78 +36,67 @@ export function getTomorrowTrack(): Track | undefined {
   return getTracks().find((track) => track.date === dateStr);
 }
 
-/** 실제 트랙이 아직 없는 날짜를 채우는 자리표시 곡 목록. 재생되지 않으며 순환 사용된다. */
-const PLACEHOLDER_PIECES: { title: string; composer: string; composerLatin: string }[] = [
-  { title: '사계 중 「봄」 1악장', composer: '안토니오 비발디', composerLatin: 'A. Vivaldi' },
-  { title: '녹턴 Op.9 No.2', composer: '프레데리크 쇼팽', composerLatin: 'F. Chopin' },
-  { title: '골드베르크 변주곡 BWV 988', composer: '요한 제바스티안 바흐', composerLatin: 'J. S. Bach' },
-  { title: "피아노 소나타 14번 '월광'", composer: '루트비히 판 베토벤', composerLatin: 'L. v. Beethoven' },
-  { title: '아이네 클라이네 나흐트무지크', composer: '볼프강 아마데우스 모차르트', composerLatin: 'W. A. Mozart' },
-  { title: "현악 4중주 '죽음과 소녀'", composer: '프란츠 슈베르트', composerLatin: 'F. Schubert' },
-  { title: "교향곡 '신세계로부터'", composer: '안토닌 드보르자크', composerLatin: 'A. Dvořák' },
-  { title: '발라드 1번 G단조', composer: '프레데리크 쇼팽', composerLatin: 'F. Chopin' },
-  { title: '수상 음악 모음곡', composer: '게오르크 프리드리히 헨델', composerLatin: 'G. F. Handel' },
-  { title: '헝가리 무곡 5번', composer: '요하네스 브람스', composerLatin: 'J. Brahms' },
-  { title: '교향시 「핀란디아」', composer: '장 시벨리우스', composerLatin: 'J. Sibelius' },
-  { title: '피아노 협주곡 21번 K.467', composer: '볼프강 아마데우스 모차르트', composerLatin: 'W. A. Mozart' },
-];
-
+/** 목차의 하루치 한 행. 표제는 책별 getHeading이 뽑아 준 값을 그대로 담는다. */
 export interface CalendarDay {
   month: number;
   day: number;
   title: string;
-  composer: string;
-  composerLatin?: string;
-  /** 실제 재생 가능한 트랙이 있을 때만 존재 — 없으면 잠긴 자리표시 날짜다. */
-  trackId?: string;
+  subtitle?: string;
+  /** 실제 항목이 있는 날만 존재 — 없으면 잠긴 자리표시 날짜다. */
+  lessonId?: string;
   locked: boolean;
   isToday: boolean;
 }
 
-/** track.date("1월 1일" 형태)를 {month, day}로 파싱한다. 형식이 안 맞으면 null. */
-function parseTrackDate(dateStr: string | undefined): { month: number; day: number } | null {
+/** lesson.date("1월 1일" 형태)를 {month, day}로 파싱한다. 형식이 안 맞으면 null. */
+function parseLessonDate(dateStr: string | undefined): { month: number; day: number } | null {
   const match = dateStr?.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
   if (!match) return null;
   return { month: Number(match[1]), day: Number(match[2]) };
 }
 
-/** 1월 1일부터 12월 31일까지 365일 — 실제 트랙이 있으면 그 데이터를, 없으면 잠긴 자리표시를 채운다. */
-export function buildCalendarYear(): CalendarDay[] {
-  const trackByDate = new Map<string, Track>();
-  for (const track of getTracks()) {
-    const parsed = parseTrackDate(track.date);
-    if (parsed) trackByDate.set(`${parsed.month}-${parsed.day}`, track);
+/** 자리표시 표제를 하나도 만들 수 없는 책(항목 0개)을 위한 최후의 표시. */
+const EMPTY_PLACEHOLDER: LessonHeading = { title: '준비 중' };
+
+/**
+ * 1월 1일부터 12월 31일까지 365일 — 실제 항목이 있으면 그 표제를, 없으면 잠긴 자리표시를 채운다.
+ *
+ * 표제를 담는 필드는 책마다 다르므로(곡명/작곡가 vs 라틴어/뜻 vs 한자/훈음) 뽑는 일은
+ * getHeading에 맡긴다. placeholders를 주지 않으면 그 책의 실제 표제를 순환해 자리를 채운다.
+ * 클래식만은 실제 곡 3개와 겹치지 않도록 자리표시 목록을 따로 넘긴다.
+ */
+export function buildCalendarYear<T extends DailyLesson>(
+  lessons: T[],
+  getHeading: (lesson: T) => LessonHeading,
+  placeholders?: LessonHeading[],
+): CalendarDay[] {
+  const lessonByDate = new Map<string, T>();
+  for (const lesson of lessons) {
+    const parsed = parseLessonDate(lesson.date);
+    if (parsed) lessonByDate.set(`${parsed.month}-${parsed.day}`, lesson);
   }
+
+  const pool = placeholders?.length ? placeholders : lessons.map(getHeading);
 
   const days: CalendarDay[] = [];
   let placeholderIndex = 0;
   for (let month = 1; month <= 12; month++) {
     for (let day = 1; day <= DAYS_IN_MONTH[month - 1]; day++) {
       const isToday = month === TODAY_MONTH && day === TODAY_DAY;
-      const track = trackByDate.get(`${month}-${day}`);
-      if (track) {
+      const lesson = lessonByDate.get(`${month}-${day}`);
+      if (lesson) {
         days.push({
           month,
           day,
-          title: track.title,
-          composer: track.composer,
-          composerLatin: track.composerEn,
-          trackId: track.id,
+          ...getHeading(lesson),
+          lessonId: lesson.id,
           locked: false,
           isToday,
         });
       } else {
-        const piece = PLACEHOLDER_PIECES[placeholderIndex % PLACEHOLDER_PIECES.length];
+        const heading = pool.length > 0 ? pool[placeholderIndex % pool.length] : EMPTY_PLACEHOLDER;
         placeholderIndex++;
-        days.push({
-          month,
-          day,
-          title: piece.title,
-          composer: piece.composer,
-          composerLatin: piece.composerLatin,
-          locked: true,
-          isToday,
-        });
+        days.push({ month, day, ...heading, locked: true, isToday });
       }
     }
   }

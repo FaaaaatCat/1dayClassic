@@ -1,11 +1,13 @@
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
-import { buildCalendarYear, CALENDAR_MONTHS, type CalendarDay } from '@/lib/calendar';
+import { getBookCalendar } from '@/lib/books';
+import { CALENDAR_MONTHS, type CalendarDay } from '@/lib/calendar';
+import type { BookId } from '@/types';
 
 type Row = { kind: 'header'; month: number } | { kind: 'entry'; entry: CalendarDay };
 
@@ -22,18 +24,23 @@ function buildRows(days: CalendarDay[]): Row[] {
   return rows;
 }
 
-const CALENDAR_DAYS = buildCalendarYear();
-const ROWS: Row[] = buildRows(CALENDAR_DAYS);
+interface Props {
+  /** 목차를 그릴 책 — 표제를 어느 필드에서 뽑을지가 책마다 다르다. */
+  bookId: BookId;
+}
 
 /**
  * 365일 목차 — 월별 헤더 + 날짜 행. 한 번만 렌더링되며 무한 스크롤은 없다.
  * 자체 ScrollView를 갖지 않는다 — 부모가 소유한 스크롤 컨테이너 안에 바로 넣어서 쓴다.
  */
-export default function TableOfContents() {
+export default function TableOfContents({ bookId }: Props) {
   const router = useRouter();
+  const rows = useMemo(() => buildRows(getBookCalendar(bookId)), [bookId]);
 
-  const openTrack = (trackId: string) => {
-    router.push({ pathname: '/today', params: { trackId } });
+  const openLesson = (lessonId: string) => {
+    // 클래식만 상세 화면이 있다. 나머지 8권은 공용 상세페이지(/book/[id])를 붙일 때 연결한다.
+    if (bookId !== 'classic') return;
+    router.push({ pathname: '/today', params: { trackId: lessonId } });
   };
 
   const renderEntry = (entry: CalendarDay) => {
@@ -53,9 +60,11 @@ export default function TableOfContents() {
             <Text style={styles.rowTitleLocked} numberOfLines={1}>
               {entry.title}
             </Text>
-            <Text style={styles.rowComposerLocked} numberOfLines={1}>
-              {entry.composer}
-            </Text>
+            {entry.subtitle != null && (
+              <Text style={styles.rowSubtitleLocked} numberOfLines={1}>
+                {entry.subtitle}
+              </Text>
+            )}
           </View>
         </View>
       );
@@ -66,7 +75,7 @@ export default function TableOfContents() {
         key={`${entry.month}-${entry.day}`}
         accessibilityLabel={`${entry.title} 보기`}
         style={styles.row}
-        onPress={() => entry.trackId && openTrack(entry.trackId)}>
+        onPress={() => entry.lessonId && openLesson(entry.lessonId)}>
         <Text style={styles.rowDay}>
           {entry.month} · {entry.day}
         </Text>
@@ -74,9 +83,11 @@ export default function TableOfContents() {
           <Text style={styles.rowTitle} numberOfLines={1}>
             {entry.title}
           </Text>
-          <Text style={styles.rowComposer} numberOfLines={1}>
-            {entry.composer}
-          </Text>
+          {entry.subtitle != null && (
+            <Text style={styles.rowSubtitle} numberOfLines={1}>
+              {entry.subtitle}
+            </Text>
+          )}
         </View>
       </ScaleButton>
     );
@@ -93,7 +104,7 @@ export default function TableOfContents() {
     return renderEntry(row.entry);
   };
 
-  return <Fragment>{ROWS.map((row) => renderRow(row))}</Fragment>;
+  return <Fragment>{rows.map((row) => renderRow(row))}</Fragment>;
 }
 
 const styles = StyleSheet.create({
@@ -156,14 +167,14 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(13),
     color: Colors.brown50,
   },
-  rowComposer: {
+  rowSubtitle: {
     fontFamily: Fonts.regular,
     fontSize: 11,
     letterSpacing: tracking(11),
     color: Colors.beige100,
     marginTop: 2,
   },
-  rowComposerLocked: {
+  rowSubtitleLocked: {
     fontFamily: Fonts.regular,
     fontSize: 11,
     letterSpacing: tracking(11),
