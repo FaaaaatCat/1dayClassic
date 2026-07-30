@@ -92,6 +92,9 @@ export default function TodayScreen() {
 
   const liked = isLiked(track.id);
   const paragraphs = track.story;
+  // 음원이 없는 트랙은 이야기 낭독만 한다 — 곡 길이가 없어 진행바를 그릴 수 없다.
+  const hasAudio = Boolean(track.audio);
+  const playLabel = hasAudio ? '노래 듣기' : '이야기 듣기';
 
   const addNote = () => {
     const text = draft.trim();
@@ -293,7 +296,7 @@ export default function TodayScreen() {
           {/* Pressable은 row에서 내용 크기로 줄어들므로 flex:1 래퍼로 가로를 채운다 */}
           <View style={styles.playPillWrap}>
             <ScaleButton
-              accessibilityLabel={isPlaying ? '일시정지' : '노래 듣기'}
+              accessibilityLabel={isPlaying ? '일시정지' : playLabel}
               style={styles.playPill}
               onPress={() => togglePlay(track)}>
               <View style={styles.playPillInner}>
@@ -311,7 +314,7 @@ export default function TodayScreen() {
                   />
                 )}
                 <Text style={styles.playPillText}>
-                  {isPlaying ? '일시정지' : '노래 듣기'}
+                  {isPlaying ? '일시정지' : playLabel}
                 </Text>
               </View>
             </ScaleButton>
@@ -331,15 +334,17 @@ export default function TodayScreen() {
             />
           </ScaleButton>
         </View>
-        <View style={styles.progressGroup}>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        {hasAudio && (
+          <View style={styles.progressGroup}>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            </View>
+            <View style={styles.progressTimeRow}>
+              <Text style={styles.progressTimeText}>{formatPlaybackTime(elapsedSeconds)}</Text>
+              <Text style={styles.progressTimeText}>{formatPlaybackTime(totalSeconds)}</Text>
+            </View>
           </View>
-          <View style={styles.progressTimeRow}>
-            <Text style={styles.progressTimeText}>{formatPlaybackTime(elapsedSeconds)}</Text>
-            <Text style={styles.progressTimeText}>{formatPlaybackTime(totalSeconds)}</Text>
-          </View>
-        </View>
+        )}
       </View>
     </View>
   );

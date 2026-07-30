@@ -23,13 +23,19 @@ const OPENING_MUSIC_VOLUME = 0.5;
 const VOLUME_RAMP_MS = 6000;
 /** 이야기(story) 문단 사이사이, 음악만 들려주는 간격 */
 const STORY_GAP_MS = 6000;
-/** story[1]이 끝나고 마무리 멘트 전까지, 음악만 들려주는 간격 */
+/** 마지막 문단이 끝나고 마무리 멘트 전까지, 음악만 들려주는 간격 */
 const CLOSING_GAP_MS = 3000;
+/** 음원이 없어 낭독만 할 때, 문단 사이의 짧은 정적. 음악이 없으니 6초는 끊긴 것처럼 들린다. */
+const NARRATION_ONLY_GAP_MS = 800;
 /** 진동 직후 읽는 오프닝 멘트 */
 const OPENING_NARRATION = "하루 클래식 공부의 시간입니다.";
 /** 이야기 낭독이 모두 끝난 뒤 읽는 마무리 멘트 */
 function buildClosingNarration(track: Track): string {
   return `오늘의 음악 '${track.title}' 어떠셨나요. 이제 감상해보세요`;
+}
+/** 음원 없이 낭독만 한 경우의 마무리 멘트 — 들려줄 곡이 없으니 '감상'으로 넘기지 않는다. */
+function buildNarrationOnlyClosing(track: Track): string {
+  return `오늘의 곡 '${track.title}' 이야기였습니다. 내일 또 만나요`;
 }
 /**
  * TTS가 onDone/onError를 안 주는 환경(일부 웹 등)에서도 플로우가 반드시 진행되도록 하는 최대 대기.
@@ -46,10 +52,13 @@ const TRACK_FADE_OUT_MS = 5000;
 /**
  * 라디오 DJ 플로우:
  * 진동 1초 → 음악 5초(50%) → 오프닝 멘트 → 음악 3초(50%→100% 램프) →
- * story[0] → 음악 3초 → story[1] → 음악 2초 → 마무리 멘트 → 나머지 곡 전체.
+ * story 문단들(사이사이 음악 6초) → 음악 2초 → 마무리 멘트 → 나머지 곡 전체.
  * 음악은 진동이 끝난 뒤 한 번 시작되면 멈추지 않고 이어지며, 멘트는 배경에 깔린 음악 위로 낭독된다.
  * 다만 곡이 5분보다 길면 5분 지점에서 5초 페이드아웃 후 멈춘다(MAX_TRACK_SECONDS).
  * 정지·곡 전환·자연 종료·5분 컷은 어디서든 idle로 전이.
+ *
+ * track.audio가 없으면(무료 회원, 음원 미준비) 음악 없이 낭독만 하는 플로우로 간다:
+ * 진동 1초 → 오프닝 멘트 → story 문단들(사이 0.8초) → 마무리 멘트 → 종료.
  */
 export type DjPhase = "idle" | "opening" | "narration" | "music";
 
@@ -59,6 +68,9 @@ export function useAudioPlayer() {
   const loadedTrackIdRef = useRef<string | null>(null);
   const [hasError, setHasError] = useState(false);
   const [phase, setPhase] = useState<DjPhase>("idle");
+  // 음원 없이 낭독만 하는 중인지 — 이때는 player가 놀고 있어서 status.playing으로 재생 여부를
+  // 판정할 수 없다.
+  const [isNarrationOnly, setIsNarrationOnly] = useState(false);
   // Firebase Storage 경로를 다운로드 URL로 바꾸는 동안(네트워크 조회) true.
   // ref는 같은 클릭 핸들러 안에서도 즉시 읽히는 재진입 가드용, state는 UI(로딩 표시)용.
   const resolvingRef = useRef(false);
@@ -121,6 +133,47 @@ export function useAudioPlayer() {
     Speech.stop();
   }, []);
 
+  /** text를 읽고 onDone/onError 또는 최대 대기 시간이 지나면 next로 진행한다. */
+  const speakThenContinue = useCallback(
+    (session: number, text: string, next: () => void) => {
+      let advanced = false;
+      const advance = () => {
+        if (advanced || session !== sessionRef.current) return;
+        advanced = true;
+        if (flowTimerRef.current != null) {
+          clearTimeout(flowTimerRef.current);
+          flowTimerRef.current = null;
+        }
+        next();
+      };
+      Speech.speak(text, {
+        language: "ko-KR",
+        voice: voiceRef.current,
+        // 시스템 TTS 설정(음높이·속도)에 좌우되지 않도록 고정한다.
+        // 기기 음높이가 비정상(예: 186%)이면 목소리가 짓눌린 것처럼 들린다.
+        pitch: 1.0,
+        rate: 1.0,
+        onDone: advance,
+        onError: advance,
+      });
+      // 멘트가 끝나지 않는 환경(일부 웹 등)에서도 플로우가 반드시 진행되도록 하는 안전장치.
+      flowTimerRef.current = setTimeout(advance, NARRATION_MAX_WAIT_MS);
+    },
+    [],
+  );
+
+  /** ms만큼 기다린 뒤 next로 진행한다. 음악이 있으면 그동안 음악만 흐른다. */
+  const waitThenContinue = useCallback(
+    (session: number, ms: number, next: () => void) => {
+      flowTimerRef.current = setTimeout(() => {
+        if (session !== sessionRef.current) return;
+        flowTimerRef.current = null;
+        next();
+      }, ms);
+    },
+    [],
+  );
+
   const startDjFlow = useCallback(
     (track: Track) => {
       cancelDjFlow();
@@ -129,86 +182,42 @@ export function useAudioPlayer() {
       openingDurationRef.current = 0;
       openingStartedAtRef.current = Date.now();
       trackCutoffTriggeredRef.current = false;
+      setIsNarrationOnly(false);
       setPhase("opening");
 
-      /** text를 읽고 onDone/onError 또는 최대 대기 시간이 지나면 next로 진행한다. */
-      const speakThenContinue = (text: string, next: () => void) => {
-        let advanced = false;
-        const advance = () => {
-          if (advanced || !isCurrentSession()) return;
-          advanced = true;
-          if (flowTimerRef.current != null) {
-            clearTimeout(flowTimerRef.current);
-            flowTimerRef.current = null;
-          }
-          next();
-        };
-        Speech.speak(text, {
-          language: "ko-KR",
-          voice: voiceRef.current,
-          // 시스템 TTS 설정(음높이·속도)에 좌우되지 않도록 고정한다.
-          // 기기 음높이가 비정상(예: 186%)이면 목소리가 짓눌린 것처럼 들린다.
-          pitch: 1.0,
-          rate: 1.0,
-          onDone: advance,
-          onError: advance,
-        });
-        // 멘트가 끝나지 않는 환경(일부 웹 등)에서도 플로우가 반드시 진행되도록 하는 안전장치.
-        flowTimerRef.current = setTimeout(advance, NARRATION_MAX_WAIT_MS);
-      };
-
-      /** ms만큼 음악만 재생한 뒤 next로 진행한다. */
-      const waitThenContinue = (ms: number, next: () => void) => {
-        flowTimerRef.current = setTimeout(() => {
-          if (!isCurrentSession()) return;
-          flowTimerRef.current = null;
-          next();
-        }, ms);
-      };
-
-      // 10. 나머지 음악 전부 재생 — 이후로는 자연 종료까지 그대로 흘러간다.
+      // 8. 나머지 음악 전부 재생 — 이후로는 자연 종료까지 그대로 흘러간다.
       const restOfSong = () => {
         setPhase("music");
       };
 
-      // 9. 마무리 멘트
+      // 7. 마무리 멘트
       const closingNarration = () => {
         setPhase("narration");
-        speakThenContinue(buildClosingNarration(track), restOfSong);
+        speakThenContinue(session, buildClosingNarration(track), restOfSong);
       };
 
-      // 8. 음악 2초
+      // 6. 음악 2초
       const musicGapBeforeClosing = () => {
         setPhase("music");
-        waitThenContinue(CLOSING_GAP_MS, closingNarration);
+        waitThenContinue(session, CLOSING_GAP_MS, closingNarration);
       };
 
-      // 7. story[1] — 문단이 없는 트랙은 건너뛴다.
-      const story1Narration = () => {
-        const text = track.story[1];
+      // 5. story 문단들 — 문단 사이마다 음악 6초. 문단 수는 책마다 다르므로 끝까지 훑는다.
+      const storyNarration = (index: number) => {
+        const text = track.story[index];
         if (!text) {
           musicGapBeforeClosing();
           return;
         }
         setPhase("narration");
-        speakThenContinue(text, musicGapBeforeClosing);
-      };
-
-      // 6. 음악 3초
-      const musicGapBeforeStory1 = () => {
-        setPhase("music");
-        waitThenContinue(STORY_GAP_MS, story1Narration);
-      };
-
-      // 5. story[0] — 문단이 없는 트랙은 건너뛴다.
-      const story0Narration = () => {
-        const text = track.story[0];
-        if (!text) {
-          musicGapBeforeStory1();
-          return;
-        }
-        setPhase("narration");
-        speakThenContinue(text, musicGapBeforeStory1);
+        speakThenContinue(session, text, () => {
+          if (index + 1 >= track.story.length) {
+            musicGapBeforeClosing();
+            return;
+          }
+          setPhase("music");
+          waitThenContinue(session, STORY_GAP_MS, () => storyNarration(index + 1));
+        });
       };
 
       // 4. 음악 3초 — 볼륨을 50%에서 100%로 서서히 올린다.
@@ -217,14 +226,14 @@ export function useAudioPlayer() {
         fadeRef.current = fadeVolume(player, 1, VOLUME_RAMP_MS);
         fadeRef.current.done.then((completed) => {
           if (!completed || !isCurrentSession()) return;
-          story0Narration();
+          storyNarration(0);
         });
       };
 
       // 3. 오프닝 멘트
       const openingNarration = () => {
         setPhase("narration");
-        speakThenContinue(OPENING_NARRATION, volumeRampUp);
+        speakThenContinue(session, OPENING_NARRATION, volumeRampUp);
       };
 
       // 2. 음악 5초 (볼륨 50%) — 진동이 끝나면 음악이 시작된다.
@@ -234,14 +243,63 @@ export function useAudioPlayer() {
         player.volume = OPENING_MUSIC_VOLUME;
         player.play();
         setPhase("music");
-        waitThenContinue(PRE_NARRATION_MUSIC_MS, openingNarration);
+        waitThenContinue(session, PRE_NARRATION_MUSIC_MS, openingNarration);
       };
 
       // 1. 진동
       Vibration.vibrate(OPENING_VIBRATION_MS);
-      waitThenContinue(OPENING_VIBRATION_MS, preNarrationMusic);
+      waitThenContinue(session, OPENING_VIBRATION_MS, preNarrationMusic);
     },
-    [cancelDjFlow, player],
+    [cancelDjFlow, player, speakThenContinue, waitThenContinue],
+  );
+
+  /**
+   * 음원이 없는 트랙: 진동 → 오프닝 멘트 → story 전체 → 마무리 멘트.
+   * player는 아예 건드리지 않는다 — 로드할 음원이 없으므로 진행바도 의미가 없다.
+   */
+  const startNarrationOnlyFlow = useCallback(
+    (track: Track) => {
+      cancelDjFlow();
+      const session = sessionRef.current;
+      setIsNarrationOnly(true);
+      setPhase("opening");
+
+      const finish = () => {
+        setPhase("idle");
+      };
+
+      const closingNarration = () => {
+        setPhase("narration");
+        speakThenContinue(session, buildNarrationOnlyClosing(track), finish);
+      };
+
+      const storyNarration = (index: number) => {
+        const text = track.story[index];
+        if (!text) {
+          closingNarration();
+          return;
+        }
+        setPhase("narration");
+        speakThenContinue(session, text, () => {
+          if (index + 1 >= track.story.length) {
+            closingNarration();
+            return;
+          }
+          waitThenContinue(session, NARRATION_ONLY_GAP_MS, () =>
+            storyNarration(index + 1),
+          );
+        });
+      };
+
+      const openingNarration = () => {
+        setPhase("narration");
+        speakThenContinue(session, OPENING_NARRATION, () => storyNarration(0));
+      };
+
+      Vibration.vibrate(OPENING_VIBRATION_MS);
+      waitThenContinue(session, OPENING_VIBRATION_MS, openingNarration);
+    },
+    [cancelDjFlow, speakThenContinue, waitThenContinue],
   );
 
   // 언마운트 시 TTS와 타이머 정리
@@ -309,6 +367,19 @@ export function useAudioPlayer() {
       setHasError(false);
       // URL 조회가 진행 중일 때 연타로 인한 중복 요청/이중 로드를 막는다.
       if (resolvingRef.current) return;
+
+      // 음원이 없는 트랙(무료 회원, 음원 미준비)은 낭독만 한다. 재개 지점이 없으므로
+      // 토글은 '처음부터 시작' 또는 '중단' 둘 중 하나다.
+      if (!track.audio) {
+        if (phase === "idle") {
+          startNarrationOnlyFlow(track);
+        } else {
+          cancelDjFlow();
+          setPhase("idle");
+        }
+        return;
+      }
+
       try {
         // 새 곡이거나 직전 로드가 실패한 경우: 기존 플로우 취소 후 새로 시작.
         // 음악은 진동이 끝난 뒤 DJ 플로우가 직접 시작한다.
@@ -348,6 +419,7 @@ export function useAudioPlayer() {
       status.currentTime,
       cancelDjFlow,
       startDjFlow,
+      startNarrationOnlyFlow,
       loadTrackSource,
     ],
   );
@@ -357,6 +429,12 @@ export function useAudioPlayer() {
     async (track: Track) => {
       setHasError(false);
       if (resolvingRef.current) return;
+
+      if (!track.audio) {
+        startNarrationOnlyFlow(track);
+        return;
+      }
+
       try {
         if (loadedTrackIdRef.current !== track.id || status.error != null) {
           await loadTrackSource(track);
@@ -371,7 +449,7 @@ export function useAudioPlayer() {
         setPhase("idle");
       }
     },
-    [player, status.error, startDjFlow, loadTrackSource],
+    [player, status.error, startDjFlow, startNarrationOnlyFlow, loadTrackSource],
   );
 
   // 전체 재생시간 = 오프닝(진동+멘트) 실제 소요 시간 + 곡 실제 길이(5분 컷 적용).
@@ -400,7 +478,10 @@ export function useAudioPlayer() {
 
   return {
     // 오프닝 중에는 음악이 아직 재생 전이지만 사용자 입장에선 '재생 중'이다.
-    isPlaying: status.playing || phase === "opening",
+    // 낭독만 하는 트랙은 player가 놀고 있으므로 플로우가 돌고 있는지로 판정한다.
+    isPlaying: status.playing || phase === "opening" || (isNarrationOnly && phase !== "idle"),
+    /** 음원 없이 낭독만 하는 중 — 진행바처럼 곡 길이에 기대는 UI는 숨겨야 한다. */
+    isNarrationOnly,
     isLoading,
     hasError: loadFailed,
     /** DJ 플로우 현재 단계 — UI에서 나레이션 중임을 표시할 때 사용 */
