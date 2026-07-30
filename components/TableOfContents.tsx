@@ -38,9 +38,7 @@ export default function TableOfContents({ bookId }: Props) {
   const rows = useMemo(() => buildRows(getBookCalendar(bookId)), [bookId]);
 
   const openLesson = (lessonId: string) => {
-    // 클래식만 상세 화면이 있다. 나머지 8권은 공용 상세페이지(/book/[id])를 붙일 때 연결한다.
-    if (bookId !== 'classic') return;
-    router.push({ pathname: '/today', params: { trackId: lessonId } });
+    router.push({ pathname: '/today', params: { bookId, lessonId } });
   };
 
   const renderEntry = (entry: CalendarDay) => {

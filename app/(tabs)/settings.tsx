@@ -11,11 +11,11 @@ export default function SettingsScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
       <Animated.View entering={FadeIn.duration(700).delay(200)} style={styles.card}>
-        <Text style={styles.appName}>하루 클래식</Text>
-        <Text style={styles.slogan}>매일 아침, 클래식 한 곡으로 하루를 시작하세요.</Text>
+        <Text style={styles.appName}>하루 공부</Text>
+        <Text style={styles.slogan}>매일 아침, 하루치 공부로 하루를 시작하세요.</Text>
         <Text style={styles.intro}>
-          하루 클래식은 책 속의 클래식 이야기를 매일 한 곡의 음악과 함께 전하는 앱입니다.
-          짧은 글과 음악이 만나, 책을 읽는 시간이 하루의 가장 조용한 사치가 되기를 바랍니다.
+          하루 공부는 유유 '하루 시리즈' 아홉 권의 하루치 이야기를 매일 아침 전하는 앱입니다.
+          짧은 글과 낭독이 만나, 책을 읽는 시간이 하루의 가장 조용한 사치가 되기를 바랍니다.
         </Text>
       </Animated.View>
 

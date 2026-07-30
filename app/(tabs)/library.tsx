@@ -6,23 +6,23 @@ import { Palette, Spacing, Typography } from '@/constants/theme';
 import { useLikes } from '@/context/LikesContext';
 
 export default function LibraryScreen() {
-  const { likedTracks } = useLikes();
+  const { likedLessons } = useLikes();
 
   return (
     <View style={styles.screen}>
       <Animated.View entering={FadeIn.duration(600)}>
-        <Text style={styles.caption}>좋아요를 누른 곡들이 담깁니다</Text>
+        <Text style={styles.caption}>보관함에 담은 항목들이 모입니다</Text>
       </Animated.View>
 
-      {likedTracks.length === 0 ? (
+      {likedLessons.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>아직 담긴 곡이 없습니다.</Text>
+          <Text style={styles.emptyText}>아직 담긴 항목이 없습니다.</Text>
         </View>
       ) : (
         <FlatList
-          data={likedTracks}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <LibraryItem track={item} />}
+          data={likedLessons}
+          keyExtractor={(item) => item.lesson.id}
+          renderItem={({ item }) => <LibraryItem bookLesson={item} />}
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           showsVerticalScrollIndicator={false}

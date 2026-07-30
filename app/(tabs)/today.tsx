@@ -13,12 +13,14 @@ import {
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import LessonCoverImage from '@/components/LessonCoverImage';
+import LessonHeading from '@/components/lesson/LessonHeading';
 import ScaleButton from '@/components/ScaleButton';
-import TrackCoverImage from '@/components/TrackCoverImage';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { useLikes } from '@/context/LikesContext';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
-import { getTodayTrack, getTrackById } from '@/lib/data';
+import { getBookLesson, getBookName, getLessonHeading } from '@/lib/books';
+import type { BookId } from '@/types';
 
 interface Note {
   id: string;
@@ -27,7 +29,10 @@ interface Note {
   date: string;
 }
 
-/** 데모용 시드 기록 — 피그마 시안과 동일 */
+/**
+ * 데모용 시드 기록 — 피그마 시안과 동일. 클래식 항목에만 얹는다.
+ * 내용이 피치카토 폴카를 두고 쓴 것이라 다른 책에 붙으면 앞뒤가 맞지 않는다.
+ */
 const SEED_NOTES: Note[] = [
   {
     id: 'seed-1',
@@ -50,16 +55,32 @@ function formatPlaybackTime(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-/** track.date("1월 1일" 형태)를 헤더에 쓰는 "1 · 1"로 바꾼다. 없으면 빈 문자열. */
+/** lesson.date("1월 1일" 형태)를 헤더에 쓰는 "1 · 1"로 바꾼다. 없으면 빈 문자열. */
 function formatHeaderDate(dateStr: string | undefined): string {
   const match = dateStr?.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
   if (!match) return '';
   return `${match[1]} · ${match[2]}`;
 }
 
+/**
+ * 하루 시리즈 9권이 공유하는 항목 상세 화면.
+ *
+ * 히어로·본문·감상 노트·재생바는 책과 무관하게 같고, 표제부만 LessonHeading이 책별로 갈라진다.
+ *
+ * 파라미터를 주지 않으면 클래식의 오늘 항목을 보여 준다 — 네이티브 알람이 항목을 지정하지 않고
+ * `1dayclassic://today?autoplay=…`로 열기 때문에 이 기본값이 필요하다.
+ * trackId는 클래식 시절 홈·목차가 쓰던 이름이라 lessonId의 별칭으로 계속 받는다.
+ */
 export default function TodayScreen() {
-  const { trackId, autoplay } = useLocalSearchParams<{ trackId?: string; autoplay?: string }>();
-  const track = (trackId ? getTrackById(trackId) : undefined) ?? getTodayTrack();
+  const params = useLocalSearchParams<{
+    bookId?: string;
+    lessonId?: string;
+    trackId?: string;
+    autoplay?: string;
+  }>();
+  const { autoplay } = params;
+  const bookId = (params.bookId ?? 'classic') as BookId;
+  const bookLesson = getBookLesson(bookId, params.lessonId ?? params.trackId);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const {
@@ -71,29 +92,52 @@ export default function TodayScreen() {
     totalSeconds,
     togglePlay,
     restart,
+    stop,
   } = useAudioPlayer();
   const { isLiked, toggleLike } = useLikes();
 
-  // 알람 알림을 탭해서 들어온 경우(autoplay=타임스탬프) 자동으로 노래 듣기를 시작한다.
-  // autoplay 값은 탭마다 새로 생성돼서, 같은 트랙이어도(반복 알람) 매번 다시 트리거된다.
+  // 낭독 멘트에 쓸 이름 — 항목만으로는 못 만든다(표제 필드가 책마다 다르고 책 이름은 카탈로그에 있다).
+  const bookName = getBookName(bookId);
+  const narrationLabels = bookLesson
+    ? { bookName, lessonTitle: getLessonHeading(bookLesson).title }
+    : null;
+
+  // 알람 알림을 탭해서 들어온 경우(autoplay=타임스탬프) 자동으로 재생을 시작한다.
+  // autoplay 값은 탭마다 새로 생성돼서, 같은 항목이어도(반복 알람) 매번 다시 트리거된다.
   const handledAutoplayRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!autoplay || !track || handledAutoplayRef.current === autoplay) return;
+    if (!autoplay || !bookLesson || !narrationLabels) return;
+    if (handledAutoplayRef.current === autoplay) return;
     handledAutoplayRef.current = autoplay;
-    togglePlay(track);
+    togglePlay(bookLesson.lesson, narrationLabels);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoplay]);
 
-  const [notes, setNotes] = useState<Note[]>(SEED_NOTES);
+  // 시드 기록은 클래식 항목에만 얹는다 — 내용이 그 곡을 두고 쓴 것이다.
+  const [notes, setNotes] = useState<Note[]>(bookId === 'classic' ? SEED_NOTES : []);
   const [draft, setDraft] = useState('');
 
-  // 데이터가 비면 보여 줄 곡이 없다. 훅은 위에서 모두 호출한 뒤이므로 안전하다.
-  if (!track) return null;
+  // /today는 탭 라우트라 파라미터만 바뀌면 이 컴포넌트와 재생 훅이 그대로 유지된다.
+  // 그때 걷어내지 않으면 앞 항목의 재생 상태('일시정지' 표시)와 기록이 다음 항목에 남는다.
+  // 첫 렌더에서는 실행하지 않는다 — 알람 자동재생 효과가 방금 시작한 재생을 멈춰 버린다.
+  const shownLessonKey = `${bookId}:${bookLesson?.lesson.id ?? ''}`;
+  const shownLessonKeyRef = useRef(shownLessonKey);
+  useEffect(() => {
+    if (shownLessonKeyRef.current === shownLessonKey) return;
+    shownLessonKeyRef.current = shownLessonKey;
+    stop();
+    setNotes(bookId === 'classic' ? SEED_NOTES : []);
+    setDraft('');
+  }, [shownLessonKey, bookId, stop]);
 
-  const liked = isLiked(track.id);
-  const paragraphs = track.story;
-  // 음원이 없는 트랙은 이야기 낭독만 한다 — 곡 길이가 없어 진행바를 그릴 수 없다.
-  const hasAudio = Boolean(track.audio);
+  // 데이터가 비면 보여 줄 항목이 없다. 훅은 위에서 모두 호출한 뒤이므로 안전하다.
+  if (!bookLesson || !narrationLabels) return null;
+
+  const lesson = bookLesson.lesson;
+  const liked = isLiked(lesson.id);
+  const paragraphs = lesson.story;
+  // 음원이 없는 항목은 이야기 낭독만 한다 — 곡 길이가 없어 진행바를 그릴 수 없다.
+  const hasAudio = Boolean(lesson.audio);
   const playLabel = hasAudio ? '노래 듣기' : '이야기 듣기';
 
   const addNote = () => {
@@ -116,9 +160,11 @@ export default function TodayScreen() {
     setNotes((prev) => prev.filter((n) => n.id !== note.id));
   };
 
-  const shareTrack = async () => {
+  const shareLesson = async () => {
+    const heading = getLessonHeading(bookLesson);
+    const subtitle = heading.subtitle ? `, ${heading.subtitle}` : '';
     try {
-      await Share.share({ message: `하루 클래식 — ${track.title}, ${track.composer}` });
+      await Share.share({ message: `${bookName} — ${heading.title}${subtitle}` });
     } catch {
       // 공유 시트를 지원하지 않는 환경(웹 등)에서는 조용히 무시한다.
     }
@@ -139,13 +185,13 @@ export default function TodayScreen() {
               size={24}
             />
           </ScaleButton>
-          <Text style={styles.headerDate}>{formatHeaderDate(track.date)}</Text>
+          <Text style={styles.headerDate}>{formatHeaderDate(lesson.date)}</Text>
         </View>
         <View style={styles.headerRight}>
           <ScaleButton
             accessibilityLabel={liked ? '보관함에서 빼기' : '보관함에 담기'}
             style={styles.headerIconButton}
-            onPress={() => toggleLike(track.id)}>
+            onPress={() => toggleLike(lesson.id)}>
             <SymbolView
               name={
                 liked
@@ -163,7 +209,7 @@ export default function TodayScreen() {
           <ScaleButton
             accessibilityLabel="공유"
             style={styles.headerIconButton}
-            onPress={shareTrack}>
+            onPress={shareLesson}>
             <SymbolView
               name={{ ios: 'square.and.arrow.up', android: 'share', web: 'share' }}
               tintColor={Colors.brown100}
@@ -178,33 +224,20 @@ export default function TodayScreen() {
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
         showsVerticalScrollIndicator={false}>
-        <TrackCoverImage track={track} style={styles.hero} resizeMode="cover" />
+        <LessonCoverImage lesson={lesson} style={styles.hero} resizeMode="cover" />
 
         <Animated.View entering={FadeIn.duration(600)} style={styles.content}>
-          {/* 곡 정보 */}
-          <View style={styles.songInfo}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{track.tag ?? '하루 클래식 공부'}</Text>
-            </View>
-            <View style={styles.titles}>
-              <Text style={styles.title}>{track.title}</Text>
-              <Text style={styles.composer}>{track.composer}</Text>
-            </View>
-            {track.titleEn && (
-              <View style={styles.englishRow}>
-                <Text style={styles.englishText}>{track.titleEn}</Text>
-                <Text style={styles.englishStar}>✦</Text>
-                <Text style={styles.englishText}>{track.composerEn}</Text>
-              </View>
-            )}
-          </View>
+          {/* 표제부 — 책에 따라 갈라지는 단 하나의 자리 */}
+          <LessonHeading bookLesson={bookLesson} bookName={bookName} />
 
-          {/* 인용문 */}
-          {track.quote && (
+          {/* 인용문 — 클래식 항목만 갖는다(쓰기 책의 에피그래프는 표제부 안에 있다) */}
+          {bookLesson.book === 'classic' && bookLesson.lesson.quote && (
             <View style={styles.quoteOuter}>
               <View style={styles.quoteInner}>
-                <Text style={styles.quoteText}>{track.quote}</Text>
-                {track.quoteBy && <Text style={styles.quoteText}>{track.quoteBy}</Text>}
+                <Text style={styles.quoteText}>{bookLesson.lesson.quote}</Text>
+                {bookLesson.lesson.quoteBy && (
+                  <Text style={styles.quoteText}>{bookLesson.lesson.quoteBy}</Text>
+                )}
               </View>
             </View>
           )}
@@ -233,7 +266,7 @@ export default function TodayScreen() {
                 multiline
                 value={draft}
                 onChangeText={setDraft}
-                placeholder="이 곡을 들으며 떠오른 생각을 자유롭게 적어보세요."
+                placeholder="오늘의 공부에서 떠오른 생각을 자유롭게 적어보세요."
                 placeholderTextColor={Colors.brown50}
               />
               <ScaleButton
@@ -253,11 +286,11 @@ export default function TodayScreen() {
                 <View key={note.id} style={styles.noteItem}>
                   <View style={styles.noteItemIcon}>
                     <SymbolView
-                      name={{
-                        ios: 'music.note',
-                        android: 'music_note',
-                        web: 'music_note',
-                      }}
+                      name={
+                        hasAudio
+                          ? { ios: 'music.note', android: 'music_note', web: 'music_note' }
+                          : { ios: 'book', android: 'menu_book', web: 'menu_book' }
+                      }
                       tintColor={Colors.beige100}
                       size={14}
                     />
@@ -298,7 +331,7 @@ export default function TodayScreen() {
             <ScaleButton
               accessibilityLabel={isPlaying ? '일시정지' : playLabel}
               style={styles.playPill}
-              onPress={() => togglePlay(track)}>
+              onPress={() => togglePlay(lesson, narrationLabels)}>
               <View style={styles.playPillInner}>
                 {isLoading ? (
                   <ActivityIndicator color={Colors.white} size="small" />
@@ -322,7 +355,7 @@ export default function TodayScreen() {
           <ScaleButton
             accessibilityLabel="다시듣기"
             style={styles.replayButton}
-            onPress={() => restart(track)}>
+            onPress={() => restart(lesson, narrationLabels)}>
             <SymbolView
               name={{
                 ios: 'arrow.counterclockwise',
@@ -401,63 +434,11 @@ const styles = StyleSheet.create({
   hero: {
     width: '100%',
     height: 320,
-    backgroundColor: Colors.beige10,
   },
   content: {
     paddingHorizontal: 20,
     paddingTop: 40,
     gap: 24,
-  },
-
-  // 곡 정보
-  songInfo: {
-    gap: 16,
-    paddingBottom: 20,
-  },
-  tag: {
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.beige10,
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  tagText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    letterSpacing: tracking(12),
-    color: Colors.beige100,
-  },
-  titles: {
-    gap: 4,
-  },
-  title: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 28,
-    letterSpacing: tracking(28),
-    color: Colors.brown100,
-  },
-  composer: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
-  },
-  englishRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  englishText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    letterSpacing: tracking(12),
-    color: Colors.brown100,
-  },
-  englishStar: {
-    fontFamily: Fonts.regular,
-    fontSize: 8,
-    letterSpacing: tracking(8),
-    color: Colors.beige100,
   },
 
   // 인용문

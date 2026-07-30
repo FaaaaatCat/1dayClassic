@@ -10,7 +10,7 @@ export default function NotFoundScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>화면을 찾을 수 없습니다.</Text>
         <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>오늘의 클래식으로 돌아가기</Text>
+          <Text style={styles.linkText}>오늘의 공부로 돌아가기</Text>
         </Link>
       </View>
     </>

@@ -4,11 +4,11 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
-import TrackCoverImage from '@/components/TrackCoverImage';
+import LessonCoverImage from '@/components/LessonCoverImage';
 import { Colors, Fonts, Radius, Shadow, tracking } from '@/constants/theme';
 import { useAlarm } from '@/context/AlarmContext';
 import { getTomorrowTrack, TODAY_DAY, TODAY_MONTH } from '@/lib/calendar';
-import { getTodayTrack } from '@/lib/data';
+import { getTodayTrack } from '@/lib/classic';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -55,7 +55,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.todayCard}>
-          <TrackCoverImage track={todayTrack} style={styles.todayImage} resizeMode="cover" />
+          <LessonCoverImage lesson={todayTrack} style={styles.todayImage} resizeMode="cover" />
           <ScaleButton
             accessibilityLabel={`${todayTrack.title} 상세 보기`}
             style={styles.todayCardBody}
@@ -138,7 +138,12 @@ export default function HomeScreen() {
                 {tomorrowTrack.composer}
               </Text>
             </View>
-            <TrackCoverImage track={tomorrowTrack} style={styles.tomorrowCover} resizeMode="cover" />
+            <LessonCoverImage
+              lesson={tomorrowTrack}
+              style={styles.tomorrowCover}
+              resizeMode="cover"
+              placeholderLabelSize={8}
+            />
           </View>
         )}
       </ScrollView>

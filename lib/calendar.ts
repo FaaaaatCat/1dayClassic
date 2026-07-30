@@ -1,4 +1,4 @@
-import { getTracks } from '@/lib/data';
+import { getTracks } from '@/lib/classic';
 import type { DailyLesson, LessonHeading, Track } from '@/types';
 
 /** 홈 화면에서 '오늘'로 고정 표시할 날짜 — 실제 시스템 날짜는 읽지 않는다. */

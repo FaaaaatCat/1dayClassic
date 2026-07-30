@@ -9,7 +9,7 @@ import { Vibration } from "react-native";
 
 import { MEDIA_HEADERS, resolveLessonAudioUrl } from "@/lib/lessons";
 import { fadeVolume, type FadeHandle } from "@/lib/fade";
-import type { Track } from "@/types";
+import type { DailyLesson } from "@/types";
 
 /** 곡 길이(status.duration)를 아직 모를 때 총 재생시간 표시에 쓰는 기본값 */
 const DEFAULT_DURATION_FALLBACK_SECONDS = 30;
@@ -27,15 +27,29 @@ const STORY_GAP_MS = 6000;
 const CLOSING_GAP_MS = 3000;
 /** 음원이 없어 낭독만 할 때, 문단 사이의 짧은 정적. 음악이 없으니 6초는 끊긴 것처럼 들린다. */
 const NARRATION_ONLY_GAP_MS = 800;
-/** 진동 직후 읽는 오프닝 멘트 */
-const OPENING_NARRATION = "하루 클래식 공부의 시간입니다.";
-/** 이야기 낭독이 모두 끝난 뒤 읽는 마무리 멘트 */
-function buildClosingNarration(track: Track): string {
-  return `오늘의 음악 '${track.title}' 어떠셨나요. 이제 감상해보세요`;
+/**
+ * 낭독 멘트에 들어가는 이름들. 항목 자체에서는 뽑을 수 없다 — 표제를 담은 필드가 책마다
+ * 다르고(곡명/라틴어 원문/한자), 책 이름은 항목이 아니라 카탈로그가 갖고 있다.
+ * 그래서 화면이 책별 표제 함수로 뽑아 넘겨 준다.
+ */
+export interface NarrationLabels {
+  /** 예: '하루 라틴어 공부' */
+  bookName: string;
+  /** 그 날의 표제 — 목차에 뜨는 것과 같은 값 */
+  lessonTitle: string;
 }
-/** 음원 없이 낭독만 한 경우의 마무리 멘트 — 들려줄 곡이 없으니 '감상'으로 넘기지 않는다. */
-function buildNarrationOnlyClosing(track: Track): string {
-  return `오늘의 곡 '${track.title}' 이야기였습니다. 내일 또 만나요`;
+
+/** 진동 직후 읽는 오프닝 멘트 */
+function buildOpeningNarration({ bookName }: NarrationLabels): string {
+  return `${bookName}의 시간입니다.`;
+}
+/** 이야기 낭독이 모두 끝난 뒤 읽는 마무리 멘트 — 뒤에 이어질 음악으로 넘긴다. */
+function buildClosingNarration({ lessonTitle }: NarrationLabels): string {
+  return `오늘의 음악 '${lessonTitle}' 어떠셨나요. 이제 감상해보세요`;
+}
+/** 음원 없이 낭독만 한 경우의 마무리 멘트 — 들려줄 음악이 없으니 '감상'으로 넘기지 않는다. */
+function buildNarrationOnlyClosing({ lessonTitle }: NarrationLabels): string {
+  return `'${lessonTitle}' 이야기였습니다. 내일 또 만나요`;
 }
 /**
  * TTS가 onDone/onError를 안 주는 환경(일부 웹 등)에서도 플로우가 반드시 진행되도록 하는 최대 대기.
@@ -57,7 +71,7 @@ const TRACK_FADE_OUT_MS = 5000;
  * 다만 곡이 5분보다 길면 5분 지점에서 5초 페이드아웃 후 멈춘다(MAX_TRACK_SECONDS).
  * 정지·곡 전환·자연 종료·5분 컷은 어디서든 idle로 전이.
  *
- * track.audio가 없으면(무료 회원, 음원 미준비) 음악 없이 낭독만 하는 플로우로 간다:
+ * 항목에 audio가 없으면(하루 서점 8권, 무료 회원, 음원 미준비) 음악 없이 낭독만 하는 플로우로 간다:
  * 진동 1초 → 오프닝 멘트 → story 문단들(사이 0.8초) → 마무리 멘트 → 종료.
  */
 export type DjPhase = "idle" | "opening" | "narration" | "music";
@@ -65,7 +79,7 @@ export type DjPhase = "idle" | "opening" | "narration" | "music";
 export function useAudioPlayer() {
   const player = useExpoAudioPlayer(undefined, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
-  const loadedTrackIdRef = useRef<string | null>(null);
+  const loadedLessonIdRef = useRef<string | null>(null);
   const [hasError, setHasError] = useState(false);
   const [phase, setPhase] = useState<DjPhase>("idle");
   // 음원 없이 낭독만 하는 중인지 — 이때는 player가 놀고 있어서 status.playing으로 재생 여부를
@@ -175,7 +189,7 @@ export function useAudioPlayer() {
   );
 
   const startDjFlow = useCallback(
-    (track: Track) => {
+    (lesson: DailyLesson, labels: NarrationLabels) => {
       cancelDjFlow();
       const session = sessionRef.current;
       const isCurrentSession = () => session === sessionRef.current;
@@ -193,7 +207,7 @@ export function useAudioPlayer() {
       // 7. 마무리 멘트
       const closingNarration = () => {
         setPhase("narration");
-        speakThenContinue(session, buildClosingNarration(track), restOfSong);
+        speakThenContinue(session, buildClosingNarration(labels), restOfSong);
       };
 
       // 6. 음악 2초
@@ -204,14 +218,14 @@ export function useAudioPlayer() {
 
       // 5. story 문단들 — 문단 사이마다 음악 6초. 문단 수는 책마다 다르므로 끝까지 훑는다.
       const storyNarration = (index: number) => {
-        const text = track.story[index];
+        const text = lesson.story[index];
         if (!text) {
           musicGapBeforeClosing();
           return;
         }
         setPhase("narration");
         speakThenContinue(session, text, () => {
-          if (index + 1 >= track.story.length) {
+          if (index + 1 >= lesson.story.length) {
             musicGapBeforeClosing();
             return;
           }
@@ -233,7 +247,7 @@ export function useAudioPlayer() {
       // 3. 오프닝 멘트
       const openingNarration = () => {
         setPhase("narration");
-        speakThenContinue(session, OPENING_NARRATION, volumeRampUp);
+        speakThenContinue(session, buildOpeningNarration(labels), volumeRampUp);
       };
 
       // 2. 음악 5초 (볼륨 50%) — 진동이 끝나면 음악이 시작된다.
@@ -254,11 +268,11 @@ export function useAudioPlayer() {
   );
 
   /**
-   * 음원이 없는 트랙: 진동 → 오프닝 멘트 → story 전체 → 마무리 멘트.
+   * 음원이 없는 항목: 진동 → 오프닝 멘트 → story 전체 → 마무리 멘트.
    * player는 아예 건드리지 않는다 — 로드할 음원이 없으므로 진행바도 의미가 없다.
    */
   const startNarrationOnlyFlow = useCallback(
-    (track: Track) => {
+    (lesson: DailyLesson, labels: NarrationLabels) => {
       cancelDjFlow();
       const session = sessionRef.current;
       setIsNarrationOnly(true);
@@ -270,18 +284,18 @@ export function useAudioPlayer() {
 
       const closingNarration = () => {
         setPhase("narration");
-        speakThenContinue(session, buildNarrationOnlyClosing(track), finish);
+        speakThenContinue(session, buildNarrationOnlyClosing(labels), finish);
       };
 
       const storyNarration = (index: number) => {
-        const text = track.story[index];
+        const text = lesson.story[index];
         if (!text) {
           closingNarration();
           return;
         }
         setPhase("narration");
         speakThenContinue(session, text, () => {
-          if (index + 1 >= track.story.length) {
+          if (index + 1 >= lesson.story.length) {
             closingNarration();
             return;
           }
@@ -293,7 +307,7 @@ export function useAudioPlayer() {
 
       const openingNarration = () => {
         setPhase("narration");
-        speakThenContinue(session, OPENING_NARRATION, () => storyNarration(0));
+        speakThenContinue(session, buildOpeningNarration(labels), () => storyNarration(0));
       };
 
       Vibration.vibrate(OPENING_VIBRATION_MS);
@@ -335,24 +349,23 @@ export function useAudioPlayer() {
   }, [player, status.isLoaded, status.duration, status.currentTime]);
 
   /**
-   * track.audio(Storage 경로 또는 완성된 URL)를 실제 재생 URL로 바꿔 플레이어에 로드한다.
+   * lesson.audio(Storage 경로 또는 완성된 URL)를 실제 재생 URL로 바꿔 플레이어에 로드한다.
    * Storage 경로 조회는 네트워크 요청이라 실패할 수 있다(파일 미업로드, 권한 규칙 미설정 등) —
    * 실패하면 호출부의 catch가 hasError로 잡는다.
    *
-   * 음원이 아예 없는 트랙(미준비 또는 무료 회원)도 같은 경로로 hasError가 된다.
-   * story를 TTS로 읽어 주는 대체 재생은 아직 없다.
+   * 음원이 없는 항목은 여기까지 오지 않는다 — 호출부가 먼저 낭독 전용 플로우로 보낸다.
    */
-  const loadTrackSource = useCallback(
-    async (track: Track) => {
+  const loadLessonSource = useCallback(
+    async (lesson: DailyLesson) => {
       resolvingRef.current = true;
       setIsResolvingSource(true);
       try {
-        const uri = await resolveLessonAudioUrl(track);
+        const uri = await resolveLessonAudioUrl(lesson);
         if (!uri) {
-          throw new Error(`음원이 없는 트랙입니다: ${track.id}`);
+          throw new Error(`음원이 없는 항목입니다: ${lesson.id}`);
         }
         player.replace({ uri, headers: MEDIA_HEADERS });
-        loadedTrackIdRef.current = track.id;
+        loadedLessonIdRef.current = lesson.id;
       } finally {
         resolvingRef.current = false;
         setIsResolvingSource(false);
@@ -363,16 +376,16 @@ export function useAudioPlayer() {
 
   /** 재생 ↔ 일시정지 토글. 처음 누르면 로드 후 DJ 플로우 시작. */
   const togglePlay = useCallback(
-    async (track: Track) => {
+    async (lesson: DailyLesson, labels: NarrationLabels) => {
       setHasError(false);
       // URL 조회가 진행 중일 때 연타로 인한 중복 요청/이중 로드를 막는다.
       if (resolvingRef.current) return;
 
-      // 음원이 없는 트랙(무료 회원, 음원 미준비)은 낭독만 한다. 재개 지점이 없으므로
-      // 토글은 '처음부터 시작' 또는 '중단' 둘 중 하나다.
-      if (!track.audio) {
+      // 음원이 없는 항목(하루 서점 8권, 무료 회원, 음원 미준비)은 낭독만 한다. 재개 지점이
+      // 없으므로 토글은 '처음부터 시작' 또는 '중단' 둘 중 하나다.
+      if (!lesson.audio) {
         if (phase === "idle") {
-          startNarrationOnlyFlow(track);
+          startNarrationOnlyFlow(lesson, labels);
         } else {
           cancelDjFlow();
           setPhase("idle");
@@ -381,11 +394,11 @@ export function useAudioPlayer() {
       }
 
       try {
-        // 새 곡이거나 직전 로드가 실패한 경우: 기존 플로우 취소 후 새로 시작.
+        // 새 항목이거나 직전 로드가 실패한 경우: 기존 플로우 취소 후 새로 시작.
         // 음악은 진동이 끝난 뒤 DJ 플로우가 직접 시작한다.
-        if (loadedTrackIdRef.current !== track.id || status.error != null) {
-          await loadTrackSource(track);
-          startDjFlow(track);
+        if (loadedLessonIdRef.current !== lesson.id || status.error != null) {
+          await loadLessonSource(lesson);
+          startDjFlow(lesson, labels);
           return;
         }
 
@@ -397,7 +410,7 @@ export function useAudioPlayer() {
           setPhase("idle");
         } else if (status.currentTime < 0.5) {
           // 곡 처음부터의 재생: DJ 플로우 전체를 다시 태운다.
-          startDjFlow(track);
+          startDjFlow(lesson, labels);
         } else {
           // 중간 재개: 나레이션은 다시 재생하지 않고 원래 볼륨의 음악만 잇는다.
           cancelDjFlow();
@@ -407,7 +420,7 @@ export function useAudioPlayer() {
         }
       } catch {
         setHasError(true);
-        loadedTrackIdRef.current = null;
+        loadedLessonIdRef.current = null;
         setPhase("idle");
       }
     },
@@ -420,37 +433,56 @@ export function useAudioPlayer() {
       cancelDjFlow,
       startDjFlow,
       startNarrationOnlyFlow,
-      loadTrackSource,
+      loadLessonSource,
     ],
   );
 
   /** 다시듣기 — 처음부터 오프닝(진동+멘트) 포함 전체 플로우를 다시 태운다. */
   const restart = useCallback(
-    async (track: Track) => {
+    async (lesson: DailyLesson, labels: NarrationLabels) => {
       setHasError(false);
       if (resolvingRef.current) return;
 
-      if (!track.audio) {
-        startNarrationOnlyFlow(track);
+      if (!lesson.audio) {
+        startNarrationOnlyFlow(lesson, labels);
         return;
       }
 
       try {
-        if (loadedTrackIdRef.current !== track.id || status.error != null) {
-          await loadTrackSource(track);
+        if (loadedLessonIdRef.current !== lesson.id || status.error != null) {
+          await loadLessonSource(lesson);
         } else {
           player.pause();
           player.seekTo(0);
         }
-        startDjFlow(track);
+        startDjFlow(lesson, labels);
       } catch {
         setHasError(true);
-        loadedTrackIdRef.current = null;
+        loadedLessonIdRef.current = null;
         setPhase("idle");
       }
     },
-    [player, status.error, startDjFlow, startNarrationOnlyFlow, loadTrackSource],
+    [player, status.error, startDjFlow, startNarrationOnlyFlow, loadLessonSource],
   );
+
+  /**
+   * 재생을 완전히 멈추고 idle로 되돌린다.
+   *
+   * cancelDjFlow는 진행 중인 연쇄만 무효화하고 phase는 그대로 두므로, 낭독 도중 화면이
+   * 다른 항목으로 바뀌면 phase가 narration에 머물러 재생 버튼이 '일시정지'로 남는다.
+   * 항목이 바뀔 때 호출해서 그 잔상을 걷어낸다.
+   */
+  const stop = useCallback(() => {
+    cancelDjFlow();
+    // 로드한 적이 없으면 player를 건드릴 이유가 없다(낭독 전용 항목이 그렇다).
+    if (loadedLessonIdRef.current !== null) {
+      player.pause();
+      player.seekTo(0);
+      player.volume = 1;
+    }
+    setIsNarrationOnly(false);
+    setPhase("idle");
+  }, [cancelDjFlow, player]);
 
   // 전체 재생시간 = 오프닝(진동+멘트) 실제 소요 시간 + 곡 실제 길이(5분 컷 적용).
   // status.duration은 곡 로드가 끝나기 전엔 0/undefined이므로 그동안은 기본값으로 대체한다.
@@ -473,12 +505,12 @@ export function useAudioPlayer() {
     !loadFailed &&
     (isResolvingSource ||
       (phase !== "opening" &&
-        loadedTrackIdRef.current !== null &&
+        loadedLessonIdRef.current !== null &&
         (!status.isLoaded || status.isBuffering)));
 
   return {
     // 오프닝 중에는 음악이 아직 재생 전이지만 사용자 입장에선 '재생 중'이다.
-    // 낭독만 하는 트랙은 player가 놀고 있으므로 플로우가 돌고 있는지로 판정한다.
+    // 낭독만 하는 항목은 player가 놀고 있으므로 플로우가 돌고 있는지로 판정한다.
     isPlaying: status.playing || phase === "opening" || (isNarrationOnly && phase !== "idle"),
     /** 음원 없이 낭독만 하는 중 — 진행바처럼 곡 길이에 기대는 UI는 숨겨야 한다. */
     isNarrationOnly,
@@ -495,5 +527,6 @@ export function useAudioPlayer() {
     totalSeconds,
     togglePlay,
     restart,
+    stop,
   };
 }
