@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -17,8 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScaleButton from '@/components/ScaleButton';
 import TableOfContents from '@/components/TableOfContents';
 import { Colors, Fonts, tracking } from '@/constants/theme';
-import { getTodayDayOfYear, TOTAL_DAYS_IN_YEAR } from '@/lib/calendar';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
+import { getTodayDayOfYear, TOTAL_DAYS_IN_YEAR } from '@/lib/calendar';
 
 /** 미니박스 높이(px) — 고정값, 애니메이션 대상이 아니다 */
 const MINI_BOX_HEIGHT = 80;
@@ -26,17 +26,22 @@ const MINI_BOX_HEIGHT = 80;
 const MINI_BOX_SLIDE_OFFSET = 10;
 
 /**
- * 하루 서점의 "현재 선택중" 책 상세 페이지.
+ * 하루 서점 9권이 공유하는 책 상세 페이지.
+ *
+ * 표지·저자·진행바·365일 목차는 책과 무관하게 같은 모양이고, 달라지는 것은 목차 행의 표제뿐이라
+ * (곡명/작곡가 vs 라틴어/뜻 vs 한자/훈음) bookId만 TableOfContents로 넘겨 준다.
+ *
  * 상단 인포(라벨/표지/제목/진행바)는 목차와 함께 스크롤되다가 화면 밖으로 사라지면,
  * 헤더 바로 아래 미니박스(표지+제목+라벨 한 줄)가 위에서 살짝 내려오듯 나타난다.
  * 미니박스는 position:absolute 오버레이라 크기가 바뀌지 않고, 목차가 담긴 ScrollView의
  * 레이아웃에는 전혀 영향을 주지 않는다 (높이 애니메이션이던 이전 버전은 이 때문에
  * 스크롤 중 목차가 살짝 밀렸다가 복귀하는 버벅임이 있었다).
  */
-export default function BookstoreDetailScreen() {
+export default function BookDetailScreen() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const currentBook = BOOKSTORE_BOOKS.find((book) => book.isCurrent);
+  const book = BOOKSTORE_BOOKS.find((candidate) => candidate.id === id);
 
   const dayOfYear = getTodayDayOfYear();
   const progress = dayOfYear / TOTAL_DAYS_IN_YEAR;
@@ -61,7 +66,8 @@ export default function BookstoreDetailScreen() {
     setShowMiniBox(e.nativeEvent.contentOffset.y >= infoHeight);
   };
 
-  if (!currentBook) return null;
+  // 카탈로그에 없는 id로 들어온 경우. 훅은 위에서 모두 호출한 뒤이므로 안전하다.
+  if (!book) return null;
 
   return (
     <View style={styles.screen}>
@@ -83,22 +89,24 @@ export default function BookstoreDetailScreen() {
       <Animated.View
         pointerEvents={showMiniBox ? 'auto' : 'none'}
         style={[styles.miniBox, { top: headerHeight }, miniBoxAnimatedStyle]}>
-        <Image source={currentBook.coverImage} style={styles.miniCover} resizeMode="cover" />
+        <Image source={book.coverImage} style={styles.miniCover} resizeMode="cover" />
         <Text style={styles.miniTitle} numberOfLines={1}>
-          {currentBook.title}
+          {book.title}
         </Text>
-        <LinearGradient
-          colors={[Colors.blue100, Colors.blue50]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.miniBadge}>
-          <SymbolView
-            name={{ ios: 'checkmark', android: 'check', web: 'check' }}
-            tintColor={Colors.white}
-            size={12}
-          />
-          <Text style={styles.miniBadgeText}>현재 선택중</Text>
-        </LinearGradient>
+        {book.isCurrent && (
+          <LinearGradient
+            colors={[Colors.blue100, Colors.blue50]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.miniBadge}>
+            <SymbolView
+              name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+              tintColor={Colors.white}
+              size={12}
+            />
+            <Text style={styles.miniBadgeText}>현재 선택중</Text>
+          </LinearGradient>
+        )}
       </Animated.View>
 
       <ScrollView
@@ -111,21 +119,23 @@ export default function BookstoreDetailScreen() {
             infoHeightRef.current = e.nativeEvent.layout.height;
           }}>
           <View style={styles.hero}>
-            <LinearGradient
-              colors={[Colors.blue100, Colors.blue50]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.badge}>
-              <SymbolView
-                name={{ ios: 'checkmark', android: 'check', web: 'check' }}
-                tintColor={Colors.white}
-                size={14}
-              />
-              <Text style={styles.badgeText}>현재 선택중</Text>
-            </LinearGradient>
-            <Image source={currentBook.coverImage} style={styles.cover} resizeMode="cover" />
-            <Text style={styles.title}>{currentBook.title}</Text>
-            <Text style={styles.author}>{currentBook.author}</Text>
+            {book.isCurrent && (
+              <LinearGradient
+                colors={[Colors.blue100, Colors.blue50]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.badge}>
+                <SymbolView
+                  name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                  tintColor={Colors.white}
+                  size={14}
+                />
+                <Text style={styles.badgeText}>현재 선택중</Text>
+              </LinearGradient>
+            )}
+            <Image source={book.coverImage} style={styles.cover} resizeMode="cover" />
+            <Text style={styles.title}>{book.title}</Text>
+            <Text style={styles.author}>{book.author}</Text>
           </View>
 
           <View style={styles.progressSection}>
@@ -138,7 +148,7 @@ export default function BookstoreDetailScreen() {
           </View>
         </View>
 
-        <TableOfContents bookId={currentBook.id} />
+        <TableOfContents bookId={book.id} />
       </ScrollView>
     </View>
   );

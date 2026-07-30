@@ -28,7 +28,7 @@ interface TabBarProps {
   };
 }
 
-/** 탭바에 실제로 보여줄 탭만 순서대로 나열 — today/alarm-detail/bookstore-detail은 상세 화면이라 제외. */
+/** 탭바에 실제로 보여줄 탭만 순서대로 나열 — today/alarm-detail/book/[id]은 상세 화면이라 제외. */
 const TABS: TabConfig[] = [
   { name: 'index', label: '오늘의 공부', lineIcon: 'pencil-outline', fillIcon: 'pencil' },
   { name: 'bookstore', label: '하루 서점', lineIcon: 'book-outline', fillIcon: 'book' },
@@ -37,7 +37,7 @@ const TABS: TabConfig[] = [
 ];
 
 /** 상세 화면(자체 헤더를 그리는 화면)에서는 탭바 자체를 숨긴다. */
-const HIDDEN_ROUTES = new Set(['today', 'alarm-detail', 'bookstore-detail']);
+const HIDDEN_ROUTES = new Set(['today', 'alarm-detail', 'book/[id]']);
 
 /** 탭 콘텐츠(아이콘+라벨) 영역의 고정 높이 — 세이프에어리어는 이 아래에 별도로 더해진다. */
 const BAR_HEIGHT = 64;

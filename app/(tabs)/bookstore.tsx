@@ -22,7 +22,7 @@ export default function BookstoreScreen() {
         <ScaleButton
           accessibilityLabel={`${currentBook.title} 상세 보기`}
           style={styles.featured}
-          onPress={() => router.push('/bookstore-detail')}>
+          onPress={() => router.push({ pathname: '/book/[id]', params: { id: currentBook.id } })}>
           <Image source={currentBook.coverImage} style={styles.featuredCover} resizeMode="cover" />
           <View style={styles.featuredInfo}>
             <LinearGradient
