@@ -6,12 +6,21 @@ import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
+import type { BookId } from '@/types';
 
-/** 하루 서점 — 유유 출판사 "하루 시리즈" 카탈로그. 현재 선택중인 책만 상세로 진입, 나머지는 탭 동작 없음. */
+/**
+ * 하루 서점 — 유유 출판사 "하루 시리즈" 카탈로그.
+ * 9권 모두 탭하면 같은 상세 페이지(/book/[id])로 들어간다. '현재 선택중'인 책만
+ * 상단에 크게 놓이고, 나머지는 아래 격자에 놓인다는 차이뿐이다.
+ */
 export default function BookstoreScreen() {
   const router = useRouter();
   const currentBook = BOOKSTORE_BOOKS.find((book) => book.isCurrent);
   const otherBooks = BOOKSTORE_BOOKS.filter((book) => !book.isCurrent);
+
+  const openBook = (id: BookId) => {
+    router.push({ pathname: '/book/[id]', params: { id } });
+  };
 
   return (
     <ScrollView
@@ -22,7 +31,7 @@ export default function BookstoreScreen() {
         <ScaleButton
           accessibilityLabel={`${currentBook.title} 상세 보기`}
           style={styles.featured}
-          onPress={() => router.push({ pathname: '/book/[id]', params: { id: currentBook.id } })}>
+          onPress={() => openBook(currentBook.id)}>
           <Image source={currentBook.coverImage} style={styles.featuredCover} resizeMode="cover" />
           <View style={styles.featuredInfo}>
             <LinearGradient
@@ -44,11 +53,18 @@ export default function BookstoreScreen() {
       )}
 
       <View style={styles.grid}>
+        {/* ScaleButton은 style을 내부 뷰에 적용하고 바깥 Pressable은 내용 크기로 줄어든다.
+            격자의 두 칸 폭은 래퍼가 잡아 주고, 칸 안쪽을 ScaleButton이 가득 채운다. */}
         {otherBooks.map((book) => (
-          <View key={book.id} style={styles.gridCell}>
-            <Image source={book.coverImage} style={styles.gridCover} resizeMode="cover" />
-            <Text style={styles.gridTitle}>{book.title}</Text>
-            <Text style={styles.gridAuthor}>{book.author}</Text>
+          <View key={book.id} style={styles.gridCellWrap}>
+            <ScaleButton
+              accessibilityLabel={`${book.title} 상세 보기`}
+              style={styles.gridCell}
+              onPress={() => openBook(book.id)}>
+              <Image source={book.coverImage} style={styles.gridCover} resizeMode="cover" />
+              <Text style={styles.gridTitle}>{book.title}</Text>
+              <Text style={styles.gridAuthor}>{book.author}</Text>
+            </ScaleButton>
           </View>
         ))}
       </View>
@@ -118,8 +134,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
-  gridCell: {
+  gridCellWrap: {
     width: '50%',
+  },
+  gridCell: {
+    width: '100%',
     alignItems: 'center',
     gap: 16,
     paddingHorizontal: 20,
