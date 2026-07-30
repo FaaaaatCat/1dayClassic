@@ -97,10 +97,6 @@ export function useAudioPlayer() {
   const fadeRef = useRef<FadeHandle | null>(null);
   /** 낭독 전용 항목의 문장 단위 목록 — 낭독을 시작할 때 story에서 만든다. */
   const narrationUnitsRef = useRef<NarrationUnit[]>([]);
-  /** 지금 읽고 있는 문장의 위치 — '이전 문장 / 다음 문장'의 기준점. */
-  const narrationIndexRef = useRef(0);
-  /** 문장 이동으로 낭독을 다시 시작할 때 마무리 멘트에 쓸 이름. */
-  const narrationLabelsRef = useRef<NarrationLabels | null>(null);
   /** 5분 컷 페이드아웃을 이미 시작했는지 — 재생 세션마다 초기화된다. */
   const trackCutoffTriggeredRef = useRef(false);
   /** 시스템 TTS 엔진에서 고른 최적 한국어 목소리 identifier */
@@ -275,10 +271,7 @@ export function useAudioPlayer() {
     [speakThenContinue],
   );
 
-  /**
-   * 낭독 덩이를 startIndex부터 차례로 읽는다. 문장 사이는 바로 잇고 문단 끝에서만 쉰다.
-   * 문장 이동('이전 문장 / 다음 문장')이 중간 지점에서 다시 들어오는 입구이기도 하다.
-   */
+  /** 낭독 덩이를 startIndex부터 차례로 읽는다. 문장 사이는 바로 잇고 문단 끝에서만 쉰다. */
   const narrateFrom = useCallback(
     (session: number, startIndex: number, labels: NarrationLabels) => {
       const step = (index: number) => {
@@ -288,7 +281,6 @@ export function useAudioPlayer() {
           finishNarration(session, labels);
           return;
         }
-        narrationIndexRef.current = index;
         setPhase("narration");
         speakThenContinue(session, unit.text, () => {
           if (index + 1 >= units.length) {
@@ -316,9 +308,6 @@ export function useAudioPlayer() {
       cancelDjFlow();
       const session = sessionRef.current;
       narrationUnitsRef.current = buildNarrationUnits(lesson.story, NARRATION_ONLY_GAP_MS);
-      narrationIndexRef.current = 0;
-      // 문장 이동은 팝업에서 따로 들어오므로, 그때 쓸 멘트 이름을 여기서 붙들어 둔다.
-      narrationLabelsRef.current = labels;
       setIsNarrationOnly(true);
       setPhase("opening");
 
@@ -333,25 +322,6 @@ export function useAudioPlayer() {
       waitThenContinue(session, OPENING_VIBRATION_MS, openingNarration);
     },
     [cancelDjFlow, narrateFrom, speakThenContinue, waitThenContinue],
-  );
-
-  /**
-   * 문장 단위 이동 — 낭독 전용 항목에서만 뜻이 있다(음원이 있으면 seekBy로 시간을 옮긴다).
-   * 읽던 문장을 끊고 옮겨 간 문장부터 다시 읽는다. 양 끝에서는 아무것도 하지 않는다.
-   */
-  const skipSentence = useCallback(
-    (delta: -1 | 1) => {
-      const units = narrationUnitsRef.current;
-      const labels = narrationLabelsRef.current;
-      if (units.length === 0 || !labels) return;
-      const target = narrationIndexRef.current + delta;
-      if (target < 0 || target >= units.length) return;
-
-      cancelDjFlow();
-      setIsNarrationOnly(true);
-      narrateFrom(sessionRef.current, target, labels);
-    },
-    [cancelDjFlow, narrateFrom],
   );
 
   // 언마운트 시 TTS와 타이머 정리
@@ -522,20 +492,6 @@ export function useAudioPlayer() {
     setPhase("idle");
   }, [cancelDjFlow, player]);
 
-  /**
-   * 음원 재생 위치를 초 단위로 옮긴다(10초 전/후). 낭독 전용 항목에는 옮길 타임라인이
-   * 없으므로 아무것도 하지 않는다 — 그쪽은 skipSentence가 문장 단위로 옮긴다.
-   */
-  const seekBy = useCallback(
-    (seconds: number) => {
-      if (loadedLessonIdRef.current === null || !status.isLoaded) return;
-      const limit = Math.min(status.duration || 0, MAX_TRACK_SECONDS);
-      const target = Math.max(0, Math.min(status.currentTime + seconds, limit));
-      player.seekTo(target);
-    },
-    [player, status.isLoaded, status.duration, status.currentTime],
-  );
-
   const loadFailed = hasError || status.error != null;
   // 오프닝(진동+멘트) 중에는 음악이 백그라운드에서 로드되는 중이어도
   // 시퀀스가 진행되고 있으므로 로딩 스피너 대신 일시정지 버튼을 보여 준다.
@@ -560,9 +516,5 @@ export function useAudioPlayer() {
     togglePlay,
     restart,
     stop,
-    /** 음원 재생 위치를 초 단위로 옮긴다 — 음원이 있는 항목에서만 동작한다. */
-    seekBy,
-    /** 낭독을 이전/다음 문장으로 옮긴다 — 음원이 없는 항목에서만 동작한다. */
-    skipSentence,
   };
 }

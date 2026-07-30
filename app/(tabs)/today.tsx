@@ -16,9 +16,6 @@ import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { getBookLesson, getBookName, getLessonHeading } from '@/lib/books';
 import type { BookId } from '@/types';
 
-/** 음원 위치를 옮기는 단위(초) — '10초 전/후' 버튼용. 음원이 없는 항목은 문장 단위로 옮긴다. */
-const SEEK_SECONDS = 10;
-
 interface Note {
   id: string;
   text: string;
@@ -74,16 +71,7 @@ export default function TodayScreen() {
   const bookLesson = getBookLesson(bookId, params.lessonId ?? params.trackId);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const {
-    isPlaying,
-    isLoading,
-    hasError,
-    togglePlay,
-    restart,
-    stop,
-    seekBy,
-    skipSentence,
-  } = useAudioPlayer();
+  const { isPlaying, isLoading, hasError, togglePlay, restart, stop } = useAudioPlayer();
   const { isLiked, toggleLike } = useLikes();
   const [sheetVisible, setSheetVisible] = useState(false);
 
@@ -128,7 +116,7 @@ export default function TodayScreen() {
   const lesson = bookLesson.lesson;
   const liked = isLiked(lesson.id);
   const paragraphs = lesson.story;
-  // 음원이 없는 항목은 이야기 낭독만 한다 — '10초 전/후' 대신 문장 단위로 옮긴다.
+  // 음원이 없는 항목은 이야기 낭독만 한다 — 감상 노트 아이콘 선택에 쓴다.
   const hasAudio = Boolean(lesson.audio);
 
   /** 헤더의 '오디오 듣기' — 기존 재생 버튼과 같은 토글을 실행하고 팝업을 띄운다. */
@@ -142,9 +130,6 @@ export default function TodayScreen() {
     stop();
     setSheetVisible(false);
   };
-
-  const seekBack = () => (hasAudio ? seekBy(-SEEK_SECONDS) : skipSentence(-1));
-  const seekForward = () => (hasAudio ? seekBy(SEEK_SECONDS) : skipSentence(1));
 
   const addNote = () => {
     const text = draft.trim();
@@ -316,14 +301,11 @@ export default function TodayScreen() {
 
       <AudioListenSheet
         visible={sheetVisible}
-        hasAudio={hasAudio}
         isPlaying={isPlaying}
         isLoading={isLoading}
         hasError={hasError}
         onTogglePlay={() => togglePlay(lesson, narrationLabels)}
         onRestart={() => restart(lesson, narrationLabels)}
-        onSeekBack={seekBack}
-        onSeekForward={seekForward}
         onClose={closeAudioSheet}
       />
     </View>

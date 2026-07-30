@@ -6,15 +6,11 @@ import { Colors, Fonts, Shadow, tracking } from '@/constants/theme';
 
 interface Props {
   visible: boolean;
-  /** 음원이 있는 항목이면 10초 전/후, 없으면(낭독 전용) 이전/다음 문장으로 이동한다. */
-  hasAudio: boolean;
   isPlaying: boolean;
   isLoading: boolean;
   hasError: boolean;
   onTogglePlay: () => void;
   onRestart: () => void;
-  onSeekBack: () => void;
-  onSeekForward: () => void;
   /** 팝업을 닫는다 — 재생도 함께 멈춘다(호출부에서 stop 처리). */
   onClose: () => void;
 }
@@ -25,14 +21,11 @@ interface Props {
  */
 export default function AudioListenSheet({
   visible,
-  hasAudio,
   isPlaying,
   isLoading,
   hasError,
   onTogglePlay,
   onRestart,
-  onSeekBack,
-  onSeekForward,
   onClose,
 }: Props) {
   return (
@@ -40,15 +33,19 @@ export default function AudioListenSheet({
       <Pressable style={styles.backdrop} accessibilityLabel="팝업 닫기" onPress={onClose}>
         {/* onPress 빈 핸들러 — 카드 안쪽(버튼이 아닌 여백)을 눌러도 뒤 backdrop까지 눌리지 않게 막는다. */}
         <Pressable style={styles.card} onPress={() => {}}>
-          {/* 닫기 — 카드 안쪽 우측 상단에 고정. 화면 기준으로 두면 today.tsx 헤더(오디오 듣기
-              버튼 등)와 겹쳐서, 카드 자체의 모서리로 옮겼다. */}
-          <ScaleButton accessibilityLabel="닫기" style={styles.closeButton} onPress={onClose}>
-            <SymbolView
-              name={{ ios: 'xmark', android: 'close', web: 'close' }}
-              tintColor={Colors.brown100}
-              size={18}
-            />
-          </ScaleButton>
+          {/* 닫기 — 카드 안쪽 우측 상단에 고정. ScaleButton은 Pressable로 감싼 뒤 내부
+              Animated.View에만 style을 넣는 구조라, position:absolute를 ScaleButton에
+              직접 주면 크기가 0인 바깥 Pressable을 기준으로 계산돼 엉뚱한 자리(카드
+              왼쪽 위)에 뜬다. 그래서 위치는 이 wrapper가 잡고 ScaleButton은 크기만 갖는다. */}
+          <View style={styles.closeButtonWrap}>
+            <ScaleButton accessibilityLabel="닫기" style={styles.closeButton} onPress={onClose}>
+              <SymbolView
+                name={{ ios: 'xmark', android: 'close', web: 'close' }}
+                tintColor={Colors.brown100}
+                size={18}
+              />
+            </ScaleButton>
+          </View>
 
           <View style={styles.iconCircle}>
             <SymbolView
@@ -95,35 +92,6 @@ export default function AudioListenSheet({
                 />
               </ScaleButton>
               <Text style={styles.controlLabel}>다시듣기</Text>
-            </View>
-          </View>
-
-          <View style={styles.secondaryRow}>
-            <View style={styles.controlColumn}>
-              <ScaleButton
-                accessibilityLabel={hasAudio ? '10초 전으로' : '이전 문장'}
-                style={styles.secondaryButton}
-                onPress={onSeekBack}>
-                <SymbolView
-                  name={{ ios: 'chevron.left', android: 'chevron_left', web: 'chevron_left' }}
-                  tintColor={Colors.beige100}
-                  size={20}
-                />
-              </ScaleButton>
-              <Text style={styles.controlLabelSmall}>{hasAudio ? '10초 전' : '이전 문장'}</Text>
-            </View>
-            <View style={styles.controlColumn}>
-              <ScaleButton
-                accessibilityLabel={hasAudio ? '10초 후로' : '다음 문장'}
-                style={styles.secondaryButton}
-                onPress={onSeekForward}>
-                <SymbolView
-                  name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-                  tintColor={Colors.beige100}
-                  size={20}
-                />
-              </ScaleButton>
-              <Text style={styles.controlLabelSmall}>{hasAudio ? '10초 후' : '다음 문장'}</Text>
             </View>
           </View>
         </Pressable>
@@ -179,11 +147,6 @@ const styles = StyleSheet.create({
     gap: 28,
     marginTop: 16,
   },
-  secondaryRow: {
-    flexDirection: 'row',
-    gap: 28,
-    marginTop: 8,
-  },
   controlColumn: {
     alignItems: 'center',
     gap: 6,
@@ -194,30 +157,21 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     backgroundColor: Colors.brown100,
   },
-  secondaryButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.beige10,
-  },
   controlLabel: {
     fontFamily: Fonts.regular,
     fontSize: 12,
     letterSpacing: tracking(12),
     color: Colors.brown50,
   },
-  controlLabelSmall: {
-    fontFamily: Fonts.regular,
-    fontSize: 11,
-    letterSpacing: tracking(11),
-    color: Colors.brown50,
+  closeButtonWrap: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
   },
   closeButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
     width: 32,
     height: 32,
     borderRadius: 16,
+    backgroundColor: Colors.brown10,
   },
 });
