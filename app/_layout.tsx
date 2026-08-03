@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { AlarmProvider } from '@/context/AlarmContext';
 import { LikesProvider } from '@/context/LikesContext';
+import { NotesProvider } from '@/context/NotesContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { Palette } from '@/constants/theme';
 import {
@@ -71,11 +72,13 @@ export default function RootLayout() {
     <ThemeProvider value={AppTheme}>
       <AlarmProvider>
         <LikesProvider>
-          <ToastProvider>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-          </ToastProvider>
+          <NotesProvider>
+            <ToastProvider>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
+            </ToastProvider>
+          </NotesProvider>
         </LikesProvider>
       </AlarmProvider>
     </ThemeProvider>

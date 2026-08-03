@@ -1,6 +1,8 @@
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import LessonCoverImage from '@/components/LessonCoverImage';
+import ScaleButton from '@/components/ScaleButton';
 import { Palette, Radius, Shadow, Spacing, Typography, tracking } from '@/constants/theme';
 import { getBookName, getLessonHeading, type BookLesson } from '@/lib/books';
 
@@ -9,14 +11,24 @@ interface LibraryItemProps {
 }
 
 /**
- * 보관함의 항목 한 줄 — 소형 커버 + 표제 + 어느 책의 것인지.
+ * 보관함의 항목 한 줄 — 소형 커버 + 표제 + 어느 책의 것인지. 탭하면 그 항목 상세로 간다.
  * 표제를 어느 필드에서 뽑는지는 책마다 달라 목차와 같은 표제 함수에 맡긴다.
  */
 export default function LibraryItem({ bookLesson }: LibraryItemProps) {
+  const router = useRouter();
   const heading = getLessonHeading(bookLesson);
 
   return (
-    <View style={styles.item}>
+    <ScaleButton
+      accessibilityLabel={`${heading.title} 보기`}
+      style={styles.item}
+      onPress={() =>
+        router.push({
+          pathname: '/today',
+          params: { bookId: bookLesson.book, lessonId: bookLesson.lesson.id },
+        })
+      }
+    >
       <LessonCoverImage
         lesson={bookLesson.lesson}
         style={styles.cover}
@@ -36,7 +48,7 @@ export default function LibraryItem({ bookLesson }: LibraryItemProps) {
           </Text>
         )}
       </View>
-    </View>
+    </ScaleButton>
   );
 }
 

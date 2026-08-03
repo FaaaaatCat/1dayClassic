@@ -12,34 +12,10 @@ import LessonCoverImage from '@/components/LessonCoverImage';
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { useLikes } from '@/context/LikesContext';
+import { useNotes, type Note } from '@/context/NotesContext';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { getBookLesson, getBookName, getLessonHeading } from '@/lib/books';
 import type { BookId } from '@/types';
-
-interface Note {
-  id: string;
-  text: string;
-  /** "2026.07.01 (16:53)" 형태 */
-  date: string;
-}
-
-/**
- * 데모용 시드 기록 — 피그마 시안과 동일. 클래식 항목에만 얹는다.
- * 내용이 피치카토 폴카를 두고 쓴 것이라 다른 책에 붙으면 앞뒤가 맞지 않는다.
- */
-const SEED_NOTES: Note[] = [
-  {
-    id: 'seed-1',
-    text: '피치카토 주법을 찾아봐야겠어요. 그리고 다른 노래들도 있는지 알아봐야겠다.',
-    date: '2026.07.01 (16:53)',
-  },
-  { id: 'seed-2', text: '처음 듣는데 진짜 좋다.', date: '2026.04.21 (12:13)' },
-];
-
-function formatNoteDate(date: Date = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} (${pad(date.getHours())}:${pad(date.getMinutes())})`;
-}
 
 /** lesson.date("1월 1일" 형태)를 헤더에 쓰는 "1 · 1"로 바꾼다. 없으면 빈 문자열. */
 function formatHeaderDate(dateStr: string | undefined): string {
@@ -73,6 +49,7 @@ export default function TodayScreen() {
   const insets = useSafeAreaInsets();
   const { isPlaying, isLoading, hasError, togglePlay, restart, stop } = useAudioPlayer();
   const { isLiked, toggleLike } = useLikes();
+  const { notesOf, addNote, deleteNote } = useNotes();
   const [sheetVisible, setSheetVisible] = useState(false);
 
   // 낭독 멘트에 쓸 이름 — 항목만으로는 못 만든다(표제 필드가 책마다 다르고 책 이름은 카탈로그에 있다).
@@ -92,12 +69,12 @@ export default function TodayScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoplay]);
 
-  // 시드 기록은 클래식 항목에만 얹는다 — 내용이 그 곡을 두고 쓴 것이다.
-  const [notes, setNotes] = useState<Note[]>(bookId === 'classic' ? SEED_NOTES : []);
+  /** 아직 저장하지 않은 입력 중인 기록 — 항목이 바뀌면 비운다. */
   const [draft, setDraft] = useState('');
 
   // /today는 탭 라우트라 파라미터만 바뀌면 이 컴포넌트와 재생 훅이 그대로 유지된다.
-  // 그때 걷어내지 않으면 앞 항목의 재생 상태('일시정지' 표시)와 기록이 다음 항목에 남는다.
+  // 그때 걷어내지 않으면 앞 항목의 재생 상태('일시정지' 표시)와 입력 중이던 글이 다음 항목에 남는다.
+  // (저장된 기록은 항목 id로 갈라져 있어 따로 비울 필요가 없다.)
   // 첫 렌더에서는 실행하지 않는다 — 알람 자동재생 효과가 방금 시작한 재생을 멈춰 버린다.
   const shownLessonKey = `${bookId}:${bookLesson?.lesson.id ?? ''}`;
   const shownLessonKeyRef = useRef(shownLessonKey);
@@ -106,15 +83,15 @@ export default function TodayScreen() {
     shownLessonKeyRef.current = shownLessonKey;
     stop();
     setSheetVisible(false);
-    setNotes(bookId === 'classic' ? SEED_NOTES : []);
     setDraft('');
-  }, [shownLessonKey, bookId, stop]);
+  }, [shownLessonKey, stop]);
 
   // 데이터가 비면 보여 줄 항목이 없다. 훅은 위에서 모두 호출한 뒤이므로 안전하다.
   if (!bookLesson || !narrationLabels) return null;
 
   const lesson = bookLesson.lesson;
   const liked = isLiked(lesson.id);
+  const notes = notesOf(lesson.id);
   const paragraphs = lesson.story;
   // 음원이 없는 항목은 이야기 낭독만 한다 — 감상 노트 아이콘 선택에 쓴다.
   const hasAudio = Boolean(lesson.audio);
@@ -131,24 +108,15 @@ export default function TodayScreen() {
     setSheetVisible(false);
   };
 
-  const addNote = () => {
-    const text = draft.trim();
-    if (!text) return;
-    setNotes((prev) => [
-      { id: `note-${Date.now()}`, text, date: formatNoteDate() },
-      ...prev,
-    ]);
+  const submitDraft = () => {
+    addNote(lesson.id, draft);
     setDraft('');
   };
 
   /** 편집: 내용을 입력창으로 되돌리고 목록에서 뺀다. 기록하기로 다시 저장. */
   const editNote = (note: Note) => {
     setDraft(note.text);
-    setNotes((prev) => prev.filter((n) => n.id !== note.id));
-  };
-
-  const deleteNote = (note: Note) => {
-    setNotes((prev) => prev.filter((n) => n.id !== note.id));
+    deleteNote(lesson.id, note.id);
   };
 
   const shareLesson = async () => {
@@ -169,9 +137,10 @@ export default function TodayScreen() {
           <ScaleButton
             accessibilityLabel="닫기"
             style={styles.headerIconButton}
-            onPress={() => router.replace('/')}>
+            onPress={() => router.replace("/")}
+          >
             <SymbolView
-              name={{ ios: 'xmark', android: 'close', web: 'close' }}
+              name={{ ios: "xmark", android: "close", web: "close" }}
               tintColor={Colors.brown100}
               size={24}
             />
@@ -179,24 +148,25 @@ export default function TodayScreen() {
           <Text style={styles.headerDate}>{formatHeaderDate(lesson.date)}</Text>
         </View>
         <View style={styles.headerRight}>
-          <HeaderMoreMenu
-            liked={liked}
-            onToggleBookmark={() => toggleLike(lesson.id)}
-            onShare={shareLesson}
-          />
           <ScaleButton
             accessibilityLabel="오디오 듣기"
             style={styles.listenButton}
-            onPress={openAudioSheet}>
+            onPress={openAudioSheet}
+          >
             <View style={styles.listenButtonInner}>
               <SymbolView
-                name={{ ios: 'headphones', android: 'headset', web: 'headset' }}
+                name={{ ios: "headphones", android: "headset", web: "headset" }}
                 tintColor={Colors.white}
                 size={16}
               />
               <Text style={styles.listenButtonText}>오디오 듣기</Text>
             </View>
           </ScaleButton>
+          <HeaderMoreMenu
+            liked={liked}
+            onToggleBookmark={() => toggleLike(lesson.id)}
+            onShare={shareLesson}
+          />
         </View>
       </View>
 
@@ -204,20 +174,27 @@ export default function TodayScreen() {
       <ScrollView
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
-        showsVerticalScrollIndicator={false}>
-        <LessonCoverImage lesson={lesson} style={styles.hero} resizeMode="cover" />
+        showsVerticalScrollIndicator={false}
+      >
+        <LessonCoverImage
+          lesson={lesson}
+          style={styles.hero}
+          resizeMode="cover"
+        />
 
         <Animated.View entering={FadeIn.duration(600)} style={styles.content}>
           {/* 표제부 — 책에 따라 갈라지는 단 하나의 자리 */}
           <LessonHeading bookLesson={bookLesson} bookName={bookName} />
 
           {/* 인용문 — 클래식 항목만 갖는다(쓰기 책의 에피그래프는 표제부 안에 있다) */}
-          {bookLesson.book === 'classic' && bookLesson.lesson.quote && (
+          {bookLesson.book === "classic" && bookLesson.lesson.quote && (
             <View style={styles.quoteOuter}>
               <View style={styles.quoteInner}>
                 <Text style={styles.quoteText}>{bookLesson.lesson.quote}</Text>
                 {bookLesson.lesson.quoteBy && (
-                  <Text style={styles.quoteText}>{bookLesson.lesson.quoteBy}</Text>
+                  <Text style={styles.quoteText}>
+                    {bookLesson.lesson.quoteBy}
+                  </Text>
                 )}
               </View>
             </View>
@@ -234,7 +211,7 @@ export default function TodayScreen() {
           <View style={styles.notesSection}>
             <View style={styles.notesTitleRow}>
               <SymbolView
-                name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
+                name={{ ios: "pencil", android: "edit", web: "edit" }}
                 tintColor={Colors.brown100}
                 size={14}
               />
@@ -253,7 +230,8 @@ export default function TodayScreen() {
               <ScaleButton
                 accessibilityLabel="기록하기"
                 style={styles.noteSubmit}
-                onPress={addNote}>
+                onPress={submitDraft}
+              >
                 <Text style={styles.noteSubmitText}>기록하기</Text>
               </ScaleButton>
             </View>
@@ -269,8 +247,16 @@ export default function TodayScreen() {
                     <SymbolView
                       name={
                         hasAudio
-                          ? { ios: 'music.note', android: 'music_note', web: 'music_note' }
-                          : { ios: 'book', android: 'menu_book', web: 'menu_book' }
+                          ? {
+                              ios: "music.note",
+                              android: "music_note",
+                              web: "music_note",
+                            }
+                          : {
+                              ios: "book",
+                              android: "menu_book",
+                              web: "menu_book",
+                            }
                       }
                       tintColor={Colors.beige100}
                       size={14}
@@ -282,12 +268,14 @@ export default function TodayScreen() {
                       <Text style={styles.noteItemDate}>{note.date}</Text>
                       <ScaleButton
                         accessibilityLabel="기록 편집"
-                        onPress={() => editNote(note)}>
+                        onPress={() => editNote(note)}
+                      >
                         <Text style={styles.noteItemAction}>편집</Text>
                       </ScaleButton>
                       <ScaleButton
                         accessibilityLabel="기록 삭제"
-                        onPress={() => deleteNote(note)}>
+                        onPress={() => deleteNote(lesson.id, note.id)}
+                      >
                         <Text style={styles.noteItemAction}>삭제</Text>
                       </ScaleButton>
                     </View>
@@ -326,7 +314,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     paddingBottom: 12,
     backgroundColor: Colors.bg,
   },
@@ -338,7 +326,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 4,
   },
   headerIconButton: {
     width: 41,
