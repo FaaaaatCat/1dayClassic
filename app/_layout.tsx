@@ -6,6 +6,7 @@ import { Alert } from 'react-native';
 import 'react-native-reanimated';
 
 import { AlarmProvider } from '@/context/AlarmContext';
+import { BookSelectionProvider } from '@/context/BookSelectionContext';
 import { LikesProvider } from '@/context/LikesContext';
 import { NotesProvider } from '@/context/NotesContext';
 import { ToastProvider } from '@/context/ToastContext';
@@ -71,15 +72,17 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={AppTheme}>
       <AlarmProvider>
-        <LikesProvider>
-          <NotesProvider>
-            <ToastProvider>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              </Stack>
-            </ToastProvider>
-          </NotesProvider>
-        </LikesProvider>
+        <BookSelectionProvider>
+          <LikesProvider>
+            <NotesProvider>
+              <ToastProvider>
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                </Stack>
+              </ToastProvider>
+            </NotesProvider>
+          </LikesProvider>
+        </BookSelectionProvider>
       </AlarmProvider>
     </ThemeProvider>
   );

@@ -7,18 +7,19 @@ export interface BookstoreBook {
   title: string;
   author: string;
   coverImage: ImageSourcePropType;
-  /** 현재 이 앱이 대응하는 책이면 true — 피처드 섹션에 노출된다 */
-  isCurrent?: boolean;
 }
 
-/** 유유 출판사 "하루 시리즈" 카탈로그 — 하루 서점 화면 전용 정적 데이터. */
+/**
+ * 유유 출판사 "하루 시리즈" 카탈로그 — 하루 서점 화면 전용 정적 데이터.
+ * 어느 책이 "현재 선택중"인지는 여기 담긴 정적 값이 아니라 BookSelectionContext의
+ * 런타임 상태다 — 사용자가 서점에서 고를 때마다 바뀌기 때문이다.
+ */
 export const BOOKSTORE_BOOKS: BookstoreBook[] = [
   {
     id: 'classic',
     title: '하루 클래식 공부',
     author: '글릿 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-classic.jpg'),
-    isCurrent: true,
   },
   {
     id: 'latin',

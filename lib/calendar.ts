@@ -1,5 +1,4 @@
-import { getTracks } from '@/lib/classic';
-import type { DailyLesson, LessonHeading, Track } from '@/types';
+import type { DailyLesson, LessonHeading } from '@/types';
 
 /** 홈 화면에서 '오늘'로 고정 표시할 날짜 — 실제 시스템 날짜는 읽지 않는다. */
 export const TODAY_MONTH = 1;
@@ -24,16 +23,18 @@ export function getTodayDayOfYear(): number {
   return count + TODAY_DAY;
 }
 
-/** '내일'(TODAY_MONTH/TODAY_DAY + 1일)에 해당하는 실제 트랙 — 없으면 undefined. */
-export function getTomorrowTrack(): Track | undefined {
+/**
+ * '내일'(TODAY_MONTH/TODAY_DAY + 1일)의 {month, day}. 책마다 그 날짜에 실제 항목이
+ * 있는지는 다르므로, 있는지 확인하는 일은 호출부(lib/books.ts의 getTomorrowLesson)가 한다.
+ */
+export function getTomorrowDate(): { month: number; day: number } {
   let month = TODAY_MONTH;
   let day = TODAY_DAY + 1;
   if (day > DAYS_IN_MONTH[month - 1]) {
     day = 1;
     month = month === 12 ? 1 : month + 1;
   }
-  const dateStr = `${month}월 ${day}일`;
-  return getTracks().find((track) => track.date === dateStr);
+  return { month, day };
 }
 
 /** 목차의 하루치 한 행. 표제는 책별 getHeading이 뽑아 준 값을 그대로 담는다. */

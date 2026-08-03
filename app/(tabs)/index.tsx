@@ -7,8 +7,9 @@ import ScaleButton from '@/components/ScaleButton';
 import LessonCoverImage from '@/components/LessonCoverImage';
 import { Colors, Fonts, Radius, Shadow, tracking } from '@/constants/theme';
 import { useAlarm } from '@/context/AlarmContext';
-import { getTomorrowTrack, TODAY_DAY, TODAY_MONTH } from '@/lib/calendar';
-import { getTodayTrack } from '@/lib/classic';
+import { useBookSelection } from '@/context/BookSelectionContext';
+import { getBookLesson, getBookName, getLessonHeading, getTomorrowLesson } from '@/lib/books';
+import { TODAY_DAY, TODAY_MONTH } from '@/lib/calendar';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -24,16 +25,24 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { alarm, toggleEnabled } = useAlarm();
+  const { selectedBookId } = useBookSelection();
 
-  const todayTrack = getTodayTrack();
-  const tomorrowTrack = getTomorrowTrack();
+  const bookName = getBookName(selectedBookId);
+  const todayLesson = getBookLesson(selectedBookId);
+  const tomorrowLesson = getTomorrowLesson(selectedBookId);
   const { meridiem, time } = formatAlarmTime(alarm.hour, alarm.minute);
 
   // 데이터가 비면 홈 화면이 성립하지 않는다. 훅은 위에서 모두 호출한 뒤이므로 안전하다.
-  if (!todayTrack) return null;
+  if (!todayLesson) return null;
 
-  const openTrack = (trackId: string) => {
-    router.push({ pathname: '/today', params: { trackId } });
+  const todayHeading = getLessonHeading(todayLesson);
+  const tomorrowHeading = tomorrowLesson ? getLessonHeading(tomorrowLesson) : null;
+
+  const openLesson = () => {
+    router.push({
+      pathname: '/today',
+      params: { bookId: selectedBookId, lessonId: todayLesson.lesson.id },
+    });
   };
 
   const openAlarmDetail = () => {
@@ -46,7 +55,7 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.body, { paddingTop: insets.top }]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.pageTitle}>
-          <Text style={styles.pageTitleText}>하루 클래식 공부</Text>
+          <Text style={styles.pageTitleText}>{bookName}</Text>
           <View style={styles.pageTitleDateRow}>
             <Text style={styles.pageTitleDateNumber}>{TODAY_MONTH}</Text>
             <Text style={styles.pageTitleDateStar}>✦</Text>
@@ -55,20 +64,22 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.todayCard}>
-          <LessonCoverImage lesson={todayTrack} style={styles.todayImage} resizeMode="cover" />
+          <LessonCoverImage lesson={todayLesson.lesson} style={styles.todayImage} resizeMode="cover" />
           <ScaleButton
-            accessibilityLabel={`${todayTrack.title} 상세 보기`}
+            accessibilityLabel={`${todayHeading.title} 상세 보기`}
             style={styles.todayCardBody}
-            onPress={() => openTrack(todayTrack.id)}>
+            onPress={openLesson}>
             <Text style={styles.todayLabel}>오늘의 공부</Text>
             <View style={styles.todayRow}>
               <View style={styles.todayInfo}>
                 <Text style={styles.todayTitle} numberOfLines={1}>
-                  {todayTrack.title}
+                  {todayHeading.title}
                 </Text>
-                <Text style={styles.todayComposer} numberOfLines={1}>
-                  {todayTrack.composer}
-                </Text>
+                {todayHeading.subtitle != null && (
+                  <Text style={styles.todayComposer} numberOfLines={1}>
+                    {todayHeading.subtitle}
+                  </Text>
+                )}
               </View>
               <View style={styles.todayButton}>
                 <SymbolView
@@ -124,22 +135,24 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {tomorrowTrack && (
+        {tomorrowLesson && tomorrowHeading && (
           <View style={styles.tomorrowRow}>
             <View style={styles.tomorrowColumn}>
               <View style={styles.tomorrowTitleRow}>
                 <Text style={styles.tomorrowLabel}>내일은?</Text>
                 <View style={styles.tomorrowDivider} />
                 <Text style={styles.tomorrowTitle} numberOfLines={1}>
-                  {tomorrowTrack.title}
+                  {tomorrowHeading.title}
                 </Text>
               </View>
-              <Text style={styles.tomorrowComposer} numberOfLines={1}>
-                {tomorrowTrack.composer}
-              </Text>
+              {tomorrowHeading.subtitle != null && (
+                <Text style={styles.tomorrowComposer} numberOfLines={1}>
+                  {tomorrowHeading.subtitle}
+                </Text>
+              )}
             </View>
             <LessonCoverImage
-              lesson={tomorrowTrack}
+              lesson={tomorrowLesson.lesson}
               style={styles.tomorrowCover}
               resizeMode="cover"
               placeholderLabelSize={8}

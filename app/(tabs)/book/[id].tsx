@@ -17,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScaleButton from '@/components/ScaleButton';
 import TableOfContents from '@/components/TableOfContents';
 import { Colors, Fonts, tracking } from '@/constants/theme';
+import { useBookSelection } from '@/context/BookSelectionContext';
+import { useToast } from '@/context/ToastContext';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 import { getTodayDayOfYear, TOTAL_DAYS_IN_YEAR } from '@/lib/calendar';
 
@@ -41,10 +43,19 @@ export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { selectedBookId, selectBook } = useBookSelection();
+  const { showToast } = useToast();
   const book = BOOKSTORE_BOOKS.find((candidate) => candidate.id === id);
+  const isSelected = book?.id === selectedBookId;
 
   const dayOfYear = getTodayDayOfYear();
   const progress = dayOfYear / TOTAL_DAYS_IN_YEAR;
+
+  const chooseBook = () => {
+    if (!book) return;
+    selectBook(book.id);
+    showToast(`선택 완료 — ${book.title}`);
+  };
 
   const infoHeightRef = useRef(0);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -93,7 +104,7 @@ export default function BookDetailScreen() {
         <Text style={styles.miniTitle} numberOfLines={1}>
           {book.title}
         </Text>
-        {book.isCurrent && (
+        {isSelected && (
           <LinearGradient
             colors={[Colors.blue100, Colors.blue50]}
             start={{ x: 0, y: 0 }}
@@ -119,7 +130,7 @@ export default function BookDetailScreen() {
             infoHeightRef.current = e.nativeEvent.layout.height;
           }}>
           <View style={styles.hero}>
-            {book.isCurrent && (
+            {isSelected && (
               <LinearGradient
                 colors={[Colors.blue100, Colors.blue50]}
                 start={{ x: 0, y: 0 }}
@@ -136,6 +147,14 @@ export default function BookDetailScreen() {
             <Image source={book.coverImage} style={styles.cover} resizeMode="cover" />
             <Text style={styles.title}>{book.title}</Text>
             <Text style={styles.author}>{book.author}</Text>
+            {!isSelected && (
+              <ScaleButton
+                accessibilityLabel={`${book.title}을(를) 오늘의 공부로 선택`}
+                style={styles.selectButton}
+                onPress={chooseBook}>
+                <Text style={styles.selectButtonText}>이 책으로 선택하기</Text>
+              </ScaleButton>
+            )}
           </View>
 
           <View style={styles.progressSection}>
@@ -260,6 +279,19 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(14),
     color: Colors.brown50,
     textAlign: 'center',
+  },
+  selectButton: {
+    marginTop: 8,
+    height: 40,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: Colors.brown100,
+  },
+  selectButtonText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    letterSpacing: tracking(14),
+    color: Colors.white,
   },
   progressSection: {
     gap: 8,

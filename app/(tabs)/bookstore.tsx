@@ -5,18 +5,20 @@ import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
+import { useBookSelection } from '@/context/BookSelectionContext';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 import type { BookId } from '@/types';
 
 /**
  * 하루 서점 — 유유 출판사 "하루 시리즈" 카탈로그.
- * 9권 모두 탭하면 같은 상세 페이지(/book/[id])로 들어간다. '현재 선택중'인 책만
- * 상단에 크게 놓이고, 나머지는 아래 격자에 놓인다는 차이뿐이다.
+ * 9권 모두 탭하면 같은 상세 페이지(/book/[id])로 들어간다. '현재 선택중'인 책(선택은
+ * 그 상세 페이지에서 한다)만 상단에 크게 놓이고, 나머지는 아래 격자에 놓인다는 차이뿐이다.
  */
 export default function BookstoreScreen() {
   const router = useRouter();
-  const currentBook = BOOKSTORE_BOOKS.find((book) => book.isCurrent);
-  const otherBooks = BOOKSTORE_BOOKS.filter((book) => !book.isCurrent);
+  const { selectedBookId } = useBookSelection();
+  const currentBook = BOOKSTORE_BOOKS.find((book) => book.id === selectedBookId);
+  const otherBooks = BOOKSTORE_BOOKS.filter((book) => book.id !== selectedBookId);
 
   const openBook = (id: BookId) => {
     router.push({ pathname: '/book/[id]', params: { id } });

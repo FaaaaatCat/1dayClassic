@@ -1,4 +1,4 @@
-import { buildCalendarYear, type CalendarDay } from '@/lib/calendar';
+import { buildCalendarYear, getTomorrowDate, type CalendarDay } from '@/lib/calendar';
 import {
   getTodayTrack,
   getTrackById,
@@ -200,6 +200,20 @@ function todayLesson(bookId: BookId): BookLesson | undefined {
  */
 export function getBookLesson(bookId: BookId, lessonId?: string): BookLesson | undefined {
   return (lessonId ? lessonById(bookId, lessonId) : undefined) ?? todayLesson(bookId);
+}
+
+/**
+ * 그 책의 '내일'(TODAY_MONTH/TODAY_DAY + 1일) 항목 — 그 날짜에 실제 항목이 없으면(잠긴
+ * 자리표시뿐이면) undefined. 홈 화면의 '내일은?' 프리뷰가 undefined일 때 행 자체를 숨긴다.
+ *
+ * 365일 목차(getBookCalendar)가 이미 날짜별로 실제 항목/자리표시를 갈라 뒀으므로,
+ * 그 결과에서 내일 날짜 한 칸만 찾아 되돌린다 — 날짜 파싱을 여기서 다시 하지 않는다.
+ */
+export function getTomorrowLesson(bookId: BookId): BookLesson | undefined {
+  const { month, day } = getTomorrowDate();
+  const tomorrow = getBookCalendar(bookId).find((d) => d.month === month && d.day === day);
+  if (!tomorrow || tomorrow.locked || !tomorrow.lessonId) return undefined;
+  return lessonById(bookId, tomorrow.lessonId);
 }
 
 /**
