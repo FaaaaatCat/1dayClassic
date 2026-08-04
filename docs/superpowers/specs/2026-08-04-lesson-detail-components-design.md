@@ -30,8 +30,10 @@
 - 테스트 인프라 도입 — 이번엔 타입체크로만 검증한다.
 - `ShopBlock`의 링크 목적지·동작 정의 — 조판만 옮기고 동작은 다음 작업에서 정한다.
 - 퀴즈의 주관식(입력식) 문항 — 지금은 4지선다만 만든다.
-- 퀴즈 풀이 기록의 영속화 — 화면을 나가면 초기화된다. 붙이는 경로는 아래에 적어 둔다.
 - 한 항목에 퀴즈 여러 개 — 항목당 한 문제로 고정한다.
+- **통계 탭** — 퀴즈 기록은 이번에 남기기 시작하지만, 그것을 보여 주는 화면은 나중에 만든다.
+  지금 화면을 설계하면 무엇을 보고 싶은지 모르는 상태에서 추측하게 된다.
+- **학습 완주율 기록** — '완주'의 정의가 아직 없다. 아래 '완주율은 왜 지금 정하지 않는가' 참고.
 
 ## 조사 결과 — 3개 화면 비교
 
@@ -136,7 +138,12 @@ components/lesson/
     index.ts                 BookId → 조합 컴포넌트 레지스트리
   LessonDetailShell.tsx      스크롤·닫기·오디오 팝업·safe area + Context 제공
   LessonDetailContext.tsx    2층
+context/
+  QuizContext.tsx            퀴즈 푼 기록 — 기존 LikesContext·NotesContext와 나란히
 ```
+
+`QuizContext`만 `context/`에 두는 이유: 이건 앱 전체에 하나 떠서 AsyncStorage에 저장하는 싱글턴이라
+`LikesContext`·`NotesContext`와 성격이 같다. `app/_layout.tsx`에서 함께 마운트한다.
 
 `LessonDetailContext`를 `context/`에 두지 않는 이유: 기존 `context/*`는 `app/_layout.tsx`에서
 마운트돼 앱 전체에 하나씩 떠 있는 싱글턴이다. 이건 상세 화면이 열려 있는 동안만 사는 것이라
@@ -152,7 +159,7 @@ components/lesson/
 | `QuoteBlock` | `text: string`<br>`by?: string` | 3화면 구조 동일, 길이만 다름 |
 | `DescBlock` | `paragraphs: string[]` | |
 | `ShopBlock` | 없음 | 3화면 동일 |
-| `QuizBlock` | `quiz: Quiz` | 콘텐츠는 props, 풀이 상태는 내부 `useState` |
+| `QuizBlock` | `quiz: Quiz` | 콘텐츠는 props, 푼 기록은 `QuizContext` |
 | `NoteBlock` | 없음 | Context에서 항목·핸들러를 꺼낸다 |
 | `MoreFunctionsBlock` | 없음 | Context에서 항목·핸들러를 꺼낸다 |
 
@@ -200,11 +207,10 @@ interface LessonDetailValue {
 Context를 한 덩어리로 만들지 않는다는 원칙이 여기서 지켜진다:
 
 - **화면 수명 상태** → `LessonDetailContext` (지금 어떤 항목을 보고 있나 + 화면 수준 동작)
-- **영속 기능 상태** → 기능별 앱 Context (`LikesContext`, `NotesContext`)
-- **블록 안에서 끝나는 상태** → 그 블록의 `useState` (퀴즈 풀이 상태가 여기 해당한다)
+- **영속 기능 상태** → 기능별 앱 Context (`LikesContext`, `NotesContext`, 새로 만드는 `QuizContext`)
 
-퀴즈는 이번에 저장을 하지 않으므로 Context를 만들지 않는다. 나중에 풀이 기록을 저장하기로 하면
-`QuizContext`가 **추가만** 되고 위의 것들은 수정되지 않는다.
+`QuizContext`는 기존 두 Context를 **수정하지 않고 추가만** 된다 — 설계 원칙이 실제로 지켜지는지
+확인하는 첫 사례다.
 
 ## 데이터 흐름과 점진 이관
 
@@ -340,17 +346,54 @@ JSON **문법** 오류(끝 쉼표 등)는 이 검증이 아니라 `npx tsc --noE
 - 보기를 고르기 전에는 해설이 보이지 않는다.
 - 보기 하나를 고르면 **즉시** 해설이 열리고, 고른 보기가 정답인지 오답인지 표시된다. 제출 버튼은 없다.
 - 고른 뒤에는 **보기가 잠긴다.** 잠그지 않으면 4개를 차례로 눌러 정답을 찾을 수 있어 퀴즈가 무의미해진다.
-- 항목이 바뀌면 초기화된다(`key={lesson.id}`).
-- 푼 기록은 저장하지 않는다. 화면을 나갔다 오면 처음 상태다.
+- 이미 푼 항목을 다시 열면 **고른 보기와 해설이 그대로 복원된다.** 기록이 남아 있기 때문이다.
 
-### 상태를 Context에 두지 않는 이유
+### 푼 기록의 저장
 
-저장을 하지 않으므로 풀이 상태는 `QuizBlock` 내부 `useState`면 충분하다. 지금 `QuizContext`를 만들면
-쓰지도 않을 Provider가 하나 늘 뿐이다.
+`QuizContext`를 새로 만든다. `NotesContext`가 이미 쓰고 있는 '항목 id로 갈라 AsyncStorage에 영속화'
+패턴을 그대로 따른다.
 
-나중에 기록을 저장하기로 하면 그때 `QuizContext`를 **추가**한다. `NotesContext`가 이미 쓰고 있는
-'항목 id로 갈라 AsyncStorage에 영속화' 패턴을 그대로 따르면 되고, 이 설계의 원칙대로 기존 Context와
-블록은 수정되지 않는다.
+```ts
+// 항목 id → 푼 기록
+interface QuizAttempt {
+  bookId: BookId;          // 책별 정답률 집계에 쓴다
+  choice: 1 | 2 | 3 | 4;   // 무엇을 골랐는지
+  correct: boolean;
+  at: string;              // ISO 8601. 기간별 집계에 쓴다
+}
+```
+
+이 기록은 나중에 만들 **통계 탭**(책별 북마크 수·퀴즈 정답률·학습 완주율)이 읽어 갈 재료다.
+통계 화면 자체는 이번 범위가 아니지만, **기록은 지금부터 남긴다** — 기록하지 않은 과거는 나중에
+만들어낼 수 없기 때문이다.
+
+두 필드는 당장 쓰지 않지만 지금 넣는다:
+
+- **`bookId`** — 항목 id가 `classic_1_polka`처럼 책 이름으로 시작하긴 하지만, 문자열을 잘라 책을
+  알아내는 방식은 id 규칙이 조금만 바뀌어도 깨진다. 한 칸 더 쓰는 편이 싸다.
+- **`at`** — 없으면 "지난달 정답률" 같은 기간별 집계를 영원히 만들 수 없다. 지나간 시각은 되살릴 수 없다.
+
+통계에 필요한 나머지 재료 중 **북마크 수는 이미 `LikesContext`가 저장하고 있어** 따로 할 일이 없다.
+
+### 완주율은 왜 지금 정하지 않는가
+
+학습 완주율은 이번에 다루지 않는다. 지금 그것을 계산할 데이터가 **하나도 없다** — 어떤 항목을 읽었는지
+기록하는 곳이 앱 어디에도 없다.
+
+책 상세 화면에 진행바가 있지만 그것은 학습 진도가 아니다:
+
+```ts
+// app/(tabs)/book/[id].tsx
+const dayOfYear = getTodayDayOfYear();
+const progress = dayOfYear / TOTAL_DAYS_IN_YEAR;   // 오늘이 며칠째인가 ÷ 365
+```
+
+앱을 한 번도 켜지 않아도 날짜만 지나면 차오르는, 사용자 행동과 무관한 값이다.
+
+그래서 완주율은 새로 기록을 시작해야 하는데, **'완주'의 정의가 먼저 필요하다** — 항목을 열면 완주인지,
+끝까지 스크롤해야 하는지, 오디오를 다 들어야 하는지, 퀴즈까지 풀어야 하는지에 따라 남길 기록이 달라진다.
+정의 없이 서둘러 기록하면 잘못된 기준의 데이터가 쌓인다. 통계 탭에서 무엇을 보고 싶은지 정해질 때
+역으로 정의하는 편이 낫다.
 
 ### 나중에 책마다 퀴즈 형식이 달라지면
 
