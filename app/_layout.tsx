@@ -9,6 +9,7 @@ import { AlarmProvider } from '@/context/AlarmContext';
 import { BookSelectionProvider } from '@/context/BookSelectionContext';
 import { LikesProvider } from '@/context/LikesContext';
 import { NotesProvider } from '@/context/NotesContext';
+import { QuizProvider } from '@/context/QuizContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { Palette } from '@/constants/theme';
 import {
@@ -75,11 +76,13 @@ export default function RootLayout() {
         <BookSelectionProvider>
           <LikesProvider>
             <NotesProvider>
-              <ToastProvider>
-                <Stack>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                </Stack>
-              </ToastProvider>
+              <QuizProvider>
+                <ToastProvider>
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  </Stack>
+                </ToastProvider>
+              </QuizProvider>
             </NotesProvider>
           </LikesProvider>
         </BookSelectionProvider>
