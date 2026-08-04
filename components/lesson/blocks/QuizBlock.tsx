@@ -47,19 +47,21 @@ export default function QuizBlock({ quiz }: Props) {
   };
 
   return (
-    <View style={[blockStyles.block, styles.wrap]}>
-      <View style={styles.titleRow}>
-        <SymbolView
-          name={{ ios: 'questionmark.circle.fill', android: 'help', web: 'help' }}
-          tintColor={Colors.brown100}
-          size={14}
-        />
-        <Text style={styles.title}>{quiz.title}</Text>
-      </View>
+    <View style={blockStyles.block}>
+      {/* 블록 안의 모든 내용을 파란 카드 하나로 감싼다 — 배경이 어두워서 안쪽 글자는 흰색이다. */}
+      <View style={styles.card}>
+        <View style={styles.titleRow}>
+          <SymbolView
+            name={{ ios: 'questionmark.circle.fill', android: 'help', web: 'help' }}
+            tintColor={Colors.white}
+            size={14}
+          />
+          <Text style={styles.title}>{quiz.title}</Text>
+        </View>
 
-      <Text style={styles.question}>{quiz.question}</Text>
+        <Text style={styles.question}>{quiz.question}</Text>
 
-      <View style={styles.choices}>
+        <View style={styles.choices}>
         {quiz.choices.map((choiceText, index) => {
           const choiceNumber = (index + 1) as 1 | 2 | 3 | 4;
           const isSelected = attempt?.choice === choiceNumber;
@@ -96,46 +98,51 @@ export default function QuizBlock({ quiz }: Props) {
               </Text>
             </ScaleButton>
           );
-        })}
-      </View>
-
-      {attempt && (
-        <View
-          style={[
-            styles.explanation,
-            attempt.correct ? styles.explanationCorrect : styles.explanationIncorrect,
-          ]}
-        >
-          <Text style={styles.explanationLabel}>{attempt.correct ? '잘했어요' : '아쉬워요'}</Text>
-          <Text style={styles.explanationAnswer}>정답은 {quiz.answer}번 입니다</Text>
-          <Text style={styles.explanationText}>{quiz.explanation}</Text>
+          })}
         </View>
-      )}
+
+        {attempt && (
+          <View style={styles.explanation}>
+            <Text style={styles.explanationLabel}>{attempt.correct ? '잘했어요' : '아쉬워요'}</Text>
+            <Text style={styles.explanationAnswer}>정답은 {quiz.answer}번 입니다</Text>
+            <Text style={styles.explanationText}>{quiz.explanation}</Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
 
+/** 파란 카드 위에 얹는 반투명 흰색 — 보기 상자와 해설 상자의 기본 배경. */
+const WHITE_20 = 'rgba(255, 255, 255, 0.2)';
+
 const styles = StyleSheet.create({
-  wrap: {
+  /** 블록 내용을 통째로 감싸는 파란 카드 */
+  card: {
+    backgroundColor: Colors.blue100,
+    borderRadius: 10,
+    padding: 20,
     gap: 16,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    // 감상 노트의 제목 줄과 같은 위아래 여백
+    paddingVertical: 16,
   },
   title: {
     fontFamily: Fonts.semiBold,
     fontSize: 16,
     letterSpacing: tracking(16),
-    color: Colors.brown100,
+    color: Colors.white,
   },
   question: {
     fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    lineHeight: 26,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
+    fontSize: 20,
+    lineHeight: 30,
+    letterSpacing: tracking(20),
+    color: Colors.white,
   },
   choices: {
     gap: 10,
@@ -148,18 +155,20 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     width: '100%',
     borderWidth: 1,
-    borderColor: Colors.brown10,
+    borderColor: 'transparent',
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    backgroundColor: WHITE_20,
+  },
+  // 정답은 흰 상자로 또렷하게, 오답은 팔레트의 옅은 빨강으로 — 파란 카드 위에서
+  // 둘 다 배경(반투명 흰색)과 확실히 갈린다.
+  choiceCorrect: {
+    borderColor: Colors.white,
     backgroundColor: Colors.white,
   },
-  choiceCorrect: {
-    borderColor: Colors.blue100,
-    backgroundColor: Colors.blue10,
-  },
   choiceIncorrect: {
-    borderColor: Colors.red100,
+    borderColor: Colors.red10,
     backgroundColor: Colors.red10,
   },
   choiceText: {
@@ -167,7 +176,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     letterSpacing: tracking(14),
-    color: Colors.brown100,
+    color: Colors.white,
   },
   choiceTextCorrect: {
     fontFamily: Fonts.semiBold,
@@ -180,31 +189,26 @@ const styles = StyleSheet.create({
   explanation: {
     borderRadius: 8,
     padding: 16,
-    gap: 4,
-  },
-  explanationCorrect: {
-    backgroundColor: Colors.blue10,
-  },
-  explanationIncorrect: {
-    backgroundColor: Colors.red10,
+    gap: 8,
+    backgroundColor: WHITE_20,
   },
   explanationLabel: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
     letterSpacing: tracking(13),
-    color: Colors.brown100,
+    color: Colors.white,
   },
   explanationAnswer: {
     fontFamily: Fonts.semiBold,
-    fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown100,
+    fontSize: 20,
+    letterSpacing: tracking(20),
+    color: Colors.white,
   },
   explanationText: {
     fontFamily: Fonts.regular,
     fontSize: 14,
     lineHeight: 24,
     letterSpacing: tracking(14),
-    color: Colors.brown100,
+    color: Colors.white,
   },
 });
