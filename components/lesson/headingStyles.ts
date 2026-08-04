@@ -30,20 +30,20 @@ export const headingStyles = StyleSheet.create({
   },
   /** 제목 + 부제 묶음 */
   titles: {
-    gap: 4,
+    gap: 8,
   },
   /** 그 날의 표제 — 곡명, 라틴어 원문, 한문 구절, 글 제목 */
   title: {
     fontFamily: Fonts.semiBold,
-    fontSize: 28,
-    letterSpacing: tracking(28),
+    fontSize: 36,
+    letterSpacing: tracking(36),
     color: Colors.brown100,
   },
   /** 표제 바로 아래 — 작곡가, 우리말 뜻, 독음 */
   subtitle: {
     fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    letterSpacing: tracking(16),
+    fontSize: 20,
+    letterSpacing: tracking(20),
     color: Colors.brown100,
   },
   /** 보조행 — 영문 표기, 발음, 출처처럼 작게 붙는 줄 */

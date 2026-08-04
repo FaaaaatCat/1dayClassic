@@ -2,7 +2,6 @@ import * as WebBrowser from 'expo-web-browser';
 import type { AndroidSymbol, SFSymbol } from 'expo-symbols';
 import { SymbolView } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useLessonDetail } from '@/components/lesson/LessonDetailContext';
 import { blockStyles } from '@/components/lesson/blocks/blockStyles';
@@ -38,16 +37,16 @@ const AUDIO_ICON: SymbolName = { ios: 'headphones', android: 'headset', web: 'he
  * 항목 상세의 인트로 — 날짜 문구와 액션 버튼들. Figma를 따라 가운데 정렬한다
  * (기존 today.tsx는 왼쪽 정렬이었다). 8권도 함께 가운데 정렬로 바뀐다 — 의도된 변화다.
  *
- * paddingTop은 기존 today.tsx의 introSection과 같은 값(`insets.top + 20`)을 유지한다 —
- * 가운데 정렬이 되면서 텍스트가 우측 상단 고정 닫기 버튼과 겹칠 일이 줄어, 세로 오프셋을
- * 더 늘릴 이유가 없다(늘리면 8권 전체가 아래로 밀려 픽셀이 바뀐다).
+ * 화면의 첫 블록이라 위 여백을 공통 간격(20) 대신 스스로 정한다 — INTRO_PADDING_TOP.
+ * safe area를 더하지 않고 고정값을 쓴다: 100px면 어떤 기기의 노치보다 충분히 아래다.
  */
+const INTRO_PADDING_TOP = 100;
+
 export default function IntroBlock({ date, tagline, actions }: Props) {
-  const insets = useSafeAreaInsets();
   const { openAudio } = useLessonDetail();
 
   return (
-    <View style={[blockStyles.block, styles.wrap, { paddingTop: insets.top + 20 }]}>
+    <View style={[blockStyles.block, styles.wrap, { paddingTop: INTRO_PADDING_TOP }]}>
       <View style={styles.textGroup}>
         {date && <Text style={styles.line}>{date}</Text>}
         <Text style={styles.line}>{tagline}</Text>

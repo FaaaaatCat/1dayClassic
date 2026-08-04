@@ -11,8 +11,9 @@ import { useLikes } from '@/context/LikesContext';
  * 북마크 + 공유하기. 기존 today.tsx의 actionRow를 옮겼다.
  * 북마크는 기존 `useLikes()`, 공유는 `useLessonDetail().share()`를 쓴다.
  *
- * paddingTop:32는 기존 `content` 컨테이너의 gap(24) + actionRow 자신의 paddingTop(8)을
- * 더한 값이다 — 컨테이너가 사라진 자리를 이 블록이 스스로 채운다.
+ * 두 버튼은 화면 오른쪽에 붙는다. 배경은 brown10, 아이콘은 brown50으로 닫기 버튼과 같은
+ * 차림을 한다 — 셋 다 '내용이 아니라 조작'이라 같은 무게로 보여야 한다.
+ * 북마크의 담김/안 담김은 색이 아니라 아이콘의 채움 여부로 구분된다.
  */
 export default function MoreFunctionsBlock() {
   const { bookLesson, share } = useLessonDetail();
@@ -33,14 +34,14 @@ export default function MoreFunctionsBlock() {
               ? { ios: 'bookmark.fill', android: 'bookmark', web: 'bookmark' }
               : { ios: 'bookmark', android: 'bookmark_border', web: 'bookmark_border' }
           }
-          tintColor={liked ? Colors.beige100 : Colors.brown100}
+          tintColor={Colors.brown50}
           size={18}
         />
       </ScaleButton>
       <ScaleButton accessibilityLabel="공유하기" style={styles.actionButton} onPress={share}>
         <SymbolView
           name={{ ios: 'square.and.arrow.up', android: 'share', web: 'share' }}
-          tintColor={Colors.brown100}
+          tintColor={Colors.brown50}
           size={18}
         />
       </ScaleButton>
@@ -51,8 +52,8 @@ export default function MoreFunctionsBlock() {
 const styles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
     gap: 12,
-    paddingTop: 32,
   },
   actionButton: {
     width: 32,

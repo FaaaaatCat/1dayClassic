@@ -23,6 +23,9 @@ type ChoiceState = 'neutral' | 'correct' | 'incorrect';
  *
  * 제출 버튼은 없다. 보기를 고르면 즉시 기록되고 잠긴다. 이미 푼 항목은 기록에서
  * 상태(고른 보기·해설)를 그대로 복원한다.
+ *
+ * 잠긴 뒤에는 정답 보기를 항상 표시하고, 틀렸다면 내가 고른 오답도 함께 표시한다.
+ * 해설은 '잘했어요/아쉬워요 → 정답은 n번 입니다 → 해설' 순서로 읽힌다.
  */
 export default function QuizBlock({ quiz }: Props) {
   const { bookLesson } = useLessonDetail();
@@ -61,13 +64,15 @@ export default function QuizBlock({ quiz }: Props) {
           const choiceNumber = (index + 1) as 1 | 2 | 3 | 4;
           const isSelected = attempt?.choice === choiceNumber;
           const isAnswer = choiceNumber === quiz.answer;
+          // 잠긴 뒤에는 정답을 '항상' 표시한다 — 내가 고른 것만 표시하면 틀렸을 때
+          // 무엇이 정답이었는지 알 수 없다. 내가 고른 오답은 그 위에 따로 표시한다.
           const state: ChoiceState = !locked
             ? 'neutral'
-            : isSelected
-              ? isAnswer
-                ? 'correct'
-                : 'incorrect'
-              : 'neutral';
+            : isAnswer
+              ? 'correct'
+              : isSelected
+                ? 'incorrect'
+                : 'neutral';
 
           return (
             <ScaleButton
@@ -101,7 +106,8 @@ export default function QuizBlock({ quiz }: Props) {
             attempt.correct ? styles.explanationCorrect : styles.explanationIncorrect,
           ]}
         >
-          <Text style={styles.explanationLabel}>{attempt.correct ? '정답입니다' : '아쉬워요'}</Text>
+          <Text style={styles.explanationLabel}>{attempt.correct ? '잘했어요' : '아쉬워요'}</Text>
+          <Text style={styles.explanationAnswer}>정답은 {quiz.answer}번 입니다</Text>
           <Text style={styles.explanationText}>{quiz.explanation}</Text>
         </View>
       )}
@@ -111,7 +117,6 @@ export default function QuizBlock({ quiz }: Props) {
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingTop: 24,
     gap: 16,
   },
   titleRow: {
@@ -183,6 +188,12 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     fontSize: 13,
     letterSpacing: tracking(13),
+    color: Colors.brown100,
+  },
+  explanationAnswer: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    letterSpacing: tracking(14),
     color: Colors.brown100,
   },
   explanationText: {

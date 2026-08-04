@@ -98,7 +98,7 @@ export default function LessonDetailShell({ bookLesson, children }: Props) {
           >
             <SymbolView
               name={{ ios: 'xmark', android: 'close', web: 'close' }}
-              tintColor={Colors.brown100}
+              tintColor={Colors.brown50}
               size={18}
             />
           </ScaleButton>

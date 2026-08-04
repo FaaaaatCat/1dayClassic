@@ -24,9 +24,7 @@ interface Props {
  * 호출 한도(Starter 플랜)에 걸렸다. 지금 이 배치를 실제로 쓰는 책이 없어(클래식은 column만
  * 쓴다) 당장 화면에 영향은 없지만, 듣기 책을 이관할 때 Figma로 다시 확인해야 한다.
  *
- * paddingTop:40은 기존 today.tsx의 `content` 컨테이너가 표제부 앞에 두던 여백이다.
- * DefaultDetail은 이 블록 대신 기존 LessonHeading을 계속 쓰므로(8권 화면 불변 규칙),
- * 이 여백 값은 클래식에만 적용된다.
+ * 앞 블록과의 간격은 blockStyles.block이 9종에 똑같이 준다 — 이 블록은 갖지 않는다.
  */
 export default function TitleBlock({ label, layout = 'column', title, subtitle, meta, decoration }: Props) {
   return (
@@ -66,7 +64,6 @@ export default function TitleBlock({ label, layout = 'column', title, subtitle, 
 
 const styles = StyleSheet.create({
   section: {
-    paddingTop: 40,
     gap: 16,
   },
   columnTitles: {

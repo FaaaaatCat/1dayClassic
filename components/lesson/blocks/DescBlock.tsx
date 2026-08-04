@@ -9,8 +9,7 @@ interface Props {
 /**
  * 본문 문단들. 기존 today.tsx의 paragraph 스타일을 그대로 옮긴다.
  *
- * paddingTop:24는 기존 `content` 컨테이너의 gap(24)을 대신한다(앞 블록—표제부 또는
- * 인용문—과의 간격). 문단 사이 gap도 같은 값(24)이었으므로 내부 gap도 24로 맞춘다.
+ * 앞 블록과의 간격은 blockStyles.block이 준다. 여기 gap(24)은 문단 사이 간격이라 별개다.
  */
 export default function DescBlock({ paragraphs }: Props) {
   return (
@@ -26,7 +25,6 @@ export default function DescBlock({ paragraphs }: Props) {
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingTop: 24,
     gap: 24,
   },
 });

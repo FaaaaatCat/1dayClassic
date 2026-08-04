@@ -28,9 +28,8 @@ interface Props {
  * 두 줄 분리는 새 디자인이므로 8권에도 함께 적용된다 — 의도된 변화다(구 formatIntroText가
  * 합치던 한 줄을 IntroBlock이 date/tagline 두 줄로 나눠 받는다).
  *
- * 표제부 앞뒤 여백(paddingHorizontal:20, paddingTop:40)은 이 파일이 직접 갖는다 — 예전엔
- * today.tsx의 `content` 컨테이너가 주던 여백인데, LessonHeading·headingStyles.ts는 고치지
- * 않기로 했으므로 그 책임을 여기서 대신 진다.
+ * 표제부 여백은 이 파일이 직접 갖는다 — LessonHeading은 blockStyles.block을 쓰지 않으므로
+ * 다른 블록과 같은 간격이 나오도록 여기서 맞춘다.
  */
 export default function DefaultDetail({ bookLesson }: Props) {
   const lesson = bookLesson.lesson;
@@ -61,8 +60,10 @@ export default function DefaultDetail({ bookLesson }: Props) {
 }
 
 const styles = StyleSheet.create({
+  // 표제부는 LessonHeading이 그리므로 blockStyles.block을 쓸 수 없다 — 다른 블록과 같은
+  // 여백(좌우 20 · 위 20)을 여기서 직접 준다.
   heading: {
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 20,
   },
 });

@@ -15,8 +15,7 @@ import { useNotes, type Note } from '@/context/NotesContext';
  * 입력 중인 글(draft)은 이 블록 안에서 관리한다. 항목이 바뀌면 비워야 하는데, 그건
  * 상위(조합 파일)가 `key`로 이 블록을 다시 마운트시켜 처리한다 — 여기서는 그걸 전제한다.
  *
- * paddingTop:44는 기존 `content` 컨테이너의 gap(24) + notesSection 자신의 paddingTop(20)을
- * 더한 값이다 — 컨테이너가 사라진 자리를 이 블록이 스스로 채운다.
+ * 블록 사이 간격은 이 블록이 갖지 않는다 — blockStyles.block이 9종에 똑같이 준다.
  */
 export default function NoteBlock() {
   const { bookLesson } = useLessonDetail();
@@ -40,7 +39,7 @@ export default function NoteBlock() {
   };
 
   return (
-    <View style={[blockStyles.block, styles.notesSection]}>
+    <View style={blockStyles.block}>
       <View style={styles.notesTitleRow}>
         <SymbolView
           name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
@@ -105,9 +104,6 @@ export default function NoteBlock() {
 }
 
 const styles = StyleSheet.create({
-  notesSection: {
-    paddingTop: 44,
-  },
   notesTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',

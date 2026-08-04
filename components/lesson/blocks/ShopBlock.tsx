@@ -42,7 +42,6 @@ export default function ShopBlock() {
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingTop: 24,
   },
   card: {
     height: 240,

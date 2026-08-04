@@ -10,9 +10,16 @@ import { Colors, Fonts, tracking } from '@/constants/theme';
  * 값이 두 곳에 중복되지만, 9권 이관이 끝나면 `headingStyles.ts`가 통째로 사라지므로 일시적이다.
  */
 export const blockStyles = StyleSheet.create({
-  /** 블록 하나의 바깥 여백 — Figma에서 블록이 x=20, width=320 */
+  /**
+   * 블록 하나의 바깥 여백 — 좌우는 Figma 기준(x=20, width=320), 위는 블록 사이 간격이다.
+   *
+   * 간격을 블록마다 따로 두지 않고 여기서 한 번에 정한다. 블록은 순서가 책마다 바뀌므로
+   * "앞에 무엇이 오는지"를 각자 알 수 없고, 알 필요도 없어야 한다.
+   * 첫 블록만 자기 paddingTop을 덮어쓴다(인트로).
+   */
   block: {
     paddingHorizontal: 20,
+    paddingTop: 20,
   },
   /** 책 이름 태그 알약 */
   tag: {

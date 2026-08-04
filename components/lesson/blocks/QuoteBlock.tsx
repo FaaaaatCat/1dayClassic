@@ -12,8 +12,7 @@ interface Props {
  * 인용문 + 출처. 기존 today.tsx의 quoteOuter/quoteInner/quoteText 조판을 그대로 옮긴다.
  * `Fonts.serifDisplay`를 쓰는 현재 조판을 유지한다(라틴 전용이라 한글은 시스템 폴백으로 그려진다).
  *
- * paddingTop:24는 기존 `content` 컨테이너의 gap(24)을 대신한다 — 블록마다 스스로
- * 앞 블록과의 간격을 갖는 구조라 컨테이너 gap이 없어진 자리를 채운다.
+ * 앞 블록과의 간격은 blockStyles.block이 9종에 똑같이 준다 — 이 블록은 갖지 않는다.
  */
 export default function QuoteBlock({ text, by }: Props) {
   return (
@@ -30,7 +29,6 @@ export default function QuoteBlock({ text, by }: Props) {
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingTop: 24,
   },
   quoteOuter: {
     borderTopWidth: 1,
