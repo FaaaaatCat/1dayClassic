@@ -141,7 +141,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   choiceButton: {
-    alignItems: 'flex-start',
+    // 'flex-start'가 아니라 'stretch'다. flex-start면 안쪽 Text가 '글자 길이만큼'의 폭을
+    // 갖는데(= 내용 폭), 그러면 Android에서 글자가 쓸 수 있는 폭을 넘길 때 줄바꿈되지 않고
+    // 잘려 버린다. stretch면 Text가 버튼 폭을 그대로 받아 제 경계에서 줄바꿈한다.
+    // 웹에서는 글자가 짧아 우연히 안 넘쳐서 이 차이가 드러나지 않는다.
+    alignItems: 'stretch',
     width: '100%',
     borderWidth: 1,
     borderColor: Colors.brown10,
