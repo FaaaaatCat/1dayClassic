@@ -25,6 +25,24 @@ export interface LessonHeading {
 }
 
 /**
+ * 항목마다 붙는 4지선다 한 문제.
+ *
+ * 콘텐츠를 개발자가 아닌 사람이 직접 적으므로 `answer`는 0이 아니라 1부터 센다 —
+ * 화면에 보이는 "2번"과 데이터에 적는 2가 같아야 한다. 0부터의 색인 변환은 코드가 한다.
+ */
+export interface Quiz {
+  /** 예: "오늘의 퀴즈" */
+  title: string;
+  question: string;
+  /** 보기 4개. 개수는 lib/quiz.ts가 개발 중에 검사한다. */
+  choices: string[];
+  /** 정답 번호 — 1부터 4까지 */
+  answer: 1 | 2 | 3 | 4;
+  /** 보기를 고르면 바로 열리는 해설 */
+  explanation: string;
+}
+
+/**
  * '하루 시리즈' 책들이 공유하는 하루치 항목의 공통부.
  *
  * 표제부(곡 제목, 라틴어 원문, 한문 구절, 한자 …)는 책마다 다르므로 여기 두지 않는다.
@@ -50,6 +68,8 @@ export interface DailyLesson {
   audio?: string;
   /** 커버 이미지 — Storage 경로("latin/foo.jpg") 또는 완성된 http(s) URL */
   coverImage: string;
+  /** 오늘의 퀴즈. 없는 날은 생략하며, 그러면 화면에 퀴즈 영역이 나오지 않는다. */
+  quiz?: Quiz;
   /** 데모: true면 로테이션 대신 오늘의 항목으로 고정 */
   featured?: boolean;
 }
@@ -70,6 +90,8 @@ export interface Track extends DailyLesson {
   quote?: string;
   /** 인용문 출처 */
   quoteBy?: string;
+  /** '노래 듣기' 버튼이 여는 유튜브 주소. 없으면 버튼이 나오지 않는다. */
+  youtubeUrl?: string;
 }
 
 export interface TracksData {

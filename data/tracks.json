@@ -16,6 +16,19 @@
       ],
       "coverImage": "musics/1_1.Pizzicato-Polka.jpeg",
       "audio": "musics/1_1.Pizzicato-Polka.mp3",
+      "youtubeUrl": "https://www.youtube.com/results?search_query=%ED%94%BC%EC%B9%98%EC%B9%B4%ED%86%A0+%ED%8F%B4%EC%B9%B4+%EC%9A%94%ED%95%9C+%EC%8A%88%ED%8A%B8%EB%9D%BC%EC%9A%B0%EC%8A%A4",
+      "quiz": {
+        "title": "오늘의 퀴즈",
+        "question": "'피치카토'는 어떤 연주법을 뜻할까요?",
+        "choices": [
+          "활로 현을 켠다",
+          "손가락으로 현을 뜯는다",
+          "활대로 현을 두드린다",
+          "현을 손바닥으로 누른다"
+        ],
+        "answer": 2,
+        "explanation": "피치카토(pizzicato)는 이탈리아어로 '꼬집다, 뜯다'라는 뜻입니다. 활을 내려놓고 손가락으로 현을 직접 뜯어 짧고 통통 튀는 소리를 내지요. 요한 슈트라우스 2세는 이 주법만으로 곡 전체를 채워 「피치카토 폴카」를 만들었습니다."
+      },
       "featured": true
     },
     {
