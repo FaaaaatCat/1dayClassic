@@ -103,8 +103,22 @@ export default function QuizBlock({ quiz }: Props) {
 
         {attempt && (
           <View style={styles.explanation}>
-            <Text style={styles.explanationLabel}>{attempt.correct ? '잘했어요' : '아쉬워요'}</Text>
-            <Text style={styles.explanationAnswer}>정답은 {quiz.answer}번 입니다</Text>
+            <Text
+              style={[
+                styles.explanationLabel,
+                attempt.correct ? styles.resultCorrect : styles.resultIncorrect,
+              ]}
+            >
+              {attempt.correct ? '잘했어요' : '아쉬워요'}
+            </Text>
+            <Text
+              style={[
+                styles.explanationAnswer,
+                attempt.correct ? styles.resultCorrect : styles.resultIncorrect,
+              ]}
+            >
+              정답은 {quiz.answer}번 입니다
+            </Text>
             <Text style={styles.explanationText}>{quiz.explanation}</Text>
           </View>
         )}
@@ -186,29 +200,35 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.semiBold,
     color: Colors.red100,
   },
+  // 파란 카드 위에 얹히는 흰 상자 — 여기 안쪽만 글자가 어둡다.
   explanation: {
     borderRadius: 8,
     padding: 16,
     gap: 8,
-    backgroundColor: WHITE_20,
+    backgroundColor: Colors.white,
   },
   explanationLabel: {
     fontFamily: Fonts.semiBold,
     fontSize: 13,
     letterSpacing: tracking(13),
-    color: Colors.white,
   },
   explanationAnswer: {
     fontFamily: Fonts.semiBold,
     fontSize: 20,
     letterSpacing: tracking(20),
-    color: Colors.white,
+  },
+  /** '잘했어요'와 '정답은 n번 입니다'의 색 — 맞았는지 틀렸는지를 이 두 줄이 전한다. */
+  resultCorrect: {
+    color: Colors.blue100,
+  },
+  resultIncorrect: {
+    color: Colors.red100,
   },
   explanationText: {
     fontFamily: Fonts.regular,
     fontSize: 14,
     lineHeight: 24,
     letterSpacing: tracking(14),
-    color: Colors.white,
+    color: Colors.brown100,
   },
 });
