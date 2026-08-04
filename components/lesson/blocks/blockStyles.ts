@@ -11,15 +11,16 @@ import { Colors, Fonts, tracking } from '@/constants/theme';
  */
 export const blockStyles = StyleSheet.create({
   /**
-   * 블록 하나의 바깥 여백 — 좌우는 Figma 기준(x=20, width=320), 위는 블록 사이 간격이다.
+   * 블록 하나의 여백 — 네 방향 모두 20으로 통일한다.
    *
-   * 간격을 블록마다 따로 두지 않고 여기서 한 번에 정한다. 블록은 순서가 책마다 바뀌므로
-   * "앞에 무엇이 오는지"를 각자 알 수 없고, 알 필요도 없어야 한다.
-   * 첫 블록만 자기 paddingTop을 덮어쓴다(인트로).
+   * 블록은 순서가 책마다 바뀌므로 "앞에 무엇이 오는지"를 각자 알 수 없고, 알 필요도 없다.
+   * 그래서 여백을 블록마다 따로 두지 않고 여기서 한 번에 정한다.
+   *
+   * **어떤 블록도 이 값을 덮어쓰지 않는다.** 특정 블록의 안쪽을 더 띄우고 싶으면
+   * 블록의 padding이 아니라 그 안의 요소에 여백을 준다(인트로의 textGroup이 그 예다).
    */
   block: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    padding: 20,
   },
   /** 책 이름 태그 알약 */
   tag: {

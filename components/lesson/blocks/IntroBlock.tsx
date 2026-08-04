@@ -37,16 +37,19 @@ const AUDIO_ICON: SymbolName = { ios: 'headphones', android: 'headset', web: 'he
  * 항목 상세의 인트로 — 날짜 문구와 액션 버튼들. Figma를 따라 가운데 정렬한다
  * (기존 today.tsx는 왼쪽 정렬이었다). 8권도 함께 가운데 정렬로 바뀐다 — 의도된 변화다.
  *
- * 화면의 첫 블록이라 위 여백을 공통 간격(20) 대신 스스로 정한다 — INTRO_PADDING_TOP.
+ * 화면의 첫 블록이라 글자를 아래로 더 내려야 하는데, 그 여백을 **블록에 주지 않는다** —
+ * blockStyles.block의 20은 9종이 공유하는 값이라 여기서 깨면 통일이 무너진다.
+ * 대신 안쪽 textGroup이 스스로 TEXT_GROUP_PADDING_TOP만큼 내려온다.
+ *
  * safe area를 더하지 않고 고정값을 쓴다: 100px면 어떤 기기의 노치보다 충분히 아래다.
  */
-const INTRO_PADDING_TOP = 100;
+const TEXT_GROUP_PADDING_TOP = 100;
 
 export default function IntroBlock({ date, tagline, actions }: Props) {
   const { openAudio } = useLessonDetail();
 
   return (
-    <View style={[blockStyles.block, styles.wrap, { paddingTop: INTRO_PADDING_TOP }]}>
+    <View style={[blockStyles.block, styles.wrap]}>
       <View style={styles.textGroup}>
         {date && <Text style={styles.line}>{date}</Text>}
         <Text style={styles.line}>{tagline}</Text>
@@ -84,12 +87,12 @@ export default function IntroBlock({ date, tagline, actions }: Props) {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    paddingBottom: 20,
     gap: 16,
   },
   textGroup: {
     alignItems: 'center',
     gap: 8,
+    paddingTop: TEXT_GROUP_PADDING_TOP,
   },
   line: {
     fontFamily: Fonts.semiBold,

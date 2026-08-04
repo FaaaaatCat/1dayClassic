@@ -60,10 +60,9 @@ export default function DefaultDetail({ bookLesson }: Props) {
 }
 
 const styles = StyleSheet.create({
-  // 표제부는 LessonHeading이 그리므로 blockStyles.block을 쓸 수 없다 — 다른 블록과 같은
-  // 여백(좌우 20 · 위 20)을 여기서 직접 준다.
+  // 표제부는 LessonHeading이 그리므로 blockStyles.block을 쓸 수 없다 —
+  // 다른 블록과 같은 여백(네 방향 20)을 여기서 직접 맞춘다.
   heading: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    padding: 20,
   },
 });
