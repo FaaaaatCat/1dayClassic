@@ -27,8 +27,9 @@ export default function NoteBlock() {
   const lesson = bookLesson.lesson;
   const { notesOf, addNote, deleteNote } = useNotes();
   const notes = notesOf(lesson.id);
-  // 음원이 없는 항목은 이야기 낭독만 한다 — 감상 노트 아이콘 선택에 쓴다.
-  const hasAudio = Boolean(lesson.audio);
+  // 기록 아이콘 — 음악을 다루는 책이면 음표, 아니면 책 모양.
+  // (예전에는 항목의 음원 유무로 갈랐는데, 음원이 항목에서 없어져 책으로 판단한다.)
+  const isMusicBook = bookLesson.book === 'classic';
 
   const [draft, setDraft] = useState('');
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -85,7 +86,7 @@ export default function NoteBlock() {
             <View style={styles.noteItemIcon}>
               <SymbolView
                 name={
-                  hasAudio
+                  isMusicBook
                     ? { ios: 'music.note', android: 'music_note', web: 'music_note' }
                     : { ios: 'book', android: 'menu_book', web: 'menu_book' }
                 }

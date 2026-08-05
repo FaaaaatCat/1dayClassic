@@ -10,20 +10,14 @@ export const MEDIA_HEADERS: Record<string, string> = {
 };
 
 /**
- * 책들의 공통 미디어 해석기 — 클래식(Track)을 포함한 9권 모두 이 두 함수를 쓴다.
+ * 커버 이미지 해석기 — 9권이 함께 쓴다.
  *
- * 책마다 데이터 파일과 표제 필드는 다르지만 audio/coverImage는 DailyLesson 공통부라
- * 여기 한 곳에서만 해석한다. 실제 변환은 resolveMediaUrl 하나로 모이므로 다운로드 URL
+ * 책마다 데이터 파일과 표제 필드는 다르지만 coverImage는 DailyLesson 공통부라 여기
+ * 한 곳에서만 해석한다. 실제 변환은 resolveMediaUrl 하나로 모이므로 다운로드 URL
  * 캐시(lib/firebase.ts)도 함께 공유한다.
  *
- * 값이 비어 있으면(음원 미준비, 무료 회원 등) undefined를 돌려준다 — 호출부가 재생/이미지
- * 없는 상태를 직접 처리한다.
+ * 낭독 배경음악은 항목이 아니라 설정에 딸린 값이라 여기 없다 — lib/bgm.ts를 보라.
  */
-export function resolveLessonAudioUrl(lesson: DailyLesson): Promise<string | undefined> {
-  if (!lesson.audio) return Promise.resolve(undefined);
-  return resolveMediaUrl(lesson.audio);
-}
-
 export function resolveLessonCoverImageUrl(lesson: DailyLesson): Promise<string | undefined> {
   if (!lesson.coverImage) return Promise.resolve(undefined);
   return resolveMediaUrl(lesson.coverImage);

@@ -6,6 +6,7 @@ import { Alert } from 'react-native';
 import 'react-native-reanimated';
 
 import { AlarmProvider } from '@/context/AlarmContext';
+import { BgmProvider } from '@/context/BgmContext';
 import { BookSelectionProvider } from '@/context/BookSelectionContext';
 import { LikesProvider } from '@/context/LikesContext';
 import { NotesProvider } from '@/context/NotesContext';
@@ -77,11 +78,13 @@ export default function RootLayout() {
           <LikesProvider>
             <NotesProvider>
               <QuizProvider>
+                <BgmProvider>
                 <ToastProvider>
                   <Stack>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                   </Stack>
                 </ToastProvider>
+                </BgmProvider>
               </QuizProvider>
             </NotesProvider>
           </LikesProvider>

@@ -59,13 +59,6 @@ export interface DailyLesson {
   source?: string;
   /** 본문 문단들 — 오늘의 이야기 본문이자 나레이션 낭독 대상 */
   story: string[];
-  /**
-   * 음원. Firebase Storage 경로("latin/foo.mp3") 또는 완성된 http(s) URL.
-   *
-   * 없을 수 있다 — 아직 음원을 준비하지 않았거나, 유료 회원에게만 음원을 제공하는 경우다.
-   * 음원이 없으면 재생 컨트롤 대신 story를 TTS로 읽는 경로로 간다.
-   */
-  audio?: string;
   /** 커버 이미지 — Storage 경로("latin/foo.jpg") 또는 완성된 http(s) URL */
   coverImage: string;
   /** 오늘의 퀴즈. 없는 날은 생략하며, 그러면 화면에 퀴즈 영역이 나오지 않는다. */

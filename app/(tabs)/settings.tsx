@@ -1,10 +1,16 @@
+import { SymbolView } from 'expo-symbols';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
+import ScaleButton from '@/components/ScaleButton';
 import SettingRow from '@/components/SettingRow';
-import { Palette, Radius, Shadow, Spacing, Typography } from '@/constants/theme';
+import { Colors, Fonts, Palette, Radius, Shadow, Spacing, tracking, Typography } from '@/constants/theme';
+import { useBgm } from '@/context/BgmContext';
+import { BGM_OPTIONS } from '@/lib/bgm';
 
 export default function SettingsScreen() {
+  const { bgmId, select } = useBgm();
+
   return (
     <ScrollView
       style={styles.screen}
@@ -20,6 +26,40 @@ export default function SettingsScreen() {
       </Animated.View>
 
       <Animated.View entering={FadeIn.duration(700).delay(350)} style={styles.card}>
+        <Text style={styles.sectionTitle}>낭독 배경음악</Text>
+        <Text style={styles.sectionHint}>
+          오디오 듣기를 누르면 여기서 고른 음악이 낭독 아래에 깔립니다.
+        </Text>
+
+        <View style={styles.bgmList}>
+          {BGM_OPTIONS.map((option) => {
+            const selected = option.id === bgmId;
+            return (
+              <ScaleButton
+                key={option.id}
+                accessibilityLabel={`배경음악 ${option.label}`}
+                style={[styles.bgmRow, selected && styles.bgmRowSelected]}
+                onPress={() => select(option.id)}
+              >
+                <View style={styles.bgmRowInner}>
+                  <Text style={[styles.bgmLabel, selected && styles.bgmLabelSelected]}>
+                    {option.label}
+                  </Text>
+                  {selected && (
+                    <SymbolView
+                      name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                      tintColor={Colors.green100}
+                      size={18}
+                    />
+                  )}
+                </View>
+              </ScaleButton>
+            );
+          })}
+        </View>
+      </Animated.View>
+
+      <Animated.View entering={FadeIn.duration(700).delay(500)} style={styles.card}>
         <SettingRow label="버전" value="1.0.0 (데모)" />
       </Animated.View>
     </ScrollView>
@@ -54,5 +94,52 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Palette.subText,
     marginTop: Spacing.lg,
+  },
+
+  // 낭독 배경음악 고르기
+  sectionTitle: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 16,
+    letterSpacing: tracking(16),
+    color: Colors.brown100,
+  },
+  sectionHint: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 20,
+    letterSpacing: tracking(13),
+    color: Colors.brown50,
+    marginTop: Spacing.xs,
+  },
+  bgmList: {
+    marginTop: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  bgmRow: {
+    alignItems: 'stretch',
+    borderWidth: 1,
+    borderColor: Colors.brown10,
+    borderRadius: 10,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  bgmRowSelected: {
+    borderColor: Colors.green100,
+    backgroundColor: Colors.green10,
+  },
+  bgmRowInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  bgmLabel: {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    letterSpacing: tracking(15),
+    color: Colors.brown100,
+  },
+  bgmLabelSelected: {
+    fontFamily: Fonts.semiBold,
+    color: Colors.green100,
   },
 });
