@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useLessonDetail } from '@/components/lesson/LessonDetailContext';
+import BlockEntryButton from '@/components/lesson/blocks/BlockEntryButton';
+import BlockSheet from '@/components/lesson/blocks/BlockSheet';
 import { blockStyles } from '@/components/lesson/blocks/blockStyles';
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
@@ -16,6 +18,9 @@ import { useNotes, type Note } from '@/context/NotesContext';
  * 상위(조합 파일)가 `key`로 이 블록을 다시 마운트시켜 처리한다 — 여기서는 그걸 전제한다.
  *
  * 블록 사이 간격은 이 블록이 갖지 않는다 — blockStyles.block이 9종에 똑같이 준다.
+ *
+ * 상세 화면에는 '오늘의 감상노트 남기기' 버튼만 놓고, 쓰는 일은 전체화면 팝업에서 한다.
+ * 기록이 하나라도 있으면 버튼 옆에 완료 표시가 남는다.
  */
 export default function NoteBlock() {
   const { bookLesson } = useLessonDetail();
@@ -26,6 +31,8 @@ export default function NoteBlock() {
   const hasAudio = Boolean(lesson.audio);
 
   const [draft, setDraft] = useState('');
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const hasNotes = notes.length > 0;
 
   const submitDraft = () => {
     addNote(lesson.id, draft);
@@ -40,15 +47,18 @@ export default function NoteBlock() {
 
   return (
     <View style={blockStyles.block}>
-      <View style={styles.notesTitleRow}>
-        <SymbolView
-          name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
-          tintColor={Colors.brown100}
-          size={14}
-        />
-        <Text style={styles.notesTitle}>감상 노트</Text>
-      </View>
+      <BlockEntryButton
+        label="오늘의 감상노트 남기기"
+        done={hasNotes}
+        onPress={() => setSheetVisible(true)}
+      />
 
+      <BlockSheet
+        visible={sheetVisible}
+        title="오늘의 감상노트"
+        done={hasNotes}
+        onClose={() => setSheetVisible(false)}
+      >
       <View style={styles.noteBox}>
         <TextInput
           style={styles.noteInput}
@@ -63,6 +73,8 @@ export default function NoteBlock() {
         </ScaleButton>
       </View>
 
+      {/* 기록이 하나도 없으면 목록 자체를 띄우지 않는다 — 쓰고 나서야 나타난다. */}
+      {hasNotes && (
       <View style={styles.noteList}>
         <View style={styles.noteCountRow}>
           <Text style={styles.noteCount}>{notes.length}개의 기록</Text>
@@ -99,23 +111,13 @@ export default function NoteBlock() {
           </View>
         ))}
       </View>
+      )}
+      </BlockSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  notesTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 16,
-  },
-  notesTitle: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
-  },
   noteBox: {
     borderWidth: 1,
     borderColor: Colors.brown50,

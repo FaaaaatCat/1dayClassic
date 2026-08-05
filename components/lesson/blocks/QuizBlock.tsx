@@ -1,7 +1,10 @@
 import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useLessonDetail } from '@/components/lesson/LessonDetailContext';
+import BlockEntryButton from '@/components/lesson/blocks/BlockEntryButton';
+import BlockSheet from '@/components/lesson/blocks/BlockSheet';
 import { blockStyles } from '@/components/lesson/blocks/blockStyles';
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
@@ -26,12 +29,16 @@ type ChoiceState = 'neutral' | 'correct' | 'incorrect';
  *
  * 잠긴 뒤에는 정답 보기를 항상 표시하고, 틀렸다면 내가 고른 오답도 함께 표시한다.
  * 해설은 '잘했어요/아쉬워요 → 정답은 n번 입니다 → 해설' 순서로 읽힌다.
+ *
+ * 상세 화면에는 '오늘의 복습 Quiz' 버튼만 놓고, 문제는 전체화면 팝업에서 푼다.
+ * 한 번 풀면 버튼 옆에 완료 표시가 남는다.
  */
 export default function QuizBlock({ quiz }: Props) {
   const { bookLesson } = useLessonDetail();
   const lessonId = bookLesson.lesson.id;
   const bookId = bookLesson.book; // QuizAttempt.bookId에 그대로 넣는다
   const { attemptOf, record } = useQuiz();
+  const [sheetVisible, setSheetVisible] = useState(false);
 
   const attempt = attemptOf(lessonId);
   const locked = attempt !== undefined;
@@ -48,6 +55,18 @@ export default function QuizBlock({ quiz }: Props) {
 
   return (
     <View style={blockStyles.block}>
+      <BlockEntryButton
+        label="오늘의 복습 Quiz"
+        done={locked}
+        onPress={() => setSheetVisible(true)}
+      />
+
+      <BlockSheet
+        visible={sheetVisible}
+        title="오늘의 복습 Quiz"
+        done={locked}
+        onClose={() => setSheetVisible(false)}
+      >
       {/* 블록 안의 모든 내용을 파란 카드 하나로 감싼다 — 배경이 어두워서 안쪽 글자는 흰색이다. */}
       <View style={styles.card}>
         <View style={styles.titleRow}>
@@ -122,7 +141,8 @@ export default function QuizBlock({ quiz }: Props) {
             <Text style={styles.explanationText}>{quiz.explanation}</Text>
           </View>
         )}
-      </View>
+        </View>
+      </BlockSheet>
     </View>
   );
 }

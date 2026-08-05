@@ -25,6 +25,9 @@ export const Colors = {
   red100: '#EB5757', // --red-100
   red50: '#F5ABAB', // --red-50
   red10: '#FEF3F4', // --red-10
+  green100: '#2E7D4F', // --green-100
+  green50: '#97C7AC', // --green-50
+  green10: '#EDF6F0', // --green-10
 } as const;
 
 /** 번들된 서체 — 을유1945(기본), DM Serif Display(인용문 전용·라틴만 지원) */
