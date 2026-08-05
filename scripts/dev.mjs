@@ -8,8 +8,11 @@
  * 폰이 안 꽂혀 있어도 Metro는 그냥 띄운다. 나중에 꽂고 `npm run device`만 다시 돌리면 된다.
  */
 import { execFileSync, spawn } from 'node:child_process';
+import http from 'node:http';
 
 const PORT = 8081;
+/** 폰에 설치된 dev build. app.json의 android.package와 같아야 한다. */
+const APP_ACTIVITY = 'com.onedayalarm.app/.MainActivity';
 
 /**
  * 붙어 있는 기기와 그 상태. adb를 못 찾으면 null.
@@ -89,12 +92,54 @@ export function setupReverse() {
   }
 }
 
+/** 폰에서 앱을 띄운다. 이미 열려 있으면 앞으로 가져온다. */
+export function launchApp() {
+  try {
+    execFileSync('adb', ['shell', 'am', 'start', '-n', APP_ACTIVITY], { stdio: 'ignore' });
+    console.log('✓ 폰에서 앱을 열었습니다.');
+    return true;
+  } catch {
+    console.log('⚠  앱을 열지 못했습니다. dev build가 폰에 설치돼 있는지 확인해 주세요.');
+    console.log('   설치가 안 돼 있으면: npx expo run:android');
+    return false;
+  }
+}
+
+/** Metro가 응답할 때까지 기다린다. 준비 전에 앱을 열면 번들을 못 받아 에러 화면이 뜬다. */
+function waitForMetro(timeoutMs = 90000) {
+  const deadline = Date.now() + timeoutMs;
+
+  const ping = () =>
+    new Promise((resolve) => {
+      const request = http.get(
+        { host: 'localhost', port: PORT, path: '/status', timeout: 2000 },
+        (response) => {
+          let body = '';
+          response.on('data', (chunk) => (body += chunk));
+          response.on('end', () => resolve(body.includes('packager-status:running')));
+        },
+      );
+      request.on('error', () => resolve(false));
+      request.on('timeout', () => {
+        request.destroy();
+        resolve(false);
+      });
+    });
+
+  return (async () => {
+    while (Date.now() < deadline) {
+      if (await ping()) return true;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    return false;
+  })();
+}
+
 /** 이 파일을 직접 실행했을 때만 Metro까지 띄운다(`npm run device`는 위 함수만 쓴다). */
 if (process.argv[1] && process.argv[1].endsWith('dev.mjs')) {
-  setupReverse();
+  const phoneReady = setupReverse();
 
-  console.log(`\nMetro를 시작합니다 (포트 ${PORT})...`);
-  console.log('폰에서 dev build 앱을 여세요. Expo Go로는 열리지 않습니다.\n');
+  console.log(`\nMetro를 시작합니다 (포트 ${PORT})...\n`);
 
   const metro = spawn(
     process.platform === 'win32' ? 'npx.cmd' : 'npx',
@@ -106,4 +151,17 @@ if (process.argv[1] && process.argv[1].endsWith('dev.mjs')) {
   );
 
   metro.on('exit', (code) => process.exit(code ?? 0));
+
+  // Metro가 뜬 뒤에 앱을 연다. 준비되기 전에 열면 번들을 못 받아 에러 화면이 뜬다.
+  if (phoneReady) {
+    waitForMetro().then((ready) => {
+      if (!ready) {
+        console.log('\n⚠  Metro가 준비되지 않아 앱을 자동으로 열지 못했습니다.');
+        console.log('   Metro가 뜬 뒤 다른 터미널에서 `npm run device`를 실행하세요.');
+        return;
+      }
+      console.log('');
+      launchApp();
+    });
+  }
 }

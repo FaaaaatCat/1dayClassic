@@ -1,10 +1,9 @@
 /**
- * `npm run device` — Metro는 이미 켜져 있는데 폰만 다시 꽂았을 때 쓴다.
- * USB 터널만 다시 연다.
+ * `npm run device` — Metro는 이미 켜져 있는데 폰만 다시 꽂았거나 앱이 안 열릴 때 쓴다.
+ * USB 터널을 다시 열고 앱을 띄운다.
  */
-import { setupReverse } from './dev.mjs';
+import { launchApp, setupReverse } from './dev.mjs';
 
-const ok = setupReverse();
-if (ok) {
-  console.log('\n폰에서 dev build 앱을 열거나, 이미 열려 있으면 Reload 하세요.');
+if (setupReverse()) {
+  launchApp();
 }
