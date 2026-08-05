@@ -15,21 +15,23 @@ interface Props {
 
 /** 구매 전에 보여 주는 기본 비율 */
 const VISIBLE_RATIO = 0.4;
-/** 40%가 이보다 짧으면 이만큼까지 늘려 보여 준다 — 너무 조금 보여 주면 읽을 맛이 없다. */
+/** 40%가 이보다 짧으면 이만큼까지 늘려 준다 — 너무 조금 보여 주면 읽을 맛이 없다. */
 const MIN_VISIBLE_CHARS = 400;
-/** 원문이 짧은(≤ MIN_VISIBLE_CHARS) 글에 쓰는 비율. 이때는 최소 글자 수를 적용하지 않는다. */
-const SHORT_CONTENT_RATIO = 0.5;
+/** 어떤 경우에도 넘지 않는 상한. 짧은 글에서 최소 글자 수가 전문 공개가 되는 것을 막는다. */
+const MAX_VISIBLE_RATIO = 0.5;
 
 /**
- * 구매 전에 보여 줄 글자 수.
+ * 구매 전에 보여 줄 글자 수 — 40%를 쓰되 400자까지는 늘려 주고, 절반은 넘기지 않는다.
  *
- * - 원문이 400자를 넘으면 40%를 쓰되, 그게 400자보다 짧으면 400자로 늘린다.
- * - 원문이 400자 이하면 최소 글자 수를 적용하지 않고 절반만 보여 준다
- *   (400자를 적용하면 사실상 전문이 되어 버린다).
+ * 상한(절반)이 짧은 글까지 함께 처리한다. 예컨대 400자짜리 글은 최소 글자 수 400을
+ * 그대로 쓰면 전문이 공개되는데, 상한에 걸려 200자(50%)가 된다 — 짧은 글을 위한
+ * 별도 분기가 필요 없다.
+ *
+ * 400자 → 200(50%) · 500자 → 250(50%) · 900자 → 400(44%) · 1500자 → 600(40%)
  */
 function visibleCharCount(total: number): number {
-  if (total <= MIN_VISIBLE_CHARS) return Math.round(total * SHORT_CONTENT_RATIO);
-  return Math.max(Math.round(total * VISIBLE_RATIO), MIN_VISIBLE_CHARS);
+  const atLeast = Math.max(total * VISIBLE_RATIO, MIN_VISIBLE_CHARS);
+  return Math.round(Math.min(atLeast, total * MAX_VISIBLE_RATIO));
 }
 
 /**
