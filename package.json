@@ -36,6 +36,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "device": "node scripts/device.mjs",
+    "check:quizzes": "node scripts/check-quizzes.mjs",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
