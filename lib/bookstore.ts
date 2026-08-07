@@ -7,6 +7,16 @@ export interface BookstoreBook {
   title: string;
   author: string;
   coverImage: ImageSourcePropType;
+  /**
+   * 잠금화면 알람 위쪽 절반을 덮는 사진. 아직 사진이 없는 책은 비워 둔다 —
+   * 그 경우 알람 배경은 바탕색만 나오고 나머지 배치는 그대로다.
+   */
+  alarmBackground?: ImageSourcePropType;
+  /**
+   * 알람 전용으로 합성한 표지(그림자·원근이 들어간 목업). 비워 두면 coverImage를 대신 쓰는데,
+   * 그건 납작한 사각형이라 알람 화면에서 조금 작게 놓인다 — lib/alarmBook.ts 참고.
+   */
+  alarmCover?: ImageSourcePropType;
 }
 
 /**
@@ -20,53 +30,66 @@ export const BOOKSTORE_BOOKS: BookstoreBook[] = [
     title: '하루 클래식 공부',
     author: '글릿 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-classic.jpg'),
+    alarmBackground: require('@/assets/images/alarm/bg-classic.webp'),
+    alarmCover: require('@/assets/images/alarm/cover-classic.webp'),
   },
   {
     id: 'latin',
     title: '하루 라틴어 공부',
     author: '김태권 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-latin.jpg'),
+    alarmBackground: require('@/assets/images/alarm/bg-latin.webp'),
   },
   {
     id: 'quote',
     title: '하루 명언 공부',
     author: '김영수 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-quote.jpg'),
+    alarmBackground: require('@/assets/images/alarm/bg-quote.webp'),
   },
   {
     id: 'hanja',
     title: '하루 한자 공부',
     author: '이인호 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-hanja.jpg'),
+    alarmBackground: require('@/assets/images/alarm/bg-hanja.webp'),
   },
   {
     id: 'liberal',
     title: '하루 교양 공부',
     author: '전성원 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-liberal.jpg'),
+    alarmBackground: require('@/assets/images/alarm/bg-liberal.webp'),
+    alarmCover: require('@/assets/images/alarm/cover-liberal.webp'),
   },
   {
     id: 'psychology',
     title: '하루 심리 공부',
     author: '신고은 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-psychology.jpg'),
+    alarmBackground: require('@/assets/images/alarm/bg-psychology.webp'),
   },
   {
     id: 'writing',
     title: '하루 쓰기 공부',
     author: '브라이언 로빈슨 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-writing.jpg'),
+    alarmBackground: require('@/assets/images/alarm/bg-writing.webp'),
   },
   {
     id: 'hanmun',
     title: '하루 한문 공부',
     author: '임자헌 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-hanmun.jpg'),
+    alarmBackground: require('@/assets/images/alarm/bg-hanmun.webp'),
+    alarmCover: require('@/assets/images/alarm/cover-hanmun.webp'),
   },
   {
     id: 'english',
     title: '하루 영어 교양',
     author: '서미석 [유유]',
     coverImage: require('@/assets/images/bookstore/cover-english.jpg'),
+    alarmBackground: require('@/assets/images/alarm/bg-english.webp'),
+    alarmCover: require('@/assets/images/alarm/cover-english.webp'),
   },
 ];

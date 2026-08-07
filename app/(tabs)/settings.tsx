@@ -6,7 +6,9 @@ import ScaleButton from '@/components/ScaleButton';
 import SettingRow from '@/components/SettingRow';
 import { Colors, Fonts, Palette, Radius, Shadow, Spacing, tracking, Typography } from '@/constants/theme';
 import { useBgm } from '@/context/BgmContext';
+import { previewAlarmScreens } from '@/lib/alarmBook';
 import { BGM_OPTIONS } from '@/lib/bgm';
+import { isNativeAlarmAvailable } from '@/modules/alarm-clock';
 
 export default function SettingsScreen() {
   const { bgmId, select } = useBgm();
@@ -58,6 +60,29 @@ export default function SettingsScreen() {
           })}
         </View>
       </Animated.View>
+
+      {/*
+        디자인 확인용. 실제 알람 화면을 그대로 띄우므로 여기서 보이는 게 곧 아침에 보일 화면이다.
+        출시 전에 이 카드를 지우거나 __DEV__로 감쌀 것.
+      */}
+      {isNativeAlarmAvailable() && (
+        <Animated.View entering={FadeIn.duration(700).delay(450)} style={styles.card}>
+          <Text style={styles.sectionTitle}>알람 화면 미리보기</Text>
+          <Text style={styles.sectionHint}>
+            아홉 권의 알람 화면을 차례로 봅니다. 화면을 누르면 다음 책, 우측 상단 ✕로 닫습니다.
+          </Text>
+          <ScaleButton
+            accessibilityLabel="알람 테스트"
+            style={styles.testButton}
+            onPress={() => {
+              previewAlarmScreens().catch((error) => {
+                console.warn('[settings] 알람 미리보기 실패:', error);
+              });
+            }}>
+            <Text style={styles.testButtonLabel}>알람 테스트</Text>
+          </ScaleButton>
+        </Animated.View>
+      )}
 
       <Animated.View entering={FadeIn.duration(700).delay(500)} style={styles.card}>
         <SettingRow label="버전" value="1.0.0 (데모)" />
@@ -141,5 +166,19 @@ const styles = StyleSheet.create({
   bgmLabelSelected: {
     fontFamily: Fonts.semiBold,
     color: Colors.green100,
+  },
+
+  // 알람 화면 미리보기
+  testButton: {
+    marginTop: Spacing.lg,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: Colors.beige100,
+  },
+  testButtonLabel: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    letterSpacing: tracking(15),
+    color: Colors.white,
   },
 });

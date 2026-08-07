@@ -1,9 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    global.css 지정 팔레트의 네이티브 사본. 알람 화면은 JS 없이 뜨므로 색을 여기 한 번 더 적는다.
+    새 색이 필요하면 global.css에 먼저 등록하고 그 값을 여기로 가져올 것.
+    (XML 주석 안에는 하이픈 두 개를 못 써서 변수 이름의 앞 접두사는 생략했다.)
+-->
 <resources>
-    <color name="alarm_bg">#FAF6EE</color>
-    <color name="alarm_text_primary">#030303</color>
-    <color name="alarm_text_secondary">#827F7A</color>
-    <color name="alarm_accent">#8B6C42</color>
-    <color name="alarm_on_accent">#FFFFFF</color>
-    <color name="alarm_border">#E0DBD5</color>
+    <!-- 잠금화면 알람 화면 — global.css의 violet 계열 + night -->
+    <color name="alarm_night">#111114</color>
+    <color name="alarm_violet_100">#7C4DFF</color>
+    <color name="alarm_violet_50">#9C6BFF</color>
+    <color name="alarm_violet_10">#C8BEFF</color>
+    <color name="alarm_violet_5">#F0ECFF</color>
+    <color name="alarm_on_dark">#FFFFFF</color>
+
+    <!--
+        사진 위에 고르게 까는 40% 어둠(66 = 40%). 사진 아래쪽은 이 값에서 alarm_night
+        불투명으로 넘어가며 바탕색과 이어진다 : alarm_photo_fade 참고.
+    -->
+    <color name="alarm_photo_veil">#66111114</color>
+
+    <!-- 미리보기 전용 빌드 표식 (global.css의 red-100) -->
+    <color name="alarm_debug">#EB5757</color>
+
+    <!-- 버튼 -->
+    <color name="alarm_button_fill">#14FFFFFF</color>      <!-- 보조 버튼 배경 8% -->
+    <color name="alarm_button_stroke">#26FFFFFF</color>    <!-- 보조 버튼 테두리 15% -->
+    <color name="alarm_button_label">#99FFFFFF</color>     <!-- 보조 버튼 글자 60% -->
 </resources>

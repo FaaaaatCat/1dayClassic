@@ -28,6 +28,12 @@ export const Colors = {
   green100: '#2E7D4F', // --green-100
   green50: '#97C7AC', // --green-50
   green10: '#EDF6F0', // --green-10
+  // 잠금화면 알람 전용 — 어두운 사진 위에서만 쓴다. 앱 본문에는 쓰지 않는다.
+  violet100: '#7C4DFF', // --violet-100
+  violet50: '#9C6BFF', // --violet-50
+  violet10: '#C8BEFF', // --violet-10
+  violet5: '#F0ECFF', // --violet-5
+  night: '#111114', // --night
 } as const;
 
 /** 번들된 서체 — 을유1945(기본), DM Serif Display(인용문 전용·라틴만 지원) */

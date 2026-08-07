@@ -19,6 +19,14 @@
             android:taskAffinity=""
             android:theme="@style/Theme.AlarmFullScreen" />
 
+        <activity
+            android:name=".AlarmDismissActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.AlarmInvisible" />
+
         <service
             android:name=".AlarmRingingService"
             android:foregroundServiceType="mediaPlayback"

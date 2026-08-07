@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
+        배경 사진이 붙기 전에도, 사진을 못 읽었을 때도 화면은 어두운 밤색이다 —
+        그래야 흰 글자가 항상 읽힌다. 상태바/네비바는 사진 위로 비치게 투명으로 둔다.
+    -->
     <style name="Theme.AlarmFullScreen" parent="android:Theme.Material.NoActionBar.Fullscreen">
-        <item name="android:windowBackground">@color/alarm_bg</item>
-        <item name="android:statusBarColor">@color/alarm_bg</item>
-        <item name="android:navigationBarColor">@color/alarm_bg</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/alarm_night</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- 알림 '끄기'가 거쳐 가는 트램펄린 액티비티용 — 아무것도 그리지 않고 전환 효과도 없다. -->
+    <style name="Theme.AlarmInvisible" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
     </style>
 </resources>

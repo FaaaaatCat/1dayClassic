@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
+import { syncAlarmBook } from '@/lib/alarmBook';
 import { BOOK_IDS } from '@/lib/books';
 import type { BookId } from '@/types';
 
@@ -51,6 +52,12 @@ export function BookSelectionProvider({ children }: { children: React.ReactNode 
     if (!hydrated) return;
     AsyncStorage.setItem(STORAGE_KEY, selectedBookId).catch((error) => {
       console.warn('[bookSelection] 선택 저장 실패:', error);
+    });
+    // 잠금화면 알람은 JS 없이 뜨므로 고른 책을 미리 네이티브에 내려보낸다.
+    // 매 실행마다 다시 보내는 건 의도한 것이다 — 파일 두 장 복사는 싸고, 앱을 업데이트해서
+    // 이미지가 바뀌었을 때 "이미 보냈다"고 건너뛰면 옛 이미지가 그대로 남는다.
+    syncAlarmBook(selectedBookId).catch((error) => {
+      console.warn('[bookSelection] 알람 책 동기화 실패:', error);
     });
   }, [selectedBookId, hydrated]);
 
