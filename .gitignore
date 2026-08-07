@@ -46,3 +46,6 @@ modules/*/android/.gradle/
 
 # superpowers subagent-driven-development scratch state
 .superpowers/
+
+# 알람 잠금화면 검증 산출물(로그·스크린샷)
+/.alarm-verify/
