@@ -13,6 +13,7 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.IBinder
 import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
 
 /**
@@ -29,6 +30,7 @@ class AlarmRingingService : Service() {
 
     private const val TAG = "AlarmRingingService"
     private const val CHANNEL_ID = "alarm-ringing"
+    private const val CHANNEL_QUIET_ID = "alarm-ringing-quiet"
     private const val NOTIFICATION_ID = 1001
     private const val WAKELOCK_TAG = "1dayclassic:alarm"
     /** 어떤 이유로든 서비스가 정상 종료되지 못했을 때 배터리를 계속 소모하지 않도록 하는 안전장치. */
@@ -158,8 +160,21 @@ class AlarmRingingService : Service() {
     stopSelf()
   }
 
+  /**
+   * AlarmReceiver가 전체화면을 직접 띄울 수 있는 상황인가.
+   *
+   * 그때는 알림까지 헤드업으로 겹쳐 뜨면 같은 알람이 두 번 보인다. 조용한 채널을 써서
+   * 알림은 그림자 안에만 남긴다 — 포그라운드 서비스라 알림 자체를 없앨 수는 없다.
+   *
+   * 잠금 상태는 제외한다. 그쪽은 setFullScreenIntent가 공식 경로이고 이미 검증된 길이라
+   * 건드리지 않는다. 어차피 전체화면이 덮으므로 헤드업이 겹쳐 보이지도 않는다.
+   */
+  private fun willShowFullScreenDirectly(): Boolean =
+    Settings.canDrawOverlays(this) && !AlarmFlow.isDeviceLocked(this)
+
   private fun buildNotification(): Notification {
-    createChannel()
+    createChannels()
+    val silent = willShowFullScreenDirectly()
 
     val fullScreenIntent = PendingIntent.getActivity(
       this,
@@ -184,39 +199,61 @@ class AlarmRingingService : Service() {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    return Notification.Builder(this, CHANNEL_ID)
+    val builder = Notification.Builder(this, if (silent) CHANNEL_QUIET_ID else CHANNEL_ID)
       .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
       .setContentTitle("하루 클래식 알람")
       .setContentText("오늘의 곡을 들을 시간이에요")
       .setCategory(Notification.CATEGORY_ALARM)
-      .setPriority(Notification.PRIORITY_MAX)
       .setOngoing(true)          // 스와이프로 지워지지 않는다
       .setAutoCancel(false)
-      // 잠금/화면꺼짐일 때만 AlarmActivity가 전체화면으로 뜬다.
-      // 사용자가 기기를 쓰고 있으면 OS가 헤드업 알림으로 격하시킨다 — 의도된 동작이다.
-      .setFullScreenIntent(fullScreenIntent, true)
       // 전체화면이 안 뜨는 상황에서도 알람을 제어할 수 있도록 액션을 항상 넣는다.
       .addAction(0, "스누즈", snoozePending)
       .addAction(0, "끄기", dismissPending)
-      .build()
+
+    if (!silent) {
+      // 잠금/화면꺼짐일 때 AlarmActivity를 전체화면으로 띄우는 공식 경로.
+      // 오버레이 권한이 없으면 이것만이 전체화면을 띄울 수 있는 길이다.
+      builder.setPriority(Notification.PRIORITY_MAX)
+      builder.setFullScreenIntent(fullScreenIntent, true)
+    }
+
+    return builder.build()
   }
 
-  private fun createChannel() {
+  /**
+   * 채널이 두 개인 이유 — 채널 중요도는 만든 뒤에 코드로 못 바꾸고 사용자만 바꿀 수 있다.
+   * 상황에 따라 헤드업을 켜고 끄려면 중요도가 다른 채널을 각각 두는 수밖에 없다.
+   */
+  private fun createChannels() {
     val manager = getSystemService(NotificationManager::class.java)
-    if (manager.getNotificationChannel(CHANNEL_ID) != null) return
 
-    val channel = NotificationChannel(
-      CHANNEL_ID,
-      "알람",
-      NotificationManager.IMPORTANCE_HIGH
-    ).apply {
-      description = "알람이 울릴 때 표시됩니다"
-      // 소리는 MediaPlayer(ALARM 스트림)로만 재생한다. 채널 소리를 켜면 이중 재생된다.
-      setSound(null, null)
-      enableVibration(true)
-      vibrationPattern = longArrayOf(0, 500, 500, 500)
-      lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+    if (manager.getNotificationChannel(CHANNEL_ID) == null) {
+      manager.createNotificationChannel(
+        NotificationChannel(CHANNEL_ID, "알람", NotificationManager.IMPORTANCE_HIGH).apply {
+          description = "알람이 울릴 때 표시됩니다"
+          // 소리는 MediaPlayer(ALARM 스트림)로만 재생한다. 채널 소리를 켜면 이중 재생된다.
+          setSound(null, null)
+          enableVibration(true)
+          vibrationPattern = longArrayOf(0, 500, 500, 500)
+          lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        }
+      )
     }
-    manager.createNotificationChannel(channel)
+
+    if (manager.getNotificationChannel(CHANNEL_QUIET_ID) == null) {
+      manager.createNotificationChannel(
+        NotificationChannel(
+          CHANNEL_QUIET_ID,
+          "알람 (전체화면 표시 중)",
+          // LOW라야 헤드업으로 튀어나오지 않는다. 알람 화면이 이미 떠 있으므로
+          // 이 알림은 그림자 안에서 끄기/스누즈 액션만 제공하면 된다.
+          NotificationManager.IMPORTANCE_LOW
+        ).apply {
+          description = "알람 화면이 떠 있는 동안 표시됩니다"
+          setSound(null, null)
+          lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        }
+      )
+    }
   }
 }
