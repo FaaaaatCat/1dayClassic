@@ -36,6 +36,19 @@ class AlarmClockModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("AlarmClock")
 
+    Events("onAlarmLockFlowChanged")
+
+    /** 지금 잠금화면 위 알람 플로우인가. */
+    AsyncFunction("isAlarmLockFlow") { AlarmFlow.isActive }
+
+    OnStartObserving {
+      AlarmFlow.observe { active ->
+        sendEvent("onAlarmLockFlowChanged", mapOf("active" to active))
+      }
+    }
+
+    OnStopObserving { AlarmFlow.observe(null) }
+
     AsyncFunction("scheduleAlarm") { input: AlarmInput ->
       AlarmPrefs.save(
         context,

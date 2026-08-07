@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { ScrollView, Share, StyleSheet, View } from 'react-native';
+import { BackHandler, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AudioListenSheet from '@/components/lesson/AudioListenSheet';
@@ -10,6 +10,7 @@ import ScaleButton from '@/components/ScaleButton';
 import { Colors } from '@/constants/theme';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { getBookName, getLessonHeading, type BookLesson } from '@/lib/books';
+import { useAlarmLockFlow } from '@/modules/alarm-clock';
 
 interface Props {
   bookLesson: BookLesson;
@@ -30,6 +31,22 @@ export default function LessonDetailShell({ bookLesson, children }: Props) {
   const insets = useSafeAreaInsets();
   const { isPlaying, isLoading, hasError, togglePlay, restart, stop } = useAudioPlayer();
   const [sheetVisible, setSheetVisible] = useState(false);
+  // 잠금 위 알람 플로우에서는 이 화면을 벗어날 길이 없어야 한다 — 닫기가 유일한 출구라 감춘다.
+  const lockFlow = useAlarmLockFlow();
+
+  /**
+   * 잠금 중에는 뒤로가기를 삼킨다.
+   *
+   * 네이티브 리스너(AlarmFlowLifecycleListener.onBackPressed)만으로는 막히지 않는다 —
+   * expo의 ReactActivityDelegateWrapper가 리스너 반환값과 무관하게 delegate.onBackPressed()를
+   * 호출하고, 그 경로가 invokeDefaultOnBackPressed()로 이어져 액티비티를 끝낸다(실측 확인).
+   * RN의 BackHandler에서 true를 반환해야 그 경로가 차단된다.
+   */
+  useEffect(() => {
+    if (!lockFlow) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => subscription.remove();
+  }, [lockFlow]);
 
   const lesson = bookLesson.lesson;
   const bookName = getBookName(bookLesson.book);
@@ -89,20 +106,25 @@ export default function LessonDetailShell({ bookLesson, children }: Props) {
             ScaleButton은 Pressable로 감싼 뒤 내부 Animated.View에만 style을 넣는 구조라,
             position:absolute를 ScaleButton에 직접 주면 크기가 0인 바깥 Pressable을 기준으로
             계산돼 엉뚱한 자리(눌리지 않는 버튼)가 된다. 그래서 위치는 이 wrapper가 잡고
-            ScaleButton은 크기만 갖는다(AudioListenSheet의 닫기 버튼과 같은 패턴). */}
-        <View style={[styles.closeButtonWrap, { top: insets.top + 12 }]}>
-          <ScaleButton
-            accessibilityLabel="닫기"
-            style={styles.closeButton}
-            onPress={() => router.replace('/')}
-          >
-            <SymbolView
-              name={{ ios: 'xmark', android: 'close', web: 'close' }}
-              tintColor={Colors.brown50}
-              size={18}
-            />
-          </ScaleButton>
-        </View>
+            ScaleButton은 크기만 갖는다(AudioListenSheet의 닫기 버튼과 같은 패턴).
+
+            잠금 위 알람 플로우에서는 이 버튼을 아예 그리지 않는다 — 유일한 출구를 막아야
+            잠금 상태에서 오늘의 공부를 벗어날 수 없다. */}
+        {!lockFlow && (
+          <View style={[styles.closeButtonWrap, { top: insets.top + 12 }]}>
+            <ScaleButton
+              accessibilityLabel="닫기"
+              style={styles.closeButton}
+              onPress={() => router.replace('/')}
+            >
+              <SymbolView
+                name={{ ios: 'xmark', android: 'close', web: 'close' }}
+                tintColor={Colors.brown50}
+                size={18}
+              />
+            </ScaleButton>
+          </View>
+        )}
 
         <ScrollView
           style={styles.body}

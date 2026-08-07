@@ -1,15 +1,47 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 import type { AlarmInput, AlarmPermissionStatus } from './src/AlarmClock.types';
 
 export type { AlarmInput, AlarmPermissionStatus };
 
+/**
+ * 표지를 어느 크기로 놓을지.
+ * - `mockup` — 알람 전용 합성 표지(그림자·원근 포함). 190×256dp 그대로.
+ * - `flat` — 서점 표지를 빌려 쓴 경우. 비율이 달라 148×219dp로 작게.
+ */
+export type AlarmCoverStyle = 'mockup' | 'flat';
+
+/** 알람 화면이 쓸 책 이미지를 복사해 넣을 자리 — 경로는 네이티브가 정한다. */
+export interface AlarmImageTargets {
+  /** background/cover를 담을 폴더. 아직 없을 수 있어 쓰기 전에 만들어야 한다. */
+  directory: string;
+  background: string;
+  cover: string;
+}
+
+/** 디자인 확인용 미리보기에 넘길 책 한 권. 이미지는 파일로 깔아 두고 경로만 넘긴다. */
+export interface AlarmPreviewBook {
+  name: string;
+  coverStyle: AlarmCoverStyle;
+  backgroundUri: string;
+  coverUri: string;
+}
+
 interface AlarmClockNativeModule {
   scheduleAlarm(input: AlarmInput): Promise<void>;
   cancelAlarm(): Promise<void>;
   getPermissionStatus(): Promise<AlarmPermissionStatus>;
   openAlarmPermissionSettings(): Promise<void>;
+  setAlarmBook(name: string, coverStyle: AlarmCoverStyle): Promise<void>;
+  getAlarmImageTargets(): Promise<AlarmImageTargets>;
+  previewAlarm(books: AlarmPreviewBook[]): Promise<void>;
+  isAlarmLockFlow(): Promise<boolean>;
+  addListener(
+    event: 'onAlarmLockFlowChanged',
+    listener: (payload: { active: boolean }) => void,
+  ): { remove(): void };
 }
 
 const ALL_GRANTED: AlarmPermissionStatus = {
@@ -66,6 +98,23 @@ export async function getPermissionStatus(): Promise<AlarmPermissionStatus> {
   return nativeModule.getPermissionStatus();
 }
 
+/** 알람 화면이 쓸 책 이름("하루 클래식 공부")과 표지 종류를 네이티브에 저장한다. */
+export async function setAlarmBook(name: string, coverStyle: AlarmCoverStyle): Promise<void> {
+  await getNativeModule()?.setAlarmBook(name, coverStyle);
+}
+
+/** 책 이미지를 복사해 넣을 자리. 네이티브 모듈이 없으면 null — 그 경우 동기화를 건너뛴다. */
+export async function getAlarmImageTargets(): Promise<AlarmImageTargets | null> {
+  const nativeModule = getNativeModule();
+  if (!nativeModule) return null;
+  return nativeModule.getAlarmImageTargets();
+}
+
+/** 디자인 확인용 — 실제 알람 화면을 넘겨 보는 모드로 띄운다. 소리·진동·버튼 동작은 없다. */
+export async function previewAlarm(books: AlarmPreviewBook[]): Promise<void> {
+  await getNativeModule()?.previewAlarm(books);
+}
+
 /** 부족한 권한 중 우선순위가 높은 것의 설정 화면을 연다. */
 export async function openAlarmPermissionSettings(): Promise<void> {
   await getNativeModule()?.openAlarmPermissionSettings();
@@ -81,4 +130,39 @@ export function hasAllAlarmPermissions(status: AlarmPermissionStatus): boolean {
  */
 export function isNativeAlarmAvailable(): boolean {
   return getNativeModule() !== null;
+}
+
+/**
+ * 지금 잠금화면 위 알람 플로우인지 구독한다.
+ *
+ * 잠금 중에는 오늘의 공부에서 나갈 길이 없어야 하므로, 이 값이 참이면 화면을 벗어나는
+ * 컨트롤을 감춘다. 네이티브 모듈이 없으면(iOS·Expo Go) 항상 false다.
+ */
+export function useAlarmLockFlow(): boolean {
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    const nativeModule = getNativeModule();
+    if (!nativeModule) return;
+
+    let cancelled = false;
+    // 이미 플로우 중일 때 마운트될 수 있다 — 이벤트만 기다리면 그 경우를 놓친다.
+    nativeModule
+      .isAlarmLockFlow()
+      .then((value) => {
+        if (!cancelled) setActive(value);
+      })
+      .catch(() => undefined);
+
+    const subscription = nativeModule.addListener('onAlarmLockFlowChanged', (payload) => {
+      setActive(payload.active);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.remove();
+    };
+  }, []);
+
+  return active;
 }
