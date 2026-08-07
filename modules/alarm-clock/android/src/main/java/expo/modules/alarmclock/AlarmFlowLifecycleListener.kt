@@ -35,15 +35,25 @@ class AlarmFlowLifecycleListener : ReactActivityLifecycleListener {
     activity?.let { AlarmFlow.stop(it) }
   }
 
-  /** 안전망 — 화면 꺼짐 등 어떤 경로로 벗어나든 플래그가 남지 않게 한다. */
-  override fun onPause(activity: Activity?) {
-    activity?.let { AlarmFlow.stop(it) }
-  }
+  // onPause는 쓰지 않는다. expo의 ReactActivityDelegateWrapper가 onPause를
+  // loadAppReady.await() 뒤로 미뤄 코루틴으로 전달하기 때문에, 시작 과정에서 생긴 pause가
+  // onCreate의 start() '뒤에' 도착해 방금 켠 플래그를 즉시 꺼 버린다(실측으로 확인).
+  // 화면 꺼짐도 플로우 종료가 아니다 — 플로우는 홈으로 나가거나 잠금을 풀 때만 끝난다.
 
   override fun onDestroy(activity: Activity?) {
     activity?.let { AlarmFlow.stop(it) }
     if (hostActivity === activity) hostActivity = null
   }
+
+  /**
+   * 잠금 중에는 뒤로가기를 삼킨다.
+   *
+   * **이것만으로는 막히지 않는다.** ReactActivityDelegateWrapper는 리스너 반환값과 무관하게
+   * delegate.onBackPressed()를 호출하고, 그 경로가 invokeDefaultOnBackPressed()로 이어져
+   * 액티비티를 끝낸다(실측 확인). 실제 차단은 LessonDetailShell의 RN BackHandler가 한다.
+   * 여기서 true를 반환하는 것은 ReactActivity.onBackPressed의 super 호출을 막는 이중 방어다.
+   */
+  override fun onBackPressed(): Boolean = AlarmFlow.isActive
 
   private fun enterIfLockFlow(activity: Activity, intent: Intent?) {
     val lockFlow = intent?.getBooleanExtra(MainActivityIntent.EXTRA_LOCK_FLOW, false) ?: false
