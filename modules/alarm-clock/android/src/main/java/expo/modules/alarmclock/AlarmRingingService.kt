@@ -176,16 +176,7 @@ class AlarmRingingService : Service() {
     createChannels()
     val silent = willShowFullScreenDirectly()
 
-    val fullScreenIntent = PendingIntent.getActivity(
-      this,
-      0,
-      Intent(this, AlarmActivity::class.java).apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-      },
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
-    // 서비스가 아니라 트램펄린 액티비티를 부른다 — 소리를 끄는 것에 더해 광고 화면까지 열어야 하고,
+    // 서비스가 아니라 트램펄린 액티비티를 부른다 — 소리를 끄는 것에 더해 오늘의 공부까지 열어야 하고,
     // 서비스에서는 액티비티를 실행할 수 없다. AlarmDismissActivity 주석 참고.
     val dismissPending = PendingIntent.getActivity(
       this, 1,
@@ -201,20 +192,30 @@ class AlarmRingingService : Service() {
 
     val builder = Notification.Builder(this, if (silent) CHANNEL_QUIET_ID else CHANNEL_ID)
       .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-      .setContentTitle("하루 클래식 알람")
-      .setContentText("오늘의 곡을 들을 시간이에요")
+      .setContentTitle(getString(R.string.alarm_notification_title))
+      // 전체화면과 같은 재료를 쓴다 — 둘이 서로 다른 책을 말하면 안 된다.
+      .setContentText(getString(R.string.alarm_notification_text, AlarmBook.studyLabel(this)))
       .setCategory(Notification.CATEGORY_ALARM)
       .setOngoing(true)          // 스와이프로 지워지지 않는다
       .setAutoCancel(false)
       // 전체화면이 안 뜨는 상황에서도 알람을 제어할 수 있도록 액션을 항상 넣는다.
-      .addAction(0, "스누즈", snoozePending)
-      .addAction(0, "끄기", dismissPending)
+      .addAction(0, getString(R.string.alarm_action_snooze), snoozePending)
+      .addAction(0, getString(R.string.alarm_action_dismiss), dismissPending)
 
     if (!silent) {
       // 잠금/화면꺼짐일 때 AlarmActivity를 전체화면으로 띄우는 공식 경로.
       // 오버레이 권한이 없으면 이것만이 전체화면을 띄울 수 있는 길이다.
+      // PendingIntent도 여기서만 만든다 — 조용한 경로에서는 쓰이지 않는다.
       builder.setPriority(Notification.PRIORITY_MAX)
-      builder.setFullScreenIntent(fullScreenIntent, true)
+      builder.setFullScreenIntent(
+        PendingIntent.getActivity(
+          this,
+          0,
+          AlarmActivity.fireIntent(this),
+          PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        ),
+        true
+      )
     }
 
     return builder.build()

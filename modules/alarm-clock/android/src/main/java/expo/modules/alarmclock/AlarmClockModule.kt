@@ -32,6 +32,10 @@ class AlarmPreviewBook : Record {
 }
 
 class AlarmClockModule : Module() {
+  private companion object {
+    const val TAG = "AlarmClock"
+  }
+
   private val context: Context
     get() = appContext.reactContext ?: throw Exceptions.ReactContextLost()
 
@@ -120,56 +124,66 @@ class AlarmClockModule : Module() {
       )
     }
 
+    /** 설정 화면의 권한 토글이 쓴다. */
+    AsyncFunction("requestPermission") { kind: String -> requestPermission(kind) }
+
     /**
-     * 권한 하나를 요청한다 — 설정 화면의 권한 토글이 쓴다.
+     * 첫 실행 안내의 '설정 열기' — 부족한 권한 중 가장 급한 것 하나로 보낸다.
      *
-     * 알림만 진짜 시스템 팝업을 띄울 수 있다. 나머지 셋은 Android가 요청 API를 제공하지
-     * 않아서 해당 권한의 시스템 설정 화면을 여는 것이 앱이 할 수 있는 전부다.
+     * 한 번에 하나만 보낼 수 있어서(설정 화면이 권한마다 다르다) 순서가 곧 우선순위다.
+     * 나머지는 설정 탭의 권한 카드에서 마저 켜게 된다.
      */
-    AsyncFunction("requestPermission") { kind: String ->
-      when (kind) {
-        "notifications" -> requestNotificationPermission()
-        "exactAlarm" -> openSettings(
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-          } else {
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-          }
-        )
-        "fullScreenIntent" -> openSettings(
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT
-          } else {
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-          }
-        )
-        "overlay" -> openSettings(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-        else -> Log.w("AlarmClock", "알 수 없는 권한 종류: $kind")
+    AsyncFunction("openAlarmPermissionSettings") {
+      val missing = MISSING_FIRST.firstOrNull { !isGranted(it) }
+      if (missing != null) {
+        requestPermission(missing)
+      } else {
+        openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
       }
     }
+  }
 
-    AsyncFunction("openAlarmPermissionSettings") {
-      val intent = when {
-        !hasExactAlarmPermission() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-          Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-            .setData(Uri.parse("package:${context.packageName}"))
+  /**
+   * 안내 우선순위. 앞쪽일수록 없을 때 알람이 크게 망가진다.
+   *
+   * 오버레이가 마지막인 이유 — 이게 없어도 알람은 울리고 잠금 상태에서는 전체화면도 뜬다.
+   * 기기를 쓰는 중에 전체화면으로 깨우는 것만 안 된다.
+   */
+  private val MISSING_FIRST = listOf("notifications", "exactAlarm", "fullScreenIntent", "overlay")
 
-        !hasFullScreenIntentPermission() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
-          Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
-            .setData(Uri.parse("package:${context.packageName}"))
+  private fun isGranted(kind: String): Boolean = when (kind) {
+    "notifications" -> hasNotificationPermission()
+    "exactAlarm" -> hasExactAlarmPermission()
+    "fullScreenIntent" -> hasFullScreenIntentPermission()
+    "overlay" -> hasOverlayPermission()
+    else -> true
+  }
 
-        // 우선순위가 가장 낮다 — 이게 없어도 알람은 울리고, 잠금 상태에서는 전체화면도 뜬다.
-        // 기기를 쓰는 중에 전체화면으로 깨우는 것만 안 된다.
-        !hasOverlayPermission() ->
-          Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-            .setData(Uri.parse("package:${context.packageName}"))
-
-        else ->
-          Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            .setData(Uri.parse("package:${context.packageName}"))
-      }
-      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-      context.startActivity(intent)
+  /**
+   * 권한 하나를 요청한다.
+   *
+   * 알림만 진짜 시스템 팝업을 띄울 수 있다. 나머지 셋은 Android가 요청 API를 제공하지
+   * 않아서 해당 권한의 시스템 설정 화면을 여는 것이 앱이 할 수 있는 전부다.
+   */
+  private fun requestPermission(kind: String) {
+    when (kind) {
+      "notifications" -> requestNotificationPermission()
+      "exactAlarm" -> openSettings(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+          Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+        } else {
+          Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+        }
+      )
+      "fullScreenIntent" -> openSettings(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+          Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT
+        } else {
+          Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+        }
+      )
+      "overlay" -> openSettings(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+      else -> Log.w(TAG, "알 수 없는 권한 종류: $kind")
     }
   }
 

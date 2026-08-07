@@ -8,4 +8,18 @@
     <string name="alarm_message">%1$s할\n시간입니다</string>
 
     <string name="alarm_preview_close">미리보기 닫기</string>
+
+    <!--
+        알람이 울리는 동안 뜨는 알림. 본문은 alarm_message와 같은 재료(studyLabel)를 쓴다 —
+        전체화면과 알림이 서로 다른 책을 말하면 안 된다.
+    -->
+    <string name="alarm_notification_title">하루 공부 알람</string>
+    <string name="alarm_notification_text">%1$s할 시간입니다</string>
+    <!--
+        알림 액션 — 이름은 하는 일(snooze/dismiss)을, 값은 사용자가 얻는 것을 말한다.
+        '끄기'가 아니라 '공부하기'인 이유는 전체화면 알람의 버튼과 같다 — 알람을 끄는 것보다
+        공부로 넘어가는 것이 이 앱의 목적이라서다.
+    -->
+    <string name="alarm_action_snooze">다시 울림</string>
+    <string name="alarm_action_dismiss">공부하기</string>
 </resources>
