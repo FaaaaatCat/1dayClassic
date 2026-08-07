@@ -82,6 +82,13 @@ export default function RootLayout() {
                 <ToastProvider>
                   <Stack>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    {/* 전면 광고 — 스와이프로 닫히면 안 되므로 제스처를 막는다.
+                        지금은 여는 곳이 없다(app/ad.tsx 주석 참고). 라우트만 살려 두어
+                        붙일 자리가 정해지면 router.push('/ad')로 바로 쓴다. */}
+                    <Stack.Screen
+                      name="ad"
+                      options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+                    />
                   </Stack>
                 </ToastProvider>
                 </BgmProvider>
