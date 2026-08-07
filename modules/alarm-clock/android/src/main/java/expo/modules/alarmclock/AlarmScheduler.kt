@@ -106,7 +106,7 @@ object AlarmScheduler {
       val showIntent = PendingIntent.getActivity(
         context,
         requestCode,
-        MainActivityIntent.create(context, autoplay = false),
+        MainActivityIntent.today(context),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
       )
       alarmManager.setAlarmClock(

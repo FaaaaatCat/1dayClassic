@@ -170,8 +170,13 @@ class AlarmRingingService : Service() {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    val dismissPending = PendingIntent.getService(
-      this, 1, dismissIntent(this),
+    // 서비스가 아니라 트램펄린 액티비티를 부른다 — 소리를 끄는 것에 더해 광고 화면까지 열어야 하고,
+    // 서비스에서는 액티비티를 실행할 수 없다. AlarmDismissActivity 주석 참고.
+    val dismissPending = PendingIntent.getActivity(
+      this, 1,
+      Intent(this, AlarmDismissActivity::class.java).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      },
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
     val snoozePending = PendingIntent.getService(
