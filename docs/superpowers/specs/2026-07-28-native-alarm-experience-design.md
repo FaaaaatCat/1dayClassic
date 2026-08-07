@@ -23,6 +23,11 @@
 > 2. **자동 재생을 하지 않는다.** 원래는 `?autoplay=` 파라미터로 오늘의 곡을 바로 재생할
 >    계획이었으나 도입하지 않기로 했다. `LessonDetailShell`에 파라미터 처리 코드는 남아
 >    있지만 넘기는 곳이 없다.
+> 3. **기기를 쓰는 중에도 전체화면이 뜬다.** 원래는 사용 중이면 헤드업 알림으로 두기로
+>    했으나(현재 작업을 가로채지 않으려고), 그러면 알람이 너무 약하다. '다른 앱 위에 표시'
+>    권한을 요구하고 `AlarmReceiver`가 액티비티를 직접 실행한다. 「전체화면 표시 조건」 참고.
+> 4. **권한 안내는 설치 후 첫 실행 때 한 번만.** 그 뒤로는 설정 탭의 권한 카드에서 확인한다.
+>    「권한 UX」 참고.
 >
 > 잠금화면 위 컨텐츠 플로우는 별도 문서를 따른다 —
 > `2026-08-07-alarm-lock-flow-design.md`.
@@ -68,18 +73,21 @@ Android 네이티브 구현이 필요하다.
 [Native] AlarmReceiver
       │  1. 다음 주 알람 즉시 재예약 (반복 보장)
       │  2. AlarmRingingService 시작
+      │  3. AlarmActivity 직접 실행 ← 오버레이 권한이 있을 때만 성공
       ▼
 [Native] AlarmRingingService (Foreground, mediaPlayback)
       │  · WakeLock 획득
       │  · MediaPlayer 반복 재생 (USAGE_ALARM)
-      │  · FSI 알림 게시 (ongoing, 끄기/스누즈 액션 포함)
-      ▼ (OS가 판단)
-   화면 꺼짐/잠금 ──→ AlarmActivity 전체화면
+      │  · 알림 게시 (ongoing, 끄기/스누즈 액션 포함)
+      │    - 잠금 상태거나 오버레이 권한 없음 → HIGH 채널 + FSI
+      │    - 사용 중 + 오버레이 권한 있음     → LOW 채널 (헤드업 억제)
+      ▼
+   AlarmActivity 전체화면
       │  [공부하기] → 서비스 종료 + MainActivity를 today로 실행
       │              (잠겨 있으면 잠금화면 위에 그대로 표시 — 별도 문서 참고)
       │  [스누즈]   → 서비스 종료 + 5분 뒤 1회성 알람 예약
       │
-   기기 사용 중   ──→ 헤드업 알림 (현재 작업 방해하지 않음)
+   (오버레이 권한이 없고 기기 사용 중이면 전체화면 대신 헤드업 알림)
          [끄기]   → 서비스 종료 + MainActivity를 today로 실행
          [스누즈] → 서비스 종료 + 5분 뒤 1회성 알람 예약
 ```
@@ -90,22 +98,56 @@ Android 네이티브 구현이 필요하다.
 
 ### 전체화면 표시 조건 (중요)
 
-**`setFullScreenIntent()`만 사용하고, 서비스에서 `startActivity()`를 직접 호출하지 않는다.**
+**목표는 "언제나 전체화면"이다.** 기기를 쓰는 중이어도 알람 화면이 떠야 한다(2026-08-07 변경).
+원래 설계는 사용 중일 때 현재 작업을 가로채지 않으려고 헤드업 알림으로 두었으나, 그러면 알람이
+너무 약해 알라미와 같은 경험이 되지 않는다.
 
-`setFullScreenIntent()`는 기기가 잠겨 있거나 화면이 꺼져 있을 때만 액티비티를 실행하고,
-사용자가 기기를 사용 중이면 OS가 헤드업 알림으로 격하시킨다. 이 동작이 목표 UX와 정확히 일치한다
-— 사용자가 휴대폰을 쓰고 있을 때 현재 작업을 가로채지 않는다.
+이를 위해 두 경로를 함께 쓴다.
 
-| 기기 상태 | 표시 방식 |
-|---|---|
-| 화면 꺼짐 / 잠금화면 | **전체화면 AlarmActivity** |
-| 기기 사용 중 (우리 앱이든 다른 앱이든) | **헤드업 알림만** (끄기/스누즈 버튼 포함) |
+1. **`setFullScreenIntent()`** — 기기가 잠겨 있거나 화면이 꺼져 있을 때만 액티비티를 실행한다.
+   사용 중이면 OS가 헤드업 알림으로 격하시킨다. 권한 없이도 동작하는 공식 경로다.
+2. **`AlarmReceiver`에서 `startActivity()` 직접 실행** — 사용 중일 때도 전체화면을 띄운다.
+   **'다른 앱 위에 표시'(SYSTEM_ALERT_WINDOW) 권한이 있어야 성공한다.**
 
-두 경우 모두 **소리는 동일하게 재생되고, 사용자가 끄기/스누즈를 누를 때까지 지속된다.**
+| 기기 상태 | 오버레이 권한 | 표시 방식 |
+|---|---|---|
+| 화면 꺼짐 / 잠금화면 | 무관 | **전체화면** (FSI) |
+| 기기 사용 중 | 있음 | **전체화면** (직접 실행), 헤드업 없음 |
+| 기기 사용 중 | 없음 | 헤드업 알림만 |
 
-이 결정으로 Background Activity Launch(BAL) 정책 이슈가 원천적으로 발생하지 않는다. 참고로
-공식 문서상 BAL 면제 조건에 "포그라운드 서비스 실행 중"은 **포함되지 않으므로**, 서비스에서
-`startActivity()`를 호출하는 접근은 애초에 신뢰할 수 없다.
+어느 경우든 **소리는 동일하게 재생되고, 사용자가 끄기/스누즈를 누를 때까지 지속된다.**
+
+#### BAL(Background Activity Launch)에 대하여
+
+원래 이 문서는 "포그라운드 서비스 실행 중"이 BAL 면제 조건이 아니므로 `startActivity()` 접근은
+신뢰할 수 없다고 적었다. **그 판단은 맞았다.** 다만 "그러므로 불가능"이라는 결론이 불완전했다 —
+오버레이 권한이라는 길이 있다.
+
+실측으로 확인한 것(SM-S942N, Android 16):
+
+- `setAlarmClock()`이 발동 시 주는 임시 허용목록(`ALARM_MANAGER_ALARM_CLOCK`, 10초)은
+  **포그라운드 서비스 시작만 허용하고 액티비티 실행은 허용하지 않는다.**
+
+  ```
+  Background activity launch blocked! callingUidProcState: FOREGROUND_SERVICE
+  START ... AlarmActivity ... (BAL_BLOCK) result code=102
+  ```
+
+- 오버레이 권한이 있으면 `BAL_ALLOW_NON_APP_VISIBLE_WINDOW`로 통과한다. 알라미가 이 권한을
+  요구하는 이유가 이것이다.
+
+#### 헤드업 억제
+
+전체화면을 직접 띄우는 상황에서 알림까지 헤드업으로 뜨면 같은 알람이 두 번 보인다. 포그라운드
+서비스라 알림 자체를 없앨 수는 없으므로, **중요도가 다른 채널 두 개**를 두고 상황에 따라 고른다
+(채널 중요도는 만든 뒤 코드로 못 바꾸고 사용자만 바꿀 수 있다).
+
+| 채널 | 중요도 | 언제 |
+|---|---|---|
+| `alarm-ringing` | HIGH + FSI | 잠금 상태이거나 오버레이 권한 없음 |
+| `alarm-ringing-quiet` | LOW | 사용 중 + 오버레이 권한 있음 |
+
+`IMPORTANCE_LOW` 채널은 진동하지 않는다. 조용한 경로에서는 소리와 전체화면만 남는다.
 
 ## 모듈 구조
 
@@ -143,6 +185,7 @@ modules/alarm-clock/
 | `FOREGROUND_SERVICE` | 이미 `app.json`에 선언됨 |
 | `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | 이미 `app.json`에 선언됨 |
 | `POST_NOTIFICATIONS` | 알림 게시 (Android 13+). **`expo-notifications` 플러그인이 자동으로 넣어주던 권한이므로, 플러그인 제거와 함께 이 모듈에서 명시적으로 선언해야 한다** |
+| `SYSTEM_ALERT_WINDOW` | 기기 사용 중에도 전체화면 알람 (2026-08-07 추가). 사용자가 직접 켜야 하고, 없으면 사용 중일 때 헤드업 알림으로 격하된다 |
 
 컴포넌트:
 
@@ -217,8 +260,9 @@ Activity 생명주기와 완전히 독립. **AlarmActivity가 사라져도 사�
 
 `onStartCommand`:
 1. `WakeLock` 획득 (10분 타임아웃 안전장치)
-2. `startForeground()` — FSI가 붙은 ongoing 알림 게시. 알림에 **끄기/스누즈 액션 버튼을 항상
-   포함**해서 전체화면이 뜨지 않는 상황에서도 알람을 제어할 수 있게 한다.
+2. `startForeground()` — ongoing 알림 게시. 채널과 FSI 여부는 상황에 따라 갈린다
+   (「헤드업 억제」 참고). 알림에 **끄기/스누즈 액션 버튼은 항상 포함**해서 전체화면이 뜨지
+   않는 상황에서도 알람을 제어할 수 있게 한다.
 3. `MediaPlayer` 반복 재생
 
 ```kotlin
@@ -311,7 +355,10 @@ export interface AlarmPermissionStatus {
   notifications: boolean;    // POST_NOTIFICATIONS (13+)
   exactAlarm: boolean;       // canScheduleExactAlarms() (12+)
   fullScreenIntent: boolean; // canUseFullScreenIntent() (14+)
+  overlay: boolean;          // Settings.canDrawOverlays()
 }
+
+type AlarmPermissionKind = keyof AlarmPermissionStatus;
 
 /** 알람 예약. 기존 예약은 덮어쓴다. enabled=false면 취소만 수행. */
 scheduleAlarm(input: AlarmInput): Promise<void>;
@@ -324,31 +371,49 @@ getPermissionStatus(): Promise<AlarmPermissionStatus>;
 
 /** 부족한 권한의 설정 화면으로 이동. */
 openAlarmPermissionSettings(): Promise<void>;
+
+/** 권한 하나를 요청. 설정 화면의 권한 토글이 쓴다. */
+requestAlarmPermission(kind: AlarmPermissionKind): Promise<void>;
 ```
 
 Android 외 플랫폼에서는 전부 no-op (`getPermissionStatus`는 모두 `true` 반환).
 
 ## 권한 UX
 
-**앱 실행 시 한 번만 확인한다.** 알람 저장 시점의 안내, 홈 화면 배지, 토스트 문구 변경은 없다.
+**설치 후 처음 앱을 켰을 때 딱 한 번만 묻는다**(2026-08-07 변경). 그 뒤로는 앱이 먼저 말을
+걸지 않는다.
 
-1. 앱 시작 시 `getPermissionStatus()` 호출
-2. **모두 허용되어 있으면 아무것도 표시하지 않는다**
-3. 하나라도 없으면 팝업 1회 표시:
+원래는 앱을 켤 때마다 확인해 부족하면 팝업을 띄웠는데, 아무것도 기억하지 않아서 '나중에'를
+누른 사용자는 켤 때마다 같은 팝업을 다시 봤다. 오버레이 권한이 필수 목록에 들어오면서 이 문제가
+드러났다 — 거부한 사용자는 영원히 시달리게 된다.
 
-   > **알람을 위해 필요한 권한을 허용해 주세요.**
-   > [설정 열기] [나중에]
+1. 첫 실행에만 `getPermissionStatus()` 호출 (AsyncStorage `alarm-permission-prompted-v1`)
+2. 하나라도 없으면 팝업 1회 표시. **물어봤다는 사실은 사용자의 선택과 무관하게 기록한다** —
+   '나중에'를 누른 것도 대답이다
+3. 그 뒤로 권한을 확인하고 켜는 곳은 **설정 탭의 권한 카드**(`components/AlarmPermissionCard.tsx`)
 
-4. [설정 열기] → `openAlarmPermissionSettings()`가 부족한 권한 중 우선순위가 높은 것의
-   설정 화면으로 이동
+### 설정의 권한 카드
 
-권한별 설정 화면 진입점:
+권한 넷을 각각 토글로 보여 준다. 하나라도 빠지면 상단에 안내 문구가 뜬다 —
+*"알람이 잘 울릴 수 있도록 모든 권한을 필수로 허용해주세요"*.
 
-| 권한 | 확인 API | 설정 화면 인텐트 |
+토글은 **켜는 방향으로만** 동작한다. 앱이 권한을 회수할 수는 없어서, 이미 켜진 항목을 누르면
+시스템 설정 화면이 열려 사용자가 직접 끈다.
+
+권한 변경은 전부 앱 밖에서 일어나 결과를 즉시 알 수 없다. **앱이 포그라운드로 돌아올 때마다
+상태를 다시 읽는다**(`AppState` 구독).
+
+### 권한별 요청 방법
+
+| 권한 | 확인 API | 요청 방법 |
 |---|---|---|
+| 알림 | `areNotificationsEnabled()` | **런타임 권한 팝업** (13+). 못 띄우면 알림 설정 화면 |
 | 정확한 알람 | `AlarmManager.canScheduleExactAlarms()` | `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` |
 | 전체화면 인텐트 | `NotificationManager.canUseFullScreenIntent()` | `ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT` |
-| 알림 | 런타임 권한 요청 | 표준 권한 다이얼로그 |
+| 다른 앱 위에 표시 | `Settings.canDrawOverlays()` | `ACTION_MANAGE_OVERLAY_PERMISSION` |
+
+**넷 중 시스템 팝업을 띄울 수 있는 것은 알림뿐이다.** 나머지 셋은 Android가 요청 API를 제공하지
+않아 해당 권한의 설정 화면을 여는 것이 앱이 할 수 있는 전부다. 알라미도 같다.
 
 > Android 14부터 `USE_FULL_SCREEN_INTENT`는 설치 시 자동 부여되지 않으며 사용자가 켜고 끌 수
 > 있다. Play 스토어는 알람/통화 앱이 아닌 앱의 기본 권한을 회수한다.
@@ -360,8 +425,12 @@ Android 외 플랫폼에서는 전부 no-op (`getPermissionStatus`는 모두 `tr
 | 없는 권한 | 결과 |
 |---|---|
 | 정확한 알람 | `setAndAllowWhileIdle()` 폴백 — 몇 분 오차 가능하나 울림 |
-| 전체화면 인텐트 | 전체화면 대신 헤드업 알림 — 소리 정상, 알림의 끄기/스누즈 버튼으로 제어 |
+| 전체화면 인텐트 | 잠금 상태에서도 전체화면 없이 헤드업 알림 — 소리 정상 |
+| 다른 앱 위에 표시 | **기기 사용 중일 때만** 전체화면 대신 헤드업 알림. 잠금·화면꺼짐에서는 정상 |
 | 알림 | 소리는 재생되나 알림/전체화면 없음 (제어는 앱을 열어야 함) |
+
+'다른 앱 위에 표시'가 넷 중 가장 덜 치명적이다 — 아침에 자는 동안 울리는 본래 상황은 잠금
+상태라 이 권한이 없어도 전체화면이 정상으로 뜬다.
 
 ## 프로세스 종료·배터리 최적화에서의 동작
 
@@ -396,7 +465,8 @@ Android 외 플랫폼에서는 전부 no-op (`getPermissionStatus`는 모두 `tr
 네이티브 알람은 자동화 테스트가 어렵고 실기기 확인이 필수다. Development Build를 설치한 실기기에서:
 
 1. 1~2분 뒤로 알람 설정 → 화면 끄기 → 전체화면 알람이 뜨고 화면이 켜지는지
-2. 같은 조건에서 앱을 사용 중일 때 → 헤드업 알림만 뜨고 전체화면은 안 뜨는지
+2. 오버레이 권한을 켠 뒤 앱을 사용 중일 때 → **전체화면이 뜨고 헤드업은 안 뜨는지**
+   (권한을 끄면 헤드업만 떠야 한다 — 두 경우를 모두 확인할 것)
 3. 알람이 울리는 중 화면을 밀어 닫아도 소리가 계속되는지
 4. 공부하기 → 오늘의 공부 화면으로 이동하는지 (자동 재생은 하지 않는다)
 5. 스누즈 → 5분 뒤 다시 울리는지
