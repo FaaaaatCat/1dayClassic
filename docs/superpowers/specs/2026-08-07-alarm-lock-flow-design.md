@@ -130,8 +130,15 @@
 | `MainActivityIntent.kt` | `today()`에 캐시버스팅 `t` 파라미터 추가(반복 알람에서 두 번째부터 화면이 안 바뀌는 문제 — `ad()`가 같은 이유로 이미 쓰고 있다), `lockFlow` 인자 추가 |
 | `AlarmClockModule.kt` | `isAlarmLockFlow()` 노출 + `onAlarmLockFlowChanged` 이벤트 |
 | `modules/alarm-clock/index.ts` | 위 API의 JS 래퍼. 기존 `requireOptionalNativeModule` 지연 해석 패턴 유지 |
-| `app/(tabs)/_layout.tsx` | `LOCK_FLOW`면 탭바 숨김 |
-| `app/(tabs)/today.tsx` | `LOCK_FLOW`면 다른 화면으로 나가는 경로 차단 |
+| `components/lesson/LessonDetailShell.tsx` | `LOCK_FLOW`면 닫기(X) 버튼 숨김 |
+
+탭바와 이탈 경로에 대해 코드를 확인한 결과, 예상보다 작업이 작다.
+
+- **탭바는 손댈 필요가 없다.** `AppTabBar`의 `HIDDEN_ROUTES`에 `today`가 이미 있어
+  (`components/AppTabBar.tsx`) 이 화면에서는 탭바가 원래 그려지지 않는다
+- **`today`를 벗어나는 길은 하나뿐이다** — `LessonDetailShell`의 닫기(X)가 `router.replace('/')`를
+  호출하는 것. 이것만 잠금 모드에서 감추면 이탈 경로가 없어진다
+- 따라서 `app/(tabs)/_layout.tsx`와 `app/(tabs)/today.tsx`는 **변경하지 않는다**
 
 `app/ad.tsx`는 **건드리지 않는다.** 이 플로우에서 빠질 뿐 화면 자체는 남아 있고, 퀴즈 이후로
 옮길 때 그대로 쓴다.
