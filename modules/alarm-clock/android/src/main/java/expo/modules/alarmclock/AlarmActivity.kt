@@ -219,6 +219,18 @@ class AlarmActivity : ComponentActivity() {
     private const val FLAT_COVER_HEIGHT_DP = 219
 
     /**
+     * 알람이 울릴 때 이 화면을 띄우는 인텐트.
+     *
+     * AlarmReceiver가 이걸로 직접 실행한다 — setFullScreenIntent만으로는 기기를 쓰는 중일 때
+     * OS가 헤드업 알림으로 격하시켜 전체화면이 뜨지 않기 때문이다. 알라미처럼 항상 전체화면이
+     * 뜨게 하려면 직접 실행해야 한다.
+     */
+    fun fireIntent(context: Context): Intent =
+      Intent(context, AlarmActivity::class.java).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      }
+
+    /**
      * 디자인 확인용 — 넘겨받은 책들을 한 장씩 넘겨 보는 모드로 연다.
      * 경로는 file:// URI로 받아 실제 경로로 바꿔 둔다(BitmapFactory는 URI를 못 읽는다).
      */

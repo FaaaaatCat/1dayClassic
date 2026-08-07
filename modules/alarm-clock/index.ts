@@ -48,6 +48,7 @@ const ALL_GRANTED: AlarmPermissionStatus = {
   notifications: true,
   exactAlarm: true,
   fullScreenIntent: true,
+  overlay: true,
 };
 
 let resolved: AlarmClockNativeModule | null = null;
@@ -121,7 +122,9 @@ export async function openAlarmPermissionSettings(): Promise<void> {
 }
 
 export function hasAllAlarmPermissions(status: AlarmPermissionStatus): boolean {
-  return status.notifications && status.exactAlarm && status.fullScreenIntent;
+  return (
+    status.notifications && status.exactAlarm && status.fullScreenIntent && status.overlay
+  );
 }
 
 /**

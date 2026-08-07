@@ -113,7 +113,8 @@ class AlarmClockModule : Module() {
       mapOf(
         "notifications" to hasNotificationPermission(),
         "exactAlarm" to hasExactAlarmPermission(),
-        "fullScreenIntent" to hasFullScreenIntentPermission()
+        "fullScreenIntent" to hasFullScreenIntentPermission(),
+        "overlay" to hasOverlayPermission()
       )
     }
 
@@ -125,6 +126,12 @@ class AlarmClockModule : Module() {
 
         !hasFullScreenIntentPermission() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
           Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
+            .setData(Uri.parse("package:${context.packageName}"))
+
+        // 우선순위가 가장 낮다 — 이게 없어도 알람은 울리고, 잠금 상태에서는 전체화면도 뜬다.
+        // 기기를 쓰는 중에 전체화면으로 깨우는 것만 안 된다.
+        !hasOverlayPermission() ->
+          Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
             .setData(Uri.parse("package:${context.packageName}"))
 
         else ->
@@ -145,6 +152,15 @@ class AlarmClockModule : Module() {
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     return AlarmScheduler.canScheduleExact(alarmManager)
   }
+
+  /**
+   * '다른 앱 위에 표시' — 기기를 쓰는 중에도 전체화면 알람을 띄우려면 필요하다.
+   *
+   * Android는 백그라운드에서의 액티비티 실행을 막는데(BAL), 앱이 보이는 오버레이 창을
+   * 가질 수 있으면 예외로 허용한다(BAL_ALLOW_NON_APP_VISIBLE_WINDOW). 이게 없으면
+   * AlarmReceiver의 직접 실행이 BAL_BLOCK 되고 헤드업 알림으로만 남는다 — 실측 확인.
+   */
+  private fun hasOverlayPermission(): Boolean = Settings.canDrawOverlays(context)
 
   /** Android 14부터 사용자가 끄고 켤 수 있다. 그 이전 버전은 항상 허용. */
   private fun hasFullScreenIntentPermission(): Boolean {
