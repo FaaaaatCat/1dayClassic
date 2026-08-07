@@ -9,6 +9,13 @@ export interface AlarmInput {
   enabled: boolean;
 }
 
+/** 권한 한 종류를 가리키는 키 — AlarmPermissionStatus의 필드 이름과 같다. */
+export type AlarmPermissionKind =
+  | 'notifications'
+  | 'exactAlarm'
+  | 'fullScreenIntent'
+  | 'overlay';
+
 export interface AlarmPermissionStatus {
   notifications: boolean;
   /** Android 12+ 에서만 의미가 있다. 그 이전 버전은 항상 true. */

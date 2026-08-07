@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import { useFonts } from 'expo-font';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
@@ -28,6 +29,9 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
+/** 권한 안내를 이미 한 번 했는지. 설치 후 처음 켰을 때만 묻기 위해 남긴다. */
+const PERMISSION_PROMPT_KEY = 'alarm-permission-prompted-v1';
+
 const AppTheme = {
   ...DefaultTheme,
   colors: {
@@ -47,17 +51,35 @@ export default function RootLayout() {
     DMSerifDisplay_400Regular,
   });
 
-  // 앱 시작 시 한 번만 확인한다. 권한이 모두 있으면 아무것도 표시하지 않는다.
+  /**
+   * 권한 안내는 설치 후 처음 앱을 켰을 때 딱 한 번만 한다.
+   *
+   * 켤 때마다 띄우면 권한을 미룬 사용자에게 매번 같은 팝업을 던지게 된다. 그 뒤로 권한을
+   * 확인하고 켜는 곳은 설정 탭의 권한 카드다(components/AlarmPermissionCard.tsx).
+   *
+   * 물어봤다는 사실은 사용자의 선택과 무관하게 기록한다 — '나중에'를 누른 것도 대답이다.
+   */
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        const asked = await AsyncStorage.getItem(PERMISSION_PROMPT_KEY);
+        if (cancelled || asked) return;
+
         const status = await getPermissionStatus();
-        if (cancelled || hasAllAlarmPermissions(status)) return;
-        Alert.alert('알람 권한 필요', '알람을 위해 필요한 권한을 허용해 주세요.', [
-          { text: '나중에', style: 'cancel' },
-          { text: '설정 열기', onPress: () => void openAlarmPermissionSettings() },
-        ]);
+        if (cancelled) return;
+
+        await AsyncStorage.setItem(PERMISSION_PROMPT_KEY, 'true');
+        if (hasAllAlarmPermissions(status)) return;
+
+        Alert.alert(
+          '알람 권한 필요',
+          '알람이 잘 울리려면 몇 가지 권한이 필요합니다.\n설정 > 알람 권한에서 언제든 확인할 수 있습니다.',
+          [
+            { text: '나중에', style: 'cancel' },
+            { text: '설정 열기', onPress: () => void openAlarmPermissionSettings() },
+          ],
+        );
       } catch (error) {
         console.warn('[alarm] 권한 상태 확인 실패:', error);
       }

@@ -2,9 +2,13 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
-import type { AlarmInput, AlarmPermissionStatus } from './src/AlarmClock.types';
+import type {
+  AlarmInput,
+  AlarmPermissionKind,
+  AlarmPermissionStatus,
+} from './src/AlarmClock.types';
 
-export type { AlarmInput, AlarmPermissionStatus };
+export type { AlarmInput, AlarmPermissionKind, AlarmPermissionStatus };
 
 /**
  * 표지를 어느 크기로 놓을지.
@@ -34,6 +38,7 @@ interface AlarmClockNativeModule {
   cancelAlarm(): Promise<void>;
   getPermissionStatus(): Promise<AlarmPermissionStatus>;
   openAlarmPermissionSettings(): Promise<void>;
+  requestPermission(kind: AlarmPermissionKind): Promise<void>;
   setAlarmBook(name: string, coverStyle: AlarmCoverStyle): Promise<void>;
   getAlarmImageTargets(): Promise<AlarmImageTargets>;
   previewAlarm(books: AlarmPreviewBook[]): Promise<void>;
@@ -119,6 +124,17 @@ export async function previewAlarm(books: AlarmPreviewBook[]): Promise<void> {
 /** 부족한 권한 중 우선순위가 높은 것의 설정 화면을 연다. */
 export async function openAlarmPermissionSettings(): Promise<void> {
   await getNativeModule()?.openAlarmPermissionSettings();
+}
+
+/**
+ * 권한 하나를 요청한다.
+ *
+ * 알림만 시스템 팝업이 뜨고(Android 13+ 런타임 권한), 나머지 셋은 Android가 요청 API를
+ * 제공하지 않아 해당 권한의 시스템 설정 화면이 열린다. 어느 쪽이든 결과는 즉시 알 수 없으므로,
+ * 호출한 쪽은 앱이 다시 포그라운드로 돌아올 때 getPermissionStatus로 다시 읽어야 한다.
+ */
+export async function requestAlarmPermission(kind: AlarmPermissionKind): Promise<void> {
+  await getNativeModule()?.requestPermission(kind);
 }
 
 export function hasAllAlarmPermissions(status: AlarmPermissionStatus): boolean {

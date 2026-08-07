@@ -1,5 +1,6 @@
 package expo.modules.alarmclock
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.Context
@@ -7,6 +8,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -118,6 +120,34 @@ class AlarmClockModule : Module() {
       )
     }
 
+    /**
+     * 권한 하나를 요청한다 — 설정 화면의 권한 토글이 쓴다.
+     *
+     * 알림만 진짜 시스템 팝업을 띄울 수 있다. 나머지 셋은 Android가 요청 API를 제공하지
+     * 않아서 해당 권한의 시스템 설정 화면을 여는 것이 앱이 할 수 있는 전부다.
+     */
+    AsyncFunction("requestPermission") { kind: String ->
+      when (kind) {
+        "notifications" -> requestNotificationPermission()
+        "exactAlarm" -> openSettings(
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+          } else {
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+          }
+        )
+        "fullScreenIntent" -> openSettings(
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT
+          } else {
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+          }
+        )
+        "overlay" -> openSettings(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+        else -> Log.w("AlarmClock", "알 수 없는 권한 종류: $kind")
+      }
+    }
+
     AsyncFunction("openAlarmPermissionSettings") {
       val intent = when {
         !hasExactAlarmPermission() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
@@ -141,6 +171,33 @@ class AlarmClockModule : Module() {
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
       context.startActivity(intent)
     }
+  }
+
+  /** 해당 권한의 시스템 설정 화면을 연다. package: URI를 붙여 우리 앱 항목으로 바로 간다. */
+  private fun openSettings(action: String) {
+    val intent = Intent(action)
+      .setData(Uri.parse("package:${context.packageName}"))
+      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    context.startActivity(intent)
+  }
+
+  /**
+   * 알림 권한 — 넷 중 유일하게 시스템 팝업을 띄울 수 있다(Android 13+의 런타임 권한).
+   *
+   * 사용자가 이미 두 번 거부했으면 Android가 팝업을 더 이상 띄우지 않는다. 그 경우 아무
+   * 일도 일어나지 않으면 토글이 고장 난 것처럼 보이므로, 액티비티가 없거나 팝업을 띄울 수
+   * 없는 상황에서는 알림 설정 화면으로 보낸다.
+   */
+  private fun requestNotificationPermission() {
+    val activity = appContext.currentActivity
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && activity != null) {
+      activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
+      return
+    }
+    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+      .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    context.startActivity(intent)
   }
 
   private fun hasNotificationPermission(): Boolean {

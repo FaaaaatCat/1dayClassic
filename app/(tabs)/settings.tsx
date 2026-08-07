@@ -2,6 +2,7 @@ import { SymbolView } from 'expo-symbols';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
+import AlarmPermissionCard from '@/components/AlarmPermissionCard';
 import ScaleButton from '@/components/ScaleButton';
 import SettingRow from '@/components/SettingRow';
 import { Colors, Fonts, Palette, Radius, Shadow, Spacing, tracking, Typography } from '@/constants/theme';
@@ -60,6 +61,16 @@ export default function SettingsScreen() {
           })}
         </View>
       </Animated.View>
+
+      {/*
+        앱 시작 시의 권한 요청은 처음 한 번뿐이라(app/_layout.tsx), 그 뒤에 권한을 확인하고
+        켜는 곳은 여기가 유일하다. 네이티브 모듈이 없으면(Expo Go) 물어볼 대상이 없어 숨긴다.
+      */}
+      {isNativeAlarmAvailable() && (
+        <Animated.View entering={FadeIn.duration(700).delay(400)}>
+          <AlarmPermissionCard />
+        </Animated.View>
+      )}
 
       {/*
         디자인 확인용. 실제 알람 화면을 그대로 띄우므로 여기서 보이는 게 곧 아침에 보일 화면이다.
