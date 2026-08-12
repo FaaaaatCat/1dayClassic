@@ -11,18 +11,6 @@ export const CALENDAR_MONTHS = [
 
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
-/** 1년 총 일수 (365) */
-export const TOTAL_DAYS_IN_YEAR = DAYS_IN_MONTH.reduce((sum, days) => sum + days, 0);
-
-/** 1월 1일부터 '오늘'(TODAY_MONTH/TODAY_DAY)까지의 누적 일수 — 1부터 시작 */
-export function getTodayDayOfYear(): number {
-  let count = 0;
-  for (let month = 1; month < TODAY_MONTH; month++) {
-    count += DAYS_IN_MONTH[month - 1];
-  }
-  return count + TODAY_DAY;
-}
-
 /**
  * '내일'(TODAY_MONTH/TODAY_DAY + 1일)의 {month, day}. 책마다 그 날짜에 실제 항목이
  * 있는지는 다르므로, 있는지 확인하는 일은 호출부(lib/books.ts의 getTomorrowLesson)가 한다.

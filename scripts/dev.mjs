@@ -111,8 +111,9 @@ function waitForMetro(timeoutMs = 90000) {
 
   const ping = () =>
     new Promise((resolve) => {
+      // Metro는 127.0.0.1에만 바인딩된다. 'localhost'로 물으면 Node가 ::1을 먼저 잡아 실패할 수 있다.
       const request = http.get(
-        { host: 'localhost', port: PORT, path: '/status', timeout: 2000 },
+        { host: '127.0.0.1', port: PORT, path: '/status', timeout: 2000 },
         (response) => {
           let body = '';
           response.on('data', (chunk) => (body += chunk));
@@ -146,6 +147,8 @@ if (process.argv[1] && process.argv[1].endsWith('dev.mjs')) {
     ['expo', 'start', '--localhost', '--port', String(PORT)],
     {
       stdio: 'inherit',
+      // Node 18.20+/20.12+는 Windows에서 .cmd를 shell 없이 spawn하면 EINVAL을 던진다.
+      shell: process.platform === 'win32',
       env: { ...process.env, NODE_OPTIONS: '--dns-result-order=ipv4first' },
     },
   );

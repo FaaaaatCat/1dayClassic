@@ -21,7 +21,8 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: '오늘의 공부', headerShown: false }} />
       <Tabs.Screen name="today" options={{ headerShown: false, href: null }} />
       <Tabs.Screen name="alarm-detail" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="bookstore" options={{ title: '하루 서점' }} />
+      {/* 서점은 타이틀이 스크롤을 따라 올라가야 해서 공용 헤더를 쓰지 않고 화면이 직접 그린다. */}
+      <Tabs.Screen name="bookstore" options={{ title: '하루 서점', headerShown: false }} />
       <Tabs.Screen name="book/[id]" options={{ headerShown: false, href: null }} />
       <Tabs.Screen name="library" options={{ title: '기록' }} />
       <Tabs.Screen name="settings" options={{ title: '설정' }} />

@@ -39,6 +39,8 @@
     "dev": "node scripts/dev.mjs",
     "device": "node scripts/device.mjs",
     "check:quizzes": "node scripts/check-quizzes.mjs",
+    "check:tags": "node scripts/check-tags.mjs",
+    "fetch:uupress": "node scripts/fetch-uupress.mjs",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
