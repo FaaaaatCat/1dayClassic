@@ -14,6 +14,7 @@ import {
   Text,
   View,
   ViewStyle,
+  type ImageSourcePropType,
 } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -309,6 +310,72 @@ export default function BookDetailScreen() {
     );
   };
 
+  const goToLibraryBook = () => {
+    if (!catalogBook) return;
+    router.push({
+      pathname: "/book/[id]",
+      params: { id: catalogBook.bookId ?? catalogBook.id, from: "library" },
+    });
+  };
+
+  const renderHeroButtons = () => {
+    if (isFromLibrary) return null;
+    if (inShelf) {
+      return (
+        <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: true }}
+            disabled
+            style={[styles.heroButton, styles.shelfStatusButton]}
+          >
+            <Text style={styles.heroButtonText}>서재에 담은 책입니다</Text>
+          </Pressable>
+          <ScaleButton
+            accessibilityLabel={`${view.title} 내 서재 상세페이지로 이동`}
+            style={[styles.heroButton, styles.goToLibraryButton]}
+            onPress={goToLibraryBook}
+          >
+            <Text style={[styles.heroButtonText, styles.goToLibraryButtonText]}>보러가기</Text>
+            <SymbolView
+              name={{ ios: "chevron.right", android: "chevron_right", web: "chevron_right" }}
+              tintColor={Colors.brown100}
+              size={18}
+            />
+          </ScaleButton>
+        </>
+      );
+    }
+    return (
+      <>
+        <ScaleButton
+          accessibilityLabel={`${view.title}을(를) 내 서재에 담기`}
+          style={[styles.heroButton, styles.addShelfButton]}
+          onPress={addBookToShelf}
+        >
+          <SymbolView
+            name={{ ios: "bookmark", android: "bookmark_border", web: "bookmark_border" }}
+            tintColor={Colors.white}
+            size={18}
+          />
+          <Text style={styles.heroButtonText}>내 서재에 담기</Text>
+        </ScaleButton>
+        <ScaleButton
+          accessibilityLabel="미리보기"
+          style={[styles.heroButton, styles.previewButton]}
+          onPress={() => setPreviewOpen(true)}
+        >
+          <SymbolView
+            name={{ ios: "eye", android: "visibility", web: "visibility" }}
+            tintColor={Colors.brown50}
+            size={18}
+          />
+          <Text style={[styles.heroButtonText, styles.previewButtonText]}>미리보기</Text>
+        </ScaleButton>
+      </>
+    );
+  };
+
   // ScrollView의 직속 자식을 평평한 배열로 짜면서, 절 제목 자식의 인덱스를 같이 모은다
   // (stickyHeaderIndices에 그대로 넘기기 위해).
   const scrollChildren: React.ReactNode[] = [];
@@ -330,10 +397,11 @@ export default function BookDetailScreen() {
         {chips.length > 0 && (
           <View style={styles.chips}>
             {chips.map((chip) => (
-              <TagChip key={`${chip.variant}-${chip.label}`} {...chip} />
+              <TagChip key={`${chip.variant}-${chip.label}`} detail {...chip} />
             ))}
           </View>
         )}
+        <View style={styles.buttonRow}>{renderHeroButtons()}</View>
       </View>
     </View>,
   );
@@ -369,6 +437,19 @@ export default function BookDetailScreen() {
       </View>,
     );
   });
+
+  if (isFromLibrary) {
+    return (
+      <LibraryBookDetailView
+        title={view.title}
+        author={view.author}
+        cover={view.cover}
+        catalogId={catalogBook?.id ?? ""}
+        chips={chips}
+        onChangeBook={chooseBook}
+      />
+    );
+  }
 
   return (
     <>
@@ -518,6 +599,306 @@ export default function BookDetailScreen() {
 // CTA 바의 버튼 4종(활성 2 + 비활성 2)이 상태에 따라 자리를 서로 바꿔 끼우므로, 크기·모양을
 // 여기 하나로 묶어 상태가 바뀌어도 레이아웃이 흔들리지 않게 한다. StyleSheet.create 안에서는
 // 같은 객체 리터럴의 다른 키를 참조할 수 없어 바깥에 따로 뺐다.
+interface LibraryBookDetailViewProps {
+  catalogId: string;
+  title: string;
+  author: string;
+  cover: ImageSourcePropType;
+  chips: Array<{ label: string; variant: "series" | "field" }>;
+  onChangeBook: () => void;
+}
+
+// 공부 진도 — 책마다 실제 총 페이지수를 아직 안 갖고 있어(카탈로그의 pages는 "336쪽"
+// 같은 문자열이라 책마다 제각각이고 신뢰하기 어렵다), MVP 동안은 모든 책을 320p로,
+// 진행 그리드는 320p에 맞춘 칸 수 대신 딱 200칸으로 고정한다 — 둘 다 나중에 책별 실제
+// 데이터가 생기면 그 값으로 바꾸면 된다.
+const MVP_TOTAL_PAGES = 320;
+const PROGRESS_DOT_COUNT = 200;
+const PROGRESS_DOT_DONE = 0;
+
+function LibraryBookDetailView({
+  catalogId,
+  title,
+  author,
+  cover,
+  chips,
+  onChangeBook,
+}: LibraryBookDetailViewProps) {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { removeFromShelf } = useShelf();
+  const { showToast } = useToast();
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+
+  const removeBook = () => {
+    if (!catalogId) return;
+    removeFromShelf(catalogId);
+    showToast("내 서재에서 삭제했습니다");
+    router.replace("/library");
+  };
+
+  return (
+    <>
+      <View style={libraryStyles.screen}>
+        <View style={[libraryStyles.header, { paddingTop: insets.top + 16 }]}>
+          <Text style={libraryStyles.headerTitle}>내 서재</Text>
+          <ScaleButton
+            accessibilityLabel="내 서재로 돌아가기"
+            style={libraryStyles.closeButton}
+            onPress={() => router.replace("/library")}
+          >
+            <SymbolView
+              name={{ ios: "xmark", android: "close", web: "close" }}
+              tintColor={Colors.brown100}
+              size={24}
+            />
+          </ScaleButton>
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+        >
+          {/* 책 info — 표지+제목/저자/태그가 가로로 나란히, 그 아래 버튼 줄. Figma의
+              "책 info" 프레임과 동일하게 이 블록만 자체 좌우 padding(20)을 갖는다 —
+              아래 카드 목록은 padding이 8로 훨씬 좁다. */}
+          <View style={libraryStyles.hero}>
+            <View style={libraryStyles.coverRow}>
+              <Image source={cover} style={libraryStyles.cover} resizeMode="cover" />
+              <View style={libraryStyles.infoColumn}>
+                <Text style={libraryStyles.title}>{title}</Text>
+                <Text style={libraryStyles.author}>{author}</Text>
+                <View style={libraryStyles.chips}>
+                  {chips.map((chip) => (
+                    <TagChip key={`${chip.variant}-${chip.label}`} detail {...chip} />
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            <View style={libraryStyles.buttonRow}>
+              <ScaleButton
+                accessibilityLabel={`${title} 오늘의 책으로 변경하기`}
+                style={[libraryStyles.actionButton, libraryStyles.changeButton]}
+                onPress={onChangeBook}
+              >
+                <SymbolView
+                  name={{ ios: "arrow.triangle.2.circlepath", android: "sync", web: "sync" }}
+                  tintColor={Colors.white}
+                  size={18}
+                />
+                <Text style={libraryStyles.changeButtonText}>이 책으로 변경하기</Text>
+              </ScaleButton>
+              <ScaleButton
+                accessibilityLabel="미리보기"
+                style={[libraryStyles.actionButton, libraryStyles.previewButton]}
+                onPress={() => setPreviewOpen(true)}
+              >
+                <Text style={libraryStyles.previewButtonText}>미리보기</Text>
+              </ScaleButton>
+              <ScaleButton
+                accessibilityLabel={moreMenuOpen ? "더보기 닫기" : "더보기"}
+                style={[libraryStyles.actionButton, libraryStyles.moreButton]}
+                onPress={() => setMoreMenuOpen((open) => !open)}
+              >
+                <SymbolView
+                  name={{ ios: "ellipsis", android: "more_vert", web: "more_vert" }}
+                  tintColor={Colors.brown100}
+                  size={20}
+                />
+              </ScaleButton>
+            </View>
+
+            {moreMenuOpen && (
+              <View style={libraryStyles.moreMenu}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="내 서재에서 삭제하기"
+                  style={libraryStyles.moreMenuItem}
+                  onPress={removeBook}
+                >
+                  <SymbolView
+                    name={{ ios: "trash", android: "delete", web: "delete" }}
+                    tintColor={Colors.red100}
+                    size={18}
+                  />
+                  <Text style={libraryStyles.deleteText}>내 서재에서 삭제하기</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+
+          <View style={libraryStyles.cardList}>
+            {/* 독서 기록 — 다른 카드처럼 값 하나가 아니라 문장 한 줄 + 구분선으로 나눈
+                통계 한 줄이라 LibraryStatCard 대신 직접 그린다. */}
+            <View style={libraryStyles.card}>
+              <Text style={libraryStyles.cardTitle}>독서 기록</Text>
+              <Text style={libraryStyles.readingSentence}>0일 동안 이 책을 읽었어요.</Text>
+              <View style={libraryStyles.readingStatsRow}>
+                <Text style={libraryStyles.readingStatText}>총 0시간 0분</Text>
+                <View style={libraryStyles.readingStatDivider} />
+                <Text style={libraryStyles.readingStatText}>0p</Text>
+                <View style={libraryStyles.readingStatDivider} />
+                <Text style={libraryStyles.readingStatText}>0일 독서</Text>
+              </View>
+            </View>
+
+            <LibraryStatCard
+              title="공부 진도"
+              value="0p"
+              note={`(총 ${MVP_TOTAL_PAGES}p)`}
+              buttonLabel="빼먹은 진도 채우기"
+            >
+              <ProgressDotGrid total={PROGRESS_DOT_COUNT} done={PROGRESS_DOT_DONE} />
+            </LibraryStatCard>
+
+            <LibraryStatCard
+              title="퀴즈 정답률"
+              value="0%"
+              note="(아직 푼 퀴즈가 없어요)"
+              buttonLabel="틀린 문제 보러가기"
+            />
+
+            <LibraryStatCard title="독서 노트" value="0개" buttonLabel="기록한 노트 보기" />
+
+            <View style={libraryStyles.card}>
+              <Text style={libraryStyles.cardTitle}>마지막으로 책갈피 끼워둔 날</Text>
+              <Text style={libraryStyles.emptyBookmark}>아직 읽지 않은 책이에요</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+      <BookPreviewModal visible={previewOpen} onClose={() => setPreviewOpen(false)} />
+    </>
+  );
+}
+
+function LibraryStatCard({
+  title,
+  value,
+  note,
+  buttonLabel,
+  children,
+}: {
+  title: string;
+  value?: string;
+  note?: string;
+  buttonLabel?: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <View style={libraryStyles.card}>
+      <Text style={libraryStyles.cardTitle}>{title}</Text>
+      {value && (
+        <View style={libraryStyles.valueRow}>
+          <Text style={libraryStyles.cardValue}>{value}</Text>
+          {note && <Text style={libraryStyles.cardNote}>{note}</Text>}
+        </View>
+      )}
+      {children}
+      {buttonLabel && (
+        <Pressable style={libraryStyles.cardButton}>
+          <Text style={libraryStyles.cardButtonText}>{buttonLabel}</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+/** 공부 진도의 더미 진행 그리드 — done개는 초록, 나머지는 회색 사각형. */
+function ProgressDotGrid({ total, done }: { total: number; done: number }) {
+  return (
+    <View style={libraryStyles.dotGrid}>
+      {Array.from({ length: total }, (_, index) => (
+        <View
+          key={index}
+          style={[libraryStyles.dot, index < done && libraryStyles.dotDone]}
+        />
+      ))}
+    </View>
+  );
+}
+
+const libraryStyles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: Colors.bg },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: Colors.bg,
+  },
+  headerTitle: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 18,
+    letterSpacing: tracking(18),
+    color: Colors.brown100,
+  },
+  closeButton: { width: 41, height: 41, borderRadius: 20.5, alignItems: "center", justifyContent: "center" },
+  // 책 info 블록 — 표지+텍스트 줄, 버튼 줄 순서로 세로 gap 20, 자체 좌우 padding 20,
+  // 아래 카드 목록과 얇은 구분선으로 나뉜다(Figma 원래 색 #F4F0F7는 팔레트에 없어
+  // 앱이 이미 구분선으로 쓰는 brown10으로 대체).
+  hero: {
+    gap: 20,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.brown10,
+  },
+  coverRow: { flexDirection: "row", gap: 20, alignItems: "flex-start" },
+  cover: {
+    width: 95,
+    height: 140,
+    borderRadius: 2,
+    shadowColor: Colors.brown100,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  infoColumn: { flex: 1, gap: 12, paddingTop: 20 },
+  title: { fontFamily: Fonts.semiBold, fontSize: 22, letterSpacing: tracking(22), color: Colors.brown100 },
+  author: { fontFamily: Fonts.regular, fontSize: 14, letterSpacing: tracking(14), color: Colors.brown50 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
+  buttonRow: { width: "100%", flexDirection: "row", gap: 8, alignItems: "center" },
+  actionButton: { height: 40, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 10, paddingHorizontal: 20 },
+  changeButton: { flex: 1, backgroundColor: Colors.beige100 },
+  changeButtonText: { fontFamily: Fonts.semiBold, fontSize: 15, letterSpacing: tracking(15), color: Colors.white },
+  previewButton: { backgroundColor: Colors.brown100 },
+  previewButtonText: { fontFamily: Fonts.semiBold, fontSize: 15, letterSpacing: tracking(15), color: Colors.white },
+  moreButton: { width: 40, paddingHorizontal: 0, borderWidth: 1, borderColor: Colors.brown10, backgroundColor: Colors.white },
+  moreMenu: { alignSelf: "stretch", backgroundColor: Colors.white, borderRadius: 10, shadowColor: Colors.brown100, shadowOpacity: 0.12, shadowRadius: 8, elevation: 4 },
+  moreMenuItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 13 },
+  deleteText: { fontFamily: Fonts.regular, fontSize: 14, letterSpacing: tracking(14), color: Colors.red100 },
+  // 카드 목록 — 화면 padding이 hero 블록(20)보다 훨씬 좁다(8). 카드 사이 gap 20.
+  cardList: { paddingHorizontal: 8, paddingTop: 8, gap: 20 },
+  card: { gap: 8, paddingHorizontal: 20, paddingVertical: 24, borderRadius: 20, backgroundColor: Colors.white },
+  cardTitle: { fontFamily: Fonts.semiBold, fontSize: 15, letterSpacing: tracking(15), color: Colors.brown100, paddingBottom: 8 },
+  valueRow: { flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" },
+  cardValue: { fontFamily: Fonts.semiBold, fontSize: 20, letterSpacing: tracking(20), color: Colors.brown100 },
+  cardNote: { fontFamily: Fonts.regular, fontSize: 15, letterSpacing: tracking(15), color: Colors.brown100 },
+  readingSentence: { fontFamily: Fonts.semiBold, fontSize: 20, letterSpacing: tracking(20), color: Colors.brown100 },
+  readingStatsRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  readingStatText: { fontFamily: Fonts.regular, fontSize: 15, letterSpacing: tracking(15), color: Colors.brown100 },
+  readingStatDivider: { width: 1, height: 12, backgroundColor: Colors.brown10 },
+  // 공부 진도의 더미 진행 그리드 — 완료 칸은 green100(Figma 원래 색 #34C759는 팔레트에
+  // 없어 지정 팔레트의 green100으로 대체), 미완료 칸은 brown10(Figma와 동일한 색).
+  dotGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6, paddingVertical: 4 },
+  dot: { width: 8, height: 8, backgroundColor: Colors.brown10 },
+  dotDone: { backgroundColor: Colors.green100 },
+  cardButton: {
+    alignSelf: "flex-start",
+    height: 32,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: Colors.brown50,
+  },
+  cardButtonText: { fontFamily: Fonts.semiBold, fontSize: 14, letterSpacing: tracking(14), color: Colors.brown50 },
+  emptyBookmark: { fontFamily: Fonts.regular, fontSize: 14, letterSpacing: tracking(14), color: Colors.brown50 },
+});
+
 const ctaSize: ViewStyle = {
   flex: 1,
   flexDirection: "row",
@@ -595,7 +976,38 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    width: "100%",
+    gap: 8,
+  },
+  heroButton: {
+    flex: 1,
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    borderRadius: 26,
+  },
+  heroButtonText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    letterSpacing: tracking(14),
+    color: Colors.white,
+  },
+  addShelfButton: {
+    backgroundColor: Colors.brown100,
+  },
+  shelfStatusButton: {
+    backgroundColor: Colors.brown50,
+  },
+  goToLibraryButton: {
+    borderWidth: 1,
+    borderColor: Colors.brown100,
+    backgroundColor: Colors.white,
+  },
+  goToLibraryButtonText: {
+    color: Colors.brown100,
   },
   price: {
     fontFamily: Fonts.semiBold,
@@ -691,6 +1103,7 @@ const styles = StyleSheet.create({
   // 화면 하단에 고정되는 CTA 영역 전체를 감싸는 래퍼 — 세이프에어리어 하단 패딩은
   // 여기서 한 번만 준다(ctaBar 아래에 삭제 링크가 붙어도 총 여백이 흔들리지 않게).
   ctaFooter: {
+    display: "none",
     backgroundColor: Colors.bg,
   },
   // CTA 바 — sticky 절 제목 구분선과 같은 톤의 얇은 위쪽 경계선으로 스크롤 영역과 구분한다.
@@ -774,17 +1187,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     height: 52,
-    paddingHorizontal: 16,
-    borderRadius: 100,
+    paddingHorizontal: 12,
+    borderRadius: 26,
     borderWidth: 1,
-    borderColor: Colors.brown10,
-    backgroundColor: Colors.brown100,
+    borderColor: Colors.brown50,
+    backgroundColor: Colors.white,
   },
   previewButtonText: {
     fontFamily: Fonts.semiBold,
     fontSize: 15,
     letterSpacing: tracking(13),
-    color: Colors.white,
+    color: Colors.brown50,
   },
   moreButton: {
     flexDirection: "row",
