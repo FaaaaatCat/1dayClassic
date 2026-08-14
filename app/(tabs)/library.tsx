@@ -57,8 +57,8 @@ export default function LibraryScreen() {
 
   const openBook = (book: CatalogBook) => {
     router.push({
-      pathname: '/book/[id]',
-      params: { id: book.bookId ?? book.id, from: 'library' },
+      pathname: '/library/book/[id]',
+      params: { id: book.bookId ?? book.id },
     });
   };
 

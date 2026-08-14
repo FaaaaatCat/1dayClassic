@@ -25,6 +25,7 @@ export default function TabLayout() {
       {/* 서점은 타이틀이 스크롤을 따라 올라가야 해서 공용 헤더를 쓰지 않고 화면이 직접 그린다. */}
       <Tabs.Screen name="bookstore" options={{ title: '하루 서점', headerShown: false }} />
       <Tabs.Screen name="book/[id]" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen name="library/book/[id]" options={{ headerShown: false, href: null }} />
       <Tabs.Screen name="settings" options={{ title: '설정' }} />
     </Tabs>
   );

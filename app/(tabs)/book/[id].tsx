@@ -438,19 +438,6 @@ export default function BookDetailScreen() {
     );
   });
 
-  if (isFromLibrary) {
-    return (
-      <LibraryBookDetailView
-        title={view.title}
-        author={view.author}
-        cover={view.cover}
-        catalogId={catalogBook?.id ?? ""}
-        chips={chips}
-        onChangeBook={chooseBook}
-      />
-    );
-  }
-
   return (
     <>
       <View style={styles.screen}>
@@ -599,7 +586,7 @@ export default function BookDetailScreen() {
 // CTA 바의 버튼 4종(활성 2 + 비활성 2)이 상태에 따라 자리를 서로 바꿔 끼우므로, 크기·모양을
 // 여기 하나로 묶어 상태가 바뀌어도 레이아웃이 흔들리지 않게 한다. StyleSheet.create 안에서는
 // 같은 객체 리터럴의 다른 키를 참조할 수 없어 바깥에 따로 뺐다.
-interface LibraryBookDetailViewProps {
+interface LegacyLibraryDetailProps {
   catalogId: string;
   title: string;
   author: string;
@@ -616,14 +603,14 @@ const MVP_TOTAL_PAGES = 320;
 const PROGRESS_DOT_COUNT = 200;
 const PROGRESS_DOT_DONE = 0;
 
-function LibraryBookDetailView({
+function LegacyLibraryDetail({
   catalogId,
   title,
   author,
   cover,
   chips,
   onChangeBook,
-}: LibraryBookDetailViewProps) {
+}: LegacyLibraryDetailProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { removeFromShelf } = useShelf();
