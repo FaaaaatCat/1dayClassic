@@ -1,7 +1,6 @@
 import DescBlock from '@/components/lesson/blocks/DescBlock';
 import ImageBlock from '@/components/lesson/blocks/ImageBlock';
 import IntroBlock from '@/components/lesson/blocks/IntroBlock';
-import MoreFunctionsBlock from '@/components/lesson/blocks/MoreFunctionsBlock';
 import NoteBlock from '@/components/lesson/blocks/NoteBlock';
 import QuizBlock from '@/components/lesson/blocks/QuizBlock';
 import QuoteBlock from '@/components/lesson/blocks/QuoteBlock';
@@ -18,7 +17,7 @@ interface Props {
  * 클래식 조합 — 9권 중 이번에 Figma로 이관하는 유일한 책.
  *
  * 화면 순서 = 아래 JSX 줄 순서: 인트로 → 히어로 → 표제부 → 인용문 → 본문 → 퀴즈 →
- * 감상 노트 → 북마크·공유.
+ * 감상 노트.
  *
  * 본문은 구매 전이면 앞부분만 보이고 그 아래에 구매 안내가 붙는다. 구매 여부는
  * lib/purchase.ts가 답하고, 이 파일은 그 값을 본문 블록에 넘겨 주기만 한다.
@@ -57,7 +56,6 @@ export default function ClassicDetail({ lesson }: Props) {
       <DescBlock paragraphs={lesson.story} purchased={purchased} />
       {quiz && <QuizBlock quiz={quiz} />}
       <NoteBlock />
-      <MoreFunctionsBlock />
     </>
   );
 }

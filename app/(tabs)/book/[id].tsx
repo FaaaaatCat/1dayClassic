@@ -1,8 +1,9 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Alert,
   BackHandler,
   Image,
   NativeScrollEvent,
@@ -12,23 +13,29 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+  ViewStyle,
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import ScaleButton from '@/components/ScaleButton';
-import TagChip from '@/components/TagChip';
-import { Colors, Fonts, tracking } from '@/constants/theme';
-import { useBookSelection } from '@/context/BookSelectionContext';
-import { useToast } from '@/context/ToastContext';
-import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
+import BookPreviewModal from "@/components/BookPreviewModal";
+import ScaleButton from "@/components/ScaleButton";
+import TagChip from "@/components/TagChip";
+import { Colors, Fonts, tracking } from "@/constants/theme";
+import { useBookSelection } from "@/context/BookSelectionContext";
+import { useShelf } from "@/context/ShelfContext";
+import { useToast } from "@/context/ToastContext";
+import { BOOKSTORE_BOOKS } from "@/lib/bookstore";
 import {
-  formatPrice,
   getCatalogBook,
   getCatalogBookByBookId,
   type CatalogBook,
-} from '@/lib/catalog';
-import { fieldsOf, seriesOf } from '@/lib/tags';
+} from "@/lib/catalog";
+import { fieldsOf, seriesOf } from "@/lib/tags";
 
 /** 헤더 미니 표지가 나타날 때 위에서 살짝 내려오는 느낌을 주는 시작 오프셋(px) */
 const MINI_SLIDE_OFFSET = 10;
@@ -39,9 +46,20 @@ const MINI_SLIDE_OFFSET = 10;
  * 1) 학습 가능한 '하루 시리즈' 9권: 표지가 로컬 에셋이다.
  * 2) 유유출판사 카탈로그의 나머지 책: 표지가 원격 URL이다.
  *
- * '이 책으로 선택하기' 버튼은 이미 선택된 책이 아닌 한 277권 전부에 뜬다. 다만 실제
- * 선택(selectBook)은 학습 콘텐츠가 있는 9권에서만 일어나고, 나머지 268권은 버튼을 눌러도
- * 선택되지 않고 '준비중' 토스트만 뜬다 — 이유는 chooseBook 주석 참고.
+ * 하단 CTA 바는 catalogBook이 있으면 늘 뜨고, 진입 경로(from)로 버튼 역할이 완전히
+ * 갈린다 — 하루 서점 쪽에는 '내 서재에 담기'류만, 내 서재 쪽에는 '이 책으로 변경하기'류만
+ * 나오고 서로 섞이지 않는다(4갈래 분기는 renderCta 참고):
+ * - 하루 서점(from !== 'library')에서는 서재(ShelfContext) 여부로 갈린다. 서재에 없으면
+ *   '내 서재에 담기'(누르면 담길 뿐 오늘의 책은 안 바뀐다), 이미 담겼으면 눌러도 아무 일도
+ *   안 하는 안내용 비활성 버튼('서재에 담긴 책입니다.')이다.
+ * - 내 서재(from === 'library')에서는 오늘의 책 선택 여부로 갈린다. 아직 선택 전이면
+ *   '이 책으로 변경하기'. 다만 실제 선택(selectBook)은 학습 콘텐츠가 있는 9권에서만
+ *   일어나고, 나머지 268권은 버튼을 눌러도 선택되지 않고 '준비중' 토스트만 뜬다 — 이유는
+ *   chooseBook 주석 참고. 이미 선택된 책이면 눌러도 아무 일도 안 하는 비활성 버튼('현재
+ *   선택중', 히어로 배지와 같은 파란 그라데이션)이다.
+ *
+ * 이 화면은 하루 서점과 내 서재 두 탭이 함께 쓴다(라우트 파라미터 from으로 온 곳을 기억해
+ * 뒀다가 X·뒤로가기 때 그리로 돌아간다).
  *
  * 표지·저자·정가·상세 절은 두 종류가 같은 모양이라, 아래에서 view라는 한 덩어리로 합쳐 둔다.
  *
@@ -54,17 +72,23 @@ const MINI_SLIDE_OFFSET = 10;
  * 스크롤 이동한다.
  */
 export default function BookDetailScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, from } = useLocalSearchParams<{ id?: string; from?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { selectedBookId, selectBook } = useBookSelection();
+  const { isInShelf, addToShelf, removeFromShelf } = useShelf();
   const { showToast } = useToast();
+
+  // 하루 서점과 내 서재 두 탭에서 들어올 수 있어, 온 곳을 기억해 뒀다가 그리로 돌아간다.
+  // from이 없거나 다른 값이면(예: 딥링크) 기존처럼 서점으로 되돌린다.
+  const isFromLibrary = from === "library";
+  const closeDestination = isFromLibrary ? "/library" : "/bookstore";
 
   // 학습 가능한 9권이 먼저다 — 그 9권은 카탈로그에도 있지만 표지를 로컬 에셋으로 쓴다.
   const studyBook = BOOKSTORE_BOOKS.find((candidate) => candidate.id === id);
   const catalogBook: CatalogBook | undefined = studyBook
     ? getCatalogBookByBookId(studyBook.id)
-    : getCatalogBook(id ?? '');
+    : getCatalogBook(id ?? "");
 
   const view = studyBook
     ? {
@@ -83,16 +107,19 @@ export default function BookDetailScreen() {
       };
 
   const isSelected = studyBook?.id === selectedBookId;
+  // 서재의 키는 항상 catalogBook.id(노션 uuid) — 라우트 id는 9권일 때 BookId라 값이 달라
+  // 그대로 쓰면 안 된다(catalogBook은 studyBook 여부와 무관하게 항상 계산되어 있다).
+  const inShelf = catalogBook ? isInShelf(catalogBook.id) : false;
 
   // 시리즈 칩을 앞에, 분야 칩을 뒤에 둔다. 학습 가능한 9권도 카탈로그 태그를 그대로 쓴다.
   const tags = catalogBook?.tags ?? [];
   const chips = [
     // 제목 규칙이 걸린 시리즈도 있어서 카탈로그 쪽 제목을 넘긴다(9권은 표기가 조금 다르다).
-    ...seriesOf(tags, catalogBook?.title ?? '').map((label) => ({
+    ...seriesOf(tags, catalogBook?.title ?? "").map((label) => ({
       label,
-      variant: 'series' as const,
+      variant: "series" as const,
     })),
-    ...fieldsOf(tags).map((label) => ({ label, variant: 'field' as const })),
+    ...fieldsOf(tags).map((label) => ({ label, variant: "field" as const })),
   ];
 
   /**
@@ -100,16 +127,19 @@ export default function BookDetailScreen() {
    *
    * 이 화면은 탭 네비게이터의 형제라서 그냥 두면 뒤로가기가 첫 탭('오늘의 공부')으로
    * 돌아간다 — 탭 네비게이터의 기본 backBehavior가 firstRoute이기 때문이다.
-   * 여기로는 하루 서점에서만 들어오므로 서점으로 되돌린다.
+   * 하루 서점·내 서재 어느 쪽에서 왔는지에 따라 closeDestination으로 되돌린다.
    */
   useFocusEffect(
     useCallback(() => {
-      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-        router.replace('/bookstore');
-        return true;
-      });
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => {
+          router.replace(closeDestination);
+          return true;
+        },
+      );
       return () => subscription.remove();
-    }, [router]),
+    }, [router, closeDestination]),
   );
 
   const chooseBook = () => {
@@ -119,11 +149,44 @@ export default function BookDetailScreen() {
     // 그 자리에서 크래시한다 — 그래서 studyBook이 없을 때는 절대 selectBook을 호출하지 않고
     // 안내 토스트만 띄운다.
     if (!studyBook) {
-      showToast('준비중인 콘텐츠입니다');
+      showToast("준비중인 콘텐츠입니다");
       return;
     }
     selectBook(studyBook.id);
     showToast(`선택 완료 — ${studyBook.title}`);
+  };
+
+  /** 서재에 담긴 책만 '이 책으로 변경하기'가 뜨므로, 담을 곳(catalogBook)이 없으면 버튼도 렌더하지 않는다. */
+  const addBookToShelf = () => {
+    if (!catalogBook) return;
+    addToShelf(catalogBook.id);
+    showToast("선택하신 책이 내 서재에 담겼습니다");
+  };
+
+  /** 서재에 담긴 책에만 뜨는 삭제 — catalogBook 없으면(극단적 예외) 아무 일도 안 한다. */
+  const removeBookFromShelf = () => {
+    if (!catalogBook) return;
+    removeFromShelf(catalogBook.id);
+    showToast("내 서재에서 삭제했습니다");
+  };
+
+  // more 메뉴의 두 옵션 — 기존 동작(previewOpen/removeBookFromShelf)을 그대로 부르고
+  // 메뉴만 닫는다.
+  const openPreviewFromMenu = () => {
+    setMoreMenuOpen(false);
+    setPreviewOpen(true);
+  };
+  const removeBookFromShelfFromMenu = () => {
+    setMoreMenuOpen(false);
+    removeBookFromShelf();
+  };
+
+  /** 실제 결제 연동이 없는 MVP라 구매를 완료 처리하지 않는다 — 왜 안 되는지만 안내한다. */
+  const notifyPurchaseUnavailable = () => {
+    Alert.alert(
+      "아직 준비 중인 기능이에요",
+      "MVP 단계라 구현되지 않은 기능이며, 출판사와의 협의가 필요합니다.",
+    );
   };
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -131,15 +194,23 @@ export default function BookDetailScreen() {
   // 절 제목 View의 onLayout에서 채워진다 — ScrollView 콘텐츠 기준 y좌표라 scrollTo에 그대로 쓴다.
   const sectionOffsetsRef = useRef<Record<number, number>>({});
   const [showMiniHeader, setShowMiniHeader] = useState(false);
+  // 미리보기 팝업 — 구매/선택 상태와 무관하게 모든 책 상세페이지에서 열 수 있다.
+  const [previewOpen, setPreviewOpen] = useState(false);
+  // 서재에 담긴 책만 뜨는 more 버튼의 옵션 박스(미리보기/삭제).
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const miniHeaderProgress = useSharedValue(0);
 
   useEffect(() => {
-    miniHeaderProgress.value = withTiming(showMiniHeader ? 1 : 0, { duration: 240 });
+    miniHeaderProgress.value = withTiming(showMiniHeader ? 1 : 0, {
+      duration: 240,
+    });
   }, [showMiniHeader, miniHeaderProgress]);
 
   const miniHeaderAnimatedStyle = useAnimatedStyle(() => ({
     opacity: miniHeaderProgress.value,
-    transform: [{ translateY: (1 - miniHeaderProgress.value) * -MINI_SLIDE_OFFSET }],
+    transform: [
+      { translateY: (1 - miniHeaderProgress.value) * -MINI_SLIDE_OFFSET },
+    ],
   }));
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -163,11 +234,80 @@ export default function BookDetailScreen() {
   useEffect(() => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: false });
     setShowMiniHeader(false);
+    setMoreMenuOpen(false);
     sectionOffsetsRef.current = {};
   }, [id]);
 
   // 카탈로그에 없는 id로 들어온 경우. 훅은 위에서 모두 호출한 뒤이므로 안전하다.
   if (!view) return null;
+
+  /**
+   * 하단 CTA의 내용을 만든다 — 진입 경로(from)마다 버튼이 하는 일이 완전히 다르므로
+   * (하루 서점=서재 담기, 내 서재=오늘의 책 선택) 한 갈래가 다른 갈래의 문구를 절대
+   * 빌려 쓰지 않게 if로 4갈래를 명시적으로 나눈다. 비활성 상태(눌러도 아무 일도 안 함)는
+   * ScaleButton으로 감싸지 않는다 — 눌리지 않는데 Pressable을 씌우면 스크린리더가
+   * 버튼으로 잘못 읽는다.
+   */
+  const renderCta = () => {
+    if (isFromLibrary) {
+      if (isSelected) {
+        return (
+          <LinearGradient
+            colors={[Colors.blue100, Colors.blue50]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.ctaBase}
+          >
+            <SymbolView
+              name={{ ios: "checkmark", android: "check", web: "check" }}
+              tintColor={Colors.white}
+              size={18}
+            />
+            <Text style={styles.selectButtonText}>현재 선택중</Text>
+          </LinearGradient>
+        );
+      }
+      return (
+        <ScaleButton
+          accessibilityLabel={
+            studyBook
+              ? `${view.title}을(를) 오늘의 공부로 선택`
+              : `${view.title}은(는) 아직 준비중인 콘텐츠`
+          }
+          style={styles.selectButton}
+          onPress={chooseBook}
+        >
+          <SymbolView
+            name={{
+              ios: "arrow.triangle.2.circlepath",
+              android: "sync",
+              web: "sync",
+            }}
+            tintColor={Colors.white}
+            size={18}
+          />
+          <Text style={styles.selectButtonText}>이 책으로 변경하기</Text>
+        </ScaleButton>
+      );
+    }
+
+    if (inShelf) {
+      return (
+        <View style={styles.ctaDisabled}>
+          <Text style={styles.ctaDisabledText}>서재에 담긴 책입니다.</Text>
+        </View>
+      );
+    }
+    return (
+      <ScaleButton
+        accessibilityLabel={`${view.title}을(를) 내 서재에 담기`}
+        style={styles.selectButton}
+        onPress={addBookToShelf}
+      >
+        <Text style={styles.selectButtonText}>내 서재에 담기</Text>
+      </ScaleButton>
+    );
+  };
 
   // ScrollView의 직속 자식을 평평한 배열로 짜면서, 절 제목 자식의 인덱스를 같이 모은다
   // (stickyHeaderIndices에 그대로 넘기기 위해).
@@ -179,44 +319,20 @@ export default function BookDetailScreen() {
       key="hero"
       onLayout={(e) => {
         infoHeightRef.current = e.nativeEvent.layout.height;
-      }}>
+      }}
+    >
       <View style={styles.hero}>
-        {isSelected && (
-          <LinearGradient
-            colors={[Colors.blue100, Colors.blue50]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.badge}>
-            <SymbolView
-              name={{ ios: 'checkmark', android: 'check', web: 'check' }}
-              tintColor={Colors.white}
-              size={14}
-            />
-            <Text style={styles.badgeText}>현재 선택중</Text>
-          </LinearGradient>
-        )}
+        {/* '현재 선택중' 배지는 하단 CTA(renderCta)가 같은 문구·같은 그라데이션으로
+            대신한다 — 히어로 상단에 또 띄우면 같은 상태를 두 번 말하게 된다. */}
         <Image source={view.cover} style={styles.cover} resizeMode="cover" />
         <Text style={styles.title}>{view.title}</Text>
         <Text style={styles.author}>{view.author}</Text>
-        {view.price !== null && <Text style={styles.price}>{formatPrice(view.price)}</Text>}
         {chips.length > 0 && (
           <View style={styles.chips}>
             {chips.map((chip) => (
               <TagChip key={`${chip.variant}-${chip.label}`} {...chip} />
             ))}
           </View>
-        )}
-        {!isSelected && (
-          <ScaleButton
-            accessibilityLabel={
-              studyBook
-                ? `${view.title}을(를) 오늘의 공부로 선택`
-                : `${view.title}은(는) 아직 준비중인 콘텐츠`
-            }
-            style={styles.selectButton}
-            onPress={chooseBook}>
-            <Text style={styles.selectButtonText}>이 책으로 선택하기</Text>
-          </ScaleButton>
         )}
       </View>
     </View>,
@@ -226,7 +342,7 @@ export default function BookDetailScreen() {
   // Review)은 제목까지 통째로 걸러낸다. sticky 헤더 인덱스와 스크롤 이동용
   // sectionOffsetsRef는 이 필터링된 배열의 인덱스를 그대로 기준으로 삼아야 어긋나지 않는다.
   const visibleSections = view.sections.filter((section) =>
-    section.paragraphs.some((paragraph) => paragraph.trim() !== ''),
+    section.paragraphs.some((paragraph) => paragraph.trim() !== ""),
   );
 
   visibleSections.forEach((section, sectionIndex) => {
@@ -238,7 +354,8 @@ export default function BookDetailScreen() {
           sectionOffsetsRef.current[sectionIndex] = e.nativeEvent.layout.y;
         }}
         onPress={() => scrollToSection(sectionIndex)}
-        style={styles.sectionTitleRow}>
+        style={styles.sectionTitleRow}
+      >
         <Text style={styles.sectionTitleText}>{section.title}</Text>
       </Pressable>,
     );
@@ -254,40 +371,163 @@ export default function BookDetailScreen() {
   });
 
   return (
-    <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <Animated.View
-          pointerEvents={showMiniHeader ? 'auto' : 'none'}
-          style={[styles.headerMini, miniHeaderAnimatedStyle]}>
-          <Image source={view.cover} style={styles.headerMiniCover} resizeMode="cover" />
-          <Text style={styles.headerMiniTitle} numberOfLines={1}>
-            {view.title}
-          </Text>
-        </Animated.View>
-        <ScaleButton
-          accessibilityLabel="닫기"
-          style={styles.headerIconButton}
-          onPress={() => router.replace('/bookstore')}>
-          <SymbolView
-            name={{ ios: 'xmark', android: 'close', web: 'close' }}
-            tintColor={Colors.brown100}
-            size={24}
-          />
-        </ScaleButton>
-      </View>
+    <>
+      <View style={styles.screen}>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+          <Animated.View
+            pointerEvents={showMiniHeader ? "auto" : "none"}
+            style={[styles.headerMini, miniHeaderAnimatedStyle]}
+          >
+            <Image
+              source={view.cover}
+              style={styles.headerMiniCover}
+              resizeMode="cover"
+            />
+            <Text style={styles.headerMiniTitle} numberOfLines={1}>
+              {view.title}
+            </Text>
+          </Animated.View>
+          <ScaleButton
+            accessibilityLabel="닫기"
+            style={styles.headerIconButton}
+            onPress={() => router.replace(closeDestination)}
+          >
+            <SymbolView
+              name={{ ios: "xmark", android: "close", web: "close" }}
+              tintColor={Colors.brown100}
+              size={24}
+            />
+          </ScaleButton>
+        </View>
 
-      <ScrollView
-        ref={scrollViewRef}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={stickyHeaderIndices}
-        contentContainerStyle={[styles.bodyContent, { paddingBottom: 40 + insets.bottom }]}>
-        {scrollChildren}
-      </ScrollView>
-    </View>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          stickyHeaderIndices={stickyHeaderIndices}
+          contentContainerStyle={[
+            styles.bodyContent,
+            { paddingBottom: 40 + insets.bottom },
+          ]}
+        >
+          {scrollChildren}
+        </ScrollView>
+
+        {/* 스크롤과 무관하게 화면 하단에 고정되는 CTA 영역 — header와 마찬가지로 ScrollView의
+            형제라 absolute 없이도 flexbox가 알아서 하단에 붙여 준다. catalogBook이 없으면
+            담을 곳도 선택할 곳도 없으니(renderCta가 그릴 게 없다) 그때만 빈 띠가 남지 않게
+            렌더하지 않는다 — 내 서재에서 isSelected여도 '현재 선택중' 비활성 버튼을
+            보여줘야 하므로 더 이상 isSelected로 영역 자체를 숨기지 않는다.
+            세이프에어리어 하단 패딩은 바깥 래퍼가 갖는다 — inShelf일 때 그 아래 삭제 링크가
+            추가돼도 총 여백은 그대로고, ctaBar(CTA+미리보기 한 줄)의 모양은 전혀 안 바뀐다. */}
+        {catalogBook && (
+          <View
+            style={[styles.ctaFooter, { paddingBottom: 12 + insets.bottom }]}
+          >
+            <View style={styles.ctaBar}>
+              {renderCta()}
+
+              {/* 서재에 담긴 책은 미리보기 버튼이 more 버튼으로 바뀐다 — 미리보기와
+                  삭제를 그 위 옵션 박스(moreMenuOpen)로 모아 보여준다. 서재에 없으면
+                  기존 미리보기 버튼 그대로. */}
+              {inShelf ? (
+                <ScaleButton
+                  accessibilityLabel={moreMenuOpen ? "더보기 닫기" : "더보기"}
+                  style={styles.moreButton}
+                  onPress={() => setMoreMenuOpen((open) => !open)}
+                >
+                  <SymbolView
+                    name={{ ios: "ellipsis", android: "more_vert", web: "more_vert" }}
+                    tintColor={Colors.brown100}
+                    size={20}
+                  />
+                </ScaleButton>
+              ) : (
+                <ScaleButton
+                  accessibilityLabel="미리보기"
+                  style={styles.previewButton}
+                  onPress={() => setPreviewOpen(true)}
+                >
+                  <Text style={styles.previewButtonText}>미리보기</Text>
+                </ScaleButton>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* more 버튼 위 옵션 박스. 화면 전체를 덮는 투명한 Pressable로 바깥을 눌러도
+            닫히게 하고, 흰 박스는 그 위에서 more 버튼 바로 위쪽에 자리 잡는다.
+            ctaFooter/ctaBar의 padding·height 상수(12+insets.bottom, 12, 52)로
+            more 버튼 위치를 그대로 계산한다 — onLayout 측정 없이도 정확히 겹친다. */}
+        {inShelf && moreMenuOpen && (
+          <>
+            <Pressable
+              accessibilityLabel="옵션 닫기"
+              style={styles.moreMenuBackdrop}
+              onPress={() => setMoreMenuOpen(false)}
+            />
+            <View
+              style={[
+                styles.moreMenuBox,
+                { bottom: insets.bottom + 12 + 52 + 8 },
+              ]}
+            >
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="미리보기"
+                style={styles.moreMenuItem}
+                onPress={openPreviewFromMenu}
+              >
+                <SymbolView
+                  name={{ ios: "eye", android: "visibility", web: "visibility" }}
+                  tintColor={Colors.brown100}
+                  size={18}
+                />
+                <Text style={styles.moreMenuItemText}>미리보기</Text>
+              </Pressable>
+              <View style={styles.moreMenuDivider} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${view.title}을(를) 내 서재에서 삭제`}
+                style={styles.moreMenuItem}
+                onPress={removeBookFromShelfFromMenu}
+              >
+                <SymbolView
+                  name={{ ios: "trash", android: "delete", web: "delete" }}
+                  tintColor={Colors.red100}
+                  size={18}
+                />
+                <Text style={[styles.moreMenuItemText, styles.moreMenuDeleteText]}>
+                  내 서재에서 삭제하기
+                </Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+      </View>
+      <BookPreviewModal
+        visible={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+      />
+    </>
   );
 }
+
+// CTA 바의 버튼 4종(활성 2 + 비활성 2)이 상태에 따라 자리를 서로 바꿔 끼우므로, 크기·모양을
+// 여기 하나로 묶어 상태가 바뀌어도 레이아웃이 흔들리지 않게 한다. StyleSheet.create 안에서는
+// 같은 객체 리터럴의 다른 키를 참조할 수 없어 바깥에 따로 뺐다.
+const ctaSize: ViewStyle = {
+  flex: 1,
+  flexDirection: "row",
+  gap: 6,
+  height: 52,
+  paddingHorizontal: 20,
+  borderRadius: 26,
+  alignItems: "center" as const,
+  justifyContent: "center" as const,
+};
 
 const styles = StyleSheet.create({
   screen: {
@@ -295,16 +535,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingBottom: 12,
     backgroundColor: Colors.bg,
   },
   headerMini: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     marginRight: 12,
   },
@@ -325,31 +565,69 @@ const styles = StyleSheet.create({
     height: 41,
     borderRadius: 20.5,
   },
+  scrollView: {
+    flex: 1,
+  },
   bodyContent: {
     flexGrow: 1,
   },
   hero: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 12,
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 32,
+    paddingBottom: 40,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.bg,
   },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingLeft: 8,
-    paddingRight: 12,
-    height: 24,
-    borderRadius: 4,
+  subhero: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
   },
-  badgeText: {
+  buyCard: {
+    gap: 12,
+    padding: 20,
+    backgroundColor: Colors.brown10,
+    borderRadius: 10,
+    alignItems: "flex-start",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  price: {
     fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    letterSpacing: tracking(12),
+    fontSize: 15,
+    letterSpacing: tracking(15),
+    color: Colors.brown100,
+    textAlign: "center",
+  },
+  buyButton: {
+    width: "100%",
+    height: 48,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    backgroundColor: Colors.beige100,
+  },
+  buyButtonText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    letterSpacing: tracking(14),
     color: Colors.white,
   },
+  buyHint: {
+    fontFamily: Fonts.regular,
+    fontSize: 12,
+    letterSpacing: tracking(12),
+    color: Colors.brown50,
+    textAlign: "center",
+    marginTop: 8,
+    width: "100%",
+    alignSelf: "stretch",
+  },
+
   cover: {
     width: 140,
     height: 207,
@@ -361,30 +639,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   title: {
+    marginTop: 4,
     fontFamily: Fonts.semiBold,
     fontSize: 22,
     letterSpacing: tracking(22),
     color: Colors.brown100,
-    textAlign: 'center',
+    textAlign: "center",
   },
   author: {
     fontFamily: Fonts.regular,
     fontSize: 14,
     letterSpacing: tracking(14),
     color: Colors.brown50,
-    textAlign: 'center',
-  },
-  price: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-    letterSpacing: tracking(15),
-    color: Colors.brown100,
-    textAlign: 'center',
+    textAlign: "center",
   },
   chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     gap: 8,
     marginTop: 4,
   },
@@ -416,17 +688,113 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(15),
     color: Colors.brown100,
   },
-  selectButton: {
-    marginTop: 8,
-    height: 40,
+  // 화면 하단에 고정되는 CTA 영역 전체를 감싸는 래퍼 — 세이프에어리어 하단 패딩은
+  // 여기서 한 번만 준다(ctaBar 아래에 삭제 링크가 붙어도 총 여백이 흔들리지 않게).
+  ctaFooter: {
+    backgroundColor: Colors.bg,
+  },
+  // CTA 바 — sticky 절 제목 구분선과 같은 톤의 얇은 위쪽 경계선으로 스크롤 영역과 구분한다.
+  ctaBar: {
+    flexDirection: "row",
+    backgroundColor: Colors.bg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.bg,
     paddingHorizontal: 20,
-    borderRadius: 20,
-    backgroundColor: Colors.brown100,
+    paddingTop: 12,
+    gap: 8,
+  },
+  // more 버튼 위 옵션 박스를 열었을 때 화면 전체를 덮는 투명 배경 — 탭하면 닫힌다.
+  // 화면 루트(screen)의 기본 position:relative를 기준으로 꽉 채운다.
+  moreMenuBackdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  moreMenuBox: {
+    position: "absolute",
+    right: 20,
+    minWidth: 208,
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    paddingVertical: 4,
+    shadowColor: Colors.brown100,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  moreMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  moreMenuItemText: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    letterSpacing: tracking(14),
+    color: Colors.brown100,
+  },
+  moreMenuDeleteText: {
+    color: Colors.red100,
+  },
+  moreMenuDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.brown10,
+    marginHorizontal: 12,
+  },
+  ctaBase: ctaSize,
+  selectButton: {
+    ...ctaSize,
+    backgroundColor: Colors.beige100,
   },
   selectButtonText: {
     fontFamily: Fonts.semiBold,
-    fontSize: 14,
+    fontSize: 16,
     letterSpacing: tracking(14),
     color: Colors.white,
+  },
+  // 눌러도 아무 일도 하지 않는 안내용 버튼(하루 서점에서 이미 서재에 담긴 책) — 옅은 회색으로
+  // 활성 버튼과 시각적으로 구분한다.
+  ctaDisabled: {
+    ...ctaSize,
+    backgroundColor: Colors.brown10,
+  },
+  ctaDisabledText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    letterSpacing: tracking(14),
+    color: Colors.brown50,
+  },
+  previewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 52,
+    paddingHorizontal: 16,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: Colors.brown10,
+    backgroundColor: Colors.brown100,
+  },
+  previewButtonText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    letterSpacing: tracking(13),
+    color: Colors.white,
+  },
+  moreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 52,
+    paddingHorizontal: 16,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: Colors.brown10,
+    backgroundColor: Colors.white,
   },
 });

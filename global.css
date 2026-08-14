@@ -1,43 +1,44 @@
 :root {
   /* Base */
-  --white: #FFFFFF;
-  --yellow: #FEB836;
-  --bg: #FAF6EE;
+  --white: #ffffff;
+  --yellow: #feb836;
+  --bg: #faf6ee;
 
   /* Brown */
   --brown-100: #030303;
-  --brown-50:  #827F7A;
-  --brown-10:  #E0DBD5;
+  --brown-90: #181717;
+  --brown-50: #827f7a;
+  --brown-10: #e0dbd5;
 
   /* Beige */
-  --beige-100: #8B6C42;
-  --beige-50:  #D6C4A7;
-  --beige-10:  #F2E8DA;
+  --beige-100: #8b6c42;
+  --beige-50: #c9ae83;
+  --beige-10: #f2e8da;
 
   /* Blue */
-  --blue-100: #07127E;
-  --blue-50:  #8E96D7;
-  --blue-10:  #EDEDFD;
+  --blue-100: #07127e;
+  --blue-50: #8e96d7;
+  --blue-10: #ededfd;
 
   /* Red */
-  --red-100: #EB5757;
-  --red-50:  #F5ABAB;
-  --red-10:  #FEF3F4;
+  --red-100: #eb5757;
+  --red-50: #f5abab;
+  --red-10: #fef3f4;
 
   /* Green — 완료 표시에 쓴다. 채도를 낮춰 베이지 배경과 부딪히지 않게 잡았다. */
-  --green-100: #2E7D4F;
-  --green-50:  #97C7AC;
-  --green-10:  #EDF6F0;
+  --green-100: #2e7d4f;
+  --green-50: #97c7ac;
+  --green-10: #edf6f0;
 
   /*
    * Violet — 잠금화면 알람 화면 전용.
    * 위 색들은 전부 밝은 배경(--bg)을 전제로 잡혀 있어서, 어두운 사진 위에 얹히는
    * 알람 화면에서는 쓸 수 없다. 그래서 별도 계열을 둔다 — 앱 본문에는 쓰지 않는다.
    */
-  --violet-100: #7C4DFF; /* 주 버튼 그라디언트 시작 */
-  --violet-50:  #9C6BFF; /* 주 버튼 그라디언트 끝 */
-  --violet-10:  #C8BEFF; /* 날짜 */
-  --violet-5:   #F0ECFF; /* 시각 — 보랏빛이 도는 흰색 */
+  --violet-100: #7c4dff; /* 주 버튼 그라디언트 시작 */
+  --violet-50: #9c6bff; /* 주 버튼 그라디언트 끝 */
+  --violet-10: #c8beff; /* 날짜 */
+  --violet-5: #f0ecff; /* 시각 — 보랏빛이 도는 흰색 */
 
   /* 알람 화면 바탕 — 사진이 안 덮는 아래쪽 절반이 이 색이다. */
   --night: #111114;

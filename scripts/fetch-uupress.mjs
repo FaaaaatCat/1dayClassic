@@ -10,41 +10,41 @@
  *
  * 신간이 나왔거나 표지가 깨지면 이 스크립트를 다시 돌리면 된다.
  */
-import { writeFileSync } from 'node:fs';
+import { writeFileSync } from "node:fs";
 
-const ORIGIN = 'https://uupress.notion.site';
-const SPACE = 'a116a827-9756-4259-82ad-bdc6b3f1eb99';
+const ORIGIN = "https://uupress.notion.site";
+const SPACE = "a116a827-9756-4259-82ad-bdc6b3f1eb99";
 /** '모든 도서' 데이터베이스와 그 기본 뷰. */
-const COLLECTION = '64e38443-5fea-4933-be34-e1a622c5b525';
-const VIEW = '639e909d-c453-4505-98e3-605fd8960297';
+const COLLECTION = "64e38443-5fea-4933-be34-e1a622c5b525";
+const VIEW = "639e909d-c453-4505-98e3-605fd8960297";
 
-const OUT = new URL('../data/uupress-catalog.json', import.meta.url);
+const OUT = new URL("../data/uupress-catalog.json", import.meta.url);
 
 /** DB 속성 키 — Notion이 부여한 난독 키라서 무엇인지 함께 적어 둔다. */
 const PROP = {
-  author: '`zz5', // 저자/역자
+  author: "`zz5", // 저자/역자
   price: ')Y7"', // 정가
-  isbn: ';RE]', // ISBN
-  pages: '>$Pb', // 면수
-  tags: 'qNw_', // 분야/시리즈
-  pubDate: '?ex+', // 발행일
+  isbn: ";RE]", // ISBN
+  pages: ">$Pb", // 면수
+  tags: "qNw_", // 분야/시리즈
+  pubDate: "?ex+", // 발행일
 };
 
 /**
  * 학습 콘텐츠가 있는 '하루 시리즈' 9권 — 카탈로그 항목과 제목으로 짝지어 BookId를 달아 준다.
- * 이 표에 걸린 책만 서점에서 365일 목차를 열고 '이 책으로 선택하기'가 된다.
+ * 이 표에 걸린 책만 서점에서 365일 목차를 열고 '이 책으로 변경하기'가 된다.
  * 출판사 쪽 제목은 띄어쓰기가 다를 때가 있어('하루 한자공부') 공백을 지우고 비교한다.
  */
 const STUDYABLE = {
-  '하루 클래식 공부': 'classic',
-  '하루 라틴어 공부': 'latin',
-  '하루 명언 공부': 'quote',
-  '하루 한자 공부': 'hanja',
-  '하루 교양 공부': 'liberal',
-  '하루 심리 공부': 'psychology',
-  '하루 쓰기 공부': 'writing',
-  '하루 한문 공부': 'hanmun',
-  '하루 영어 교양': 'english',
+  "하루 클래식 공부": "classic",
+  "하루 라틴어 공부": "latin",
+  "하루 명언 공부": "quote",
+  "하루 한자 공부": "hanja",
+  "하루 교양 공부": "liberal",
+  "하루 심리 공부": "psychology",
+  "하루 쓰기 공부": "writing",
+  "하루 한문 공부": "hanmun",
+  "하루 영어 교양": "english",
 };
 
 /**
@@ -54,42 +54,58 @@ const STUDYABLE = {
  * header/sub_header/sub_sub_header 블록은 이 목록과 무관하게 항상 소제목으로 본다.
  */
 const SECTION_LABELS = new Set([
-  '책 소개', '책소개', '책 소개글',
-  '목차', '차례',
-  '추천의 말', '추천사', '추천하는 말', '추천의 글',
-  '저자 소개', '저자 및 역자 소개', '저역자 소개', '역자 소개', '저자/그린이 소개',
-  '기획노트', '기획 후기',
-  'Review',
-  '들어가는 말', '들어가는 글', '들어가며',
-  '편집 후기', '편집후기',
-  '머리말',
-  '옮긴이의 말',
-  '역자 후기',
-  '나오는 말', '나가는 말',
-  '감사의 말',
-  '맺음말',
-  '서문',
-  '주',
-  '후기',
-  '참고문헌', '참고 문헌',
-  '부록',
-  '찾아보기',
-  '한국의 독자들에게',
-  '더 읽을거리',
-  '프롤로그',
-  '이 책의 특징',
+  "책 소개",
+  "책소개",
+  "책 소개글",
+  "목차",
+  "차례",
+  "추천의 말",
+  "추천사",
+  "추천하는 말",
+  "추천의 글",
+  "저자 소개",
+  "저자 및 역자 소개",
+  "저역자 소개",
+  "역자 소개",
+  "저자/그린이 소개",
+  "기획노트",
+  "기획 후기",
+  "Review",
+  "들어가는 말",
+  "들어가는 글",
+  "들어가며",
+  "편집 후기",
+  "편집후기",
+  "머리말",
+  "옮긴이의 말",
+  "역자 후기",
+  "나오는 말",
+  "나가는 말",
+  "감사의 말",
+  "맺음말",
+  "서문",
+  "주",
+  "후기",
+  "참고문헌",
+  "참고 문헌",
+  "부록",
+  "찾아보기",
+  "한국의 독자들에게",
+  "더 읽을거리",
+  "프롤로그",
+  "이 책의 특징",
 ]);
 
 const HEADERS = {
-  'content-type': 'application/json',
-  accept: 'application/json',
-  'user-agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36',
+  "content-type": "application/json",
+  accept: "application/json",
+  "user-agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36",
 };
 
 async function api(path, body) {
   const res = await fetch(`${ORIGIN}/api/v3/${path}`, {
-    method: 'POST',
+    method: "POST",
     headers: HEADERS,
     body: JSON.stringify(body),
   });
@@ -98,45 +114,50 @@ async function api(path, body) {
 }
 
 /** Notion 리치텍스트 → 평문. */
-const plain = (prop) => (prop ?? []).map((run) => run[0]).join('');
+const plain = (prop) => (prop ?? []).map((run) => run[0]).join("");
 
 /** recordMap.block은 응답에 따라 {value:{value}} / {value} 두 모양이 섞여 온다. */
 const unwrap = (record) => record?.value?.value ?? record?.value;
 
-const squash = (text) => text.replace(/\s+/g, '');
+const squash = (text) => text.replace(/\s+/g, "");
 
 /** DB의 모든 행 — 서지 정보는 여기서 다 나온다(표지와 책 소개만 상세 페이지에 있다). */
 async function fetchRows() {
-  const json = await api('queryCollection?src=initial_load', {
-    source: { type: 'collection', id: COLLECTION, spaceId: SPACE },
+  const json = await api("queryCollection?src=initial_load", {
+    source: { type: "collection", id: COLLECTION, spaceId: SPACE },
     collectionView: { id: VIEW, spaceId: SPACE },
     loader: {
-      type: 'reducer',
-      reducers: { collection_group_results: { type: 'results', limit: 500 } },
-      searchQuery: '',
-      userTimeZone: 'Asia/Seoul',
+      type: "reducer",
+      reducers: { collection_group_results: { type: "results", limit: 500 } },
+      searchQuery: "",
+      userTimeZone: "Asia/Seoul",
     },
   });
 
-  const result = json.result?.reducerResults?.collection_group_results ?? json.result;
+  const result =
+    json.result?.reducerResults?.collection_group_results ?? json.result;
   return result.blockIds.map((pageId) => {
     const props = unwrap(json.recordMap.block[pageId])?.properties ?? {};
     return {
       pageId,
       // 제목 앞에 붙은 📚 같은 이모지를 떼어 낸다.
-      title: plain(props.title).replace(/^\p{Extended_Pictographic}+\s*/u, '').trim(),
-      author: plain(props[PROP.author]).replace(/,\s*/g, ', ').trim(),
+      title: plain(props.title)
+        .replace(/^\p{Extended_Pictographic}+\s*/u, "")
+        .trim(),
+      author: plain(props[PROP.author]).replace(/,\s*/g, ", ").trim(),
       price: plain(props[PROP.price]),
       isbn: plain(props[PROP.isbn]),
       pages: plain(props[PROP.pages]),
       tags: plain(props[PROP.tags]),
-      pubDate: props[PROP.pubDate]?.[0]?.[1]?.[0]?.[1]?.start_date ?? '',
+      pubDate: props[PROP.pubDate]?.[0]?.[1]?.[0]?.[1]?.start_date ?? "",
     };
   });
 }
 
 const isHeadingBlock = (block) =>
-  block.type === 'header' || block.type === 'sub_header' || block.type === 'sub_sub_header';
+  block.type === "header" ||
+  block.type === "sub_header" ||
+  block.type === "sub_sub_header";
 
 /**
  * 소제목인가? header/sub_header/sub_sub_header 블록은 텍스트와 무관하게 항상 소제목이다.
@@ -174,19 +195,23 @@ const isHeadingBlock = (block) =>
  */
 function headingLabel(block, text, current) {
   if (isHeadingBlock(block)) {
-    return text === '목차 @' ? '목차' : text;
+    return text === "목차 @" ? "목차" : text;
   }
   if (
     current &&
     (current.openedByHeading ||
       current.paragraphs.length === 0 ||
-      current.title === '목차' ||
-      current.title === '차례')
+      current.title === "목차" ||
+      current.title === "차례")
   ) {
     return null;
   }
   // 짧고 줄바꿈 없는 text 블록이 알려진 절 이름과 정확히 일치할 때만 소제목으로 본다.
-  if (block.type === 'text' && !text.includes('\n') && SECTION_LABELS.has(text)) {
+  if (
+    block.type === "text" &&
+    !text.includes("\n") &&
+    SECTION_LABELS.has(text)
+  ) {
     return text;
   }
   return null;
@@ -207,7 +232,7 @@ async function fetchAllBlocks(pageId) {
   let cursor = { stack: [] };
   const MAX_CHUNKS = 20;
   for (let chunkNumber = 0; chunkNumber < MAX_CHUNKS; chunkNumber++) {
-    const json = await api('loadPageChunk', {
+    const json = await api("loadPageChunk", {
       page: { id: pageId },
       limit: 300,
       cursor,
@@ -244,7 +269,7 @@ async function fetchDetail(pageId) {
     }
 
     // 페이지 맨 위 이미지가 표지다. 절 본문에 섞이지 않도록 여기서 처리하고 넘어간다.
-    if (!coverImage && block.type === 'image') {
+    if (!coverImage && block.type === "image") {
       const source = block.properties?.source?.[0]?.[0];
       if (source) {
         coverImage =
@@ -255,7 +280,7 @@ async function fetchDetail(pageId) {
     }
 
     // divider는 절 구분자일 뿐 — 다음 소제목이 알아서 새 절을 열어 준다.
-    if (block.type === 'divider') continue;
+    if (block.type === "divider") continue;
 
     const text = plain(block.properties?.title).trim();
     const label = headingLabel(block, text, current);
@@ -263,7 +288,11 @@ async function fetchDetail(pageId) {
       if (current) sections.push(current);
       // openedByHeading: 이 절이 header 계열 블록으로 열렸는지 — headingLabel이 다음에
       // 같은 절 안에서 장식용 text 오탐을 걸러낼 때 참고한다(위 headingLabel 주석 참고).
-      current = { title: label, paragraphs: [], openedByHeading: isHeadingBlock(block) };
+      current = {
+        title: label,
+        paragraphs: [],
+        openedByHeading: isHeadingBlock(block),
+      };
       continue;
     }
 
@@ -273,7 +302,11 @@ async function fetchDetail(pageId) {
   if (current) sections.push(current);
 
   // openedByHeading은 headingLabel 판정에만 쓰는 내부 상태라 결과 JSON에는 남기지 않는다.
-  return { coverImage, sections: sections.map(({ title, paragraphs }) => ({ title, paragraphs })), missing };
+  return {
+    coverImage,
+    sections: sections.map(({ title, paragraphs }) => ({ title, paragraphs })),
+    missing,
+  };
 }
 
 /** 동시 요청 수를 제한한 map — Notion에 한꺼번에 300개를 던지지 않기 위해. */
@@ -310,33 +343,43 @@ const books = rows.map((row, index) => ({
   bookId: studyableByKey[squash(row.title)] ?? null,
   title: row.title,
   author: row.author,
-  price: row.price ? Number(row.price.replace(/\D/g, '')) : null,
+  price: row.price ? Number(row.price.replace(/\D/g, "")) : null,
   coverImage: details[index].coverImage,
   sections: details[index].sections,
-  tags: row.tags ? row.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+  tags: row.tags
+    ? row.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : [],
   pages: row.pages,
   isbn: row.isbn,
   pubDate: row.pubDate,
 }));
 
 // 발행일 최신순. 발행일이 없는 책은 뒤로 민다.
-books.sort((a, b) => (b.pubDate || '').localeCompare(a.pubDate || ''));
+books.sort((a, b) => (b.pubDate || "").localeCompare(a.pubDate || ""));
 
-writeFileSync(OUT, JSON.stringify({ books }, null, 2), 'utf8');
+writeFileSync(OUT, JSON.stringify({ books }, null, 2), "utf8");
 
 const linked = books.filter((b) => b.bookId).length;
 const expected = Object.keys(STUDYABLE).length;
 console.log(`\n✓ ${books.length}권 → data/uupress-catalog.json`);
 console.log(`  표지 없음: ${books.filter((b) => !b.coverImage).length}`);
-console.log(`  절 없음: ${books.filter((b) => b.sections.length === 0).length}`);
+console.log(
+  `  절 없음: ${books.filter((b) => b.sections.length === 0).length}`,
+);
 console.log(`  가격 없음: ${books.filter((b) => b.price === null).length}`);
 console.log(`  하루 시리즈 연결: ${linked}/${expected}`);
 
 if (linked < expected) {
   // 제목이 바뀌면 조용히 어긋나서, 서점에 같은 책이 두 번 뜨고 목차가 사라진다.
-  console.log('\n⚠  STUDYABLE 표의 제목이 출판사 쪽 제목과 어긋났습니다. 표를 갱신해 주세요.');
+  console.log(
+    "\n⚠  STUDYABLE 표의 제목이 출판사 쪽 제목과 어긋났습니다. 표를 갱신해 주세요.",
+  );
   for (const [title, id] of Object.entries(STUDYABLE)) {
-    if (!books.some((b) => b.bookId === id)) console.log(`   ✗ ${title} (${id})`);
+    if (!books.some((b) => b.bookId === id))
+      console.log(`   ✗ ${title} (${id})`);
   }
   process.exitCode = 1;
 }
@@ -348,7 +391,10 @@ const withMissingBlocks = rows
   .map((row, index) => ({ title: row.title, missing: details[index].missing }))
   .filter((r) => r.missing > 0);
 if (withMissingBlocks.length > 0) {
-  console.log(`\n⚠  블록을 끝내 못 받아온 책 ${withMissingBlocks.length}권 — 아래 책은 절 내용이 일부 빠졌을 수 있습니다:`);
-  for (const r of withMissingBlocks) console.log(`   ✗ ${r.title}: 블록 ${r.missing}개 누락`);
+  console.log(
+    `\n⚠  블록을 끝내 못 받아온 책 ${withMissingBlocks.length}권 — 아래 책은 절 내용이 일부 빠졌을 수 있습니다:`,
+  );
+  for (const r of withMissingBlocks)
+    console.log(`   ✗ ${r.title}: 블록 ${r.missing}개 누락`);
   process.exitCode = 1;
 }

@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   NativeScrollEvent,
@@ -11,21 +11,27 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import BookCard from '@/components/BookCard';
-import TagChip from '@/components/TagChip';
-import { Colors, Fonts, tracking } from '@/constants/theme';
-import { useBookSelection } from '@/context/BookSelectionContext';
-import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
-import { getCatalogBooks, type CatalogBook } from '@/lib/catalog';
-import { isCatalogBookPurchased } from '@/lib/purchase';
-import { FIELD_NAMES, fieldsOf, SERIES_NAMES, seriesOf } from '@/lib/tags';
+import BookCard from "@/components/BookCard";
+import TagChip from "@/components/TagChip";
+import { Colors, Fonts, tracking } from "@/constants/theme";
+import { useBookSelection } from "@/context/BookSelectionContext";
+import { BOOKSTORE_BOOKS } from "@/lib/bookstore";
+import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
+import { isCatalogBookPurchased } from "@/lib/purchase";
+import { FIELD_NAMES, fieldsOf, SERIES_NAMES, seriesOf } from "@/lib/tags";
 
 /** 학습 가능한 9권은 표지를 로컬 에셋으로 갖고 있다 — 원격 URL보다 선명하고 오프라인에서도 뜬다. */
-const LOCAL_COVERS = new Map(BOOKSTORE_BOOKS.map((book) => [book.id as string, book.coverImage]));
+const LOCAL_COVERS = new Map(
+  BOOKSTORE_BOOKS.map((book) => [book.id as string, book.coverImage]),
+);
 
 /**
  * 방향이 바뀌었다고 인정하기까지 한 방향으로 움직여야 하는 거리(px).
@@ -47,12 +53,13 @@ interface Entry {
 }
 
 /** 검색어와 검색 대상을 같은 모양으로 맞춘다 — 공백과 대소문자를 무시하고 비교하기 위해. */
-const normalize = (text: string) => text.replace(/\s+/g, '').toLowerCase();
+const normalize = (text: string) => text.replace(/\s+/g, "").toLowerCase();
 
 /** 격자 한 줄에 두 권. 마지막 줄은 한 권만 올 수 있다. */
 function toRows(entries: Entry[]): Entry[][] {
   const rows: Entry[][] = [];
-  for (let i = 0; i < entries.length; i += 2) rows.push(entries.slice(i, i + 2));
+  for (let i = 0; i < entries.length; i += 2)
+    rows.push(entries.slice(i, i + 2));
   return rows;
 }
 
@@ -78,7 +85,7 @@ export default function BookstoreScreen() {
   const [series, setSeries] = useState<string | null>(null);
   const [field, setField] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
   /**
    * 검색 열기. 목록은 그 자리에 두고, 타이틀만 펴서 그 아래에 인풋이 붙게 한다
@@ -92,7 +99,7 @@ export default function BookstoreScreen() {
   /** 검색 닫기 — 검색어까지 비워서 목록을 원래대로 되돌린다. */
   const closeSearch = () => {
     setSearchOpen(false);
-    setQuery('');
+    setQuery("");
   };
 
   /**
@@ -116,12 +123,13 @@ export default function BookstoreScreen() {
     const matched = tagged
       .filter((entry) => series === null || entry.series.includes(series))
       .filter((entry) => field === null || entry.fields.includes(field))
-      .filter((entry) => needle === '' || entry.searchKey.includes(needle));
+      .filter((entry) => needle === "" || entry.searchKey.includes(needle));
 
     // 고른 책이 맨 앞, 그다음이 구매한 책. sort는 안정 정렬이라 같은 등급 안에서는
     // 카탈로그 순서(발행일 최신순)가 그대로 유지된다.
     const rank = (entry: Entry) => {
-      if (entry.book.bookId !== null && entry.book.bookId === selectedBookId) return 0;
+      if (entry.book.bookId !== null && entry.book.bookId === selectedBookId)
+        return 0;
       return entry.purchased ? 1 : 2;
     };
     return toRows([...matched].sort((a, b) => rank(a) - rank(b)));
@@ -135,15 +143,19 @@ export default function BookstoreScreen() {
     const bySeries: Record<string, number> = {};
     const byField: Record<string, number> = {};
     for (const entry of tagged) {
-      for (const name of entry.series) bySeries[name] = (bySeries[name] ?? 0) + 1;
+      for (const name of entry.series)
+        bySeries[name] = (bySeries[name] ?? 0) + 1;
       for (const name of entry.fields) byField[name] = (byField[name] ?? 0) + 1;
     }
     return { bySeries, byField };
   }, [tagged]);
 
-  /** 학습 가능한 9권은 BookId로 열어야 상세 화면이 목차와 '이 책으로 선택하기'를 띄운다. */
+  /** 학습 가능한 9권은 BookId로 열어야 상세 화면이 목차와 '이 책으로 변경하기'를 띄운다. */
   const openBook = (book: CatalogBook) => {
-    router.push({ pathname: '/book/[id]', params: { id: book.bookId ?? book.id } });
+    router.push({
+      pathname: "/book/[id]",
+      params: { id: book.bookId ?? book.id, from: "bookstore" },
+    });
   };
 
   // ── 오버레이 상태 ──────────────────────────────────────────────
@@ -220,9 +232,10 @@ export default function BookstoreScreen() {
           accessibilityRole="button"
           accessibilityLabel="책 검색"
           hitSlop={12}
-          onPress={openSearch}>
+          onPress={openSearch}
+        >
           <SymbolView
-            name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+            name={{ ios: "magnifyingglass", android: "search", web: "search" }}
             tintColor={Colors.brown100}
             size={22}
           />
@@ -245,9 +258,10 @@ export default function BookstoreScreen() {
               accessibilityRole="button"
               accessibilityLabel="검색 닫기"
               hitSlop={10}
-              onPress={closeSearch}>
+              onPress={closeSearch}
+            >
               <SymbolView
-                name={{ ios: 'xmark', android: 'close', web: 'close' }}
+                name={{ ios: "xmark", android: "close", web: "close" }}
                 tintColor={Colors.brown50}
                 size={18}
               />
@@ -259,7 +273,7 @@ export default function BookstoreScreen() {
   );
 
   const filterRow = (
-    axis: 'series' | 'field',
+    axis: "series" | "field",
     allLabel: string,
     names: string[],
     tally: Record<string, number>,
@@ -274,8 +288,14 @@ export default function BookstoreScreen() {
       scrollEventThrottle={64}
       onScroll={(event) => {
         chipOffsetRef.current[axis] = event.nativeEvent.contentOffset.x;
-      }}>
-      <TagChip label={allLabel} selected={active === null} onPress={() => setActive(null)} />
+      }}
+    >
+      <TagChip
+        label={allLabel}
+        variant={axis}
+        selected={active === null}
+        onPress={() => setActive(null)}
+      />
       {names
         .filter((name) => (tally[name] ?? 0) > 0)
         // 권수 많은 시리즈·분야를 앞에 둔다 — 오른쪽으로 스크롤해야 보이는 칩일수록 덜 쓰인다.
@@ -295,8 +315,22 @@ export default function BookstoreScreen() {
 
   const filters = (
     <View style={styles.filters}>
-      {filterRow('series', '시리즈 전체', SERIES_NAMES, counts.bySeries, series, setSeries)}
-      {filterRow('field', '분야 전체', FIELD_NAMES, counts.byField, field, setField)}
+      {filterRow(
+        "series",
+        "시리즈 전체",
+        SERIES_NAMES,
+        counts.bySeries,
+        series,
+        setSeries,
+      )}
+      {filterRow(
+        "field",
+        "분야 전체",
+        FIELD_NAMES,
+        counts.byField,
+        field,
+        setField,
+      )}
     </View>
   );
 
@@ -316,14 +350,21 @@ export default function BookstoreScreen() {
           <View
             onLayout={(event) => {
               headerHeightRef.current = event.nativeEvent.layout.height;
-            }}>
-            <View onLayout={(event) => setTitleHeight(event.nativeEvent.layout.height)}>
+            }}
+          >
+            <View
+              onLayout={(event) =>
+                setTitleHeight(event.nativeEvent.layout.height)
+              }
+            >
               {titleSection(false)}
             </View>
             {filters}
           </View>
         }
-        ListEmptyComponent={<Text style={styles.empty}>조건에 맞는 책이 없습니다.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>조건에 맞는 책이 없습니다.</Text>
+        }
         renderItem={({ item: row }) => (
           <View style={styles.row}>
             {row.map((entry) => (
@@ -332,14 +373,18 @@ export default function BookstoreScreen() {
                   title={entry.book.title}
                   author={entry.book.author}
                   cover={
-                    (entry.book.bookId !== null && LOCAL_COVERS.get(entry.book.bookId)) || {
+                    (entry.book.bookId !== null &&
+                      LOCAL_COVERS.get(entry.book.bookId)) || {
                       uri: entry.book.coverImage,
                     }
                   }
                   series={entry.series}
                   fields={entry.fields}
                   purchased={entry.purchased}
-                  selected={entry.book.bookId !== null && entry.book.bookId === selectedBookId}
+                  selected={
+                    entry.book.bookId !== null &&
+                    entry.book.bookId === selectedBookId
+                  }
                   onPress={() => openBook(entry.book)}
                 />
               </View>
@@ -351,8 +396,9 @@ export default function BookstoreScreen() {
       {/* 목록 위를 덮는 오버레이. 바깥 틀은 타이틀까지 펼쳤을 때의 높이를 잡아 두고 넘치는 부분을
           잘라내며, box-none이라 타이틀이 접혀 빈 자리는 터치가 그대로 목록으로 지나간다. */}
       <Animated.View
-        pointerEvents={showFilters ? 'box-none' : 'none'}
-        style={[styles.overlay, { top: insets.top }, overlayStyle]}>
+        pointerEvents={showFilters ? "box-none" : "none"}
+        style={[styles.overlay, { top: insets.top }, overlayStyle]}
+      >
         <Animated.View style={[styles.overlayColumn, columnStyle]}>
           {titleSection(true)}
           {filters}
@@ -371,9 +417,9 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   titleBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 16,
@@ -385,8 +431,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
   },
   searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     height: 40,
     paddingLeft: 14,
@@ -416,16 +462,16 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   filterRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     paddingHorizontal: 20,
     paddingBottom: 12,
   },
   overlay: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
-    overflow: 'hidden',
+    overflow: "hidden",
     zIndex: 10,
   },
   overlayColumn: {
@@ -434,17 +480,17 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.brown10,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   cellWrap: {
-    width: '50%',
+    width: "50%",
   },
   empty: {
     fontFamily: Fonts.regular,
     fontSize: 14,
     letterSpacing: tracking(14),
     color: Colors.brown50,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: 40,
   },
 });

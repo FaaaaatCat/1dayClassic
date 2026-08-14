@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { BackHandler, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { BackHandler, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AudioListenSheet from '@/components/lesson/AudioListenSheet';
@@ -89,18 +89,8 @@ export default function LessonDetailShell({ bookLesson, children }: Props) {
     setSheetVisible(false);
   };
 
-  const share = async () => {
-    const heading = getLessonHeading(bookLesson);
-    const subtitle = heading.subtitle ? `, ${heading.subtitle}` : '';
-    try {
-      await Share.share({ message: `${bookName} — ${heading.title}${subtitle}` });
-    } catch {
-      // 공유 시트를 지원하지 않는 환경(웹 등)에서는 조용히 무시한다.
-    }
-  };
-
   return (
-    <LessonDetailContext.Provider value={{ bookLesson, bookName, openAudio, share }}>
+    <LessonDetailContext.Provider value={{ bookLesson, bookName, openAudio }}>
       <View style={styles.screen}>
         {/* 닫기 — 헤더가 없어져서 이 화면을 벗어나는 유일한 길.
             ScaleButton은 Pressable로 감싼 뒤 내부 Animated.View에만 style을 넣는 구조라,

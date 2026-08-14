@@ -1,9 +1,9 @@
-import { Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 interface ScaleButtonProps {
   onPress?: () => void;
@@ -11,6 +11,8 @@ interface ScaleButtonProps {
   children: React.ReactNode;
   accessibilityLabel?: string;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /** 누르면 살짝 줄어드는 공용 버튼 — 과하지 않은 스케일 효과. */
 export default function ScaleButton({
@@ -26,7 +28,7 @@ export default function ScaleButton({
   }));
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPressIn={() => {
@@ -35,15 +37,17 @@ export default function ScaleButton({
       onPressOut={() => {
         scale.value = withTiming(1, { duration: 160 });
       }}
-      onPress={onPress}>
-      <Animated.View style={[styles.base, animatedStyle, style]}>{children}</Animated.View>
-    </Pressable>
+      onPress={onPress}
+      style={[styles.base, style, animatedStyle]}
+    >
+      {children}
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

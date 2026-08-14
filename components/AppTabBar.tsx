@@ -31,8 +31,9 @@ interface TabBarProps {
 /** 탭바에 실제로 보여줄 탭만 순서대로 나열 — today/alarm-detail/book/[id]은 상세 화면이라 제외. */
 const TABS: TabConfig[] = [
   { name: 'index', label: '오늘의 공부', lineIcon: 'pencil-outline', fillIcon: 'pencil' },
+  // 내 서재 아이콘은 우선 하루 서점과 동일하게 둔다 — 나중에 구분되는 아이콘으로 바꿀 예정.
+  { name: 'library', label: '내 서재', lineIcon: 'book-outline', fillIcon: 'book' },
   { name: 'bookstore', label: '하루 서점', lineIcon: 'book-outline', fillIcon: 'book' },
-  { name: 'library', label: '기록', lineIcon: 'bookmark-outline', fillIcon: 'bookmark' },
   { name: 'settings', label: '설정', lineIcon: 'settings-outline', fillIcon: 'settings' },
 ];
 

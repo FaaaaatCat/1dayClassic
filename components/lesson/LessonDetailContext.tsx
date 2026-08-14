@@ -7,7 +7,6 @@ interface LessonDetailValue {
   bookName: string;
   /** 오디오 팝업을 열고 재생을 시작한다 */
   openAudio: () => void;
-  share: () => void;
 }
 
 /**

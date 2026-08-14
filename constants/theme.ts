@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 
 /**
  * 하루 클래식 디자인 시스템.
@@ -10,37 +10,38 @@ import { Platform } from 'react-native';
  * 새 색이 필요하면 global.css에 먼저 등록할 것.
  */
 export const Colors = {
-  white: '#FFFFFF', // --white
-  yellow: '#FEB836', // --yellow
-  bg: '#FAF6EE', // --bg
-  brown100: '#030303', // --brown-100
-  brown50: '#827F7A', // --brown-50
-  brown10: '#E0DBD5', // --brown-10
-  beige100: '#8B6C42', // --beige-100
-  beige50: '#D6C4A7', // --beige-50
-  beige10: '#F2E8DA', // --beige-10
-  blue100: '#07127E', // --blue-100
-  blue50: '#8E96D7', // --blue-50
-  blue10: '#EDEDFD', // --blue-10
-  red100: '#EB5757', // --red-100
-  red50: '#F5ABAB', // --red-50
-  red10: '#FEF3F4', // --red-10
-  green100: '#2E7D4F', // --green-100
-  green50: '#97C7AC', // --green-50
-  green10: '#EDF6F0', // --green-10
+  white: "#FFFFFF", // --white
+  yellow: "#FEB836", // --yellow
+  bg: "#FAF6EE", // --bg
+  brown100: "#030303", // --brown-100
+  brown90: "#272323", // --brown-100
+  brown50: "#827F7A", // --brown-50
+  brown10: "#E0DBD5", // --brown-10
+  beige100: "#8B6C42", // --beige-100
+  beige50: "#c9ae83", // --beige-50
+  beige10: "#F2E8DA", // --beige-10
+  blue100: "#07127E", // --blue-100
+  blue50: "#8E96D7", // --blue-50
+  blue10: "#EDEDFD", // --blue-10
+  red100: "#EB5757", // --red-100
+  red50: "#F5ABAB", // --red-50
+  red10: "#FEF3F4", // --red-10
+  green100: "#2E7D4F", // --green-100
+  green50: "#97C7AC", // --green-50
+  green10: "#EDF6F0", // --green-10
   // 잠금화면 알람 전용 — 어두운 사진 위에서만 쓴다. 앱 본문에는 쓰지 않는다.
-  violet100: '#7C4DFF', // --violet-100
-  violet50: '#9C6BFF', // --violet-50
-  violet10: '#C8BEFF', // --violet-10
-  violet5: '#F0ECFF', // --violet-5
-  night: '#111114', // --night
+  violet100: "#7C4DFF", // --violet-100
+  violet50: "#9C6BFF", // --violet-50
+  violet10: "#C8BEFF", // --violet-10
+  violet5: "#F0ECFF", // --violet-5
+  night: "#111114", // --night
 } as const;
 
 /** 번들된 서체 — 을유1945(기본), DM Serif Display(인용문 전용·라틴만 지원) */
 export const Fonts = {
-  regular: 'Eulyoo1945-Regular',
-  semiBold: 'Eulyoo1945-SemiBold',
-  serifDisplay: 'DMSerifDisplay_400Regular',
+  regular: "Eulyoo1945-Regular",
+  semiBold: "Eulyoo1945-SemiBold",
+  serifDisplay: "DMSerifDisplay_400Regular",
 } as const;
 
 /**
@@ -56,13 +57,13 @@ export function tracking(fontSize: number): number {
  * 먼저 등록된 것인지 확인할 것. 주석은 global.css의 변수 이름.
  */
 export const Palette = {
-  background: '#FAF6EE', // --bg
-  primary: '#07127E', // --blue-100
-  accent: '#8B6C42', // --beige-100
-  text: '#030303', // --brown-100
-  subText: '#827F7A', // --brown-50
-  card: '#FFFFFF', // --white
-  divider: '#E0DBD5', // --brown-10
+  background: "#FAF6EE", // --bg
+  primary: "#07127E", // --blue-100
+  accent: "#8B6C42", // --beige-100
+  text: "#030303", // --brown-100
+  subText: "#827F7A", // --brown-50
+  card: "#FFFFFF", // --white
+  divider: "#E0DBD5", // --brown-10
 } as const;
 
 export const Spacing = {
@@ -76,9 +77,9 @@ export const Spacing = {
 } as const;
 
 const serif = Platform.select({
-  ios: 'Georgia',
-  android: 'serif',
-  default: 'Georgia, serif',
+  ios: "Georgia",
+  android: "serif",
+  default: "Georgia, serif",
 });
 
 export const Typography = {
@@ -104,7 +105,7 @@ export const Typography = {
     lineHeight: 18,
     letterSpacing: 1.2,
     color: Palette.accent,
-    fontWeight: '600' as const,
+    fontWeight: "600" as const,
   },
   /** 본문 — 읽고 싶게 만드는 행간 */
   body: {

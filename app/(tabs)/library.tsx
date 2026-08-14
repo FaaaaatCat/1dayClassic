@@ -1,33 +1,100 @@
+import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
 
-import LibraryItem from '@/components/LibraryItem';
-import { Palette, Spacing, Typography } from '@/constants/theme';
-import { useLikes } from '@/context/LikesContext';
+import BookCard from '@/components/BookCard';
+import { Colors, Fonts, tracking } from '@/constants/theme';
+import { useBookSelection } from '@/context/BookSelectionContext';
+import { useShelf } from '@/context/ShelfContext';
+import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
+import { getCatalogBooks, type CatalogBook } from '@/lib/catalog';
+import { isCatalogBookPurchased } from '@/lib/purchase';
+import { fieldsOf, seriesOf } from '@/lib/tags';
 
+/** 학습 가능한 9권은 표지를 로컬 에셋으로 갖고 있다 — bookstore.tsx와 같은 패턴. */
+const LOCAL_COVERS = new Map(BOOKSTORE_BOOKS.map((book) => [book.id as string, book.coverImage]));
+
+interface Entry {
+  book: CatalogBook;
+  series: string[];
+  fields: string[];
+  purchased: boolean;
+}
+
+/** 격자 한 줄에 두 권. 마지막 줄은 한 권만 올 수 있다. */
+function toRows(entries: Entry[]): Entry[][] {
+  const rows: Entry[][] = [];
+  for (let i = 0; i < entries.length; i += 2) rows.push(entries.slice(i, i + 2));
+  return rows;
+}
+
+/**
+ * 내 서재 — 하루 서점에서 "내 서재에 담기"를 누른 책만 모아 보여준다.
+ *
+ * 목록이 작아 bookstore.tsx의 필터·검색·sticky 오버레이는 가져오지 않는다. 대신
+ * 탭 네비게이터가 그려주는 공용 헤더를 그대로 쓴다(_layout.tsx의 TITLES 참고).
+ */
 export default function LibraryScreen() {
-  const { likedLessons } = useLikes();
+  const router = useRouter();
+  const { shelfIds } = useShelf();
+  const { selectedBookId } = useBookSelection();
+
+  const rows = useMemo(() => {
+    const catalogById = new Map(getCatalogBooks().map((book) => [book.id, book]));
+    // 최신 담은 순 — shelfIds는 오래된 것 먼저라 뒤집는다.
+    const entries: Entry[] = [...shelfIds]
+      .reverse()
+      .map((id) => catalogById.get(id))
+      .filter((book): book is CatalogBook => book !== undefined)
+      .map((book) => ({
+        book,
+        series: seriesOf(book.tags, book.title),
+        fields: fieldsOf(book.tags),
+        purchased: isCatalogBookPurchased(book.id),
+      }));
+    return toRows(entries);
+  }, [shelfIds]);
+
+  const openBook = (book: CatalogBook) => {
+    router.push({
+      pathname: '/book/[id]',
+      params: { id: book.bookId ?? book.id, from: 'library' },
+    });
+  };
 
   return (
     <View style={styles.screen}>
-      <Animated.View entering={FadeIn.duration(600)}>
-        <Text style={styles.caption}>보관함에 담은 항목들이 모입니다</Text>
-      </Animated.View>
-
-      {likedLessons.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>아직 담긴 항목이 없습니다.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={likedLessons}
-          keyExtractor={(item) => item.lesson.id}
-          renderItem={({ item }) => <LibraryItem bookLesson={item} />}
-          contentContainerStyle={styles.list}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      <FlatList
+        contentContainerStyle={styles.content}
+        data={rows}
+        keyExtractor={(row) => row[0].book.id}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <Text style={styles.empty}>아직 담은 책이 없습니다. 하루 서점에서 책을 담아보세요.</Text>
+        }
+        renderItem={({ item: row }) => (
+          <View style={styles.row}>
+            {row.map((entry) => (
+              <View key={entry.book.id} style={styles.cellWrap}>
+                <BookCard
+                  title={entry.book.title}
+                  author={entry.book.author}
+                  cover={
+                    (entry.book.bookId !== null && LOCAL_COVERS.get(entry.book.bookId)) || {
+                      uri: entry.book.coverImage,
+                    }
+                  }
+                  series={entry.series}
+                  fields={entry.fields}
+                  purchased={entry.purchased}
+                  selected={entry.book.bookId !== null && entry.book.bookId === selectedBookId}
+                  onPress={() => openBook(entry.book)}
+                />
+              </View>
+            ))}
+          </View>
+        )}
+      />
     </View>
   );
 }
@@ -35,26 +102,25 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Palette.background,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.sm,
+    backgroundColor: Colors.bg,
   },
-  caption: {
-    ...Typography.caption,
+  content: {
+    flexGrow: 1,
+    paddingBottom: 40,
   },
-  list: {
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.xxxl,
+  row: {
+    flexDirection: 'row',
   },
-  separator: {
-    height: Spacing.md,
+  cellWrap: {
+    width: '50%',
   },
   empty: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    ...Typography.caption,
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    letterSpacing: tracking(14),
+    color: Colors.brown50,
+    textAlign: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
 });
