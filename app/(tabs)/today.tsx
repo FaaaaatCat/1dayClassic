@@ -17,13 +17,12 @@ import type { BookId } from '@/types';
  * bookId를 안 주면 하루 서점에서 선택해 둔 책의 오늘 항목을 보여 준다 — 네이티브 알람이
  * 항목을 지정하지 않고 `1dayclassic://today?autoplay=…`로 열기 때문에 이 기본값이 필요하고,
  * 그래서 알람이 여는 책도 선택된 책을 그대로 따라간다.
- * trackId는 클래식 시절 홈·목차가 쓰던 이름이라 lessonId의 별칭으로 계속 받는다.
  */
 export default function TodayScreen() {
-  const params = useLocalSearchParams<{ bookId?: string; lessonId?: string; trackId?: string }>();
+  const params = useLocalSearchParams<{ bookId?: string; lessonId?: string }>();
   const { selectedBookId } = useBookSelection();
   const bookId = (params.bookId as BookId | undefined) ?? selectedBookId;
-  const bookLesson = getBookLesson(bookId, params.lessonId ?? params.trackId);
+  const bookLesson = getBookLesson(bookId, params.lessonId);
 
   if (!bookLesson) return null;
 
