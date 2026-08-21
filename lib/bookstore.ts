@@ -24,6 +24,27 @@ export interface BookstoreBook {
  * 어느 책이 "현재 선택중"인지는 여기 담긴 정적 값이 아니라 BookSelectionContext의
  * 런타임 상태다 — 사용자가 서점에서 고를 때마다 바뀌기 때문이다.
  */
+/**
+ * MVP가 지금 제공하는 학습 가능한 책 — liberal(하루 교양 공부)만 아직 없다.
+ * 제외 목록이 아니라 포함 목록이다 — 새 책을 추가해도 여기 명시하기 전에는
+ * 자동으로 MVP가 되지 않는다(기본값이 Non-MVP).
+ */
+const MVP_BOOK_IDS: readonly BookId[] = [
+  'classic',
+  'latin',
+  'quote',
+  'hanja',
+  'psychology',
+  'writing',
+  'hanmun',
+  'english',
+];
+
+/** 이 책이 지금 MVP에서 제공되는 학습 콘텐츠인지. 9권 카드 리본·서점 필터·책 변경 제한이 함께 쓴다. */
+export function isMvpBook(bookId: BookId): boolean {
+  return MVP_BOOK_IDS.includes(bookId);
+}
+
 export const BOOKSTORE_BOOKS: BookstoreBook[] = [
   {
     id: 'classic',

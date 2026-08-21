@@ -30,7 +30,7 @@ import { Colors, Fonts, tracking } from "@/constants/theme";
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { useShelf } from "@/context/ShelfContext";
 import { useToast } from "@/context/ToastContext";
-import { BOOKSTORE_BOOKS } from "@/lib/bookstore";
+import { BOOKSTORE_BOOKS, isMvpBook } from "@/lib/bookstore";
 import {
   getCatalogBook,
   getCatalogBookByBookId,
@@ -148,9 +148,9 @@ export default function BookDetailScreen() {
     // getTomorrowLesson → getBookCalendar → BUILD_CALENDAR[bookId]()가 이 값을 그대로 키로
     // 쓴다. 카탈로그 전용 책의 id를 selectBook에 넘기면 BUILD_CALENDAR에 없는 키라 홈 화면이
     // 그 자리에서 크래시한다 — 그래서 studyBook이 없을 때는 절대 selectBook을 호출하지 않고
-    // 안내 토스트만 띄운다.
-    if (!studyBook) {
-      showToast("준비중인 콘텐츠입니다");
+    // 안내 토스트만 띄운다. liberal처럼 9권에는 있지만 아직 MVP가 제공하지 않는 책도 같은 이유로 막는다.
+    if (!studyBook || !isMvpBook(studyBook.id)) {
+      showToast("MVP에서는 제공하지 않는 콘텐츠입니다.");
       return;
     }
     selectBook(studyBook.id);
@@ -271,9 +271,9 @@ export default function BookDetailScreen() {
       return (
         <ScaleButton
           accessibilityLabel={
-            studyBook
+            studyBook && isMvpBook(studyBook.id)
               ? `${view.title}을(를) 오늘의 공부로 선택`
-              : `${view.title}은(는) 아직 준비중인 콘텐츠`
+              : `${view.title}은(는) MVP에서 제공하지 않는 콘텐츠`
           }
           style={styles.selectButton}
           onPress={chooseBook}

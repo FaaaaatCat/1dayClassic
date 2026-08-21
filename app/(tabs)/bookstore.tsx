@@ -23,7 +23,7 @@ import BookCard from "@/components/BookCard";
 import TagChip from "@/components/TagChip";
 import { Colors, Fonts, tracking } from "@/constants/theme";
 import { useBookSelection } from "@/context/BookSelectionContext";
-import { BOOKSTORE_BOOKS } from "@/lib/bookstore";
+import { BOOKSTORE_BOOKS, isMvpBook } from "@/lib/bookstore";
 import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
 import { isCatalogBookPurchased } from "@/lib/purchase";
 import { FIELD_NAMES, fieldsOf, SERIES_NAMES, seriesOf } from "@/lib/tags";
@@ -43,11 +43,19 @@ const DIRECTION_THRESHOLD = 8;
 /** 오버레이가 나타날 때 위에서 살짝 내려오는 느낌을 주는 시작 오프셋(px). */
 const OVERLAY_SLIDE = 10;
 
+/**
+ * 시리즈 필터에 얹는 MVP 칩의 라벨. 출판사 태그가 아니라 앱이 만든 합성 카테고리라
+ * lib/tags.ts의 SERIES_NAMES에는 넣지 않고, 이 화면에서만 특수 케이스로 다룬다.
+ */
+const MVP_FILTER = "MVP";
+
 interface Entry {
   book: CatalogBook;
   series: string[];
   fields: string[];
   purchased: boolean;
+  /** 학습 가능한 9권 중 지금 MVP가 제공하는 책인지(liberal 제외). */
+  mvp: boolean;
   /** 제목+저자를 공백 없이 소문자로 붙여 둔 검색용 문자열. */
   searchKey: string;
 }
@@ -113,6 +121,7 @@ export default function BookstoreScreen() {
         series: seriesOf(book.tags, book.title),
         fields: fieldsOf(book.tags),
         purchased: isCatalogBookPurchased(book.id),
+        mvp: book.bookId !== null && isMvpBook(book.bookId),
         searchKey: normalize(`${book.title}${book.author}`),
       })),
     [],
@@ -121,7 +130,11 @@ export default function BookstoreScreen() {
   const rows = useMemo(() => {
     const needle = normalize(query);
     const matched = tagged
-      .filter((entry) => series === null || entry.series.includes(series))
+      .filter((entry) => {
+        if (series === null) return true;
+        if (series === MVP_FILTER) return entry.mvp;
+        return entry.series.includes(series);
+      })
       .filter((entry) => field === null || entry.fields.includes(field))
       .filter((entry) => needle === "" || entry.searchKey.includes(needle));
 
@@ -279,6 +292,8 @@ export default function BookstoreScreen() {
     tally: Record<string, number>,
     active: string | null,
     setActive: (next: string | null) => void,
+    /** "전체" 바로 다음에 항상 고정으로 보여줄 칩(MVP처럼 권수 집계가 없는 합성 카테고리용). */
+    pinned: string[] = [],
   ) => (
     <ScrollView
       horizontal
@@ -296,6 +311,15 @@ export default function BookstoreScreen() {
         selected={active === null}
         onPress={() => setActive(null)}
       />
+      {pinned.map((name) => (
+        <TagChip
+          key={name}
+          label={name}
+          variant={axis}
+          selected={active === name}
+          onPress={() => setActive(active === name ? null : name)}
+        />
+      ))}
       {names
         .filter((name) => (tally[name] ?? 0) > 0)
         // 권수 많은 시리즈·분야를 앞에 둔다 — 오른쪽으로 스크롤해야 보이는 칩일수록 덜 쓰인다.
@@ -322,6 +346,7 @@ export default function BookstoreScreen() {
         counts.bySeries,
         series,
         setSeries,
+        [MVP_FILTER],
       )}
       {filterRow(
         "field",
@@ -381,6 +406,7 @@ export default function BookstoreScreen() {
                   series={entry.series}
                   fields={entry.fields}
                   purchased={entry.purchased}
+                  mvp={entry.mvp}
                   selected={
                     entry.book.bookId !== null &&
                     entry.book.bookId === selectedBookId

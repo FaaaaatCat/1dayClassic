@@ -3,10 +3,10 @@ import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } fr
 import TagChip from '@/components/TagChip';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
-/** 리본 너비 — 세로로 두 글자가 들어갈 만큼만. */
-const RIBBON_WIDTH = 24;
-/** 리본 끝 V자 홈의 깊이. */
-const RIBBON_NOTCH = 7;
+/** 모서리에서 잘라 낼 정사각 영역 — 띠는 이 안에서만 보인다. */
+const RIBBON_BOX = 72;
+/** 대각선 띠의 길이 — 정사각 영역의 대각선(≈102)보다 길어야 양 끝이 카드 밖으로 잘려 나간다. */
+const RIBBON_BAND_WIDTH = 110;
 
 interface BookCardProps {
   title: string;
@@ -17,25 +17,23 @@ interface BookCardProps {
   /** 이 책의 분야들 — 베이지 칩. */
   fields: string[];
   purchased: boolean;
+  /** MVP에서 제공하는 학습 콘텐츠면 구매 리본 대신 MVP 리본을 단다. */
+  mvp: boolean;
   selected: boolean;
   onPress: () => void;
 }
 
-/** 카드 오른쪽 위에 매달리는 리본. 끝이 V자로 파여 있다. */
-function Ribbon({ text, color }: { text: string; color: string }) {
+/**
+ * 카드 오른쪽 위 모서리를 가로지르는 대각선 띠.
+ * 정사각 영역으로 잘라 낸(overflow: hidden) 안에서 띠를 45° 눕혀, 양 끝이 영역 밖으로
+ * 나가 잘리면서 모서리에 감긴 것처럼 보이게 한다.
+ */
+function CornerRibbon({ text }: { text: string }) {
   return (
-    <View style={styles.ribbon}>
-      <View style={[styles.ribbonBody, { backgroundColor: color }]}>
-        {[...text].map((char, index) => (
-          <Text key={index} style={styles.ribbonText}>
-            {char}
-          </Text>
-        ))}
+    <View style={styles.ribbonCorner} pointerEvents="none">
+      <View style={styles.ribbonBand}>
+        <Text style={styles.ribbonText}>{text}</Text>
       </View>
-      {/* 좌우 삼각형만 리본색으로 칠하고 가운데를 투명하게 둬서 V자 홈을 만든다. */}
-      <View
-        style={[styles.ribbonNotch, { borderLeftColor: color, borderRightColor: color }]}
-      />
     </View>
   );
 }
@@ -43,8 +41,9 @@ function Ribbon({ text, color }: { text: string; color: string }) {
 /**
  * 하루 서점 격자의 책 한 칸.
  *
- * 배경은 상태와 무관하게 흰색이고, 상태는 오른쪽 위 리본으로만 말한다 —
- * 고른 책은 남색 '선택', 산 책은 갈색 '구매'. 둘 다면 선택이 왼쪽에 온다.
+ * 배경은 상태와 무관하게 흰색이고, 눈에 보이는 표시는 MVP 콘텐츠에 다는 대각선 띠 하나뿐이다.
+ * 구매·선택 여부는 값으로는 그대로 들고 있지만(스크린리더가 읽는 상태 문구에 쓰인다)
+ * 카드 위에 따로 그리지는 않는다.
  *
  * 한 줄에 놓인 두 카드의 높이를 맞추려고 카드가 칸을 flex로 가득 채운다
  * (FlatList의 행은 기본이 alignItems: stretch라 짧은 쪽이 긴 쪽까지 늘어난다).
@@ -56,10 +55,11 @@ export default function BookCard({
   series,
   fields,
   purchased,
+  mvp,
   selected,
   onPress,
 }: BookCardProps) {
-  const state = selected ? '현재 선택중' : purchased ? '구매함' : '미구매';
+  const state = selected ? '현재 선택중' : mvp ? 'MVP' : purchased ? '구매함' : '미구매';
 
   return (
     <Pressable
@@ -67,10 +67,7 @@ export default function BookCard({
       accessibilityLabel={`${title} 상세 보기, ${state}`}
       style={styles.card}
       onPress={onPress}>
-      <View style={styles.ribbons}>
-        {selected && <Ribbon text="선택" color={Colors.blue100} />}
-        {purchased && <Ribbon text="구매" color={Colors.beige100} />}
-      </View>
+      {mvp && <CornerRibbon text="MVP" />}
 
       <Image source={cover} style={styles.cover} resizeMode="cover" />
       <Text style={styles.title} numberOfLines={2}>
@@ -105,37 +102,33 @@ const styles = StyleSheet.create({
     borderColor: Colors.brown10,
     backgroundColor: Colors.white,
   },
-  ribbons: {
+  ribbonCorner: {
     position: 'absolute',
     top: 0,
-    right: 16,
-    flexDirection: 'row',
-    gap: 6,
+    right: 0,
+    width: RIBBON_BOX,
+    height: RIBBON_BOX,
+    overflow: 'hidden',
     zIndex: 1,
   },
-  ribbon: {
+  // top·left는 45° 회전의 중심이 모서리 대각선 위에 오도록 잡은 값이다 — 띠가 모서리를
+  // 비스듬히 가로지르고 양 끝은 위 영역 밖으로 나가 잘린다.
+  ribbonBand: {
+    position: 'absolute',
+    top: 4,
+    left: 2,
+    width: RIBBON_BAND_WIDTH,
     alignItems: 'center',
-  },
-  ribbonBody: {
-    width: RIBBON_WIDTH,
-    alignItems: 'center',
-    paddingTop: 6,
-    paddingBottom: 2,
+    paddingVertical: 4,
+    backgroundColor: Colors.beige100,
+    transform: [{ rotate: '45deg' }],
   },
   ribbonText: {
     fontFamily: Fonts.semiBold,
     fontSize: 11,
-    // 두 글자가 바짝 붙어 보이도록 글자 크기보다 살짝 큰 정도로만 준다.
-    lineHeight: 12,
+    lineHeight: 13,
+    letterSpacing: tracking(11),
     color: Colors.white,
-  },
-  ribbonNotch: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: RIBBON_WIDTH / 2,
-    borderRightWidth: RIBBON_WIDTH / 2,
-    borderBottomWidth: RIBBON_NOTCH,
-    borderBottomColor: 'transparent',
   },
   cover: {
     width: 108,

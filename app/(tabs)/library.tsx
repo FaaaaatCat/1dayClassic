@@ -6,7 +6,7 @@ import BookCard from '@/components/BookCard';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { useBookSelection } from '@/context/BookSelectionContext';
 import { useShelf } from '@/context/ShelfContext';
-import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
+import { BOOKSTORE_BOOKS, isMvpBook } from '@/lib/bookstore';
 import { getCatalogBooks, type CatalogBook } from '@/lib/catalog';
 import { isCatalogBookPurchased } from '@/lib/purchase';
 import { fieldsOf, seriesOf } from '@/lib/tags';
@@ -19,6 +19,7 @@ interface Entry {
   series: string[];
   fields: string[];
   purchased: boolean;
+  mvp: boolean;
 }
 
 /** 격자 한 줄에 두 권. 마지막 줄은 한 권만 올 수 있다. */
@@ -51,6 +52,7 @@ export default function LibraryScreen() {
         series: seriesOf(book.tags, book.title),
         fields: fieldsOf(book.tags),
         purchased: isCatalogBookPurchased(book.id),
+        mvp: book.bookId !== null && isMvpBook(book.bookId),
       }));
     return toRows(entries);
   }, [shelfIds]);
@@ -87,6 +89,7 @@ export default function LibraryScreen() {
                   series={entry.series}
                   fields={entry.fields}
                   purchased={entry.purchased}
+                  mvp={entry.mvp}
                   selected={entry.book.bookId !== null && entry.book.bookId === selectedBookId}
                   onPress={() => openBook(entry.book)}
                 />
