@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -13,6 +14,7 @@ import { isNativeAlarmAvailable } from '@/modules/alarm-clock';
 
 export default function SettingsScreen() {
   const { bgmId, select } = useBgm();
+  const router = useRouter();
 
   return (
     <ScrollView
@@ -94,6 +96,24 @@ export default function SettingsScreen() {
           </ScaleButton>
         </Animated.View>
       )}
+
+      {/*
+        디자인 확인용. 오늘의 공부 상세를 카드뉴스로 바꿀지 판단하려고 넘김 동작만 먼저 만든
+        데모라, 실제 학습 데이터와는 연결돼 있지 않다. 방향이 정해지면 이 카드를 지울 것.
+      */}
+      <Animated.View entering={FadeIn.duration(700).delay(475)} style={styles.card}>
+        <Text style={styles.sectionTitle}>카드 슬라이드 미리보기</Text>
+        <Text style={styles.sectionHint}>
+          오늘의 공부를 좌우로 넘겨 보는 카드 형식으로 바꾸면 어떤 느낌인지 봅니다. 좌우로
+          쓸어 넘기고, 우측 상단 ✕로 닫습니다.
+        </Text>
+        <ScaleButton
+          accessibilityLabel="카드 슬라이드 미리보기 열기"
+          style={styles.testButton}
+          onPress={() => router.push('/card-slide-preview')}>
+          <Text style={styles.testButtonLabel}>카드 넘겨보기</Text>
+        </ScaleButton>
+      </Animated.View>
 
       <Animated.View entering={FadeIn.duration(700).delay(500)} style={styles.card}>
         <SettingRow label="버전" value="1.0.0 (데모)" />

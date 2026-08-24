@@ -111,6 +111,12 @@ export default function RootLayout() {
                     name="ad"
                     options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
                   />
+                  {/* 카드 슬라이드 미리보기 — 탭바 없이 전면으로 떠야 카드 넘김이 제대로 보인다.
+                      좌우 스와이프가 카드 넘김이라 뒤로가기 제스처와 부딪히므로 막는다. */}
+                  <Stack.Screen
+                    name="card-slide-preview"
+                    options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+                  />
                 </Stack>
               </ToastProvider>
               </BgmProvider>
