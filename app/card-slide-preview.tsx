@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -243,6 +244,9 @@ export default function CardSlidePreviewScreen() {
   /** 감상 노트 팝업이 열려 있는지. */
   const [noteOpen, setNoteOpen] = useState(false);
   const closeNote = () => setNoteOpen(false);
+  /** 퀴즈 팝업이 열려 있는지. */
+  const [quizOpen, setQuizOpen] = useState(false);
+  const closeQuiz = () => setQuizOpen(false);
 
   useEffect(() => {
     enter.value = withDelay(ENTER_DELAY, withTiming(1, { duration: ENTER_DURATION }));
@@ -387,6 +391,7 @@ export default function CardSlidePreviewScreen() {
             flipX={flipX}
             enter={enter}
             interactive={INTERACTIVE_KINDS.includes(p.kind) && page === index}
+            onOpenQuiz={() => setQuizOpen(true)}
           />
         ))}
         <FoldShade />
@@ -415,6 +420,25 @@ export default function CardSlidePreviewScreen() {
           {/* 기록하기/수정하기 버튼 바로 위 — 버튼을 가리지 않게 그 높이만큼 띄운다. */}
           <Toast bottom={insets.bottom + 24 + 44 + 12} at={toastAt} />
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/**
+        * 퀴즈 — 구매 안내 장의 버튼으로 전체 화면에 뜬다. 감상 노트 팝업과 같은 틀이다.
+        */}
+      <Modal visible={quizOpen} animationType="fade" onRequestClose={closeQuiz}>
+        <View
+          style={[
+            styles.noteModal,
+            { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
+          ]}>
+          <CloseButton top={insets.top + 24} onPress={closeQuiz} />
+          <ScrollView
+            style={styles.noteModalBody}
+            contentContainerStyle={styles.quizModalContent}
+            showsVerticalScrollIndicator={false}>
+            <QuizSolver />
+          </ScrollView>
+        </View>
       </Modal>
     </View>
   );
@@ -520,6 +544,7 @@ function DeckCard({
   flipX,
   enter,
   interactive,
+  onOpenQuiz,
 }: {
   index: number;
   kind: PageKind;
@@ -529,6 +554,7 @@ function DeckCard({
   enter: SharedValue<number>;
   /** 이 장이 지금 손가락을 받을 수 있는가(구매 버튼 같은 것). */
   interactive: boolean;
+  onOpenQuiz: () => void;
 }) {
   /**
    * 이 장이 얼마나 젖혀져 있는지. 0(평평, 오른쪽에 놓임)~1(180도, 왼쪽에 엎어짐).
@@ -611,7 +637,7 @@ function DeckCard({
           style={[styles.cardFace, kind === 'buy' && styles.cardFaceBuy, frontStyle]}
           pointerEvents="box-none">
           <Animated.View style={[styles.cardBody, bodyStyle]} pointerEvents="box-none">
-            <CardContent kind={kind} paragraph={paragraph} />
+            <CardContent kind={kind} paragraph={paragraph} onOpenQuiz={onOpenQuiz} />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
             <LinearGradient
@@ -655,9 +681,12 @@ function DeckCard({
 function CardContent({
   kind,
   paragraph,
+  onOpenQuiz,
 }: {
   kind: PageKind;
   paragraph?: string;
+  /** 구매 안내 장의 '퀴즈 풀러 가기' — 퀴즈를 전체 화면으로 연다. */
+  onOpenQuiz: () => void;
 }) {
   if (kind === 'intro') {
     return (
@@ -692,7 +721,7 @@ function CardContent({
   }
 
   if (kind === 'buy') {
-    return <BuyBlock />;
+    return <BuyBlock onOpenQuiz={onOpenQuiz} />;
   }
 
   if (kind === 'quiz' || kind === 'answer') {
@@ -700,6 +729,67 @@ function CardContent({
   }
 
   return null;
+}
+
+/**
+ * 퀴즈 풀기 — 구매 안내 장의 버튼으로 전체 화면에 뜬다.
+ *
+ * 카드 위가 아니라 팝업이라 보기를 손가락으로 고를 수 있다. 카드 덱에서는 탭이 페이지
+ * 넘김에 쓰여서 같은 자리에서 '넘기기'와 '고르기'를 함께 둘 수 없었다.
+ *
+ * 틀린 보기는 표시만 하고 그대로 남긴다 — 무엇을 짚었는지 보이고 다시 고를 수 있다.
+ * 정답을 맞히면 그 아래에 해설이 열리고 더는 고를 수 없다.
+ */
+function QuizSolver() {
+  const [picked, setPicked] = useState<number[]>([]);
+
+  if (!PREVIEW_QUIZ) {
+    return <Text style={styles.quizText}>퀴즈를 찾지 못했습니다.</Text>;
+  }
+
+  const answer = PREVIEW_QUIZ.answer;
+  const solved = picked.includes(answer);
+
+  return (
+    <View style={styles.quizSolver}>
+      <CardHeading text={PREVIEW_QUIZ.title} />
+      <Text style={styles.quizQuestion}>{PREVIEW_QUIZ.question}</Text>
+
+      <View style={styles.quizChoices}>
+        {PREVIEW_QUIZ.choices.map((choice, i) => {
+          const no = i + 1;
+          const tried = picked.includes(no);
+          const right = tried && no === answer;
+          const wrong = tried && !right;
+          return (
+            <Pressable
+              key={choice}
+              // 이미 짚어 본 보기와 정답을 맞힌 뒤에는 더 누르지 않는다.
+              disabled={tried || solved}
+              onPress={() => setPicked((prev) => [...prev, no])}
+              style={[
+                styles.quizChoice,
+                styles.quizChoiceBox,
+                right && styles.quizChoiceRight,
+                wrong && styles.quizChoiceWrong,
+              ]}>
+              <Text
+                style={[
+                  styles.quizChoiceNo,
+                  right && styles.quizChoiceNoRight,
+                  wrong && styles.quizChoiceNoWrong,
+                ]}>
+                {no}
+              </Text>
+              <Text style={styles.quizChoiceText}>{choice}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {solved ? <Text style={styles.quizExplanation}>{PREVIEW_QUIZ.explanation}</Text> : null}
+    </View>
+  );
 }
 
 /**
@@ -775,7 +865,7 @@ const BUY_BOOK = (() => {
   return book;
 })();
 
-function BuyBlock() {
+function BuyBlock({ onOpenQuiz }: { onOpenQuiz: () => void }) {
   const router = useRouter();
 
   return (
@@ -804,6 +894,10 @@ function BuyBlock() {
         onPress={() => BUY_BOOK && router.push(`/book/${BUY_BOOK.id}`)}
       >
         <Text style={styles.cardButtonText}>￦8,820</Text>
+      </Pressable>
+
+      <Pressable style={[styles.cardButton, styles.buyButton, styles.quizButton]} onPress={onOpenQuiz}>
+        <Text style={[styles.cardButtonText, styles.quizButtonText]}>퀴즈 풀러 가기</Text>
       </Pressable>
     </View>
   );
@@ -1429,6 +1523,42 @@ const styles = StyleSheet.create({
   },
   quizChoices: {
     gap: 10,
+  },
+  /** 퀴즈 팝업 — 카드가 아니라 화면을 쓰므로 위에서부터 채운다. */
+  quizModalContent: {
+    paddingBottom: 24,
+  },
+  quizSolver: {
+    gap: 16,
+  },
+  /** 고를 수 있는 보기는 눌리는 자리가 보이도록 테두리와 여백을 준다. */
+  quizChoiceBox: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.brown10,
+  },
+  quizChoiceRight: {
+    borderColor: Colors.green100,
+    backgroundColor: Colors.green10,
+  },
+  quizChoiceWrong: {
+    borderColor: Colors.red100,
+    backgroundColor: Colors.red10,
+  },
+  quizChoiceNoRight: {
+    color: Colors.green100,
+  },
+  quizChoiceNoWrong: {
+    color: Colors.red100,
+  },
+  /** 구매 안내 장의 두 번째 버튼 — 가격 버튼 아래에 같은 폭으로 선다. */
+  quizButton: {
+    backgroundColor: Colors.brown100,
+  },
+  quizButtonText: {
+    color: Colors.bg,
   },
   /** 번호와 보기를 한 줄에 — 보기가 두 줄로 넘어가도 번호는 첫 줄에 붙어 있게 한다. */
   quizChoice: {
