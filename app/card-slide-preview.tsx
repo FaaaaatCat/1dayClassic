@@ -137,7 +137,7 @@ const TOAST_FADE = 220;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
-type PageKind = 'intro' | 'quote' | 'desc' | 'buy' | 'quiz' | 'answer';
+type PageKind = 'intro' | 'quote' | 'desc' | 'buy';
 
 interface Page {
   kind: PageKind;
@@ -183,17 +183,16 @@ const PAGES: Page[] = [
   { kind: 'quote', headline: '듣기 공부의 시간입니다.' },
   // 본문은 문단마다 카드 한 장 — 문단이 늘거나 줄면 카드 수도 그만큼 자동으로 바뀐다.
   ...DESC_PARAGRAPHS.map((paragraph): Page => ({ kind: 'desc', paragraph })),
-  // 본문이 끝나면 구매 안내 한 장을 끼우고 감상 노트로 넘어간다.
+  // 본문이 끝나면 구매 안내 한 장으로 맺는다. 퀴즈와 감상 노트는 넘김 흐름이 아니라
+  // 하단 버튼으로 여는 전체 화면 팝업이다.
   { kind: 'buy' },
-  { kind: 'quiz', headline: '잘 읽었는지 확인해볼까요?' },
-  { kind: 'answer', headline: '정답입니다!' },
 ];
 
 /** 카드 안에 눌러야 할 것이 있는 장 — 이 장이 펼쳐져 있을 때만 손가락을 받는다. */
 const INTERACTIVE_KINDS: PageKind[] = ['buy'];
 
-/** 하단이 '오늘의 공부 마치기'로 바뀌는 페이지. */
-const ANSWER_INDEX = PAGES.findIndex((p) => p.kind === 'answer');
+/** 하단이 '오늘의 공부 마치기'로 바뀌는 페이지 — 마지막 장이다. */
+const LAST_INDEX = PAGES.length - 1;
 
 /**
  * 같은 문구가 이어지는 페이지는 한 덩어리로 묶는다 — 안 그러면 0→1처럼 문구가 같은
@@ -324,7 +323,7 @@ export default function CardSlidePreviewScreen() {
     startTurn(next);
   };
 
-  const onAnswer = page === ANSWER_INDEX;
+  const onLastPage = page === LAST_INDEX;
 
   return (
     <View style={styles.screen}>
@@ -337,7 +336,7 @@ export default function CardSlidePreviewScreen() {
       <Actions
         bottom={insets.bottom + 40}
         flipX={flipX}
-        finishEnabled={onAnswer}
+        finishEnabled={onLastPage}
         onFinish={() => router.replace('/settings')}
         onOpenNote={() => setNoteOpen(true)}
       />
@@ -724,10 +723,6 @@ function CardContent({
     return <BuyBlock onOpenQuiz={onOpenQuiz} />;
   }
 
-  if (kind === 'quiz' || kind === 'answer') {
-    return <QuizBlock showAnswer={kind === 'answer'} />;
-  }
-
   return null;
 }
 
@@ -792,54 +787,6 @@ function QuizSolver() {
   );
 }
 
-/**
- * 퀴즈 · 정답 장 — data/listening.json의 002 항목 퀴즈를 그대로 읽어 온다.
- *
- * 이 미리보기가 보여 주는 본문이 그 항목이라(인용문·본문 문단 모두) 퀴즈도 같은 항목의
- * 것을 쓴다. 아직 손가락으로 고르는 건 없다 — 질문을 읽고 한 장 넘기면 정답이 나오는
- * 읽기 흐름이다.
- */
-function QuizBlock({ showAnswer }: { showAnswer: boolean }) {
-  if (!PREVIEW_QUIZ) {
-    return (
-      <View style={styles.formBlock}>
-        <CardHeading text="퀴즈" />
-        <Text style={styles.quizText}>퀴즈를 찾지 못했습니다.</Text>
-      </View>
-    );
-  }
-
-  if (showAnswer) {
-    const no = PREVIEW_QUIZ.answer;
-    return (
-      <View style={styles.formBlock}>
-        <CardHeading text="정답" />
-        <View style={styles.quizChoice}>
-          <Text style={[styles.quizChoiceNo, styles.quizAnswerNo]}>{no}</Text>
-          <Text style={[styles.quizChoiceText, styles.quizAnswerText]}>
-            {PREVIEW_QUIZ.choices[no - 1]}
-          </Text>
-        </View>
-        <Text style={styles.quizExplanation}>{PREVIEW_QUIZ.explanation}</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.formBlock}>
-      <CardHeading text={PREVIEW_QUIZ.title} />
-      <Text style={styles.quizQuestion}>{PREVIEW_QUIZ.question}</Text>
-      <View style={styles.quizChoices}>
-        {PREVIEW_QUIZ.choices.map((choice, i) => (
-          <View key={choice} style={styles.quizChoice}>
-            <Text style={styles.quizChoiceNo}>{i + 1}</Text>
-            <Text style={styles.quizChoiceText}>{choice}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
 
 /**
  * 감상 노트 — 카드 위쪽부터 채우고 '기록하기'는 아래에 붙는다.
@@ -1056,7 +1003,7 @@ function Headline({
 
 /**
  * 하단 버튼 — 모든 카드에서 책갈피·오디오 버튼이 뜨다가, 마지막 해설 카드에서만
- * '오늘의 공부 마치기'로 바뀐다. 전환 지점은 ANSWER_INDEX 하나로 정해지므로
+ * '오늘의 공부 마치기'로 바뀐다. 전환 지점은 LAST_INDEX 하나로 정해지므로
  * desc가 몇 장으로 나뉘든 자동으로 맞다.
  */
 function Actions({
@@ -1075,12 +1022,12 @@ function Actions({
 }) {
   const roundStyle = useAnimatedStyle(() => {
     const x = flipX.value / PAGE_W;
-    return { opacity: interpolate(x, [ANSWER_INDEX - 1, ANSWER_INDEX], [1, 0], Extrapolation.CLAMP) };
+    return { opacity: interpolate(x, [LAST_INDEX - 1, LAST_INDEX], [1, 0], Extrapolation.CLAMP) };
   });
   const finishStyle = useAnimatedStyle(() => {
     const x = flipX.value / PAGE_W;
     return {
-      opacity: interpolate(x, [ANSWER_INDEX - 1, ANSWER_INDEX], [0, 1], Extrapolation.CLAMP),
+      opacity: interpolate(x, [LAST_INDEX - 1, LAST_INDEX], [0, 1], Extrapolation.CLAMP),
     };
   });
 
@@ -1375,10 +1322,6 @@ const styles = StyleSheet.create({
   },
 
   // 노트 · 퀴즈 카드
-  formBlock: {
-    alignSelf: 'stretch',
-    gap: 16,
-  },
   cardHeading: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1579,17 +1522,6 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     letterSpacing: tracking(13),
     color: Colors.brown100,
-  },
-  /** 정답 장에서 고른 보기 — 번호와 글자를 함께 굵게 세운다. */
-  quizAnswerNo: {
-    fontSize: 15,
-    lineHeight: 24,
-  },
-  quizAnswerText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-    lineHeight: 24,
-    letterSpacing: tracking(15),
   },
   quizExplanation: {
     fontFamily: Fonts.regular,
