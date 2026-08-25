@@ -31,6 +31,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
+import listeningData from '@/data/listening.json';
 import { getCatalogBooks } from '@/lib/catalog';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
@@ -153,6 +154,18 @@ const BUY_COVER_H = 152;
 
 /** 구매 안내 장에서 소개하는 책 — 카탈로그에서 제목으로 찾는다(BuyBlock 주석 참고). */
 const BUY_BOOK_TITLE = '듣기의 말들';
+
+/**
+ * 퀴즈 장이 읽어 오는 항목. 이 화면이 보여 주는 인용문과 본문이 『듣기의 말들』 002
+ * 항목이라 퀴즈도 같은 항목의 것을 쓴다. 제목이 아니라 id로 찾는 건 이 파일에서는
+ * 한 항목만 콕 집어 쓰기 때문이다.
+ */
+const PREVIEW_LESSON_ID = 'listening_2_admit_first';
+const PREVIEW_QUIZ = (() => {
+  const lesson = listeningData.lessons.find((l) => l.id === PREVIEW_LESSON_ID);
+  if (!lesson) console.warn(`[card-slide-preview] 없는 항목입니다: ${PREVIEW_LESSON_ID}`);
+  return lesson?.quiz;
+})();
 
 const QUOTE_TEXT =
   '모든 인류에게 부여된 천부적인 재능일 수 있는 경청이 어려워진 이유는 무얼까.\n' +
@@ -685,13 +698,58 @@ function CardContent({
     return <BuyBlock />;
   }
 
-  // quiz · answer — 지금은 자리만 잡아 둔 문구다.
+  if (kind === 'quiz' || kind === 'answer') {
+    return <QuizBlock showAnswer={kind === 'answer'} />;
+  }
+
+  return null;
+}
+
+/**
+ * 퀴즈 · 정답 장 — data/listening.json의 002 항목 퀴즈를 그대로 읽어 온다.
+ *
+ * 이 미리보기가 보여 주는 본문이 그 항목이라(인용문·본문 문단 모두) 퀴즈도 같은 항목의
+ * 것을 쓴다. 아직 손가락으로 고르는 건 없다 — 질문을 읽고 한 장 넘기면 정답이 나오는
+ * 읽기 흐름이다.
+ */
+function QuizBlock({ showAnswer }: { showAnswer: boolean }) {
+  if (!PREVIEW_QUIZ) {
+    return (
+      <View style={styles.formBlock}>
+        <CardHeading text="퀴즈" />
+        <Text style={styles.quizText}>퀴즈를 찾지 못했습니다.</Text>
+      </View>
+    );
+  }
+
+  if (showAnswer) {
+    const no = PREVIEW_QUIZ.answer;
+    return (
+      <View style={styles.formBlock}>
+        <CardHeading text="정답" />
+        <View style={styles.quizChoice}>
+          <Text style={[styles.quizChoiceNo, styles.quizAnswerNo]}>{no}</Text>
+          <Text style={[styles.quizChoiceText, styles.quizAnswerText]}>
+            {PREVIEW_QUIZ.choices[no - 1]}
+          </Text>
+        </View>
+        <Text style={styles.quizExplanation}>{PREVIEW_QUIZ.explanation}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.formBlock}>
-      <CardHeading text="퀴즈" />
-      <Text style={styles.quizText}>
-        {kind === 'quiz' ? '퀴즈 내용이 들어갑니다.' : '해설내용이 들어갑니다.'}
-      </Text>
+      <CardHeading text={PREVIEW_QUIZ.title} />
+      <Text style={styles.quizQuestion}>{PREVIEW_QUIZ.question}</Text>
+      <View style={styles.quizChoices}>
+        {PREVIEW_QUIZ.choices.map((choice, i) => (
+          <View key={choice} style={styles.quizChoice}>
+            <Text style={styles.quizChoiceNo}>{i + 1}</Text>
+            <Text style={styles.quizChoiceText}>{choice}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -728,7 +786,9 @@ function BuyBlock() {
       {/* 눌러야 할 것은 아래 버튼뿐이다. 나머지는 터치를 흘려보내야 카드 위를 탭했을 때
           그대로 페이지가 넘어간다 — 안 그러면 여기서 걸려 아무 일도 일어나지 않는다. */}
       <Text style={styles.buyLead} pointerEvents="none">
-        {'뒷 내용이 더 궁금하시다면\n‘잘 듣는’ 사람이 되기 위한 필독도서 『듣기의 말들』 을 구매해보세요.'}
+        {
+          "뒷 내용이 더 궁금하시다면\n‘잘 듣는’ 사람이 되기 위한 필독도서\n『듣기의 말들』 을 구매해보세요."
+        }
       </Text>
 
       <View style={styles.buyCoverArea} pointerEvents="none">
@@ -744,7 +804,8 @@ function BuyBlock() {
 
       <Pressable
         style={[styles.cardButton, styles.buyButton]}
-        onPress={() => BUY_BOOK && router.push(`/book/${BUY_BOOK.id}`)}>
+        onPress={() => BUY_BOOK && router.push(`/book/${BUY_BOOK.id}`)}
+      >
         <Text style={styles.cardButtonText}>￦8,820</Text>
       </Pressable>
     </View>
@@ -1146,7 +1207,7 @@ const styles = StyleSheet.create({
   },
   /** 구매 안내 장의 종이색. */
   cardFaceBuy: {
-    backgroundColor: Colors.brown10,
+    backgroundColor: Colors.brown50,
   },
   cardBack: {
     // 부모가 -180도까지 돌아가므로, 그 안에서 180도를 다시 돌려 두면 다 넘어갔을
@@ -1361,6 +1422,54 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     letterSpacing: tracking(16),
     color: Colors.brown100,
+  },
+  quizQuestion: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    lineHeight: 24,
+    letterSpacing: tracking(15),
+    color: Colors.brown100,
+  },
+  quizChoices: {
+    gap: 10,
+  },
+  /** 번호와 보기를 한 줄에 — 보기가 두 줄로 넘어가도 번호는 첫 줄에 붙어 있게 한다. */
+  quizChoice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  quizChoiceNo: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    lineHeight: 21,
+    color: Colors.beige100,
+  },
+  quizChoiceText: {
+    flex: 1,
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 21,
+    letterSpacing: tracking(13),
+    color: Colors.brown100,
+  },
+  /** 정답 장에서 고른 보기 — 번호와 글자를 함께 굵게 세운다. */
+  quizAnswerNo: {
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  quizAnswerText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    lineHeight: 24,
+    letterSpacing: tracking(15),
+  },
+  quizExplanation: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 22,
+    letterSpacing: tracking(13),
+    color: Colors.brown50,
   },
 
   // 본문 카드 — 문단 하나를 카드 한 장에 꽉 채운다(다른 카드처럼 alignSelf: stretch).
