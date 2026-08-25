@@ -1,11 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dimensions,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -19,6 +18,8 @@ import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,13 +33,23 @@ import { Colors, Fonts, tracking } from '@/constants/theme';
  *
  * ── 넘김 방식 ─────────────────────────────────────────────────────────────
  * 가로 ScrollView는 눈에 보이지 않고 제스처와 페이지 스냅만 맡는다. 카드는 그 아래
- * 별도 층에 겹쳐 두고 scrollX로 직접 변형해 그린다 — 이래야 넘어가는 카드가 제자리에서
+ * 별도 층에 겹쳐 두고 flipX로 직접 변형해 그린다 — 이래야 넘어가는 카드가 제자리에서
  * 젖혀지고 뒤 카드는 따라 흐르지 않고 쌓인 채 기다리는 '책' 느낌이 난다.
  *
- * 다만 본문(desc)만은 예외로 그 ScrollView 안에 직접 넣는다. 전체화면인 데다 세로로
- * 스크롤돼야 하는데, 카드층은 터치를 받지 않게 해 둬서(pointerEvents=none) 밖에 두면
- * 세로 스크롤을 못 받기 때문이다. 가로 ScrollView 안에 있으면 바깥은 가로, 안쪽은 세로로
- * 제스처가 자연스럽게 갈린다.
+ * 본문(desc)도 다른 카드와 똑같은 카드 한 장이다 — 다만 문단이 여러 개라 한 카드에
+ * 한 문단씩 담아 여러 장으로 나눈다(PAGES 구성 참고).
+ *
+ * ── rawX와 flipX가 따로 있는 이유 ──────────────────────────────────────────
+ * ScrollView.scrollTo는 애니메이션 길이를 지정할 수 없다(안드로이드 네이티브
+ * 기본값이 그대로 쓰인다 — 대략 300ms 안팎으로 꽤 빠르다). 그런데 손을 뗀 뒤/탭
+ * 넘김의 '넘어가는 속도'를 우리가 직접 늦추려면 그 시간을 우리가 정할 수 있어야
+ * 한다. 그래서 두 값을 둔다:
+ *  - rawX: 실제 스크롤 위치를 매 프레임 그대로 받는다(손가락을 드래그하는 동안은
+ *    이 값을 카드에 1:1로 반영해야 반응이 즉각적이다).
+ *  - flipX: 카드·문구·버튼이 실제로 읽는 값. 드래그 중에는 rawX를 그대로 따라가지만,
+ *    손을 떼거나(스크롤이 정착) 탭으로 넘길 때는 rawX를 곧장 따라가지 않고
+ *    withTiming(TURN_DURATION)으로 우리가 정한 속도로만 움직인다 — 그 동안
+ *    ScrollView 자체는 (보이지 않으니) 제 속도대로 빨리 끝나도 상관없다.
  *
  * 새 라이브러리 없이 이미 쓰던 reanimated만 쓴다.
  */
@@ -53,32 +64,48 @@ const CARD_H = Math.round((CARD_W * 466) / 320);
 const PAGE_W = SCREEN_W;
 
 // ── 넘김 감각을 만지는 값들 ────────────────────────────────────────────────
-/** 뒤에 몇 장까지 겹쳐 보일지. */
-const VISIBLE_BEHIND = 2;
-/** 뒤 카드가 한 장마다 오른쪽으로 밀려나는 정도(px). */
-const STACK_X = 26;
-/** 뒤 카드가 한 장마다 위로 올라가는 정도(px). */
-const STACK_Y = -6;
-/** 뒤 카드가 한 장마다 작아지는 비율. */
-const STACK_SCALE = 0.075;
-/** 원근 거리 — 작을수록 3D가 과장된다. */
-const PERSPECTIVE = 800;
-
-// 넘김은 스크롤 위치에 그대로 비례시키지 않는다. 그러면 손가락을 따라 밋밋하게 미끄러질
-// 뿐이라 '넘어갔다'는 인상이 남지 않는다. 나가는 카드는 뒤로 갈수록 가속해 화면 밖으로
-// 빠져나가고, 들어오는 카드는 제자리를 살짝 지나쳤다가 되돌아와 멈춘다.
-/** 넘어간 카드가 빠져나가는 거리(화면 폭 배수). */
-const EXIT_TRAVEL = 0.9;
-/** 빠져나가며 카메라 쪽으로 다가오는 정도. */
-const EXIT_ZOOM = 0.24;
-/** 빠져나가며 도는 각도(Y축). */
-const EXIT_TURN_DEG = 34;
-/** 빠져나가며 기우는 각도(화면 평면). */
-const EXIT_TILT_DEG = 7;
-/** 다가오는 카드가 제자리를 지나치는 지점. 0에 가까울수록 늦게 튄다. */
-const ARRIVE_PEAK = 0.26;
-/** 지나치는 정도(배율). */
-const ARRIVE_OVERSHOOT = 0.055;
+// 실제 책장처럼 책등(왼쪽 모서리)을 축으로 뻣뻣한 종이 한 장이 뒤집힌다. 스크롤
+// 위치에 선형으로 매핑하지 않고, 초반의 짧은 준비 구간 뒤 책등을 축으로 180도
+// 돌아가게 만든다(TURN). 종이의 곡면은 순수 JS로 표현할 수 없지만, 각도별 명암과
+// 회전 타이밍만으로도 종이 느낌이 꽤 산다.
+/** 전체 넘김 진행(0~1) 중 회전이 본격적으로 시작되기 전 준비 구간의 비율. */
+const LIFT_FRACTION = 0.12;
+/**
+ * 원근 거리. 회전축(왼쪽 모서리)에서 가장 먼 점(오른쪽 모서리, CARD_W만큼 떨어져
+ * 있다)이 이 거리를 넘어서면 투영이 뒤집혀 카드가 마름모꼴로 깨진다 — 카드 폭보다
+ * 충분히 커야 한다(경험적으로 3~4배 이상).
+ */
+const PERSPECTIVE = 1600;
+/** 이미 넘긴(왼쪽)·아직 안 넘긴(오른쪽) 페이지가 새어 나오는 폭(px, 한 장당). */
+const EDGE_PEEK = 3;
+/** 가장자리로 보여줄 최대 장수 — 그 이상 쌓여도 더 넓어지지 않는다. */
+const EDGE_MAX_DEPTH = 4;
+/**
+ * 두 장 이상 떨어진 페이지는 아예 opacity 0으로 지운다. elevation만으로 여러 겹친
+ * 절대배치 뷰의 그리기 순서를 맡기면, 뒤로 갈수록 elevation 값이 조밀해지다 못해
+ * 겹쳐 버려서(4장 넘게 떨어진 페이지는 전부 같은 값으로 클램프된다) 애니메이션 중
+ * 안드로이드가 프레임 사이에 순서를 잘못 정렬해 아주 먼 페이지가 한 프레임 튀어
+ * 보이는 문제가 있었다. z-order에 기대는 대신 안 보여야 할 페이지는 아예 안 그려
+ * 지게 만들면 순서가 어떻게 꼬이든 안전하다 — 덤으로 다음/이전 페이지가 서서히
+ * 드러나는 효과도 생긴다.
+ */
+const EDGE_FADE_RANGE = 1.2;
+/**
+ * 손을 뗀 뒤(스크롤 정착)나 탭으로 넘어갈 때, 카드가 실제로 넘어가는 데 걸리는
+ * 시간(ms). 예전엔 이 값이 없었다 — ScrollView의 페이지 스냅에 그대로 얹혀서
+ * 안드로이드 네이티브 기본 속도(대략 300ms)를 그대로 썼다. "너무 빠르고 정신
+ * 없다"는 피드백을 받아 그 기본값의 2배로 늦췄다. 드래그하는 동안은 이 값과
+ * 무관하게 손가락을 1:1로 따라간다 — 손 뗀 뒤/탭 넘김만 이 속도로 움직인다.
+ */
+const TURN_DURATION = 600;
+/**
+ * 페이지가 '현재 페이지'가 된 뒤 그 콘텐츠가 드러나는 방식 — 도착하자마자 바로
+ * 보이는 대신, 잠깐 완전히 비어 있다가(REVEAL_DELAY) 천천히 떠오른다(REVEAL_
+ * DURATION). 책장이 넘어가는 물리적 동작(TURN_DURATION)과는 별개의, 시간 기반
+ * 애니메이션이다 — 얼마나 빨리 넘겼든 이 페이스만큼은 항상 똑같이 흘러간다.
+ */
+const REVEAL_DELAY = 800;
+const REVEAL_DURATION = 500;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
@@ -86,23 +113,35 @@ type PageKind = 'intro' | 'quote' | 'desc' | 'note' | 'quiz' | 'answer';
 
 interface Page {
   kind: PageKind;
-  /** 카드 위에 뜨는 안내 문구. 본문(desc)에는 없다. */
+  /** 카드 위에 뜨는 안내 문구. 본문(desc) 카드에는 없다. */
   headline?: string;
+  /** desc 카드 전용 — 이 카드 한 장에 담을 문단 하나. */
+  paragraph?: string;
 }
+
+const QUOTE_TEXT =
+  '모든 인류에게 부여된 천부적인 재능일 수 있는 경청이 어려워진 이유는 무얼까.\n' +
+  '심리학자인 데이비드 배너 교수는 우리 대부분이 이미 스스로 잘 듣는 사람이라 생각하기 때문이라고 지적한다.';
+const QUOTE_SOURCE = '애덤 S. 맥휴, 『경청, 영혼의 치료제』\n(윤종석 옮김, 도서출판 CUP, 2018)';
+
+/** 본문 — 문단마다 카드 한 장씩 담는다(PAGES 참고). */
+const DESC_PARAGRAPHS = [
+  '‘익명의 알코올중독자들’ Alcoholics Anonymous을 비롯한 재활모임에서 가장 중히 여기는 것이 무엇인지 아는가? 본인이 중독이라는 사실을 인정하는 것이 1단계다. 내가 중독에 빠졌고 내 힘으로는 중독에서 벗어날 수 없다는 사실을 수긍하는 것. 이것이 이뤄지지 않으면 재활센터에서도 치료에 들어가지 않는다.',
+  '경청도 마찬가지다. 내가 잘 듣는 사람이 아니라는 것. 달리 말하면 말하기 중독에 빠져서 자꾸 상대의 말을 끊는다는 걸 인정하지 않고서는 듣기의 갱신은 요원하다.',
+  '과분하게도 내 주위엔 훌륭한 분들이 즐비하다. 그런 분들이 대화 자리에서 툭하면 상대의 말허리를 끊는다. 물론 고의는 아니다. 자기도 모르게 그런다. 커피 타임이나 술자리에서 가만히 살펴보라. 남이 말할 때 끼어들 기회를 엿보며 화제를 주도하려는 사람이 태반이다. 그런데 나 정도면 잘 들어 준다고 자평한다. 이 책을 쓰기 전까지는 나 자신도 그런 줄 몰랐다.',
+  '우리는 대화의 기준이 너무 낮다. 정보 교환, 감정 배설, 재치있는 말의 경연장 정도로 간주한다. 그러니 자신이 잘 듣는다고 착각하는 것도 무리는 아니다.',
+];
 
 const PAGES: Page[] = [
   { kind: 'intro', headline: '듣기 공부의 시간입니다.' },
   { kind: 'quote', headline: '듣기 공부의 시간입니다.' },
-  { kind: 'desc' },
+  // 본문은 문단마다 카드 한 장 — 문단이 늘거나 줄면 카드 수도 그만큼 자동으로 바뀐다.
+  ...DESC_PARAGRAPHS.map((paragraph): Page => ({ kind: 'desc', paragraph })),
   { kind: 'note', headline: '오늘의 공부는 어떠셨나요.\n떠오르는 게 있다면 적어봅시다.' },
   { kind: 'quiz', headline: '잘 읽었는지 확인해볼까요?' },
   { kind: 'answer', headline: '정답입니다!' },
 ];
 
-/** 본문이 아닌, 카드로 그려지는 페이지들의 인덱스. */
-const CARD_INDEXES = PAGES.map((p, i) => (p.kind === 'desc' ? -1 : i)).filter((i) => i >= 0);
-/** 본문 페이지의 인덱스. */
-const DESC_INDEX = PAGES.findIndex((p) => p.kind === 'desc');
 /** 하단이 '오늘의 공부 마치기'로 바뀌는 페이지. */
 const ANSWER_INDEX = PAGES.findIndex((p) => p.kind === 'answer');
 
@@ -124,110 +163,134 @@ const HEADLINE_GROUPS = PAGES.reduce<{ text: string; from: number; to: number }[
   [],
 );
 
-const QUOTE_TEXT =
-  '모든 인류에게 부여된 천부적인 재능일 수 있는 경청이 어려워진 이유는 무얼까.\n' +
-  '심리학자인 데이비드 배너 교수는 우리 대부분이 이미 스스로 잘 듣는 사람이라 생각하기 때문이라고 지적한다.';
-const QUOTE_SOURCE = '애덤 S. 맥휴, 『경청, 영혼의 치료제』\n(윤종석 옮김, 도서출판 CUP, 2018)';
-
-const DESC_PARAGRAPHS = [
-  '‘익명의 알코올중독자들’ Alcoholics Anonymous을 비롯한 재활모임에서 가장 중히 여기는 것이 무엇인지 아는가? 본인이 중독이라는 사실을 인정하는 것이 1단계다. 내가 중독에 빠졌고 내 힘으로는 중독에서 벗어날 수 없다는 사실을 수긍하는 것. 이것이 이뤄지지 않으면 재활센터에서도 치료에 들어가지 않는다.',
-  '경청도 마찬가지다. 내가 잘 듣는 사람이 아니라는 것. 달리 말하면 말하기 중독에 빠져서 자꾸 상대의 말을 끊는다는 걸 인정하지 않고서는 듣기의 갱신은 요원하다.',
-  '과분하게도 내 주위엔 훌륭한 분들이 즐비하다. 그런 분들이 대화 자리에서 툭하면 상대의 말허리를 끊는다. 물론 고의는 아니다. 자기도 모르게 그런다. 커피 타임이나 술자리에서 가만히 살펴보라. 남이 말할 때 끼어들 기회를 엿보며 화제를 주도하려는 사람이 태반이다. 그런데 나 정도면 잘 들어 준다고 자평한다. 이 책을 쓰기 전까지는 나 자신도 그런 줄 몰랐다.',
-  '우리는 대화의 기준이 너무 낮다. 정보 교환, 감정 배설, 재치있는 말의 경연장 정도로 간주한다. 그러니 자신이 잘 듣는다고 착각하는 것도 무리는 아니다.',
-];
-
 export default function CardSlidePreviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
-  const scrollX = useSharedValue(0);
+  // rawX: 실제 스크롤 위치(매 프레임 그대로). flipX: 카드가 실제로 읽는 값 —
+  // 드래그 중엔 rawX를 그대로 따르고, 정착/탭 넘김일 때만 우리가 정한 속도
+  // (TURN_DURATION)로 움직인다. 위 파일 상단 주석 참고.
+  const rawX = useSharedValue(0);
+  const flipX = useSharedValue(0);
+  const isDragging = useSharedValue(false);
   // 버튼을 누를 수 있는지는 애니메이션이 아니라 '지금 몇 번째 페이지인가'로 정한다 —
-  // 투명해진 버튼이 눌리면 안 되기 때문.
+  // 투명해진 버튼이 눌리면 안 되기 때문. 각 카드의 '방금 현재 페이지가 됐다' 리빌
+  // 애니메이션도 이 값(정확히는 아래 DeckCard의 isCurrent)이 트리거한다.
   const [page, setPage] = useState(0);
 
-  const onScroll = useAnimatedScrollHandler((event) => {
-    scrollX.value = event.contentOffset.x;
+  // onScroll·onBeginDrag·onEndDrag를 한 핸들러 객체로 묶어야 셋 다 UI 스레드
+  // 워클릿으로 제대로 바인딩된다(useAnimatedScrollHandler의 표준 사용법).
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      rawX.value = event.contentOffset.x;
+      // 드래그하는 동안만 1:1로 따라간다 — 정착 애니메이션(네이티브, 빠르다)이
+      // 진행되는 동안은 따라가지 않고 아래 onSettle이 우리 속도로 직접 옮긴다.
+      if (isDragging.value) {
+        flipX.value = rawX.value;
+      }
+    },
+    onBeginDrag: () => {
+      isDragging.value = true;
+      // 진행 중이던 정착 애니메이션이 있었다면 즉시 취소하고 손가락 위치로 스냅 —
+      // 안 그러면 드래그 시작이 이전 애니메이션과 씨름하는 것처럼 느껴진다.
+      flipX.value = rawX.value;
+    },
+    onEndDrag: () => {
+      isDragging.value = false;
+    },
   });
 
+  /**
+   * 스크롤이 어딘가에 정착했을 때(손을 떼고 난 뒤의 네이티브 스냅이 끝났을 때,
+   * 또는 탭 넘김으로 시작된 스크롤이 끝났을 때) 불린다. ScrollView 자체는 보이지
+   * 않으니 그 스냅이 얼마나 빨리 끝나든 상관없다 — 여기서 flipX를 우리 속도
+   * (TURN_DURATION)로 최종 위치까지 옮기는 게 화면에 실제로 보이는 움직임이다.
+   *
+   * 탭 넘김(goBy)이 이미 처리한 경우엔(page가 이미 next로 바뀌어 있다) 여기서
+   * 다시 손대지 않는다 — 그렇지 않으면 tap이 이미 시작해 둔 flipX 애니메이션을
+   * 중간에 다시 처음부터 트는 꼴이 된다.
+   */
   const onSettle = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setPage(Math.round(event.nativeEvent.contentOffset.x / PAGE_W));
+    const next = Math.round(event.nativeEvent.contentOffset.x / PAGE_W);
+    if (next === page) return;
+    setPage(next);
+    flipX.value = withTiming(next * PAGE_W, { duration: TURN_DURATION });
   };
 
   /**
    * 탭으로 한 장 넘긴다. 화면을 가로로 3등분해 왼쪽은 이전, 오른쪽은 다음이고
    * 가운데는 아무 일도 하지 않는다(탭 영역은 각 페이지 안에 있다).
-   * 프로그램으로 스크롤하면 onMomentumScrollEnd가 안 오는 기기가 있어 페이지를 직접 맞춘다.
+   * 실제 스크롤 위치는 네이티브 속도로(animated:true) 옮겨 둔다 — 보이지 않는
+   * 층이라 빨라도 상관없고, 다음 드래그가 정확한 지점에서 시작되려면 필요하다.
+   * 화면에 보이는 넘김 자체는 flipX를 우리 속도로 직접 움직여서 만든다.
    */
   const goBy = (delta: number) => {
     const next = Math.max(0, Math.min(PAGES.length - 1, page + delta));
     if (next === page) return;
     scrollRef.current?.scrollTo({ x: next * PAGE_W, animated: true });
     setPage(next);
+    flipX.value = withTiming(next * PAGE_W, { duration: TURN_DURATION });
   };
 
-  const onDesc = page === DESC_INDEX;
   const onAnswer = page === ANSWER_INDEX;
 
   return (
     <View style={styles.screen}>
-      {/* 카드층 — 보이기만 하고 손가락은 위의 ScrollView가 받는다. */}
+      {/* 카드층 — 보이기만 하고 손가락은 위의 ScrollView가 받는다. 렌더 순서는 상관없다
+          (각 카드가 elevation/zIndex를 직접 계산해 쌓임 순서를 정한다 — 지금 넘어가는
+          중인 카드만 항상 맨 위, 나머지는 현재 페이지와 거리순으로 낮아진다). */}
       <View style={styles.deck} pointerEvents="none">
-        {/* 뒤 카드가 앞 카드에 가리도록 큰 번호부터 그린다. 덕분에 넘어가는 카드가 늘
-            다음 카드 위에서 젖혀진다(책장이 넘어가는 순서). */}
-        {[...CARD_INDEXES].reverse().map((index) => (
-          <DeckCard key={index} index={index} kind={PAGES[index].kind} scrollX={scrollX} />
+        {PAGES.map((p, index) => (
+          <DeckCard
+            key={index}
+            index={index}
+            kind={p.kind}
+            paragraph={p.paragraph}
+            flipX={flipX}
+            isCurrent={page === index}
+          />
         ))}
       </View>
 
-      <Headlines top={insets.top + 24} scrollX={scrollX} />
+      <Headlines top={insets.top + 24} flipX={flipX} />
 
-      <CloseButton
-        top={insets.top + 24}
-        scrollX={scrollX}
-        enabled={!onDesc}
-        onPress={() => router.replace('/settings')}
-      />
+      <CloseButton top={insets.top + 24} onPress={() => router.replace('/settings')} />
 
-      <Dots scrollX={scrollX} bottom={insets.bottom + 104} />
+      <Dots flipX={flipX} bottom={insets.bottom + 104} />
 
       <Actions
         bottom={insets.bottom + 40}
-        scrollX={scrollX}
-        roundEnabled={!onDesc && !onAnswer}
+        flipX={flipX}
         finishEnabled={onAnswer}
         onFinish={() => router.replace('/settings')}
       />
 
-      {/* 제스처 층 — 본문 페이지만 실제 내용을 담고 나머지는 탭 영역만 있다. */}
+      {/* 제스처 층 — 페이지마다 좌/중/우 3등분 탭 영역만 있다(가운데는 무동작). */}
       <Animated.ScrollView
         ref={scrollRef}
         style={styles.gestureLayer}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={onScroll}
+        onScroll={scrollHandler}
         onMomentumScrollEnd={onSettle}
         scrollEventThrottle={16}>
-        {PAGES.map((p, index) =>
-          p.kind === 'desc' ? (
-            <DescPage key={index} insets={insets} />
-          ) : (
-            <View key={index} style={styles.gesturePage}>
-              <Pressable
-                accessibilityLabel="이전 장"
-                style={styles.tapZone}
-                onPress={() => goBy(-1)}
-              />
-              {/* 가운데는 일부러 아무것도 하지 않는다 — 읽는 중 실수로 넘어가지 않게. */}
-              <View style={styles.tapZone} />
-              <Pressable
-                accessibilityLabel="다음 장"
-                style={styles.tapZone}
-                onPress={() => goBy(1)}
-              />
-            </View>
-          ),
-        )}
+        {PAGES.map((_, index) => (
+          <View key={index} style={styles.gesturePage}>
+            <Pressable
+              accessibilityLabel="이전 장"
+              style={styles.tapZone}
+              onPress={() => goBy(-1)}
+            />
+            {/* 가운데는 일부러 아무것도 하지 않는다 — 읽는 중 실수로 넘어가지 않게. */}
+            <View style={styles.tapZone} />
+            <Pressable
+              accessibilityLabel="다음 장"
+              style={styles.tapZone}
+              onPress={() => goBy(1)}
+            />
+          </View>
+        ))}
       </Animated.ScrollView>
     </View>
   );
@@ -236,102 +299,192 @@ export default function CardSlidePreviewScreen() {
 // ── 카드 ──────────────────────────────────────────────────────────────────
 
 /**
- * 덱에 놓인 카드 한 장.
+ * 덱에 놓인 카드 한 장 — 진짜 책장처럼 책등(왼쪽 모서리)을 축으로 뒤집힌다.
  *
- * p = 이 카드가 맨 앞에서 몇 장 뒤인지. 0이면 지금 보는 카드, 1이면 바로 다음,
- * 음수면 이미 넘긴 카드다. 스크롤 위치를 그대로 이 값으로 바꿔 쓴다.
+ * p = 이 페이지가 지금 보는 페이지보다 몇 장 앞(+)/뒤(-)에 있는지.
+ *  - p ∈ (-1, 0] : 지금 넘어가는 중이거나 방금 도착한 페이지 — 유일하게 회전
+ *    하는 페이지다. 나머지는 전부 제자리에 가만히 쌓여 있다(실제 책이 그렇듯,
+ *    안 넘긴 페이지도 넘긴 페이지도 스스로 움직이지 않는다 — 움직이는 건 지금
+ *    넘어가는 그 한 장뿐이다).
+ *  - p ≥ 1 : 아직 안 넘긴 페이지 — 오른쪽 가장자리로 살짝 새어 나온 채 대기.
+ *  - p ≤ -1 : 이미 넘긴 페이지 — 왼쪽 가장자리로 살짝 새어 나온 채 쌓여 있다.
+ *
+ * 회전 중인 페이지는 항상 스택의 다른 모든 페이지보다 위에 있어야 뒤집히는
+ * 게 보이므로, elevation·zIndex를 세 구간(회전 중/앞/뒤)에 따라 동적으로 준다.
+ *
+ * isCurrent(이 카드가 지금 '현재 페이지'인가)가 켜지는 순간, 물리적으로 넘어가는
+ * 동작(위 로직, flipX 기반)과는 완전히 별개로 콘텐츠 자체의 등장을 한 번 더
+ * 연출한다 — 곧장 보이는 대신 REVEAL_DELAY만큼 비어 있다가 REVEAL_DURATION에
+ * 걸쳐 천천히 떠오른다. 시간 기반이라 얼마나 빨리 넘겼든 이 페이스는 항상 같다.
  */
 function DeckCard({
   index,
   kind,
-  scrollX,
+  paragraph,
+  flipX,
+  isCurrent,
 }: {
   index: number;
   kind: PageKind;
-  scrollX: SharedValue<number>;
+  paragraph?: string;
+  flipX: SharedValue<number>;
+  isCurrent: boolean;
 }) {
-  const cardStyle = useAnimatedStyle(() => {
-    const p = index - scrollX.value / PAGE_W;
+  const contentOpacity = useSharedValue(0);
+  useEffect(() => {
+    if (!isCurrent) return;
+    contentOpacity.value = 0;
+    contentOpacity.value = withDelay(REVEAL_DELAY, withTiming(1, { duration: REVEAL_DURATION }));
+  }, [isCurrent, contentOpacity]);
 
-    // 이미 넘긴 카드 — 카메라 앞을 스치듯 커지면서 왼쪽으로 빠져나간다.
-    // u를 제곱해 뒤로 갈수록 빨라지게 만든 게 '샥' 하는 인상의 핵심이다.
-    if (p < 0) {
-      const u = Math.min(-p, 1);
-      const e = u * u;
+  /**
+   * 지금 이 페이지가 얼마나 젖혀져 있는지. 0(평평, 오른쪽에 놓임)~1(180도, 왼쪽에
+   * 뒤집혀 누움). 넘어가는 중인 한 장만 그 사이를 오가고, 아직 안 넘긴 장은 0,
+   * 이미 넘긴 장은 1로 고정 — 실제 책에서 넘어간 종이가 왼쪽에 그대로 눕는 것과 같다.
+   */
+  const turnProgress = (p: number) => {
+    'worklet';
+    if (p <= -1) return 1;
+    if (p > 0) return 0;
+    return interpolate(-p, [LIFT_FRACTION, 1], [0, 1], Extrapolation.CLAMP);
+  };
+
+  /** 경첩에 거는 변형 — 원근과 회전, 딱 둘뿐이다(이유는 아래 hingeStyle 주석). */
+  const rotateAtSpine = (angleDeg: number) => {
+    'worklet';
+    return [{ perspective: PERSPECTIVE }, { rotateY: `${angleDeg}deg` }];
+  };
+
+  /**
+   * 경첩(hinge) — 실제로 회전하는 건 카드가 아니라 이 뷰다. styles.hinge에 적힌
+   * 이유로 이 뷰의 '중심선'이 곧 책등이라, 여기에 순수 rotateY만 걸면 책등이
+   * 0도에서 180도까지 한 픽셀도 움직이지 않는다.
+   *
+   * transform에는 perspective와 rotateY 둘만 둔다 — translate를 섞으면 안 된다.
+   * 안드로이드는 넘겨받은 변형 행렬을 이동·회전·확대로 '분해'해서 네이티브 뷰
+   * 속성으로 적용하는데, 원근이 걸린 회전에 이동이 섞이면 그 분해가 정확하지
+   * 않다. 카드 중심을 축으로 돌린 뒤 이동으로 되돌리든(직접 계산), transformOrigin
+   * 스타일을 쓰든(RN 내부에서 똑같이 이동을 덧붙인다) 결과는 같아서, 중간 각도에서
+   * 종이가 통째로 앞으로 떠오르며 책등에서 떨어졌다가 0도·180도에서만 정확히
+   * 제자리로 돌아온다 — '떨어졌다 다시 붙는' 현상의 진짜 원인이 이거였다.
+   * 이동을 아예 없애고 뷰 자체를 축 위에 앉히는 이 방법만 그 분해를 통과한다.
+   */
+  const hingeStyle = useAnimatedStyle(() => {
+    const p = index - flipX.value / PAGE_W;
+    const angle = -turnProgress(p) * 180;
+
+    // 넘어가는 중인 한 장은 항상 나머지 위에 있어야 젖혀지는 게 보인다.
+    if (p > -1 && p <= 0) {
+      return { opacity: 1, elevation: 200, zIndex: 200, transform: rotateAtSpine(angle) };
+    }
+
+    // 아직 안 넘긴 페이지 — 바로 다음 한 장은 현재 장과 꼭 붙어 대기하고, 그보다
+    // 뒤쪽 장부터만 가장자리로 새어 나온다(아래 cardStyle). 그래야 넘기는 장의
+    // 오른쪽 면이 회전 전후로 분리되지 않고 실제 책장처럼 이어져 보인다.
+    if (p > 0) {
+      const stackDepth = Math.min(Math.max(p - 1, 0), EDGE_MAX_DEPTH);
       return {
-        opacity: 1 - Math.pow(u, 1.5),
-        elevation: 24,
-        transform: [
-          { perspective: PERSPECTIVE },
-          { translateX: -e * SCREEN_W * EXIT_TRAVEL },
-          { translateY: -e * 24 },
-          { rotateY: `${e * EXIT_TURN_DEG}deg` },
-          { rotateZ: `${-e * EXIT_TILT_DEG}deg` },
-          { scale: 1 + e * EXIT_ZOOM },
-        ],
+        opacity: interpolate(p, [1, 1 + EDGE_FADE_RANGE], [1, 0], Extrapolation.CLAMP),
+        elevation: 100 - stackDepth,
+        zIndex: 100 - stackDepth,
+        transform: rotateAtSpine(angle),
       };
     }
 
-    // 다가오는 카드 — 스택에서 올라오며 제자리를 살짝 지나쳤다가 멈춘다.
-    const behind = Math.min(p, VISIBLE_BEHIND);
+    // 이미 넘긴 페이지 — 책등 왼쪽에 뒤집힌 채 그대로 누워 있다(뒷면이 보인다).
+    // 넘어가던 장이 180도에서 멈추는 그 자리와 정확히 같은 자리라, 회전이 끝나는
+    // 순간 옮겨 앉는 티가 나지 않는다.
+    const depth = Math.min(-p - 1, EDGE_MAX_DEPTH);
     return {
-      opacity: interpolate(
-        p,
-        [VISIBLE_BEHIND, VISIBLE_BEHIND + 0.6],
-        [1, 0],
-        Extrapolation.CLAMP,
-      ),
-      elevation: 20 - behind * 6,
-      transform: [
-        { perspective: PERSPECTIVE },
-        { translateX: behind * STACK_X },
-        {
-          translateY: interpolate(
-            p,
-            [0, ARRIVE_PEAK, 1, VISIBLE_BEHIND],
-            [0, -12, STACK_Y, VISIBLE_BEHIND * STACK_Y],
-            Extrapolation.CLAMP,
-          ),
-        },
-        {
-          scale: interpolate(
-            p,
-            [0, ARRIVE_PEAK, 1, VISIBLE_BEHIND],
-            [1, 1 + ARRIVE_OVERSHOOT, 1 - STACK_SCALE, 1 - VISIBLE_BEHIND * STACK_SCALE],
-            Extrapolation.CLAMP,
-          ),
-        },
-      ],
+      opacity: interpolate(depth, [0, EDGE_FADE_RANGE], [1, 0], Extrapolation.CLAMP),
+      elevation: 100 - depth,
+      zIndex: 100 - depth,
+      transform: rotateAtSpine(angle),
     };
   });
 
-  // 빠져나갈수록 카드에 그늘이 깔린다 — 형태 변화만으로는 깊이가 잘 안 읽힌다.
-  const shadeStyle = useAnimatedStyle(() => {
-    const p = index - scrollX.value / PAGE_W;
-    if (p >= 0) return { opacity: 0 };
-    const u = Math.min(-p, 1);
-    return { opacity: Math.pow(u, 1.3) * 0.7 };
+  /**
+   * 쌓인 장이 가장자리로 새어 나오는 만큼 — 경첩이 아니라 그 안의 카드를 민다.
+   * 회전하는 뷰의 변형에 이동을 섞지 않으려는 것도 있고(위 hingeStyle 참고), 여기서
+   * 미는 방향이 마침 양쪽 다 맞아떨어지기도 한다: 책등에서 바깥쪽(+X)으로 밀면
+   * 안 넘긴 장은 그대로 오른쪽으로, 180도 뒤집혀 누운 장은 화면에서 왼쪽으로 나온다.
+   */
+  const cardStyle = useAnimatedStyle(() => {
+    const p = index - flipX.value / PAGE_W;
+    const depth = Math.min(Math.max(Math.abs(p) - 1, 0), EDGE_MAX_DEPTH);
+    return { transform: [{ translateX: depth * EDGE_PEEK }] };
   });
 
-  return (
-    <Animated.View style={[styles.card, cardStyle]}>
-      <View style={styles.cardBody}>
-        <CardContent kind={kind} />
-      </View>
+  // 앞면 — 90도를 넘기면 숨는다(뒷면이 대신 보인다). backfaceVisibility만으로는
+  // 안드로이드에서 가끔 안 먹혀 각도로 직접 opacity를 끈다(이중 안전장치).
+  const frontStyle = useAnimatedStyle(() => {
+    const p = index - flipX.value / PAGE_W;
+    const angle = turnProgress(p) * 180;
+    return { opacity: angle < 90 ? 1 : 0 };
+  });
 
-      <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
-        <LinearGradient
-          colors={['rgba(3,3,3,0)', 'rgba(3,3,3,0.9)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={StyleSheet.absoluteFill}
-        />
+  // 뒷면 — 종이 뒷면. 90도를 넘어야 보인다.
+  const backStyle = useAnimatedStyle(() => {
+    const p = index - flipX.value / PAGE_W;
+    const angle = turnProgress(p) * 180;
+    return { opacity: angle >= 90 ? 1 : 0 };
+  });
+
+  // 종이 위에 얹는 그늘 — 책등 쪽이 짙다. 각도 변화만으로는 종이가 젖혀지는 깊이가
+  // 잘 안 읽혀서 명암으로 보완한다. 빛을 가장 많이 등지는 중간 각도에서 제일 짙고,
+  // 다 넘어가 왼쪽에 누우면 다시 걷힌다 — 누운 종이까지 어두우면 안 되기 때문.
+  const shadeStyle = useAnimatedStyle(() => {
+    const p = index - flipX.value / PAGE_W;
+    if (!(p > -1 && p <= 0)) return { opacity: 0 };
+    const turnT = turnProgress(p);
+    return { opacity: interpolate(turnT, [0, 0.5, 0.9], [0, 0.55, 0], Extrapolation.CLAMP) };
+  });
+
+  const revealStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+
+  return (
+    <Animated.View style={[styles.hinge, hingeStyle]}>
+      <Animated.View style={[styles.card, cardStyle]}>
+        <Animated.View style={[styles.cardFace, frontStyle]}>
+          <Animated.View style={[styles.cardBody, revealStyle]}>
+            <CardContent kind={kind} paragraph={paragraph} />
+          </Animated.View>
+          <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
+            <LinearGradient
+              colors={['rgba(3,3,3,0.85)', 'rgba(3,3,3,0)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </Animated.View>
+        </Animated.View>
+
+        {/* 뒷면은 경첩과 함께 -180도까지 돌아가므로, 다시 읽을 수 있게 그 자리에서
+            180도를 되돌려 둔다(뒤집힌 채로 두 번 뒤집으면 제대로 보인다). */}
+        <Animated.View style={[styles.cardFace, styles.cardBack, backStyle]}>
+          <LinearGradient
+            colors={[Colors.beige10, Colors.bg]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+          {/* 뒷면도 같은 그늘을 쓰되, 이 면은 제자리에서 180도 뒤집혀 있으니 방향도
+              뒤집는다 — 그래야 앞면과 똑같이 책등 쪽이 짙게 보인다. */}
+          <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
+            <LinearGradient
+              colors={['rgba(3,3,3,0)', 'rgba(3,3,3,0.85)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </Animated.View>
+        </Animated.View>
       </Animated.View>
     </Animated.View>
   );
 }
 
-function CardContent({ kind }: { kind: PageKind }) {
+function CardContent({ kind, paragraph }: { kind: PageKind; paragraph?: string }) {
   if (kind === 'intro') {
     return (
       <>
@@ -352,6 +505,14 @@ function CardContent({ kind }: { kind: PageKind }) {
       <View style={styles.quoteBlock}>
         <Text style={styles.quoteText}>{QUOTE_TEXT}</Text>
         <Text style={styles.quoteSource}>{QUOTE_SOURCE}</Text>
+      </View>
+    );
+  }
+
+  if (kind === 'desc') {
+    return (
+      <View style={styles.descBlock}>
+        <Text style={styles.descText}>{paragraph}</Text>
       </View>
     );
   }
@@ -396,37 +557,14 @@ function CardHeading({ text }: { text: string }) {
   );
 }
 
-// ── 본문(전체화면) ─────────────────────────────────────────────────────────
-
-/** 카드가 아니라 화면을 가득 채우는 본문. 세로로 스크롤된다. */
-function DescPage({ insets }: { insets: { top: number; bottom: number } }) {
-  return (
-    <View style={styles.descPage}>
-      <ScrollView
-        style={styles.descScroll}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.descContent,
-          { paddingTop: insets.top + 32, paddingBottom: insets.bottom + 48 },
-        ]}>
-        {DESC_PARAGRAPHS.map((paragraph, index) => (
-          <Text key={index} style={styles.descText}>
-            {paragraph}
-          </Text>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
 // ── 문구 · 버튼 · 인디케이터 ───────────────────────────────────────────────
 
 /** 카드가 바뀌면 위 문구도 함께 바뀐다. 같은 문구가 이어지는 구간은 켜 둔 채로 넘어간다. */
-function Headlines({ top, scrollX }: { top: number; scrollX: SharedValue<number> }) {
+function Headlines({ top, flipX }: { top: number; flipX: SharedValue<number> }) {
   return (
     <View style={[styles.headlineArea, { top }]} pointerEvents="none">
       {HEADLINE_GROUPS.map((group) => (
-        <Headline key={group.text} group={group} scrollX={scrollX} />
+        <Headline key={group.text} group={group} flipX={flipX} />
       ))}
     </View>
   );
@@ -434,13 +572,13 @@ function Headlines({ top, scrollX }: { top: number; scrollX: SharedValue<number>
 
 function Headline({
   group,
-  scrollX,
+  flipX,
 }: {
   group: { text: string; from: number; to: number };
-  scrollX: SharedValue<number>;
+  flipX: SharedValue<number>;
 }) {
   const style = useAnimatedStyle(() => {
-    const x = scrollX.value / PAGE_W;
+    const x = flipX.value / PAGE_W;
     return {
       opacity: interpolate(
         x,
@@ -458,38 +596,37 @@ function Headline({
 }
 
 /**
- * 하단 버튼 — 본문에서는 사라지고, 마지막 해설 카드에서는 동그란 버튼 대신
- * '오늘의 공부 마치기'가 나온다.
+ * 하단 버튼 — 모든 카드에서 책갈피·오디오 버튼이 뜨다가, 마지막 해설 카드에서만
+ * '오늘의 공부 마치기'로 바뀐다. 전환 지점은 ANSWER_INDEX 하나로 정해지므로
+ * desc가 몇 장으로 나뉘든 자동으로 맞다.
  */
 function Actions({
   bottom,
-  scrollX,
-  roundEnabled,
+  flipX,
   finishEnabled,
   onFinish,
 }: {
   bottom: number;
-  scrollX: SharedValue<number>;
-  roundEnabled: boolean;
+  flipX: SharedValue<number>;
   finishEnabled: boolean;
   onFinish: () => void;
 }) {
   const roundStyle = useAnimatedStyle(() => {
-    const x = scrollX.value / PAGE_W;
-    return {
-      opacity: interpolate(x, [1, 2, 3, 4, 5], [1, 0, 1, 1, 0], Extrapolation.CLAMP),
-    };
+    const x = flipX.value / PAGE_W;
+    return { opacity: interpolate(x, [ANSWER_INDEX - 1, ANSWER_INDEX], [1, 0], Extrapolation.CLAMP) };
   });
   const finishStyle = useAnimatedStyle(() => {
-    const x = scrollX.value / PAGE_W;
-    return { opacity: interpolate(x, [4, 5], [0, 1], Extrapolation.CLAMP) };
+    const x = flipX.value / PAGE_W;
+    return {
+      opacity: interpolate(x, [ANSWER_INDEX - 1, ANSWER_INDEX], [0, 1], Extrapolation.CLAMP),
+    };
   });
 
   return (
     <View style={[styles.actions, { bottom }]} pointerEvents="box-none">
       <Animated.View
         style={[styles.roundRow, roundStyle]}
-        pointerEvents={roundEnabled ? 'auto' : 'none'}>
+        pointerEvents={finishEnabled ? 'none' : 'auto'}>
         <ScaleButton accessibilityLabel="책갈피" style={styles.roundButton} onPress={() => {}}>
           <SymbolView
             name={{ ios: 'bookmark', android: 'bookmark', web: 'bookmark' }}
@@ -520,29 +657,16 @@ function Actions({
   );
 }
 
-/**
- * 닫기 버튼 — 본문(전체화면)에서는 글자 위에 겹쳐 읽기를 방해하므로 문구·하단 버튼과
- * 함께 사라진다. 본문에서는 좌우로 넘겨 앞뒤 카드로 빠져나온다.
- */
+/** 닫기 버튼 — 모든 카드에서 늘 같은 자리에 뜬다. */
 function CloseButton({
   top,
-  scrollX,
-  enabled,
   onPress,
 }: {
   top: number;
-  scrollX: SharedValue<number>;
-  enabled: boolean;
   onPress: () => void;
 }) {
-  const style = useAnimatedStyle(() => {
-    const x = scrollX.value / PAGE_W;
-    return { opacity: interpolate(x, [1, 2, 3], [1, 0, 1], Extrapolation.CLAMP) };
-  });
   return (
-    <Animated.View
-      style={[styles.closeButton, { top }, style]}
-      pointerEvents={enabled ? 'auto' : 'none'}>
+    <View style={[styles.closeButton, { top }]}>
       <ScaleButton accessibilityLabel="미리보기 닫기" style={styles.closeHit} onPress={onPress}>
         <SymbolView
           name={{ ios: 'xmark', android: 'close', web: 'close' }}
@@ -550,28 +674,24 @@ function CloseButton({
           size={24}
         />
       </ScaleButton>
-    </Animated.View>
+    </View>
   );
 }
 
-/** 몇 장 중 몇 번째인지 알려 주는 점 — 본문에서는 같이 사라진다. */
-function Dots({ scrollX, bottom }: { scrollX: SharedValue<number>; bottom: number }) {
-  const areaStyle = useAnimatedStyle(() => {
-    const x = scrollX.value / PAGE_W;
-    return { opacity: interpolate(x, [1, 2, 3], [1, 0, 1], Extrapolation.CLAMP) };
-  });
+/** 몇 장 중 몇 번째인지 알려 주는 점. */
+function Dots({ flipX, bottom }: { flipX: SharedValue<number>; bottom: number }) {
   return (
-    <Animated.View style={[styles.dots, { bottom }, areaStyle]} pointerEvents="none">
+    <View style={[styles.dots, { bottom }]} pointerEvents="none">
       {PAGES.map((_, i) => (
-        <Dot key={i} index={i} scrollX={scrollX} />
+        <Dot key={i} index={i} flipX={flipX} />
       ))}
-    </Animated.View>
+    </View>
   );
 }
 
-function Dot({ index, scrollX }: { index: number; scrollX: SharedValue<number> }) {
+function Dot({ index, flipX }: { index: number; flipX: SharedValue<number> }) {
   const style = useAnimatedStyle(() => {
-    const d = Math.abs(index - scrollX.value / PAGE_W);
+    const d = Math.abs(index - flipX.value / PAGE_W);
     return {
       opacity: interpolate(d, [0, 1], [1, 0.28], Extrapolation.CLAMP),
       width: interpolate(d, [0, 1], [18, 6], Extrapolation.CLAMP),
@@ -647,17 +767,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  /**
+   * 경첩 — 종이를 젖히는 회전은 카드가 아니라 이 뷰가 맡는다.
+   *
+   * rotateY는 언제나 '뷰의 중심선'을 축으로 돈다. 그 축을 옮기는 방법(직접 이동을
+   * 앞뒤로 덧대든, transformOrigin을 쓰든)은 안드로이드에서 정확하지 않다 —
+   * DeckCard의 hingeStyle 주석 참고. 그래서 축을 옮기는 대신, 축 위에 뷰를 앉힌다:
+   * 카드 두 장 폭으로 만들고 오른쪽 절반에만 카드를 담으면 이 뷰의 중심선이 곧
+   * 카드의 왼쪽 모서리, 즉 책등이 된다. 그 상태로 순수 rotateY만 걸면 책등은
+   * 어느 각도에서도 움직이지 않는다.
+   *
+   * 화면에서 카드가 여전히 가운데 오도록, 왼쪽으로 카드 한 장만큼 당겨 둔다.
+   * (이 자리 잡기는 transform이 아니라 레이아웃으로 한다 — 위와 같은 이유로 회전하는
+   *  뷰의 transform에는 이동을 섞지 않는다.)
+   */
+  hinge: {
+    position: 'absolute',
+    left: (SCREEN_W - CARD_W) / 2 - CARD_W,
+    top: '50%',
+    marginTop: -CARD_H / 2,
+    width: CARD_W * 2,
+    height: CARD_H,
+  },
   card: {
     position: 'absolute',
+    // 경첩의 오른쪽 절반 — 카드의 왼쪽 모서리가 경첩의 중심선(=책등)에 맞물린다.
+    left: CARD_W,
+    top: 0,
     width: CARD_W,
     height: CARD_H,
     borderRadius: 20,
     backgroundColor: Colors.bg,
     overflow: 'hidden',
+    // 쌓임 순서는 경첩이 정하니(hingeStyle의 elevation) 여기 elevation은 그림자용이다.
+    elevation: 12,
     shadowColor: Colors.brown100,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 20,
+  },
+  // 앞면·뒷면 공용 — 카드를 꽉 채우고 뒷면이 보일 차례가 아니면 숨는다.
+  // backfaceVisibility는 opacity 토글의 이중 안전장치(안드로이드 일부 버전 대비).
+  cardFace: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backfaceVisibility: 'hidden',
+    backgroundColor: Colors.bg,
+  },
+  cardBack: {
+    // 부모가 -180도까지 돌아가므로, 그 안에서 180도를 다시 돌려 두면 다 넘어갔을
+    // 때 뒷면 내용이 거울상이 아니라 똑바로 보인다.
+    transform: [{ rotateY: '180deg' }],
   },
   cardBody: {
     flex: 1,
@@ -778,26 +941,15 @@ const styles = StyleSheet.create({
     color: Colors.brown100,
   },
 
-  // 본문 전체화면
-  descPage: {
-    width: PAGE_W,
-    height: '100%',
-    backgroundColor: Colors.bg,
-  },
-  // 부모 높이에 묶어 둬야 내용이 넘칠 때 세로로 스크롤된다 — 이게 없으면 ScrollView가
-  // 제 내용 높이만큼 늘어나 화면 밖으로 잘리기만 하고 스크롤이 걸리지 않는다.
-  descScroll: {
-    flex: 1,
-  },
-  descContent: {
-    paddingHorizontal: 28,
-    gap: 20,
+  // 본문 카드 — 문단 하나를 카드 한 장에 꽉 채운다(다른 카드처럼 alignSelf: stretch).
+  descBlock: {
+    alignSelf: 'stretch',
   },
   descText: {
     fontFamily: Fonts.regular,
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 28,
-    letterSpacing: tracking(15),
+    letterSpacing: tracking(16),
     color: Colors.brown100,
   },
 
