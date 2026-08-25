@@ -119,16 +119,18 @@ const SHADOW_FADE_TO = 0.95;
  */
 const TURN_DURATION = 600;
 /**
- * 페이지가 '현재 페이지'가 된 뒤 그 콘텐츠가 드러나는 방식 — 도착하자마자 바로
+ * 페이지가 향하는 페이지가 된 뒤 그 콘텐츠가 드러나는 방식 — 도착하자마자 바로
  * 보이는 대신, 잠깐 완전히 비어 있다가(REVEAL_DELAY) 천천히 떠오른다(REVEAL_
  * DURATION). 책장이 넘어가는 물리적 동작(TURN_DURATION)과는 별개의, 시간 기반
  * 애니메이션이다 — 얼마나 빨리 넘겼든 이 페이스만큼은 항상 똑같이 흘러간다.
  *
- * 이 대기는 '회전이 끝난 시점'부터 잰다. 예전엔 넘기기 시작하는 시점부터 재느라
- * 800이었는데(넘김 600 + 200), 이제 page가 회전이 끝난 뒤에 갱신되므로 그 200만
- * 남는다 — 손가락으로 보면 콘텐츠가 떠오르기 시작하는 시각은 전과 똑같다.
+ * 이 대기는 넘김이 '시작되는' 시점부터 잰다(회전이 끝나는 시점이 아니다). 쌓임 순서와
+ * 달리 리빌은 늦게 걸면 안 된다 — 한 번 본 페이지는 콘텐츠가 이미 떠 있는 상태라,
+ * 늦게 걸면 넘김 내내 뒷장 내용이 비쳐 보이다가 도착하는 순간 지워졌다 다시 떠오른다.
+ * 처음 보는 페이지(넘김 내내 비어 있다가 도착 후 떠오름)와도 동작이 어긋난다.
+ * 시작 시점에 걸면 지워지는 순간이 넘어가는 종이에 가려져 어느 쪽이든 똑같이 보인다.
  */
-const REVEAL_DELAY = 200;
+const REVEAL_DELAY = 800;
 const REVEAL_DURATION = 500;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
@@ -199,10 +201,15 @@ export default function CardSlidePreviewScreen() {
   const isDragging = useSharedValue(false);
   /**
    * 정착된 페이지 — 넘김이 '끝난' 뒤에만 바뀐다(넘기기 시작할 때가 아니다).
-   * 쌓임 순서와 콘텐츠 리빌, 하단 버튼이 이 값을 읽는다. 회전이 도는 동안 이 값이
-   * 그대로여야 레이어가 중간에 재배치되지 않는다 — 아래 layerOf 주석 참고.
+   * 쌓임 순서와 하단 버튼이 이 값을 읽는다. 회전이 도는 동안 이 값이 그대로여야
+   * 레이어가 중간에 재배치되지 않는다 — 아래 layerOf 주석 참고.
    */
   const [page, setPage] = useState(0);
+  /**
+   * 향해 가고 있는 페이지 — 넘김이 '시작될 때' 바뀐다. 콘텐츠 리빌만 이 값을 쓴다.
+   * 리빌은 레이어와 시점이 반대여야 한다(REVEAL_DELAY 주석 참고).
+   */
+  const [revealPage, setRevealPage] = useState(0);
   /**
    * 지금 넘어가는 중인 종이의 인덱스. n번과 n+1번 사이를 오갈 때 실제로 젖혀지는
    * 종이는 언제나 n번 한 장이다(앞으로 넘기면 0→180도, 되돌리면 180→0도).
@@ -251,6 +258,8 @@ export default function CardSlidePreviewScreen() {
     if (gliding.value && next === from) return;
     targetPage.current = next;
     gliding.value = true;
+    // 콘텐츠 리빌은 지금 건다 — 지워지는 순간이 넘어가는 종이에 가려져야 한다.
+    setRevealPage(next);
     // n↔n+1 사이에서 젖혀지는 종이는 늘 둘 중 작은 쪽이다. 제자리 정착(next === from)
     // 이면 지금 젖혀져 있던 종이를 그대로 둔 채 각도만 되돌린다.
     if (next !== from) setSheet(Math.min(from, next));
@@ -372,7 +381,7 @@ export default function CardSlidePreviewScreen() {
             paragraph={p.paragraph}
             flipX={flipX}
             layer={layerOf(index)}
-            isCurrent={page === index}
+            isCurrent={revealPage === index}
           />
         ))}
       </View>
