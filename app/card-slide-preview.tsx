@@ -16,6 +16,7 @@ import Animated, {
   interpolate,
   runOnJS,
   useAnimatedRef,
+  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -72,6 +73,12 @@ const PAGE_W = SCREEN_W;
 /** 전체 넘김 진행(0~1) 중 회전이 본격적으로 시작되기 전 준비 구간의 비율. */
 const LIFT_FRACTION = 0.12;
 /**
+ * 젖혀지는 종이가 책등 바로 위에 곧추서는(회전 90도) 지점 — 넘김 진행 0~1 기준.
+ * 준비 구간(LIFT_FRACTION)을 뺀 나머지의 절반이다. 이 순간 종이는 화면에서 폭이 0인
+ * 선이라, 쌓임 순서를 바꿔도 보이지 않는 유일한 지점이다(아래 layerOf 주석 참고).
+ */
+const SPINE_CROSSING = (1 + LIFT_FRACTION) / 2;
+/**
  * 원근 거리. 회전축(왼쪽 모서리)에서 가장 먼 점(오른쪽 모서리, CARD_W만큼 떨어져
  * 있다)이 이 거리를 넘어서면 투영이 뒤집혀 카드가 마름모꼴로 깨진다 — 카드 폭보다
  * 충분히 커야 한다(경험적으로 3~4배 이상).
@@ -96,15 +103,10 @@ const CARD_ELEVATION = 12;
 /**
  * 종이가 다 넘어갈 즈음 그림자를 걷어내는 구간(회전 진행 0~1 기준).
  *
- * 넘어가는 종이는 회전 내내 맨 위에 있고, 90도를 지나면 책등을 넘어 다음 장 위에
- * 걸친다. 그동안 이 종이의 드롭 그림자가 다음 장의 왼쪽 모서리에 어두운 띠를 그린다.
- * 회전이 끝나 레이어가 재배치되는 순간 그 종이가 아래로 내려가면 띠도 같이 사라지는데,
- * 그게 한 프레임에 일어나서 그림자가 톡 튀어 보였다(실측 6dp 폭). 레이어를 언제
- * 재배치하든 남는 문제라, 재배치 시점을 옮기는 대신 그때쯤 그림자가 이미 없도록
- * 회전 후반에 걸쳐 서서히 걷는다 — 교체 순간에는 달라질 것이 남아 있지 않다.
- *
- * 다 넘어가 왼쪽에 엎어진 종이에 그림자가 없는 것도 물리적으로 맞다(들려 있지 않으니).
- * 되돌리기는 이 과정이 그대로 거꾸로 돌아, 종이가 일어서면서 그림자가 다시 든다.
+ * 들려 있는 종이는 그림자를 드리우지만 왼쪽에 엎어져 누운 종이는 그렇지 않다. 각도가
+ * 아니라 시간처럼 서서히 걷는 이유는, 다 넘어간 자리에서 그림자가 남아 있으면 그 종이
+ * 위에 겹치는 다음 장의 그림자와 두 겹으로 보이기 때문이다. 되돌리기에서는 이 과정이
+ * 그대로 거꾸로 돌아, 종이가 일어서면서 그림자가 다시 든다.
  */
 const SHADOW_FADE_FROM = 0.6;
 const SHADOW_FADE_TO = 0.95;
@@ -207,12 +209,34 @@ export default function CardSlidePreviewScreen() {
    * 이 한 장만 넘김이 시작될 때부터 끝날 때까지 통째로 맨 위에 둔다.
    */
   const [turningSheet, setTurningSheet] = useState(0);
+  /**
+   * 젖혀지는 종이가 책등을 넘어갔는지(회전 90도 초과). 넘어가기 전에는 오른쪽 더미
+   * 위에, 넘어간 뒤에는 왼쪽 더미 위에 놓인다 — layerOf 주석 참고.
+   */
+  const [sheetPastSpine, setSheetPastSpine] = useState(false);
+  /** turningSheet를 UI 스레드에서도 읽으려고 같이 들고 있는 값(아래 반응에서 쓴다). */
+  const turningSheetX = useSharedValue(0);
   /** 지금 향해 가고 있는 페이지. */
   const targetPage = useRef(0);
   /** 우리 속도의 넘김이 지금 돌고 있는지 — 같은 넘김을 두 번 걸지 않으려고 둔다. */
   const gliding = useSharedValue(false);
   /** 드래그 중 손가락 밑에서 젖혀지는 종이가 바뀌었는지 보려고 둔다. */
   const draggedSheet = useSharedValue(-1);
+
+  /** 젖혀지는 종이를 정한다 — UI 스레드용 사본도 같이 맞춰 둔다. */
+  const setSheet = (sheet: number) => {
+    turningSheetX.value = sheet;
+    setTurningSheet(sheet);
+  };
+
+  // 종이가 책등을 넘는 순간(회전 90도)을 잡아 둔다. 매 프레임 레이어를 계산하지 않고,
+  // 이 경계를 지날 때 딱 한 번만 상태를 뒤집는다.
+  useAnimatedReaction(
+    () => flipX.value / PAGE_W - turningSheetX.value > SPINE_CROSSING,
+    (past, previous) => {
+      if (past !== previous) runOnJS(setSheetPastSpine)(past);
+    },
+  );
 
   /**
    * 넘김 시작 — flipX를 우리 속도로 옮기고, 젖혀지는 종이를 맨 위로 올린다.
@@ -229,7 +253,7 @@ export default function CardSlidePreviewScreen() {
     gliding.value = true;
     // n↔n+1 사이에서 젖혀지는 종이는 늘 둘 중 작은 쪽이다. 제자리 정착(next === from)
     // 이면 지금 젖혀져 있던 종이를 그대로 둔 채 각도만 되돌린다.
-    if (next !== from) setTurningSheet(Math.min(from, next));
+    if (next !== from) setSheet(Math.min(from, next));
     flipX.value = withTiming(next * PAGE_W, { duration: TURN_DURATION }, (finished) => {
       // 도중에 다른 넘김이 끼어들면 finished가 false로 온다 — 그때는 그 넘김이
       // 자기 몫을 정리하도록 두고 여기서는 아무것도 하지 않는다.
@@ -242,7 +266,7 @@ export default function CardSlidePreviewScreen() {
     if (targetPage.current !== arrived) return;
     gliding.value = false;
     setPage(arrived);
-    setTurningSheet(arrived);
+    setSheet(arrived);
   };
 
   // onScroll·onBeginDrag·onEndDrag를 한 핸들러 객체로 묶어야 셋 다 UI 스레드
@@ -260,7 +284,7 @@ export default function CardSlidePreviewScreen() {
       const sheet = Math.max(0, Math.min(PAGES.length - 1, Math.floor(rawX.value / PAGE_W)));
       if (sheet !== draggedSheet.value) {
         draggedSheet.value = sheet;
-        runOnJS(setTurningSheet)(sheet);
+        runOnJS(setSheet)(sheet);
       }
     },
     onBeginDrag: () => {
@@ -305,19 +329,30 @@ export default function CardSlidePreviewScreen() {
   };
 
   /**
-   * 그리기 순서. flipX가 아니라 '정착된 페이지'와 '젖혀지는 종이'로만 정해지므로
-   * 넘김이 도는 동안에는 값이 바뀌지 않고, 회전이 끝난 뒤에만 한 번 재배치된다.
-   * 예전엔 이 값을 flipX에서 매 프레임 계산해서, 넘김이 끝나는 순간 두 장의 순서가
-   * 서로 뒤바뀌며 그림자가 튀었다.
+   * 그리기 순서. flipX에서 매 프레임 계산하지 않고 '정착된 페이지', '젖혀지는 종이',
+   * '그 종이가 책등을 넘었는지' 셋으로만 정한다. 넘김이 도는 동안 값이 바뀌는 순간은
+   * 책등을 넘을 때 딱 한 번뿐이다.
    *
-   * 젖혀지는 종이는 책등 양쪽을 가로질러 지나가므로 무조건 맨 위다. 나머지는 실제
-   * 책의 물리적 순서 그대로 — 아직 안 넘긴 오른쪽 더미는 위 장이 먼저(작은 인덱스가
-   * 위), 이미 넘긴 왼쪽 더미는 방금 넘긴 장이 맨 위(큰 인덱스가 위)다. 두 더미는
-   * 책등을 사이에 두고 갈라져 있어 서로 겹치지 않으니, 오른쪽 더미를 통째로 왼쪽
-   * 더미보다 위에 둬도 화면에서는 차이가 없다.
+   * 두 더미는 책등을 사이에 두고 갈라져 서로 겹치지 않는다. 오른쪽(아직 안 넘긴)
+   * 더미는 위 장이 먼저고, 왼쪽(이미 넘긴) 더미는 방금 넘긴 장이 맨 위다.
+   *
+   * ── 젖혀지는 종이를 어디에 끼우나 ──────────────────────────────────────
+   * 회전 내내 무조건 맨 위에 두면 안 된다. 종이가 90도를 넘어 왼쪽으로 눕는 동안
+   * 현재 장 위에 걸치는데, 그 상태에서는 현재 장이 왼쪽 종이에 드리우는 그림자(책의
+   * 접힌 골)를 이 종이가 덮어 가린다. 그러다 넘김이 끝나 종이가 제자리(왼쪽 더미)로
+   * 내려가는 순간 그 그림자가 통째로 드러나면서 톡 튄다. 실측으로도 커밋 직전에는
+   * 책등 왼쪽 한 줄이 균일하게 182였다가 직후 163→133 그라데이션으로 바뀌었다.
+   * 되돌리기에서는 이 종이의 레이어가 커밋에서 바뀌지 않아 아무 일도 없었고, 그래서
+   * 정방향에서만 튀어 보였다.
+   *
+   * 그래서 실제 책과 같은 규칙을 쓴다 — 종이는 책등 오른쪽에 있는 동안 오른쪽 더미
+   * 위에, 왼쪽으로 넘어간 뒤에는 왼쪽 더미 위에 놓인다. 자리를 바꾸는 시점이 정확히
+   * 90도인데, 그 순간 종이는 폭이 0인 선이라 어느 쪽에 있든 화면에 아무 차이가 없다.
+   * 넘김 중에 순서를 바꿔도 보이지 않는 지점은 여기뿐이다.
    */
   const layerOf = (index: number) => {
-    if (index === turningSheet) return 300;
+    // 왼쪽으로 넘어간 종이: 왼쪽 더미(≤100) 위, 오른쪽 더미(≥199) 아래.
+    if (index === turningSheet) return sheetPastSpine ? 150 : 300;
     if (index >= page) return 200 - (index - page);
     return 100 - (page - 1 - index);
   };
