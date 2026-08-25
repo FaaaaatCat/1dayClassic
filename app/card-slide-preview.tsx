@@ -156,29 +156,26 @@ const BUY_COVER_H = 152;
 const BUY_BOOK_TITLE = '듣기의 말들';
 
 /**
- * 퀴즈 장이 읽어 오는 항목. 이 화면이 보여 주는 인용문과 본문이 『듣기의 말들』 002
- * 항목이라 퀴즈도 같은 항목의 것을 쓴다. 제목이 아니라 id로 찾는 건 이 파일에서는
- * 한 항목만 콕 집어 쓰기 때문이다.
+ * 이 미리보기가 보여 주는 항목 — 인용문·본문·퀴즈를 전부 여기서 읽는다.
+ *
+ * 예전에는 같은 글이 이 파일에도 하드코딩돼 있었는데, 데이터가 생기고 나니 한 문장이
+ * 두 군데에 사는 꼴이라 실제로 어긋나 있었다(책 본문은 다섯 문단인데 화면에는 네
+ * 문단만 들어 있었다). 이제 여기 한 곳에서만 읽는다.
+ *
+ * 제목이 아니라 id로 찾는 건 이 화면이 항목 하나를 콕 집어 쓰기 때문이다.
  */
 const PREVIEW_LESSON_ID = 'listening_2_admit_first';
-const PREVIEW_QUIZ = (() => {
+const PREVIEW_LESSON = (() => {
   const lesson = listeningData.lessons.find((l) => l.id === PREVIEW_LESSON_ID);
   if (!lesson) console.warn(`[card-slide-preview] 없는 항목입니다: ${PREVIEW_LESSON_ID}`);
-  return lesson?.quiz;
+  return lesson;
 })();
 
-const QUOTE_TEXT =
-  '모든 인류에게 부여된 천부적인 재능일 수 있는 경청이 어려워진 이유는 무얼까.\n' +
-  '심리학자인 데이비드 배너 교수는 우리 대부분이 이미 스스로 잘 듣는 사람이라 생각하기 때문이라고 지적한다.';
-const QUOTE_SOURCE = '애덤 S. 맥휴, 『경청, 영혼의 치료제』\n(윤종석 옮김, 도서출판 CUP, 2018)';
-
+const QUOTE_TEXT = PREVIEW_LESSON?.epigraph ?? '';
+const QUOTE_SOURCE = PREVIEW_LESSON?.epigraphBy ?? '';
 /** 본문 — 문단마다 카드 한 장씩 담는다(PAGES 참고). */
-const DESC_PARAGRAPHS = [
-  '‘익명의 알코올중독자들’ Alcoholics Anonymous을 비롯한 재활모임에서 가장 중히 여기는 것이 무엇인지 아는가? 본인이 중독이라는 사실을 인정하는 것이 1단계다. 내가 중독에 빠졌고 내 힘으로는 중독에서 벗어날 수 없다는 사실을 수긍하는 것. 이것이 이뤄지지 않으면 재활센터에서도 치료에 들어가지 않는다.',
-  '경청도 마찬가지다. 내가 잘 듣는 사람이 아니라는 것. 달리 말하면 말하기 중독에 빠져서 자꾸 상대의 말을 끊는다는 걸 인정하지 않고서는 듣기의 갱신은 요원하다.',
-  '과분하게도 내 주위엔 훌륭한 분들이 즐비하다. 그런 분들이 대화 자리에서 툭하면 상대의 말허리를 끊는다. 물론 고의는 아니다. 자기도 모르게 그런다. 커피 타임이나 술자리에서 가만히 살펴보라. 남이 말할 때 끼어들 기회를 엿보며 화제를 주도하려는 사람이 태반이다. 그런데 나 정도면 잘 들어 준다고 자평한다. 이 책을 쓰기 전까지는 나 자신도 그런 줄 몰랐다.',
-  '우리는 대화의 기준이 너무 낮다. 정보 교환, 감정 배설, 재치있는 말의 경연장 정도로 간주한다. 그러니 자신이 잘 듣는다고 착각하는 것도 무리는 아니다.',
-];
+const DESC_PARAGRAPHS = PREVIEW_LESSON?.story ?? [];
+const PREVIEW_QUIZ = PREVIEW_LESSON?.quiz;
 
 const PAGES: Page[] = [
   { kind: 'intro', headline: '듣기 공부의 시간입니다.' },
