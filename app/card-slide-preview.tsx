@@ -191,9 +191,6 @@ const PAGES: Page[] = [
 /** 카드 안에 눌러야 할 것이 있는 장 — 이 장이 펼쳐져 있을 때만 손가락을 받는다. */
 const INTERACTIVE_KINDS: PageKind[] = ['buy'];
 
-/** 하단이 '오늘의 공부 마치기'로 바뀌는 페이지 — 마지막 장이다. */
-const LAST_INDEX = PAGES.length - 1;
-
 /**
  * 같은 문구가 이어지는 페이지는 한 덩어리로 묶는다 — 안 그러면 0→1처럼 문구가 같은
  * 구간에서도 글자가 한 번 사라졌다 다시 나타나 깜빡인다.
@@ -246,6 +243,11 @@ export default function CardSlidePreviewScreen() {
   /** 퀴즈 팝업이 열려 있는지. */
   const [quizOpen, setQuizOpen] = useState(false);
   const closeQuiz = () => setQuizOpen(false);
+  /** 해설까지 읽고 마치기 — 팝업을 닫고 미리보기에서 나간다. */
+  const finishStudy = () => {
+    setQuizOpen(false);
+    router.replace('/settings');
+  };
 
   useEffect(() => {
     enter.value = withDelay(ENTER_DELAY, withTiming(1, { duration: ENTER_DURATION }));
@@ -323,8 +325,6 @@ export default function CardSlidePreviewScreen() {
     startTurn(next);
   };
 
-  const onLastPage = page === LAST_INDEX;
-
   return (
     <View style={styles.screen}>
       <Headlines top={insets.top + 24} flipX={flipX} />
@@ -333,13 +333,7 @@ export default function CardSlidePreviewScreen() {
 
       <Dots flipX={flipX} bottom={insets.bottom + 104} />
 
-      <Actions
-        bottom={insets.bottom + 40}
-        flipX={flipX}
-        finishEnabled={onLastPage}
-        onFinish={() => router.replace('/settings')}
-        onOpenNote={() => setNoteOpen(true)}
-      />
+      <Actions bottom={insets.bottom + 40} onOpenNote={() => setNoteOpen(true)} />
 
       {/* 제스처 층 — 페이지마다 좌/중/우 3등분 탭 영역만 있다(가운데는 무동작). */}
       <Animated.ScrollView
@@ -435,7 +429,7 @@ export default function CardSlidePreviewScreen() {
             style={styles.noteModalBody}
             contentContainerStyle={styles.quizModalContent}
             showsVerticalScrollIndicator={false}>
-            <QuizSolver />
+            <QuizSolver onFinish={finishStudy} />
           </ScrollView>
         </View>
       </Modal>
@@ -735,7 +729,7 @@ function CardContent({
  * 틀린 보기는 표시만 하고 그대로 남긴다 — 무엇을 짚었는지 보이고 다시 고를 수 있다.
  * 정답을 맞히면 그 아래에 해설이 열리고 더는 고를 수 없다.
  */
-function QuizSolver() {
+function QuizSolver({ onFinish }: { onFinish: () => void }) {
   const [picked, setPicked] = useState<number[]>([]);
 
   if (!PREVIEW_QUIZ) {
@@ -782,7 +776,18 @@ function QuizSolver() {
         })}
       </View>
 
-      {solved ? <Text style={styles.quizExplanation}>{PREVIEW_QUIZ.explanation}</Text> : null}
+      {solved ? (
+        <>
+          <Text style={styles.quizExplanation}>{PREVIEW_QUIZ.explanation}</Text>
+          {/* 오늘의 공부는 여기서 맺는다 — 해설까지 읽고 나면 더 볼 것이 없다. */}
+          <ScaleButton
+            accessibilityLabel="오늘의 공부 마치기"
+            style={styles.finishButton}
+            onPress={onFinish}>
+            <Text style={styles.finishText}>오늘의 공부 마치기</Text>
+          </ScaleButton>
+        </>
+      ) : null}
     </View>
   );
 }
@@ -1002,40 +1007,15 @@ function Headline({
 }
 
 /**
- * 하단 버튼 — 모든 카드에서 책갈피·오디오 버튼이 뜨다가, 마지막 해설 카드에서만
- * '오늘의 공부 마치기'로 바뀐다. 전환 지점은 LAST_INDEX 하나로 정해지므로
- * desc가 몇 장으로 나뉘든 자동으로 맞다.
+ * 하단 버튼 — 책갈피·오디오·메모. 어느 장에서나 그대로 떠 있다.
+ *
+ * 예전에는 마지막 장에서 '오늘의 공부 마치기'로 바뀌었는데, 그 버튼은 퀴즈 팝업의
+ * 해설 아래로 옮겼다. 해설까지 읽은 지점이 공부를 맺는 자리라서다.
  */
-function Actions({
-  bottom,
-  flipX,
-  finishEnabled,
-  onFinish,
-  onOpenNote,
-}: {
-  bottom: number;
-  flipX: SharedValue<number>;
-  finishEnabled: boolean;
-  onFinish: () => void;
-  /** 감상 노트를 전체 화면으로 연다. */
-  onOpenNote: () => void;
-}) {
-  const roundStyle = useAnimatedStyle(() => {
-    const x = flipX.value / PAGE_W;
-    return { opacity: interpolate(x, [LAST_INDEX - 1, LAST_INDEX], [1, 0], Extrapolation.CLAMP) };
-  });
-  const finishStyle = useAnimatedStyle(() => {
-    const x = flipX.value / PAGE_W;
-    return {
-      opacity: interpolate(x, [LAST_INDEX - 1, LAST_INDEX], [0, 1], Extrapolation.CLAMP),
-    };
-  });
-
+function Actions({ bottom, onOpenNote }: { bottom: number; onOpenNote: () => void }) {
   return (
     <View style={[styles.actions, { bottom }]} pointerEvents="box-none">
-      <Animated.View
-        style={[styles.roundRow, roundStyle]}
-        pointerEvents={finishEnabled ? 'none' : 'auto'}>
+      <View style={styles.roundRow}>
         <ScaleButton accessibilityLabel="책갈피" style={styles.roundButton} onPress={() => {}}>
           <SymbolView
             name={{ ios: 'bookmark', android: 'bookmark', web: 'bookmark' }}
@@ -1057,18 +1037,7 @@ function Actions({
             size={24}
           />
         </ScaleButton>
-      </Animated.View>
-
-      <Animated.View
-        style={[styles.finishWrap, finishStyle]}
-        pointerEvents={finishEnabled ? 'auto' : 'none'}>
-        <ScaleButton
-          accessibilityLabel="오늘의 공부 마치기"
-          style={styles.finishButton}
-          onPress={onFinish}>
-          <Text style={styles.finishText}>오늘의 공부 마치기</Text>
-        </ScaleButton>
-      </Animated.View>
+      </View>
     </View>
   );
 }
@@ -1563,11 +1532,6 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     backgroundColor: Colors.brown50,
-  },
-  finishWrap: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
   },
   finishButton: {
     height: 52,
