@@ -33,6 +33,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import listeningData from '@/data/listening.json';
+import { useShelf } from '@/context/ShelfContext';
 import { getCatalogBooks } from '@/lib/catalog';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
@@ -154,7 +155,7 @@ interface Page {
 const BUY_COVER_H = 152;
 
 /** 구매 안내 장에서 소개하는 책 — 카탈로그에서 제목으로 찾는다(BuyBlock 주석 참고). */
-const BUY_BOOK_TITLE = '듣기의 말들';
+const PREVIEW_BOOK_TITLE = '듣기의 말들';
 
 /**
  * 이 미리보기가 보여 주는 항목 — 인용문·본문·퀴즈를 전부 여기서 읽는다.
@@ -241,12 +242,27 @@ export default function CardSlidePreviewScreen() {
   const [noteOpen, setNoteOpen] = useState(false);
   const closeNote = () => setNoteOpen(false);
   /** 퀴즈 팝업이 열려 있는지. */
+  const { isInShelf, addToShelf } = useShelf();
   const [quizOpen, setQuizOpen] = useState(false);
   const closeQuiz = () => setQuizOpen(false);
-  /** 해설까지 읽고 마치기 — 팝업을 닫고 미리보기에서 나간다. */
+  /**
+   * 해설까지 읽고 마치기 — 이 책을 내 서재에 담아 두고 그 상세로 보낸다.
+   *
+   * 서재는 카탈로그 uuid로 관리하고(ShelfContext 주석 참고), 상세 라우트의 id는 학습
+   * 콘텐츠가 있는 책이면 BookId, 아니면 카탈로그 uuid다 — 서재 목록이 여는 방식과 같다.
+   * 이미 담겨 있으면 그대로 두고 넘어간다.
+   */
   const finishStudy = () => {
     setQuizOpen(false);
-    router.replace('/settings');
+    if (!PREVIEW_BOOK) {
+      router.replace('/settings');
+      return;
+    }
+    if (!isInShelf(PREVIEW_BOOK.id)) addToShelf(PREVIEW_BOOK.id);
+    router.replace({
+      pathname: '/library/book/[id]',
+      params: { id: PREVIEW_BOOK.bookId ?? PREVIEW_BOOK.id },
+    });
   };
 
   useEffect(() => {
@@ -811,9 +827,9 @@ function QuizSolver({ onFinish }: { onFinish: () => void }) {
  * <Image source={{ uri }}>로 그린다). 제목으로 찾는 건 lib/purchase.ts와 같은 이유다 —
  * 사람이 읽고 고치기 쉽고, 카탈로그 제목은 서로 겹치지 않는다.
  */
-const BUY_BOOK = (() => {
-  const book = getCatalogBooks().find((b) => b.title === BUY_BOOK_TITLE);
-  if (!book) console.warn(`[card-slide-preview] 카탈로그에 없는 제목입니다: ${BUY_BOOK_TITLE}`);
+const PREVIEW_BOOK = (() => {
+  const book = getCatalogBooks().find((b) => b.title === PREVIEW_BOOK_TITLE);
+  if (!book) console.warn(`[card-slide-preview] 카탈로그에 없는 제목입니다: ${PREVIEW_BOOK_TITLE}`);
   return book;
 })();
 
@@ -831,9 +847,9 @@ function BuyBlock({ onOpenQuiz }: { onOpenQuiz: () => void }) {
       </Text>
 
       <View style={styles.buyCoverArea} pointerEvents="none">
-        {BUY_BOOK ? (
+        {PREVIEW_BOOK ? (
           <Image
-            source={{ uri: BUY_BOOK.coverImage }}
+            source={{ uri: PREVIEW_BOOK.coverImage }}
             style={styles.buyCover}
             resizeMode="contain"
             accessibilityIgnoresInvertColors
@@ -843,7 +859,7 @@ function BuyBlock({ onOpenQuiz }: { onOpenQuiz: () => void }) {
 
       <Pressable
         style={[styles.cardButton, styles.buyButton]}
-        onPress={() => BUY_BOOK && router.push(`/book/${BUY_BOOK.id}`)}
+        onPress={() => PREVIEW_BOOK && router.push(`/book/${PREVIEW_BOOK.id}`)}
       >
         <Text style={styles.cardButtonText}>￦8,820</Text>
       </Pressable>
