@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -20,6 +21,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
+  withSequence,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
@@ -118,6 +120,14 @@ const TURN_DURATION = 600;
  */
 const ENTER_DELAY = 800;
 const ENTER_DURATION = 500;
+/**
+ * 감상 노트 줄 간격(dp). 줄노트 바탕의 줄 간격이자 글자 줄높이다 — 두 값이 여기 하나
+ * 에서 나와야 글이 줄 위에 앉는다(NoteBlock 주석 참고).
+ */
+const NOTE_LINE_H = 26;
+/** 토스트가 떠 있는 시간과 뜨고 지는 시간(ms). */
+const TOAST_HOLD = 1800;
+const TOAST_FADE = 220;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
@@ -197,6 +207,12 @@ export default function CardSlidePreviewScreen() {
   const gliding = useSharedValue(false);
   /** 입장할 때 첫 장 본문이 한 번 떠오르는 값(ENTER_DELAY 주석 참고). */
   const enter = useSharedValue(0);
+  /**
+   * 토스트를 띄운 시각. 값이 바뀔 때마다 새로 뜬다 — 연달아 눌러도 매번 다시 뜨도록
+   * 불리언이 아니라 시각을 쓴다(같은 값이면 리액트가 갱신을 건너뛴다).
+   */
+  const [toastAt, setToastAt] = useState(0);
+  const showToast = () => setToastAt(Date.now());
 
   useEffect(() => {
     enter.value = withDelay(ENTER_DELAY, withTiming(1, { duration: ENTER_DURATION }));
@@ -278,25 +294,6 @@ export default function CardSlidePreviewScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* 카드층 — 보이기만 하고 손가락은 위의 ScrollView가 받는다.
-          쌓임 순서는 인덱스 역순으로 한 번 박아 두고 다시는 건드리지 않는다(styles.deck
-          아래 zIndex). 어느 순간에도 실제로 그려지는 건 두 장뿐이라, 앞장이 뒷장 위에만
-          있으면 그걸로 끝이다 — DeckCard 주석 참고. */}
-      <View style={styles.deck} pointerEvents="none">
-        <LeftEdge flipX={flipX} />
-        {PAGES.map((p, index) => (
-          <DeckCard
-            key={index}
-            index={index}
-            kind={p.kind}
-            paragraph={p.paragraph}
-            flipX={flipX}
-            enter={enter}
-          />
-        ))}
-        <FoldShade />
-      </View>
-
       <Headlines top={insets.top + 24} flipX={flipX} />
 
       <CloseButton top={insets.top + 24} onPress={() => router.replace('/settings')} />
@@ -337,6 +334,35 @@ export default function CardSlidePreviewScreen() {
           </View>
         ))}
       </Animated.ScrollView>
+
+      {/* 카드층 — 제스처 층보다 뒤에 둬야 감상 노트가 손가락을 받는다. 제스처 층은
+          제 영역 안의 터치를 다 가져가므로 그 아래에 있으면 입력칸까지 닿지 않는다.
+          box-none이라 카드 자체는 터치를 잡지 않고, 지금 펼쳐진 장의 입력칸·버튼만
+          잡는다 — 나머지 자리의 스와이프·탭은 그대로 아래 제스처 층으로 내려간다.
+          그리기 순서는 이래도 달라지지 않는다. 위 문구·점·버튼은 zIndex가 더 높고
+          (2~3) 카드층은 0이라, 앞에 있든 뒤에 있든 그 위로 올라오지 않는다.
+
+          쌓임 순서는 인덱스 역순으로 한 번 박아 두고 다시는 건드리지 않는다. 어느
+          순간에도 실제로 그려지는 건 두 장뿐이라, 앞장이 뒷장 위에만 있으면 그걸로
+          끝이다 — DeckCard 주석 참고. */}
+      <View style={styles.deck} pointerEvents="box-none">
+        <LeftEdge flipX={flipX} />
+        {PAGES.map((p, index) => (
+          <DeckCard
+            key={index}
+            index={index}
+            kind={p.kind}
+            paragraph={p.paragraph}
+            flipX={flipX}
+            enter={enter}
+            interactive={p.kind === 'note' && page === index}
+            onNoteSaved={showToast}
+          />
+        ))}
+        <FoldShade />
+      </View>
+
+      <Toast bottom={insets.bottom + 40} at={toastAt} />
     </View>
   );
 }
@@ -440,6 +466,8 @@ function DeckCard({
   paragraph,
   flipX,
   enter,
+  interactive,
+  onNoteSaved,
 }: {
   index: number;
   kind: PageKind;
@@ -447,6 +475,9 @@ function DeckCard({
   flipX: SharedValue<number>;
   /** 입장할 때 한 번 도는 값 — 첫 장 본문이 떠오르는 연출에만 쓴다. */
   enter: SharedValue<number>;
+  /** 이 장이 지금 손가락을 받을 수 있는가(감상 노트 입력용). */
+  interactive: boolean;
+  onNoteSaved: () => void;
 }) {
   /**
    * 이 장이 얼마나 젖혀져 있는지. 0(평평, 오른쪽에 놓임)~1(180도, 왼쪽에 엎어짐).
@@ -512,11 +543,15 @@ function DeckCard({
   });
 
   return (
-    <Animated.View style={[styles.hinge, { zIndex: PAGES.length - index }, hingeStyle]}>
+    <Animated.View
+      style={[styles.hinge, { zIndex: PAGES.length - index }, hingeStyle]}
+      // 손가락은 이 장이 지금 펼쳐져 있을 때만 받는다 — 안 그러면 보이지도 않는 장의
+      // 입력칸이 다른 페이지에서 스와이프를 가로챈다.
+      pointerEvents={interactive ? 'box-none' : 'none'}>
       <View style={styles.card}>
         <Animated.View style={[styles.cardFace, frontStyle]}>
           <Animated.View style={[styles.cardBody, bodyStyle]}>
-            <CardContent kind={kind} paragraph={paragraph} />
+            <CardContent kind={kind} paragraph={paragraph} onNoteSaved={onNoteSaved} />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
             <LinearGradient
@@ -530,7 +565,11 @@ function DeckCard({
 
         {/* 뒷면은 경첩과 함께 -180도까지 돌아가므로, 다시 읽을 수 있게 그 자리에서
             180도를 되돌려 둔다(뒤집힌 채로 두 번 뒤집으면 제대로 보인다). */}
-        <Animated.View style={[styles.cardFace, styles.cardBack, backStyle]}>
+        <Animated.View
+          style={[styles.cardFace, styles.cardBack, backStyle]}
+          // 장식용 면이다. 카드를 통째로 덮으면서 앞면보다 뒤에 그려지는 탓에, 손가락이
+          // 앞면(감상 노트 입력칸)까지 내려가지 못하고 여기서 걸린다.
+          pointerEvents="none">
           <LinearGradient
             colors={[Colors.beige10, Colors.bg]}
             start={{ x: 0, y: 0 }}
@@ -553,7 +592,16 @@ function DeckCard({
   );
 }
 
-function CardContent({ kind, paragraph }: { kind: PageKind; paragraph?: string }) {
+function CardContent({
+  kind,
+  paragraph,
+  onNoteSaved,
+}: {
+  kind: PageKind;
+  paragraph?: string;
+  /** 감상 노트를 기록했을 때 — 화면 아래 토스트를 띄우라고 알린다. */
+  onNoteSaved: () => void;
+}) {
   if (kind === 'intro') {
     return (
       <>
@@ -587,19 +635,7 @@ function CardContent({ kind, paragraph }: { kind: PageKind; paragraph?: string }
   }
 
   if (kind === 'note') {
-    return (
-      <View style={styles.formBlock}>
-        <CardHeading text="감상 노트" />
-        <View style={styles.noteInput}>
-          <Text style={styles.notePlaceholder}>
-            이 곡을 들으며 떠오른 생각을 자유롭게 적어보세요.
-          </Text>
-        </View>
-        <View style={styles.noteSubmit}>
-          <Text style={styles.noteSubmitText}>기록하기</Text>
-        </View>
-      </View>
-    );
+    return <NoteBlock onSaved={onNoteSaved} />;
   }
 
   // quiz · answer — 지금은 자리만 잡아 둔 문구다.
@@ -610,6 +646,117 @@ function CardContent({ kind, paragraph }: { kind: PageKind; paragraph?: string }
         {kind === 'quiz' ? '퀴즈 내용이 들어갑니다.' : '해설내용이 들어갑니다.'}
       </Text>
     </View>
+  );
+}
+
+/**
+ * 감상 노트 — 카드 위쪽부터 채우고 '기록하기'는 아래에 붙는다.
+ *
+ * 줄노트 바탕은 이미지가 아니라 여기서 직접 그린다. 줄 간격과 글자 줄높이가 같은 값
+ * (NOTE_LINE_H)에서 나와야 글이 줄 위에 앉는데, 이미지로 하면 두 값이 따로 놀아 글이
+ * 길어질수록 어긋난다. 카드 크기도 기기마다 달라서(CARD_W) 고정 이미지는 늘어나거나
+ * 잘리지만, 그려서 채우면 남는 높이만큼 알아서 늘어나고 해상도와도 무관하다.
+ *
+ * 저장은 아직 없다(테스트 화면). 기록하면 입력칸이 그 자리에서 기록 보기로 바뀌고
+ * 버튼이 '수정하기'가 된다.
+ */
+function NoteBlock({ onSaved }: { onSaved: () => void }) {
+  const [draft, setDraft] = useState('');
+  const [saved, setSaved] = useState<{ date: string; text: string } | null>(null);
+
+  const submit = () => {
+    if (saved) {
+      setSaved(null); // 수정하기 — 쓰던 글 그대로 다시 입력칸으로
+      return;
+    }
+    const text = draft.trim();
+    if (!text) return; // 빈 노트는 기록하지 않는다
+    setSaved({ date: todayLabel(), text });
+    onSaved();
+  };
+
+  return (
+    <View style={styles.noteBlock}>
+      <CardHeading text="감상 노트" />
+
+      <View style={styles.notePaper}>
+        <RuledLines />
+        {saved ? (
+          <View style={styles.noteSavedBody}>
+            <Text style={styles.noteDate}>{saved.date}</Text>
+            <Text style={styles.noteText}>{saved.text}</Text>
+          </View>
+        ) : (
+          <TextInput
+            style={styles.noteText}
+            value={draft}
+            onChangeText={setDraft}
+            placeholder={'이 곡을 들으며 떠오른 생각을\n자유롭게 적어보세요.'}
+            placeholderTextColor={Colors.brown50}
+            multiline
+            textAlignVertical="top"
+            underlineColorAndroid="transparent"
+          />
+        )}
+      </View>
+
+      <Pressable style={styles.noteSubmit} onPress={submit}>
+        <Text style={styles.noteSubmitText}>{saved ? '수정하기' : '기록하기'}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * 줄노트의 줄. 노트 영역을 넘치도록 넉넉히 그려 두고 넘치는 만큼은 잘라 낸다
+ * (styles.notePaper의 overflow) — 영역 높이를 재서 개수를 맞출 필요가 없다.
+ */
+function RuledLines() {
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {Array.from({ length: Math.ceil(CARD_H / NOTE_LINE_H) }, (_, i) => (
+        <View key={i} style={styles.ruledLine} />
+      ))}
+    </View>
+  );
+}
+
+/** 기록한 날짜 표시 — 실제 저장은 없으니 누른 시각을 그대로 쓴다. */
+function todayLabel() {
+  const now = new Date();
+  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
+}
+
+/**
+ * 화면 아래 토스트 — 감상 노트를 기록했을 때 잠깐 떴다 사라진다.
+ *
+ * at은 '띄운 시각'이다. 같은 버튼을 연달아 눌러도 값이 매번 달라져 그때마다 다시
+ * 뜬다(불리언이면 true→true라 리액트가 갱신을 건너뛴다). 0은 아직 한 번도 안 띄운
+ * 상태라 입장하자마자 뜨는 일이 없다.
+ */
+function Toast({ bottom, at }: { bottom: number; at: number }) {
+  const shown = useSharedValue(0);
+
+  useEffect(() => {
+    if (!at) return;
+    // 떠오름 → 잠깐 머묾 → 사라짐을 한 줄기로 잇는다. 두 번 대입하면 뒤엣것이 앞엣것을
+    // 지워서(지연 동안 현재값을 붙들고 있으므로) 아예 뜨지 않는다.
+    shown.value = withSequence(
+      withTiming(1, { duration: TOAST_FADE }),
+      withDelay(TOAST_HOLD, withTiming(0, { duration: TOAST_FADE })),
+    );
+  }, [at, shown]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: shown.value,
+    // 뜰 때 살짝 떠오른다 — 아래에서 밀려 올라오는 만큼만.
+    transform: [{ translateY: (1 - shown.value) * 8 }],
+  }));
+
+  return (
+    <Animated.View style={[styles.toast, { bottom }, style]} pointerEvents="none">
+      <Text style={styles.toastText}>감상노트에 저장되었습니다.</Text>
+    </Animated.View>
   );
 }
 
@@ -986,18 +1133,42 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(14),
     color: Colors.brown100,
   },
-  noteInput: {
-    height: 120,
-    borderRadius: 4,
-    padding: 12,
-    backgroundColor: Colors.beige10,
+  /** 감상 노트 — 위에서부터 채우고 버튼은 아래에 붙는다(가운데 정렬이 아니다). */
+  noteBlock: {
+    flex: 1,
+    alignSelf: 'stretch',
+    gap: 12,
   },
-  notePlaceholder: {
+  /** 줄노트 바탕이 깔리는 영역. 남는 높이를 다 차지하고 넘치는 줄은 여기서 잘린다. */
+  notePaper: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  ruledLine: {
+    height: NOTE_LINE_H,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.brown10,
+  },
+  /** 입력칸과 기록 보기 공용 — 줄 간격과 같은 줄높이여야 글이 줄 위에 앉는다. */
+  noteText: {
+    flex: 1,
+    padding: 0,
     fontFamily: Fonts.regular,
     fontSize: 13,
-    lineHeight: 20,
+    lineHeight: NOTE_LINE_H,
     letterSpacing: tracking(13),
-    color: Colors.brown50,
+    color: Colors.brown100,
+  },
+  noteSavedBody: {
+    flex: 1,
+  },
+  /** 기록한 날짜 — 본문과 같은 줄 위에 앉도록 줄높이를 맞춘다. */
+  noteDate: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    lineHeight: NOTE_LINE_H,
+    letterSpacing: tracking(12),
+    color: Colors.beige100,
   },
   noteSubmit: {
     height: 44,
@@ -1011,6 +1182,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: tracking(14),
     color: Colors.brown100,
+  },
+  /** 화면 아래 토스트. 카드·버튼보다 위에 뜬다. */
+  toast: {
+    position: 'absolute',
+    left: 28,
+    right: 28,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: Colors.brown90,
+    zIndex: 10,
+  },
+  toastText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 13,
+    letterSpacing: tracking(13),
+    color: Colors.bg,
   },
   quizText: {
     fontFamily: Fonts.semiBold,
