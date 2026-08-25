@@ -33,7 +33,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import listeningData from '@/data/listening.json';
-import { useShelf } from '@/context/ShelfContext';
 import { getCatalogBooks } from '@/lib/catalog';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
@@ -242,15 +241,14 @@ export default function CardSlidePreviewScreen() {
   const [noteOpen, setNoteOpen] = useState(false);
   const closeNote = () => setNoteOpen(false);
   /** 퀴즈 팝업이 열려 있는지. */
-  const { isInShelf, addToShelf } = useShelf();
   const [quizOpen, setQuizOpen] = useState(false);
   const closeQuiz = () => setQuizOpen(false);
   /**
-   * 해설까지 읽고 마치기 — 이 책을 내 서재에 담아 두고 그 상세로 보낸다.
+   * 해설까지 읽고 마치기 — 지금 읽던 책의 상세로 보낸다.
    *
-   * 서재는 카탈로그 uuid로 관리하고(ShelfContext 주석 참고), 상세 라우트의 id는 학습
-   * 콘텐츠가 있는 책이면 BookId, 아니면 카탈로그 uuid다 — 서재 목록이 여는 방식과 같다.
-   * 이미 담겨 있으면 그대로 두고 넘어간다.
+   * 상세 라우트의 id는 학습 콘텐츠가 있는 책이면 BookId, 아니면 카탈로그 uuid다.
+   * 서재 목록이 여는 식(book.bookId ?? book.id)을 그대로 따랐다. 이 화면은 서재에
+   * 담겼는지와 무관하다 — 상세 화면이 id를 카탈로그에서 푸므로 담기지 않은 책도 열린다.
    */
   const finishStudy = () => {
     setQuizOpen(false);
@@ -258,7 +256,6 @@ export default function CardSlidePreviewScreen() {
       router.replace('/settings');
       return;
     }
-    if (!isInShelf(PREVIEW_BOOK.id)) addToShelf(PREVIEW_BOOK.id);
     router.replace({
       pathname: '/library/book/[id]',
       params: { id: PREVIEW_BOOK.bookId ?? PREVIEW_BOOK.id },
