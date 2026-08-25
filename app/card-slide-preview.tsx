@@ -4,6 +4,7 @@ import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -28,6 +29,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
+import { getCatalogBooks } from '@/lib/catalog';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
 /**
@@ -131,7 +133,7 @@ const TOAST_FADE = 220;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
-type PageKind = 'intro' | 'quote' | 'desc' | 'note' | 'quiz' | 'answer';
+type PageKind = 'intro' | 'quote' | 'desc' | 'buy' | 'note' | 'quiz' | 'answer';
 
 interface Page {
   kind: PageKind;
@@ -140,6 +142,9 @@ interface Page {
   /** desc 카드 전용 — 이 카드 한 장에 담을 문단 하나. */
   paragraph?: string;
 }
+
+/** 구매 안내 장에서 소개하는 책 — 카탈로그에서 제목으로 찾는다(BuyBlock 주석 참고). */
+const BUY_BOOK_TITLE = '듣기의 말들';
 
 const QUOTE_TEXT =
   '모든 인류에게 부여된 천부적인 재능일 수 있는 경청이 어려워진 이유는 무얼까.\n' +
@@ -159,10 +164,15 @@ const PAGES: Page[] = [
   { kind: 'quote', headline: '듣기 공부의 시간입니다.' },
   // 본문은 문단마다 카드 한 장 — 문단이 늘거나 줄면 카드 수도 그만큼 자동으로 바뀐다.
   ...DESC_PARAGRAPHS.map((paragraph): Page => ({ kind: 'desc', paragraph })),
+  // 본문이 끝나면 구매 안내 한 장을 끼우고 감상 노트로 넘어간다.
+  { kind: 'buy' },
   { kind: 'note', headline: '오늘의 공부는 어떠셨나요.\n떠오르는 게 있다면 적어봅시다.' },
   { kind: 'quiz', headline: '잘 읽었는지 확인해볼까요?' },
   { kind: 'answer', headline: '정답입니다!' },
 ];
+
+/** 카드 안에 눌러야 할 것이 있는 장 — 이 장이 펼쳐져 있을 때만 손가락을 받는다. */
+const INTERACTIVE_KINDS: PageKind[] = ['buy', 'note'];
 
 /** 하단이 '오늘의 공부 마치기'로 바뀌는 페이지. */
 const ANSWER_INDEX = PAGES.findIndex((p) => p.kind === 'answer');
@@ -355,7 +365,7 @@ export default function CardSlidePreviewScreen() {
             paragraph={p.paragraph}
             flipX={flipX}
             enter={enter}
-            interactive={p.kind === 'note' && page === index}
+            interactive={INTERACTIVE_KINDS.includes(p.kind) && page === index}
             onNoteSaved={showToast}
           />
         ))}
@@ -634,6 +644,10 @@ function CardContent({
     );
   }
 
+  if (kind === 'buy') {
+    return <BuyBlock />;
+  }
+
   if (kind === 'note') {
     return <NoteBlock onSaved={onNoteSaved} />;
   }
@@ -660,6 +674,49 @@ function CardContent({
  * 저장은 아직 없다(테스트 화면). 기록하면 입력칸이 그 자리에서 기록 보기로 바뀌고
  * 버튼이 '수정하기'가 된다.
  */
+/**
+ * 구매 안내 장 — 본문이 끝나고 감상 노트로 넘어가기 전에 낀다.
+ *
+ * 표지는 새로 받지 않고 카탈로그에 있는 것을 그대로 쓴다(상세 화면도 같은 URL을
+ * <Image source={{ uri }}>로 그린다). 제목으로 찾는 건 lib/purchase.ts와 같은 이유다 —
+ * 사람이 읽고 고치기 쉽고, 카탈로그 제목은 서로 겹치지 않는다.
+ */
+const BUY_BOOK = (() => {
+  const book = getCatalogBooks().find((b) => b.title === BUY_BOOK_TITLE);
+  if (!book) console.warn(`[card-slide-preview] 카탈로그에 없는 제목입니다: ${BUY_BOOK_TITLE}`);
+  return book;
+})();
+
+function BuyBlock() {
+  const router = useRouter();
+
+  return (
+    <View style={styles.buyBlock}>
+      <Text style={styles.buyLead}>
+        {'뒷 내용이 더 궁금하시다면\n‘잘 듣는’ 사람이 되기 위한 필독도서 『듣기의 말들』 을 구매해보세요.'}
+      </Text>
+
+      {BUY_BOOK ? (
+        <Image
+          source={{ uri: BUY_BOOK.coverImage }}
+          style={styles.buyCover}
+          resizeMode="contain"
+          accessibilityIgnoresInvertColors
+        />
+      ) : (
+        // 카탈로그에서 못 찾아도 자리는 지켜 둔다 — 레이아웃이 튀지 않게.
+        <View style={styles.buyCover} />
+      )}
+
+      <Pressable
+        style={styles.cardButton}
+        onPress={() => BUY_BOOK && router.push(`/book/${BUY_BOOK.id}`)}>
+        <Text style={styles.cardButtonText}>구매하러 가기 {'>'}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function NoteBlock({ onSaved }: { onSaved: () => void }) {
   const [draft, setDraft] = useState('');
   const [saved, setSaved] = useState<{ date: string; text: string } | null>(null);
@@ -700,8 +757,8 @@ function NoteBlock({ onSaved }: { onSaved: () => void }) {
         )}
       </View>
 
-      <Pressable style={styles.noteSubmit} onPress={submit}>
-        <Text style={styles.noteSubmitText}>{saved ? '수정하기' : '기록하기'}</Text>
+      <Pressable style={styles.cardButton} onPress={submit}>
+        <Text style={styles.cardButtonText}>{saved ? '수정하기' : '기록하기'}</Text>
       </Pressable>
     </View>
   );
@@ -1170,14 +1227,36 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(12),
     color: Colors.beige100,
   },
-  noteSubmit: {
+  /** 구매 안내 장 — 문구·표지·버튼을 위에서부터 차례로 놓는다. */
+  buyBlock: {
+    flex: 1,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: 16,
+  },
+  buyLead: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    lineHeight: 22,
+    letterSpacing: tracking(14),
+    textAlign: 'center',
+    color: Colors.brown100,
+  },
+  /** 표지는 남는 높이를 다 쓰되 비율은 지킨다(resizeMode contain). */
+  buyCover: {
+    flex: 1,
+    width: '100%',
+  },
+  /** 카드 안 버튼 공용 — 감상 노트의 기록하기와 구매 안내의 구매하러 가기가 같이 쓴다. */
+  cardButton: {
+    alignSelf: 'stretch',
     height: 44,
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.beige50,
   },
-  noteSubmitText: {
+  cardButtonText: {
     fontFamily: Fonts.semiBold,
     fontSize: 14,
     letterSpacing: tracking(14),
