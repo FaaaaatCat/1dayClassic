@@ -16,7 +16,6 @@ import Animated, {
   interpolate,
   runOnJS,
   useAnimatedRef,
-  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
@@ -68,48 +67,53 @@ const PAGE_W = SCREEN_W;
 // ── 넘김 감각을 만지는 값들 ────────────────────────────────────────────────
 // 실제 책장처럼 책등(왼쪽 모서리)을 축으로 뻣뻣한 종이 한 장이 뒤집힌다. 스크롤
 // 위치에 선형으로 매핑하지 않고, 초반의 짧은 준비 구간 뒤 책등을 축으로 180도
-// 돌아가게 만든다(TURN). 종이의 곡면은 순수 JS로 표현할 수 없지만, 각도별 명암과
-// 회전 타이밍만으로도 종이 느낌이 꽤 산다.
+// 돌아가게 만든다. 종이의 곡면은 아직 표현하지 않지만, 각도별 명암과 회전 타이밍
+// 만으로도 종이 느낌이 꽤 산다.
 /** 전체 넘김 진행(0~1) 중 회전이 본격적으로 시작되기 전 준비 구간의 비율. */
 const LIFT_FRACTION = 0.12;
-/**
- * 젖혀지는 종이가 책등 바로 위에 곧추서는(회전 90도) 지점 — 넘김 진행 0~1 기준.
- * 준비 구간(LIFT_FRACTION)을 뺀 나머지의 절반이다. 이 순간 종이는 화면에서 폭이 0인
- * 선이라, 쌓임 순서를 바꿔도 보이지 않는 유일한 지점이다(아래 layerOf 주석 참고).
- */
-const SPINE_CROSSING = (1 + LIFT_FRACTION) / 2;
 /**
  * 원근 거리. 회전축(왼쪽 모서리)에서 가장 먼 점(오른쪽 모서리, CARD_W만큼 떨어져
  * 있다)이 이 거리를 넘어서면 투영이 뒤집혀 카드가 마름모꼴로 깨진다 — 카드 폭보다
  * 충분히 커야 한다(경험적으로 3~4배 이상).
  */
 const PERSPECTIVE = 1600;
-/** 이미 넘긴(왼쪽)·아직 안 넘긴(오른쪽) 페이지가 새어 나오는 폭(px, 한 장당). */
-const EDGE_PEEK = 3;
-/** 가장자리로 보여줄 최대 장수 — 그 이상 쌓여도 더 넓어지지 않는다. */
-const EDGE_MAX_DEPTH = 4;
-/**
- * 두 장 이상 떨어진 페이지는 아예 opacity 0으로 지운다. elevation만으로 여러 겹친
- * 절대배치 뷰의 그리기 순서를 맡기면, 뒤로 갈수록 elevation 값이 조밀해지다 못해
- * 겹쳐 버려서(4장 넘게 떨어진 페이지는 전부 같은 값으로 클램프된다) 애니메이션 중
- * 안드로이드가 프레임 사이에 순서를 잘못 정렬해 아주 먼 페이지가 한 프레임 튀어
- * 보이는 문제가 있었다. z-order에 기대는 대신 안 보여야 할 페이지는 아예 안 그려
- * 지게 만들면 순서가 어떻게 꼬이든 안전하다 — 덤으로 다음/이전 페이지가 서서히
- * 드러나는 효과도 생긴다.
- */
-const EDGE_FADE_RANGE = 1.2;
 /** 카드가 바닥에서 떠 보이게 하는 그림자 높이(dp). */
 const CARD_ELEVATION = 12;
 /**
  * 종이가 다 넘어갈 즈음 그림자를 걷어내는 구간(회전 진행 0~1 기준).
  *
- * 들려 있는 종이는 그림자를 드리우지만 왼쪽에 엎어져 누운 종이는 그렇지 않다. 각도가
- * 아니라 시간처럼 서서히 걷는 이유는, 다 넘어간 자리에서 그림자가 남아 있으면 그 종이
- * 위에 겹치는 다음 장의 그림자와 두 겹으로 보이기 때문이다. 되돌리기에서는 이 과정이
- * 그대로 거꾸로 돌아, 종이가 일어서면서 그림자가 다시 든다.
+ * 왼쪽에 눕는 자리는 넘김이 끝나면 빈 종이(LeftEdge)가 이어받는데, 그 빈 종이에는
+ * 그림자가 없다. 젖혀지던 종이가 그림자를 단 채로 사라지면 교대하는 순간 책등의
+ * 어두운 띠가 톡 튄다 — 실측으로 책등 왼쪽 한 줄이 균일한 182에서 166→133
+ * 그라데이션으로 한 프레임에 바뀌었다. 그래서 교대 시점에는 이미 그림자가 없도록
+ * 회전 후반에 걸쳐 서서히 걷는다.
+ *
+ * 엎어져 누운 종이에 그림자가 없는 것 자체도 물리적으로 맞다(들려 있지 않으니).
+ * 되돌리기에서는 이 과정이 그대로 거꾸로 돌아, 종이가 일어서면서 그림자가 다시 든다.
  */
 const SHADOW_FADE_FROM = 0.6;
 const SHADOW_FADE_TO = 0.95;
+/**
+ * 밑장의 본문이 떠오르는 구간 — p(이 장이 넘김의 어디쯤에 있나) 기준이다.
+ *
+ * 밑장은 젖혀지는 종이가 들리는 순간부터 드러나기 시작하는데, 그때 본문이 이미 떠
+ * 있으면 뒷장 내용이 비쳐 보인다. 그래서 종이가 책등을 넘어간 뒤에야(p < 0.44,
+ * 회전으로 치면 100도쯤) 떠오르기 시작해 거의 도착할 때(p ≤ 0.14) 다 찬다.
+ *
+ * 시간이 아니라 넘김 진행에 매다는 것이 핵심이다. 예전에는 타이머로 걸었는데, 그러면
+ * 언제 걸었는지와 지금 종이가 어디까지 넘어갔는지가 어긋날 수 있어서 한 번 본
+ * 페이지로 되돌아올 때마다 본문이 비쳤다 사라졌다 했다. 진행도에 매달면 어긋날 여지
+ * 자체가 없고, 되돌리기에서도 같은 식이 그대로 거꾸로 돈다.
+ */
+const CONTENT_IN_FROM = 0.44;
+const CONTENT_IN_TO = 0.14;
+/**
+ * 왼쪽에 눕는 빈 종이(LeftEdge)가 드러나는 구간 — 넘김 진행 0~1 기준.
+ * 첫 장을 넘기는 동안에만 의미가 있고 그 뒤로는 계속 1이다. 이 구간에서는 젖혀지는
+ * 종이가 이미 책등을 넘어 그 자리를 덮고 있어서 드러나는 과정이 보이지 않는다.
+ */
+const LEFT_EDGE_IN_FROM = 0.62;
+const LEFT_EDGE_IN_TO = 0.75;
 /**
  * 손을 뗀 뒤(스크롤 정착)나 탭으로 넘어갈 때, 카드가 실제로 넘어가는 데 걸리는
  * 시간(ms). 예전엔 이 값이 없었다 — ScrollView의 페이지 스냅에 그대로 얹혀서
@@ -119,19 +123,12 @@ const SHADOW_FADE_TO = 0.95;
  */
 const TURN_DURATION = 600;
 /**
- * 페이지가 향하는 페이지가 된 뒤 그 콘텐츠가 드러나는 방식 — 도착하자마자 바로
- * 보이는 대신, 잠깐 완전히 비어 있다가(REVEAL_DELAY) 천천히 떠오른다(REVEAL_
- * DURATION). 책장이 넘어가는 물리적 동작(TURN_DURATION)과는 별개의, 시간 기반
- * 애니메이션이다 — 얼마나 빨리 넘겼든 이 페이스만큼은 항상 똑같이 흘러간다.
- *
- * 이 대기는 넘김이 '시작되는' 시점부터 잰다(회전이 끝나는 시점이 아니다). 쌓임 순서와
- * 달리 리빌은 늦게 걸면 안 된다 — 한 번 본 페이지는 콘텐츠가 이미 떠 있는 상태라,
- * 늦게 걸면 넘김 내내 뒷장 내용이 비쳐 보이다가 도착하는 순간 지워졌다 다시 떠오른다.
- * 처음 보는 페이지(넘김 내내 비어 있다가 도착 후 떠오름)와도 동작이 어긋난다.
- * 시작 시점에 걸면 지워지는 순간이 넘어가는 종이에 가려져 어느 쪽이든 똑같이 보인다.
+ * 화면에 처음 들어왔을 때 첫 장 본문이 떠오르는 방식 — 곧장 보이는 대신 잠깐 비어
+ * 있다가(ENTER_DELAY) 천천히 떠오른다(ENTER_DURATION). 넘김과는 무관한, 입장할 때
+ * 한 번뿐인 연출이다.
  */
-const REVEAL_DELAY = 800;
-const REVEAL_DURATION = 500;
+const ENTER_DELAY = 800;
+const ENTER_DURATION = 500;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
@@ -200,69 +197,31 @@ export default function CardSlidePreviewScreen() {
   const flipX = useSharedValue(0);
   const isDragging = useSharedValue(false);
   /**
-   * 정착된 페이지 — 넘김이 '끝난' 뒤에만 바뀐다(넘기기 시작할 때가 아니다).
-   * 쌓임 순서와 하단 버튼이 이 값을 읽는다. 회전이 도는 동안 이 값이 그대로여야
-   * 레이어가 중간에 재배치되지 않는다 — 아래 layerOf 주석 참고.
+   * 정착된 페이지 — 넘김이 끝난 뒤에만 바뀐다. 하단 버튼이 어느 페이지인지 알아야
+   * 해서 남겨 둔 값이고, 카드가 어떻게 그려지는지에는 전혀 관여하지 않는다. 카드는
+   * 전부 flipX 하나로만 그려진다(DeckCard 주석 참고).
    */
   const [page, setPage] = useState(0);
-  /**
-   * 향해 가고 있는 페이지 — 넘김이 '시작될 때' 바뀐다. 콘텐츠 리빌만 이 값을 쓴다.
-   * 리빌은 레이어와 시점이 반대여야 한다(REVEAL_DELAY 주석 참고).
-   */
-  const [revealPage, setRevealPage] = useState(0);
-  /**
-   * 지금 넘어가는 중인 종이의 인덱스. n번과 n+1번 사이를 오갈 때 실제로 젖혀지는
-   * 종이는 언제나 n번 한 장이다(앞으로 넘기면 0→180도, 되돌리면 180→0도).
-   * 이 한 장만 넘김이 시작될 때부터 끝날 때까지 통째로 맨 위에 둔다.
-   */
-  const [turningSheet, setTurningSheet] = useState(0);
-  /**
-   * 젖혀지는 종이가 책등을 넘어갔는지(회전 90도 초과). 넘어가기 전에는 오른쪽 더미
-   * 위에, 넘어간 뒤에는 왼쪽 더미 위에 놓인다 — layerOf 주석 참고.
-   */
-  const [sheetPastSpine, setSheetPastSpine] = useState(false);
-  /** turningSheet를 UI 스레드에서도 읽으려고 같이 들고 있는 값(아래 반응에서 쓴다). */
-  const turningSheetX = useSharedValue(0);
   /** 지금 향해 가고 있는 페이지. */
   const targetPage = useRef(0);
   /** 우리 속도의 넘김이 지금 돌고 있는지 — 같은 넘김을 두 번 걸지 않으려고 둔다. */
   const gliding = useSharedValue(false);
-  /** 드래그 중 손가락 밑에서 젖혀지는 종이가 바뀌었는지 보려고 둔다. */
-  const draggedSheet = useSharedValue(-1);
+  /** 입장할 때 첫 장 본문이 한 번 떠오르는 값(ENTER_DELAY 주석 참고). */
+  const enter = useSharedValue(0);
 
-  /** 젖혀지는 종이를 정한다 — UI 스레드용 사본도 같이 맞춰 둔다. */
-  const setSheet = (sheet: number) => {
-    turningSheetX.value = sheet;
-    setTurningSheet(sheet);
-  };
+  useEffect(() => {
+    enter.value = withDelay(ENTER_DELAY, withTiming(1, { duration: ENTER_DURATION }));
+  }, [enter]);
 
-  // 종이가 책등을 넘는 순간(회전 90도)을 잡아 둔다. 매 프레임 레이어를 계산하지 않고,
-  // 이 경계를 지날 때 딱 한 번만 상태를 뒤집는다.
-  useAnimatedReaction(
-    () => flipX.value / PAGE_W - turningSheetX.value > SPINE_CROSSING,
-    (past, previous) => {
-      if (past !== previous) runOnJS(setSheetPastSpine)(past);
-    },
-  );
-
-  /**
-   * 넘김 시작 — flipX를 우리 속도로 옮기고, 젖혀지는 종이를 맨 위로 올린다.
-   * 회전이 끝난 뒤에야 page를 갱신한다(commitTurn). 그 사이 레이어는 손대지 않는다.
-   */
+  /** 넘김 시작 — flipX를 우리 속도로 최종 위치까지 옮긴다. */
   const startTurn = (next: number) => {
-    const from = targetPage.current;
     // 이미 그 자리로 가고 있으면 그대로 둔다 — 다시 걸면 애니메이션이 처음부터 다시
     // 시작돼 넘김이 끊겨 보인다. 탭 넘김이 옮겨 둔 스크롤이 정착하면서 onSettle이
     // 뒤따라 들어오는 경우가 대표적이고, 안드로이드가 정착 이벤트를 두 번 흘리는
     // 경우도 여기서 걸러진다.
-    if (gliding.value && next === from) return;
+    if (gliding.value && next === targetPage.current) return;
     targetPage.current = next;
     gliding.value = true;
-    // 콘텐츠 리빌은 지금 건다 — 지워지는 순간이 넘어가는 종이에 가려져야 한다.
-    setRevealPage(next);
-    // n↔n+1 사이에서 젖혀지는 종이는 늘 둘 중 작은 쪽이다. 제자리 정착(next === from)
-    // 이면 지금 젖혀져 있던 종이를 그대로 둔 채 각도만 되돌린다.
-    if (next !== from) setSheet(Math.min(from, next));
     flipX.value = withTiming(next * PAGE_W, { duration: TURN_DURATION }, (finished) => {
       // 도중에 다른 넘김이 끼어들면 finished가 false로 온다 — 그때는 그 넘김이
       // 자기 몫을 정리하도록 두고 여기서는 아무것도 하지 않는다.
@@ -270,12 +229,11 @@ export default function CardSlidePreviewScreen() {
     });
   };
 
-  /** 회전이 완전히 끝난 뒤 — 여기서만 페이지 상태와 레이어 순서를 재배치한다. */
+  /** 회전이 끝난 뒤 — 하단 버튼이 읽는 페이지 번호만 맞춰 둔다. */
   const commitTurn = (arrived: number) => {
     if (targetPage.current !== arrived) return;
     gliding.value = false;
     setPage(arrived);
-    setSheet(arrived);
   };
 
   // onScroll·onBeginDrag·onEndDrag를 한 핸들러 객체로 묶어야 셋 다 UI 스레드
@@ -285,16 +243,7 @@ export default function CardSlidePreviewScreen() {
       rawX.value = event.contentOffset.x;
       // 드래그하는 동안만 1:1로 따라간다 — 정착 애니메이션(네이티브, 빠르다)이
       // 진행되는 동안은 따라가지 않고 아래 onSettle이 우리 속도로 직접 옮긴다.
-      if (!isDragging.value) return;
-      flipX.value = rawX.value;
-      // 손가락이 페이지 경계를 넘으면 젖혀지는 종이도 다음 장으로 넘어간다. 이때는
-      // 두 장 다 평평하게 누워 있는 순간이라(하나는 0도, 하나는 180도) 순서가 바뀌어도
-      // 눈에 띄지 않는다 — 레이어를 옮겨도 되는 유일한 지점이다.
-      const sheet = Math.max(0, Math.min(PAGES.length - 1, Math.floor(rawX.value / PAGE_W)));
-      if (sheet !== draggedSheet.value) {
-        draggedSheet.value = sheet;
-        runOnJS(setSheet)(sheet);
-      }
+      if (isDragging.value) flipX.value = rawX.value;
     },
     onBeginDrag: () => {
       isDragging.value = true;
@@ -302,7 +251,6 @@ export default function CardSlidePreviewScreen() {
       // 안 그러면 드래그 시작이 이전 애니메이션과 씨름하는 것처럼 느껴진다.
       flipX.value = rawX.value;
       gliding.value = false; // 방금 그 애니메이션을 끊었으니 더는 돌고 있지 않다
-      draggedSheet.value = -1; // 젖혀지는 종이는 첫 onScroll에서 다시 정한다
     },
     onEndDrag: () => {
       isDragging.value = false;
@@ -337,42 +285,16 @@ export default function CardSlidePreviewScreen() {
     startTurn(next);
   };
 
-  /**
-   * 그리기 순서. flipX에서 매 프레임 계산하지 않고 '정착된 페이지', '젖혀지는 종이',
-   * '그 종이가 책등을 넘었는지' 셋으로만 정한다. 넘김이 도는 동안 값이 바뀌는 순간은
-   * 책등을 넘을 때 딱 한 번뿐이다.
-   *
-   * 두 더미는 책등을 사이에 두고 갈라져 서로 겹치지 않는다. 오른쪽(아직 안 넘긴)
-   * 더미는 위 장이 먼저고, 왼쪽(이미 넘긴) 더미는 방금 넘긴 장이 맨 위다.
-   *
-   * ── 젖혀지는 종이를 어디에 끼우나 ──────────────────────────────────────
-   * 회전 내내 무조건 맨 위에 두면 안 된다. 종이가 90도를 넘어 왼쪽으로 눕는 동안
-   * 현재 장 위에 걸치는데, 그 상태에서는 현재 장이 왼쪽 종이에 드리우는 그림자(책의
-   * 접힌 골)를 이 종이가 덮어 가린다. 그러다 넘김이 끝나 종이가 제자리(왼쪽 더미)로
-   * 내려가는 순간 그 그림자가 통째로 드러나면서 톡 튄다. 실측으로도 커밋 직전에는
-   * 책등 왼쪽 한 줄이 균일하게 182였다가 직후 163→133 그라데이션으로 바뀌었다.
-   * 되돌리기에서는 이 종이의 레이어가 커밋에서 바뀌지 않아 아무 일도 없었고, 그래서
-   * 정방향에서만 튀어 보였다.
-   *
-   * 그래서 실제 책과 같은 규칙을 쓴다 — 종이는 책등 오른쪽에 있는 동안 오른쪽 더미
-   * 위에, 왼쪽으로 넘어간 뒤에는 왼쪽 더미 위에 놓인다. 자리를 바꾸는 시점이 정확히
-   * 90도인데, 그 순간 종이는 폭이 0인 선이라 어느 쪽에 있든 화면에 아무 차이가 없다.
-   * 넘김 중에 순서를 바꿔도 보이지 않는 지점은 여기뿐이다.
-   */
-  const layerOf = (index: number) => {
-    // 왼쪽으로 넘어간 종이: 왼쪽 더미(≤100) 위, 오른쪽 더미(≥199) 아래.
-    if (index === turningSheet) return sheetPastSpine ? 150 : 300;
-    if (index >= page) return 200 - (index - page);
-    return 100 - (page - 1 - index);
-  };
-
   const onAnswer = page === ANSWER_INDEX;
 
   return (
     <View style={styles.screen}>
-      {/* 카드층 — 보이기만 하고 손가락은 위의 ScrollView가 받는다. 렌더 순서는 상관없다
-          (layerOf가 정해 준 elevation/zIndex로 쌓임 순서가 정해진다). */}
+      {/* 카드층 — 보이기만 하고 손가락은 위의 ScrollView가 받는다.
+          쌓임 순서는 인덱스 역순으로 한 번 박아 두고 다시는 건드리지 않는다(styles.deck
+          아래 zIndex). 어느 순간에도 실제로 그려지는 건 두 장뿐이라, 앞장이 뒷장 위에만
+          있으면 그걸로 끝이다 — DeckCard 주석 참고. */}
       <View style={styles.deck} pointerEvents="none">
+        <LeftEdge flipX={flipX} />
         {PAGES.map((p, index) => (
           <DeckCard
             key={index}
@@ -380,8 +302,7 @@ export default function CardSlidePreviewScreen() {
             kind={p.kind}
             paragraph={p.paragraph}
             flipX={flipX}
-            layer={layerOf(index)}
-            isCurrent={revealPage === index}
+            enter={enter}
           />
         ))}
       </View>
@@ -430,54 +351,84 @@ export default function CardSlidePreviewScreen() {
   );
 }
 
+/**
+ * 왼쪽에 눕는 빈 종이 — 이미 넘긴 장들이 쌓인 자리다.
+ *
+ * 내용이 없는 빈 종이라는 게 핵심이다. 다 넘어간 종이는 뒷면이 위로 오므로 어차피
+ * 빈 종이만 보이고, 화면에는 책등 왼쪽 한 뼘만 걸친다. 그래서 넘긴 장들을 실제로
+ * 계속 그려 둘 이유가 없다 — 여기 이 한 장이 그 자리를 대신 지키면 그만이고, 대신
+ * 뒤에 남아 비칠 내용 자체가 없어진다.
+ *
+ * 젖혀지던 종이가 180도에서 사라지는 자리와 정확히 같은 자리에 같은 모습으로 놓인다.
+ * 그 종이는 180도에 이를 즈음 이미 그림자가 걷혀 있고(SHADOW_FADE_*) 이 빈 종이도
+ * 그림자가 없으므로, 교대하는 순간 화면에서 달라지는 것이 없다.
+ */
+function LeftEdge({ flipX }: { flipX: SharedValue<number> }) {
+  const style = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      flipX.value / PAGE_W,
+      [LEFT_EDGE_IN_FROM, LEFT_EDGE_IN_TO],
+      [0, 1],
+      Extrapolation.CLAMP,
+    ),
+  }));
+  return (
+    <Animated.View style={[styles.hinge, styles.leftEdgeHinge, style]} pointerEvents="none">
+      <View style={styles.card}>
+        <LinearGradient
+          colors={[Colors.beige10, Colors.bg]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+    </Animated.View>
+  );
+}
+
 // ── 카드 ──────────────────────────────────────────────────────────────────
 
 /**
  * 덱에 놓인 카드 한 장 — 진짜 책장처럼 책등(왼쪽 모서리)을 축으로 뒤집힌다.
  *
- * p = 이 페이지가 지금 보는 페이지보다 몇 장 앞(+)/뒤(-)에 있는지.
- *  - p ∈ (-1, 0] : 지금 넘어가는 중이거나 방금 도착한 페이지 — 유일하게 회전
- *    하는 페이지다. 나머지는 전부 제자리에 가만히 쌓여 있다(실제 책이 그렇듯,
- *    안 넘긴 페이지도 넘긴 페이지도 스스로 움직이지 않는다 — 움직이는 건 지금
- *    넘어가는 그 한 장뿐이다).
- *  - p ≥ 1 : 아직 안 넘긴 페이지 — 오른쪽 가장자리로 살짝 새어 나온 채 대기.
- *  - p ≤ -1 : 이미 넘긴 페이지 — 왼쪽 가장자리로 살짝 새어 나온 채 쌓여 있다.
+ * p = 이 장이 지금 넘김의 어디쯤에 있나 (index - flipX/PAGE_W).
  *
- * 쌓임 순서(layer)는 여기서 계산하지 않고 화면 쪽 layerOf가 정해 준 값을 그대로
- * 받는다 — 애니메이션 값이 아니라 평범한 스타일이라 넘김이 도는 동안 바뀌지 않는다.
+ * ── 그리는 장은 언제나 두 장뿐 ────────────────────────────────────────────
+ *  - p ∈ (-1, 0] : 지금 젖혀지고 있는 종이. 0도(오른쪽에 평평)에서 180도(왼쪽에
+ *    엎어짐)까지 돈다. 앞면에 이 장의 내용이 있다.
+ *  - p ∈ (0, 1]  : 그 밑에 깔린 장. 평평하게 누워서 종이가 들리는 만큼 드러난다.
+ *  - 그 밖 : 아예 안 그린다(opacity 0).
  *
- * isCurrent(이 카드가 지금 '현재 페이지'인가)가 켜지는 순간, 물리적으로 넘어가는
- * 동작(위 로직, flipX 기반)과는 완전히 별개로 콘텐츠 자체의 등장을 한 번 더
- * 연출한다 — 곧장 보이는 대신 REVEAL_DELAY만큼 비어 있다가 REVEAL_DURATION에
- * 걸쳐 천천히 떠오른다. 시간 기반이라 얼마나 빨리 넘겼든 이 페이스는 항상 같다.
+ * 예전에는 아홉 장을 전부 늘어놓고 opacity·쌓임 순서·타이머로 가려 뒀는데, 이번
+ * 화면에서 나온 문제가 전부 그 가리기에서 나왔다. 뒷장 내용이 비치고, 레이어가
+ * 뒤바뀌고, 그림자가 튀는 것 모두 "보이면 안 되는 것이 거기 있다"는 한 가지 원인의
+ * 다른 얼굴이었다. 그래서 있을 이유가 없는 장은 그리지 않는 쪽으로 뒤집었다.
+ *
+ * 그리는 장이 둘뿐이면 쌓임 순서도 따라서 단순해진다. 앞장(p가 작은 쪽)이 뒷장 위에
+ * 있기만 하면 되므로, 인덱스 역순으로 zIndex를 한 번 박아 두고 끝이다 — 넘김 중에
+ * 바뀌는 값이 아니니 순서가 튈 일이 없다.
+ *
+ * 여기서 flipX 말고 참조하는 상태는 없다. 화면 쪽 page/turningSheet 같은 값이
+ * 카드 그리기에 끼어들지 않으므로, 리액트 상태 갱신과 UI 스레드 애니메이션이 어긋나
+ * 생기던 깜빡임도 구조적으로 없다.
  */
 function DeckCard({
   index,
   kind,
   paragraph,
   flipX,
-  layer,
-  isCurrent,
+  enter,
 }: {
   index: number;
   kind: PageKind;
   paragraph?: string;
   flipX: SharedValue<number>;
-  /** 그리기 순서 — 화면 쪽 layerOf가 정한다. 넘김이 도는 동안에는 바뀌지 않는다. */
-  layer: number;
-  isCurrent: boolean;
+  /** 입장할 때 한 번 도는 값 — 첫 장 본문이 떠오르는 연출에만 쓴다. */
+  enter: SharedValue<number>;
 }) {
-  const contentOpacity = useSharedValue(0);
-  useEffect(() => {
-    if (!isCurrent) return;
-    contentOpacity.value = 0;
-    contentOpacity.value = withDelay(REVEAL_DELAY, withTiming(1, { duration: REVEAL_DURATION }));
-  }, [isCurrent, contentOpacity]);
-
   /**
-   * 지금 이 페이지가 얼마나 젖혀져 있는지. 0(평평, 오른쪽에 놓임)~1(180도, 왼쪽에
-   * 뒤집혀 누움). 넘어가는 중인 한 장만 그 사이를 오가고, 아직 안 넘긴 장은 0,
-   * 이미 넘긴 장은 1로 고정 — 실제 책에서 넘어간 종이가 왼쪽에 그대로 눕는 것과 같다.
+   * 이 장이 얼마나 젖혀져 있는지. 0(평평, 오른쪽에 놓임)~1(180도, 왼쪽에 엎어짐).
+   * 젖혀지는 중인 한 장만 그 사이를 오가고, 밑장은 0으로 평평하게 눕는다.
    */
   const turnProgress = (p: number) => {
     'worklet';
@@ -486,111 +437,78 @@ function DeckCard({
     return interpolate(-p, [LIFT_FRACTION, 1], [0, 1], Extrapolation.CLAMP);
   };
 
-  /** 경첩에 거는 변형 — 원근과 회전, 딱 둘뿐이다(이유는 아래 hingeStyle 주석). */
+  /**
+   * 경첩에 거는 변형 — 원근과 회전, 딱 둘뿐이다.
+   *
+   * styles.hinge에 적힌 이유로 이 뷰의 중심선이 곧 책등이라, 여기에 순수 rotateY만
+   * 걸면 책등이 0도에서 180도까지 한 픽셀도 움직이지 않는다. transform에 이동을
+   * 섞으면 안 된다 — 안드로이드는 변형 행렬을 이동·회전·확대로 분해해 네이티브 뷰
+   * 속성으로 적용하는데, 원근이 걸린 회전에 이동이 섞이면 그 분해가 정확하지 않아
+   * 중간 각도에서 종이가 통째로 앞으로 떠오르며 책등에서 떨어진다.
+   */
   const rotateAtSpine = (angleDeg: number) => {
     'worklet';
     return [{ perspective: PERSPECTIVE }, { rotateY: `${angleDeg}deg` }];
   };
 
-  /**
-   * 경첩(hinge) — 실제로 회전하는 건 카드가 아니라 이 뷰다. styles.hinge에 적힌
-   * 이유로 이 뷰의 '중심선'이 곧 책등이라, 여기에 순수 rotateY만 걸면 책등이
-   * 0도에서 180도까지 한 픽셀도 움직이지 않는다.
-   *
-   * transform에는 perspective와 rotateY 둘만 둔다 — translate를 섞으면 안 된다.
-   * 안드로이드는 넘겨받은 변형 행렬을 이동·회전·확대로 '분해'해서 네이티브 뷰
-   * 속성으로 적용하는데, 원근이 걸린 회전에 이동이 섞이면 그 분해가 정확하지
-   * 않다. 카드 중심을 축으로 돌린 뒤 이동으로 되돌리든(직접 계산), transformOrigin
-   * 스타일을 쓰든(RN 내부에서 똑같이 이동을 덧붙인다) 결과는 같아서, 중간 각도에서
-   * 종이가 통째로 앞으로 떠오르며 책등에서 떨어졌다가 0도·180도에서만 정확히
-   * 제자리로 돌아온다 — '떨어졌다 다시 붙는' 현상의 진짜 원인이 이거였다.
-   * 이동을 아예 없애고 뷰 자체를 축 위에 앉히는 이 방법만 그 분해를 통과한다.
-   *
-   * 여기서 매 프레임 바뀌는 건 각도와 투명도뿐이다 — 쌓임 순서는 layer 프로퍼티로
-   * 따로 받아 평범한 스타일로 얹는다(화면 쪽 layerOf 주석 참고).
-   */
   const hingeStyle = useAnimatedStyle(() => {
     const p = index - flipX.value / PAGE_W;
-    const angle = -turnProgress(p) * 180;
-
-    // 아직 안 넘긴 페이지 — 바로 다음 한 장은 현재 장과 꼭 붙어 대기하고, 그보다
-    // 뒤쪽 장부터만 가장자리로 새어 나온다(아래 cardStyle). 그래야 넘기는 장의
-    // 오른쪽 면이 회전 전후로 분리되지 않고 실제 책장처럼 이어져 보인다.
-    if (p > 0) {
-      return {
-        opacity: interpolate(p, [1, 1 + EDGE_FADE_RANGE], [1, 0], Extrapolation.CLAMP),
-        transform: rotateAtSpine(angle),
-      };
-    }
-
-    // 이미 넘긴 페이지 — 책등 왼쪽에 뒤집힌 채 그대로 누워 있다(뒷면이 보인다).
-    // 넘어가던 장이 180도에서 멈추는 그 자리와 정확히 같은 자리라, 회전이 끝나는
-    // 순간 옮겨 앉는 티가 나지 않는다. 넘어가는 중인 한 장(-1 < p ≤ 0)은 depth가
-    // 0이라 아래 식이 그대로 opacity 1을 준다.
-    const depth = Math.min(Math.max(-p - 1, 0), EDGE_MAX_DEPTH);
-    return {
-      opacity: interpolate(depth, [0, EDGE_FADE_RANGE], [1, 0], Extrapolation.CLAMP),
-      transform: rotateAtSpine(angle),
-    };
+    // 젖혀지는 종이도 밑장도 아니면 그리지 않는다.
+    if (p <= -1 || p > 1) return { opacity: 0, transform: rotateAtSpine(0) };
+    return { opacity: 1, transform: rotateAtSpine(-turnProgress(p) * 180) };
   });
 
   /**
-   * 쌓인 장이 가장자리로 새어 나오는 만큼 — 경첩이 아니라 그 안의 카드를 민다.
-   * 회전하는 뷰의 변형에 이동을 섞지 않으려는 것도 있고(위 hingeStyle 참고), 여기서
-   * 미는 방향이 마침 양쪽 다 맞아떨어지기도 한다: 책등에서 바깥쪽(+X)으로 밀면
-   * 안 넘긴 장은 그대로 오른쪽으로, 180도 뒤집혀 누운 장은 화면에서 왼쪽으로 나온다.
+   * 본문 — 밑장일 때는 종이가 책등을 넘어간 뒤에야 떠오른다(CONTENT_IN_* 주석 참고).
+   * 젖혀지는 종이(p ≤ 0)는 읽고 있던 장이니 그대로 떠 있다. 입장 연출(enter)은 첫
+   * 장에만 걸리고, 한 번 1이 되면 그 뒤로는 이 식에 영향을 주지 않는다.
+   */
+  const bodyStyle = useAnimatedStyle(() => {
+    const p = index - flipX.value / PAGE_W;
+    const shown = interpolate(p, [CONTENT_IN_TO, CONTENT_IN_FROM], [1, 0], Extrapolation.CLAMP);
+    return { opacity: shown * (index === 0 ? enter.value : 1) };
+  });
+
+  /**
+   * 그림자 — 젖혀질수록 걷힌다(SHADOW_FADE_* 주석 참고). 이 카드 혼자 쓰는 값이라
+   * (경첩 안에 이 카드뿐이다) 여기서 바꿔도 장끼리의 쌓임 순서에는 영향이 없다.
    */
   const cardStyle = useAnimatedStyle(() => {
     const p = index - flipX.value / PAGE_W;
-    const depth = Math.min(Math.max(Math.abs(p) - 1, 0), EDGE_MAX_DEPTH);
-    // 그림자는 종이가 넘어갈수록 걷힌다 — 레이어가 재배치되는 순간 그림자가 톡 튀지
-    // 않게 하려는 것이다(SHADOW_FADE_FROM 주석 참고). 그림자는 이 카드 혼자 쓰는
-    // 값이라(경첩 안에 이 카드뿐이다) 여기서 바꿔도 장끼리의 쌓임 순서에는 영향이 없다.
     const lift = interpolate(
       turnProgress(p),
       [SHADOW_FADE_FROM, SHADOW_FADE_TO],
       [1, 0],
       Extrapolation.CLAMP,
     );
-    return {
-      transform: [{ translateX: depth * EDGE_PEEK }],
-      elevation: CARD_ELEVATION * lift,
-      shadowOpacity: 0.35 * lift,
-    };
+    return { elevation: CARD_ELEVATION * lift, shadowOpacity: 0.35 * lift };
   });
 
   // 앞면 — 90도를 넘기면 숨는다(뒷면이 대신 보인다). backfaceVisibility만으로는
   // 안드로이드에서 가끔 안 먹혀 각도로 직접 opacity를 끈다(이중 안전장치).
   const frontStyle = useAnimatedStyle(() => {
     const p = index - flipX.value / PAGE_W;
-    const angle = turnProgress(p) * 180;
-    return { opacity: angle < 90 ? 1 : 0 };
+    return { opacity: turnProgress(p) * 180 < 90 ? 1 : 0 };
   });
 
   // 뒷면 — 종이 뒷면. 90도를 넘어야 보인다.
   const backStyle = useAnimatedStyle(() => {
     const p = index - flipX.value / PAGE_W;
-    const angle = turnProgress(p) * 180;
-    return { opacity: angle >= 90 ? 1 : 0 };
+    return { opacity: turnProgress(p) * 180 >= 90 ? 1 : 0 };
   });
 
   // 종이 위에 얹는 그늘 — 책등 쪽이 짙다. 각도 변화만으로는 종이가 젖혀지는 깊이가
-  // 잘 안 읽혀서 명암으로 보완한다. 빛을 가장 많이 등지는 중간 각도에서 제일 짙고,
-  // 다 넘어가 왼쪽에 누우면 다시 걷힌다 — 누운 종이까지 어두우면 안 되기 때문.
+  // 잘 안 읽혀서 명암으로 보완한다. 레퍼런스처럼 양 끝에서 0이고 중간에서 가장 짙다.
   const shadeStyle = useAnimatedStyle(() => {
     const p = index - flipX.value / PAGE_W;
-    if (!(p > -1 && p <= 0)) return { opacity: 0 };
-    const turnT = turnProgress(p);
-    return { opacity: interpolate(turnT, [0, 0.5, 0.9], [0, 0.55, 0], Extrapolation.CLAMP) };
+    return { opacity: Math.sin(Math.PI * turnProgress(p)) * 0.55 };
   });
 
-  const revealStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
-
   return (
-    <Animated.View style={[styles.hinge, { elevation: layer, zIndex: layer }, hingeStyle]}>
+    <Animated.View style={[styles.hinge, { zIndex: PAGES.length - index }, hingeStyle]}>
       <Animated.View style={[styles.card, cardStyle]}>
         <Animated.View style={[styles.cardFace, frontStyle]}>
-          <Animated.View style={[styles.cardBody, revealStyle]}>
+          <Animated.View style={[styles.cardBody, bodyStyle]}>
             <CardContent kind={kind} paragraph={paragraph} />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
@@ -933,6 +851,11 @@ const styles = StyleSheet.create({
     width: CARD_W * 2,
     height: CARD_H,
   },
+  /** 다 넘어간 종이가 눕는 자리 — 경첩을 180도 돌려 둔 것과 같다. */
+  leftEdgeHinge: {
+    zIndex: 0,
+    transform: [{ rotateY: '180deg' }],
+  },
   card: {
     position: 'absolute',
     // 경첩의 오른쪽 절반 — 카드의 왼쪽 모서리가 경첩의 중심선(=책등)에 맞물린다.
@@ -943,8 +866,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: Colors.bg,
     overflow: 'hidden',
-    // 그림자용 값들 — 쌓임 순서는 경첩이 정한다(layerOf). elevation·shadowOpacity는
-    // 넘어가는 동안 걷혔다 드니 여기 두지 않고 cardStyle에서 매긴다.
+    // 그림자 색/거리만 여기 둔다 — 세기(elevation·shadowOpacity)는 젖혀질수록 걷히므로
+    // DeckCard의 cardStyle에서 매긴다. 빈 종이(LeftEdge)는 그래서 그림자가 없다.
     shadowColor: Colors.brown100,
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 20,
