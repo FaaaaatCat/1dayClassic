@@ -77,22 +77,11 @@ const LIFT_FRACTION = 0.12;
  * 충분히 커야 한다(경험적으로 3~4배 이상).
  */
 const PERSPECTIVE = 1600;
-/** 카드가 바닥에서 떠 보이게 하는 그림자 높이(dp). */
-const CARD_ELEVATION = 12;
 /**
- * 종이가 다 넘어갈 즈음 그림자를 걷어내는 구간(회전 진행 0~1 기준).
- *
- * 왼쪽에 눕는 자리는 넘김이 끝나면 빈 종이(LeftEdge)가 이어받는데, 그 빈 종이에는
- * 그림자가 없다. 젖혀지던 종이가 그림자를 단 채로 사라지면 교대하는 순간 책등의
- * 어두운 띠가 톡 튄다 — 실측으로 책등 왼쪽 한 줄이 균일한 182에서 166→133
- * 그라데이션으로 한 프레임에 바뀌었다. 그래서 교대 시점에는 이미 그림자가 없도록
- * 회전 후반에 걸쳐 서서히 걷는다.
- *
- * 엎어져 누운 종이에 그림자가 없는 것 자체도 물리적으로 맞다(들려 있지 않으니).
- * 되돌리기에서는 이 과정이 그대로 거꾸로 돌아, 종이가 일어서면서 그림자가 다시 든다.
+ * 책등에 지는 접힌 골 그늘의 폭(dp)과 가장 짙은 쪽 농도 — FoldShade 주석 참고.
+ * 카드에는 elevation을 주지 않으므로 종이에 지는 그림자는 이것 하나뿐이다.
  */
-const SHADOW_FADE_FROM = 0.6;
-const SHADOW_FADE_TO = 0.95;
+const FOLD_SHADE_W = 12;
 /**
  * 밑장의 본문이 떠오르는 구간 — p(이 장이 넘김의 어디쯤에 있나) 기준이다.
  *
@@ -305,6 +294,7 @@ export default function CardSlidePreviewScreen() {
             enter={enter}
           />
         ))}
+        <FoldShade />
       </View>
 
       <Headlines top={insets.top + 24} flipX={flipX} />
@@ -352,6 +342,33 @@ export default function CardSlidePreviewScreen() {
 }
 
 /**
+ * 책등에 지는 접힌 골 그늘 — 오른쪽 장이 왼쪽에 눕는 종이에 드리우는 그림자다.
+ *
+ * 뷰의 elevation 그림자로 두면 안 된다. 그 그림자는 젖혀지는 종이의 '몸통'에 가려져
+ * 있다가 그 종이가 사라지는 순간 통째로 드러난다 — 실측으로 책등 옆 한 줄이 균일한
+ * 182에서 168→143 그라데이션으로 한 프레임에 바뀌었다. 종이는 90도를 넘는 내내 이
+ * 자리를 덮고 있으므로 그리는 순서를 어떻게 바꿔도 이 문제는 남는다.
+ *
+ * 그래서 레퍼런스처럼 골을 직접 그리고 카드보다 위에 둔다. 이러면 그 밑에 무엇이
+ * 있든 — 눕는 빈 종이든, 책등을 넘어온 종이든 — 똑같이 어두워지고 교대하는 순간
+ * 달라지는 것이 없다. 카드에서 elevation을 뺀 것도 같은 이유다. 어차피 어두운
+ * 배경에서는 카드 바깥으로 지는 그림자가 보이지 않아(측정: 카드 밖은 배경값 10 그대로)
+ * 그 그림자가 하던 일은 사실상 이 골 하나뿐이었다.
+ */
+function FoldShade() {
+  return (
+    <View style={styles.foldShade} pointerEvents="none">
+      <LinearGradient
+        colors={['rgba(3,3,3,0)', 'rgba(3,3,3,0.22)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+    </View>
+  );
+}
+
+/**
  * 왼쪽에 눕는 빈 종이 — 이미 넘긴 장들이 쌓인 자리다.
  *
  * 내용이 없는 빈 종이라는 게 핵심이다. 다 넘어간 종이는 뒷면이 위로 오므로 어차피
@@ -375,12 +392,17 @@ function LeftEdge({ flipX }: { flipX: SharedValue<number> }) {
   return (
     <Animated.View style={[styles.hinge, styles.leftEdgeHinge, style]} pointerEvents="none">
       <View style={styles.card}>
-        <LinearGradient
-          colors={[Colors.beige10, Colors.bg]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={StyleSheet.absoluteFill}
-        />
+        {/* 넘어간 종이의 뒷면과 똑같이 쌓는다 — 경첩이 180도 돌아간 만큼 여기서 다시
+            180도를 되돌려야 결이 같은 방향으로 눕는다. 이 되돌림을 빠뜨렸더니 교대
+            순간 왼쪽 한 줄의 밝기가 182에서 173으로 튀었다(그라데이션이 좌우 반대). */}
+        <View style={[styles.cardFace, styles.cardBack]}>
+          <LinearGradient
+            colors={[Colors.beige10, Colors.bg]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
       </View>
     </Animated.View>
   );
@@ -469,21 +491,6 @@ function DeckCard({
     return { opacity: shown * (index === 0 ? enter.value : 1) };
   });
 
-  /**
-   * 그림자 — 젖혀질수록 걷힌다(SHADOW_FADE_* 주석 참고). 이 카드 혼자 쓰는 값이라
-   * (경첩 안에 이 카드뿐이다) 여기서 바꿔도 장끼리의 쌓임 순서에는 영향이 없다.
-   */
-  const cardStyle = useAnimatedStyle(() => {
-    const p = index - flipX.value / PAGE_W;
-    const lift = interpolate(
-      turnProgress(p),
-      [SHADOW_FADE_FROM, SHADOW_FADE_TO],
-      [1, 0],
-      Extrapolation.CLAMP,
-    );
-    return { elevation: CARD_ELEVATION * lift, shadowOpacity: 0.35 * lift };
-  });
-
   // 앞면 — 90도를 넘기면 숨는다(뒷면이 대신 보인다). backfaceVisibility만으로는
   // 안드로이드에서 가끔 안 먹혀 각도로 직접 opacity를 끈다(이중 안전장치).
   const frontStyle = useAnimatedStyle(() => {
@@ -506,7 +513,7 @@ function DeckCard({
 
   return (
     <Animated.View style={[styles.hinge, { zIndex: PAGES.length - index }, hingeStyle]}>
-      <Animated.View style={[styles.card, cardStyle]}>
+      <View style={styles.card}>
         <Animated.View style={[styles.cardFace, frontStyle]}>
           <Animated.View style={[styles.cardBody, bodyStyle]}>
             <CardContent kind={kind} paragraph={paragraph} />
@@ -541,7 +548,7 @@ function DeckCard({
             />
           </Animated.View>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Animated.View>
   );
 }
@@ -866,11 +873,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: Colors.bg,
     overflow: 'hidden',
-    // 그림자 색/거리만 여기 둔다 — 세기(elevation·shadowOpacity)는 젖혀질수록 걷히므로
-    // DeckCard의 cardStyle에서 매긴다. 빈 종이(LeftEdge)는 그래서 그림자가 없다.
-    shadowColor: Colors.brown100,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 20,
+    // 그림자는 여기 두지 않는다 — 종이에 지는 그림자는 FoldShade 하나뿐이다(그 주석 참고).
+  },
+  /** 책등 왼쪽에 붙는 골 그늘. 카드보다 위에 둬야 아래에 무엇이 오든 똑같이 어두워진다. */
+  foldShade: {
+    position: 'absolute',
+    left: (SCREEN_W - CARD_W) / 2 - FOLD_SHADE_W,
+    top: '50%',
+    marginTop: -CARD_H / 2,
+    width: FOLD_SHADE_W,
+    height: CARD_H,
+    zIndex: 100,
   },
   // 앞면·뒷면 공용 — 카드를 꽉 채우고 뒷면이 보일 차례가 아니면 숨는다.
   // backfaceVisibility는 opacity 토글의 이중 안전장치(안드로이드 일부 버전 대비).
