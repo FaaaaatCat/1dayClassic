@@ -143,6 +143,12 @@ interface Page {
   paragraph?: string;
 }
 
+/**
+ * 구매 안내 장 표지의 높이(dp). 카드 높이를 다 쓰지 않고 문구·버튼과 한 덩어리로
+ * 묶여 가운데에 모이도록, 늘어나는 값이 아니라 정해진 높이를 쓴다.
+ */
+const BUY_COVER_H = 152;
+
 /** 구매 안내 장에서 소개하는 책 — 카탈로그에서 제목으로 찾는다(BuyBlock 주석 참고). */
 const BUY_BOOK_TITLE = '듣기의 말들';
 
@@ -558,9 +564,13 @@ function DeckCard({
       // 손가락은 이 장이 지금 펼쳐져 있을 때만 받는다 — 안 그러면 보이지도 않는 장의
       // 입력칸이 다른 페이지에서 스와이프를 가로챈다.
       pointerEvents={interactive ? 'box-none' : 'none'}>
-      <View style={styles.card}>
-        <Animated.View style={[styles.cardFace, frontStyle]}>
-          <Animated.View style={[styles.cardBody, bodyStyle]}>
+      {/* 이 아래로는 진짜 눌러야 할 것(감상 노트 입력칸, 구매 버튼)만 손가락을 가져가야
+          한다. RN에서는 핸들러가 없는 평범한 View도 auto면 제 영역의 터치를 그대로
+          가져가므로, 카드부터 본문까지 box-none으로 뚫어 둔다. 안 그러면 카드 위를
+          탭했을 때 페이지가 넘어가지 않는다. */}
+      <View style={styles.card} pointerEvents="box-none">
+        <Animated.View style={[styles.cardFace, frontStyle]} pointerEvents="box-none">
+          <Animated.View style={[styles.cardBody, bodyStyle]} pointerEvents="box-none">
             <CardContent kind={kind} paragraph={paragraph} onNoteSaved={onNoteSaved} />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
@@ -691,27 +701,28 @@ function BuyBlock() {
   const router = useRouter();
 
   return (
-    <View style={styles.buyBlock}>
-      <Text style={styles.buyLead}>
+    <View style={styles.buyBlock} pointerEvents="box-none">
+      {/* 눌러야 할 것은 아래 버튼뿐이다. 나머지는 터치를 흘려보내야 카드 위를 탭했을 때
+          그대로 페이지가 넘어간다 — 안 그러면 여기서 걸려 아무 일도 일어나지 않는다. */}
+      <Text style={styles.buyLead} pointerEvents="none">
         {'뒷 내용이 더 궁금하시다면\n‘잘 듣는’ 사람이 되기 위한 필독도서 『듣기의 말들』 을 구매해보세요.'}
       </Text>
 
-      {BUY_BOOK ? (
-        <Image
-          source={{ uri: BUY_BOOK.coverImage }}
-          style={styles.buyCover}
-          resizeMode="contain"
-          accessibilityIgnoresInvertColors
-        />
-      ) : (
-        // 카탈로그에서 못 찾아도 자리는 지켜 둔다 — 레이아웃이 튀지 않게.
-        <View style={styles.buyCover} />
-      )}
+      <View style={styles.buyCoverArea} pointerEvents="none">
+        {BUY_BOOK ? (
+          <Image
+            source={{ uri: BUY_BOOK.coverImage }}
+            style={styles.buyCover}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
+        ) : null}
+      </View>
 
       <Pressable
-        style={styles.cardButton}
+        style={[styles.cardButton, styles.buyButton]}
         onPress={() => BUY_BOOK && router.push(`/book/${BUY_BOOK.id}`)}>
-        <Text style={styles.cardButtonText}>구매하러 가기 {'>'}</Text>
+        <Text style={styles.cardButtonText}>￦8,820</Text>
       </Pressable>
     </View>
   );
@@ -733,7 +744,7 @@ function NoteBlock({ onSaved }: { onSaved: () => void }) {
   };
 
   return (
-    <View style={styles.noteBlock}>
+    <View style={styles.noteBlock} pointerEvents="box-none">
       <CardHeading text="감상 노트" />
 
       <View style={styles.notePaper}>
@@ -1227,11 +1238,15 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(12),
     color: Colors.beige100,
   },
-  /** 구매 안내 장 — 문구·표지·버튼을 위에서부터 차례로 놓는다. */
+  /**
+   * 구매 안내 장 — 문구·표지·버튼을 한 덩어리로 묶어 카드 가운데에 모은다.
+   * 높이를 늘려 잡지 않으므로(flex 없음) 제 내용만큼만 차지하고, 카드 본문의
+   * justifyContent가 그 덩어리를 세로 가운데에 놓는다.
+   */
   buyBlock: {
-    flex: 1,
     alignSelf: 'stretch',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 16,
   },
   buyLead: {
@@ -1242,10 +1257,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: Colors.brown100,
   },
-  /** 표지는 남는 높이를 다 쓰되 비율은 지킨다(resizeMode contain). */
+  /** 표지가 놓이는 자리 — 높이를 정해 두고 그 안에서 비율을 지킨다(resizeMode contain). */
+  buyCoverArea: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: BUY_COVER_H,
+  },
   buyCover: {
-    flex: 1,
     width: '100%',
+    height: '100%',
   },
   /** 카드 안 버튼 공용 — 감상 노트의 기록하기와 구매 안내의 구매하러 가기가 같이 쓴다. */
   cardButton: {
@@ -1261,6 +1282,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: tracking(14),
     color: Colors.brown100,
+  },
+  /** 구매 버튼만 가로를 글자에 맞춘다(감상 노트의 기록하기는 그대로 꽉 찬 폭). */
+  buyButton: {
+    alignSelf: 'center',
+    paddingHorizontal: 28,
+    backgroundColor: Colors.blue50,
   },
   /** 화면 아래 토스트. 카드·버튼보다 위에 뜬다. */
   toast: {
