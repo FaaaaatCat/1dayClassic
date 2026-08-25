@@ -594,7 +594,12 @@ function DeckCard({
           가져가므로, 카드부터 본문까지 box-none으로 뚫어 둔다. 안 그러면 카드 위를
           탭했을 때 페이지가 넘어가지 않는다. */}
       <View style={styles.card} pointerEvents="box-none">
-        <Animated.View style={[styles.cardFace, frontStyle]} pointerEvents="box-none">
+        <Animated.View
+          // 구매 안내 장만 종이를 한 단계 어둡게 — 넘김 흐름 안에서 성격이 다른 장이라
+          // 바탕으로 구분한다. brown100을 10%로 덮은 것과 같은 색이라(계산: #E1DED6)
+          // 겹을 더 쌓지 않고 팔레트 색을 그대로 쓴다.
+          style={[styles.cardFace, kind === 'buy' && styles.cardFaceBuy, frontStyle]}
+          pointerEvents="box-none">
           <Animated.View style={[styles.cardBody, bodyStyle]} pointerEvents="box-none">
             <CardContent kind={kind} paragraph={paragraph} />
           </Animated.View>
@@ -1138,6 +1143,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     backfaceVisibility: 'hidden',
     backgroundColor: Colors.bg,
+  },
+  /** 구매 안내 장의 종이색. */
+  cardFaceBuy: {
+    backgroundColor: Colors.brown10,
   },
   cardBack: {
     // 부모가 -180도까지 돌아가므로, 그 안에서 180도를 다시 돌려 두면 다 넘어갔을
