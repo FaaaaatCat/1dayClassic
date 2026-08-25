@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
+  KeyboardAvoidingView,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -133,7 +135,7 @@ const TOAST_FADE = 220;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
-type PageKind = 'intro' | 'quote' | 'desc' | 'buy' | 'note' | 'quiz' | 'answer';
+type PageKind = 'intro' | 'quote' | 'desc' | 'buy' | 'quiz' | 'answer';
 
 interface Page {
   kind: PageKind;
@@ -172,13 +174,12 @@ const PAGES: Page[] = [
   ...DESC_PARAGRAPHS.map((paragraph): Page => ({ kind: 'desc', paragraph })),
   // 본문이 끝나면 구매 안내 한 장을 끼우고 감상 노트로 넘어간다.
   { kind: 'buy' },
-  { kind: 'note', headline: '오늘의 공부는 어떠셨나요.\n떠오르는 게 있다면 적어봅시다.' },
   { kind: 'quiz', headline: '잘 읽었는지 확인해볼까요?' },
   { kind: 'answer', headline: '정답입니다!' },
 ];
 
 /** 카드 안에 눌러야 할 것이 있는 장 — 이 장이 펼쳐져 있을 때만 손가락을 받는다. */
-const INTERACTIVE_KINDS: PageKind[] = ['buy', 'note'];
+const INTERACTIVE_KINDS: PageKind[] = ['buy'];
 
 /** 하단이 '오늘의 공부 마치기'로 바뀌는 페이지. */
 const ANSWER_INDEX = PAGES.findIndex((p) => p.kind === 'answer');
@@ -229,6 +230,9 @@ export default function CardSlidePreviewScreen() {
    */
   const [toastAt, setToastAt] = useState(0);
   const showToast = () => setToastAt(Date.now());
+  /** 감상 노트 팝업이 열려 있는지. */
+  const [noteOpen, setNoteOpen] = useState(false);
+  const closeNote = () => setNoteOpen(false);
 
   useEffect(() => {
     enter.value = withDelay(ENTER_DELAY, withTiming(1, { duration: ENTER_DURATION }));
@@ -321,6 +325,7 @@ export default function CardSlidePreviewScreen() {
         flipX={flipX}
         finishEnabled={onAnswer}
         onFinish={() => router.replace('/settings')}
+        onOpenNote={() => setNoteOpen(true)}
       />
 
       {/* 제스처 층 — 페이지마다 좌/중/우 3등분 탭 영역만 있다(가운데는 무동작). */}
@@ -372,13 +377,35 @@ export default function CardSlidePreviewScreen() {
             flipX={flipX}
             enter={enter}
             interactive={INTERACTIVE_KINDS.includes(p.kind) && page === index}
-            onNoteSaved={showToast}
           />
         ))}
         <FoldShade />
       </View>
 
-      <Toast bottom={insets.bottom + 40} at={toastAt} />
+      {/**
+        * 감상 노트 — 넘김 흐름에서 빠지고 하단 메모 버튼으로 전체 화면에 뜬다.
+        * 토스트도 여기 안에 둔다. 모달은 별도 창이라 뒤 화면의 토스트는 가려서 안 보인다.
+        */}
+      <Modal
+        visible={noteOpen}
+        animationType="fade"
+        onRequestClose={closeNote}>
+        {/* 안드로이드에서는 모달 창이 키보드에 맞춰 줄어들지 않아 기록하기 버튼이 키보드
+            뒤로 숨는다. 그래서 높이를 직접 줄인다. */}
+        <KeyboardAvoidingView
+          behavior="height"
+          style={[
+            styles.noteModal,
+            { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
+          ]}>
+          <CloseButton top={insets.top + 24} onPress={closeNote} />
+          <View style={styles.noteModalBody}>
+            <NoteBlock onSaved={showToast} />
+          </View>
+          {/* 기록하기/수정하기 버튼 바로 위 — 버튼을 가리지 않게 그 높이만큼 띄운다. */}
+          <Toast bottom={insets.bottom + 24 + 44 + 12} at={toastAt} />
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -483,7 +510,6 @@ function DeckCard({
   flipX,
   enter,
   interactive,
-  onNoteSaved,
 }: {
   index: number;
   kind: PageKind;
@@ -491,9 +517,8 @@ function DeckCard({
   flipX: SharedValue<number>;
   /** 입장할 때 한 번 도는 값 — 첫 장 본문이 떠오르는 연출에만 쓴다. */
   enter: SharedValue<number>;
-  /** 이 장이 지금 손가락을 받을 수 있는가(감상 노트 입력용). */
+  /** 이 장이 지금 손가락을 받을 수 있는가(구매 버튼 같은 것). */
   interactive: boolean;
-  onNoteSaved: () => void;
 }) {
   /**
    * 이 장이 얼마나 젖혀져 있는지. 0(평평, 오른쪽에 놓임)~1(180도, 왼쪽에 엎어짐).
@@ -571,7 +596,7 @@ function DeckCard({
       <View style={styles.card} pointerEvents="box-none">
         <Animated.View style={[styles.cardFace, frontStyle]} pointerEvents="box-none">
           <Animated.View style={[styles.cardBody, bodyStyle]} pointerEvents="box-none">
-            <CardContent kind={kind} paragraph={paragraph} onNoteSaved={onNoteSaved} />
+            <CardContent kind={kind} paragraph={paragraph} />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
             <LinearGradient
@@ -615,12 +640,9 @@ function DeckCard({
 function CardContent({
   kind,
   paragraph,
-  onNoteSaved,
 }: {
   kind: PageKind;
   paragraph?: string;
-  /** 감상 노트를 기록했을 때 — 화면 아래 토스트를 띄우라고 알린다. */
-  onNoteSaved: () => void;
 }) {
   if (kind === 'intro') {
     return (
@@ -656,10 +678,6 @@ function CardContent({
 
   if (kind === 'buy') {
     return <BuyBlock />;
-  }
-
-  if (kind === 'note') {
-    return <NoteBlock onSaved={onNoteSaved} />;
   }
 
   // quiz · answer — 지금은 자리만 잡아 둔 문구다.
@@ -889,11 +907,14 @@ function Actions({
   flipX,
   finishEnabled,
   onFinish,
+  onOpenNote,
 }: {
   bottom: number;
   flipX: SharedValue<number>;
   finishEnabled: boolean;
   onFinish: () => void;
+  /** 감상 노트를 전체 화면으로 연다. */
+  onOpenNote: () => void;
 }) {
   const roundStyle = useAnimatedStyle(() => {
     const x = flipX.value / PAGE_W;
@@ -921,6 +942,13 @@ function Actions({
         <ScaleButton accessibilityLabel="오디오 듣기" style={styles.roundButton} onPress={() => {}}>
           <SymbolView
             name={{ ios: 'headphones', android: 'headphones', web: 'headphones' }}
+            tintColor={Colors.white}
+            size={24}
+          />
+        </ScaleButton>
+        <ScaleButton accessibilityLabel="감상 노트" style={styles.roundButton} onPress={onOpenNote}>
+          <SymbolView
+            name={{ ios: 'square.and.pencil', android: 'edit', web: 'edit' }}
             tintColor={Colors.white}
             size={24}
           />
@@ -1200,6 +1228,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: tracking(14),
     color: Colors.brown100,
+  },
+  /** 감상 노트 팝업 — 전체 화면을 카드와 같은 종이색으로 채운다. */
+  noteModal: {
+    flex: 1,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.bg,
+  },
+  /** 닫기 버튼 아래로 노트가 들어갈 자리. */
+  noteModalBody: {
+    flex: 1,
+    paddingTop: 56,
   },
   /** 감상 노트 — 위에서부터 채우고 버튼은 아래에 붙는다(가운데 정렬이 아니다). */
   noteBlock: {
