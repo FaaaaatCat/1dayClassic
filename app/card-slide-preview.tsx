@@ -244,11 +244,15 @@ export default function CardSlidePreviewScreen() {
   const [quizOpen, setQuizOpen] = useState(false);
   const closeQuiz = () => setQuizOpen(false);
   /**
-   * 해설까지 읽고 마치기 — 지금 읽던 책의 상세로 보낸다.
+   * 해설까지 읽고 마치기 — 지금 읽던 책의 서재 상세로 보낸다.
    *
-   * 상세 라우트의 id는 학습 콘텐츠가 있는 책이면 BookId, 아니면 카탈로그 uuid다.
-   * 서재 목록이 여는 식(book.bookId ?? book.id)을 그대로 따랐다. 이 화면은 서재에
-   * 담겼는지와 무관하다 — 상세 화면이 id를 카탈로그에서 푸므로 담기지 않은 책도 열린다.
+   * 상세로 바로 replace하면 미리보기가 스택에서 빠지면서 아래에 아무것도 남지 않아,
+   * 상세에서 뒤로가기를 누르면 앱이 통째로 종료된다. 그래서 서재 목록으로 먼저 옮긴 뒤
+   * 그 위에 상세를 얹는다 — 서재에서 책을 열었을 때와 같은 자리에 놓인다.
+   *
+   * 상세 라우트의 id는 학습 콘텐츠가 있는 책이면 BookId, 아니면 카탈로그 uuid다
+   * (서재 목록의 openBook과 같은 식). 서재에 담겼는지와는 무관하다 — 상세 화면이 id를
+   * 카탈로그에서 푸므로 담기지 않은 책도 열린다.
    */
   const finishStudy = () => {
     setQuizOpen(false);
@@ -256,7 +260,8 @@ export default function CardSlidePreviewScreen() {
       router.replace('/settings');
       return;
     }
-    router.replace({
+    router.replace('/library');
+    router.push({
       pathname: '/library/book/[id]',
       params: { id: PREVIEW_BOOK.bookId ?? PREVIEW_BOOK.id },
     });
