@@ -176,7 +176,8 @@ const QUOTE_TEXT = PREVIEW_LESSON?.epigraph ?? '';
 const QUOTE_SOURCE = PREVIEW_LESSON?.epigraphBy ?? '';
 /** 본문 — 문단마다 카드 한 장씩 담는다(PAGES 참고). */
 const DESC_PARAGRAPHS = PREVIEW_LESSON?.story ?? [];
-const PREVIEW_QUIZ = PREVIEW_LESSON?.quiz;
+/** 오늘의 퀴즈 — 항목 하나가 문제 여러 개를 든다. */
+const PREVIEW_QUIZZES = PREVIEW_LESSON?.quizzes ?? [];
 
 const PAGES: Page[] = [
   { kind: 'intro', headline: '듣기 공부의 시간입니다.' },
@@ -748,63 +749,76 @@ function CardContent({
  * 정답을 맞히면 그 아래에 해설이 열리고 더는 고를 수 없다.
  */
 function QuizSolver({ onFinish }: { onFinish: () => void }) {
-  const [picked, setPicked] = useState<number[]>([]);
+  // 문제마다 짚어 본 보기를 따로 쌓는다 — 한 문제의 오답이 옆 문제에 번지면 안 된다.
+  const [picked, setPicked] = useState<number[][]>(() => PREVIEW_QUIZZES.map(() => []));
 
-  if (!PREVIEW_QUIZ) {
+  if (PREVIEW_QUIZZES.length === 0) {
     return <Text style={styles.quizText}>퀴즈를 찾지 못했습니다.</Text>;
   }
 
-  const answer = PREVIEW_QUIZ.answer;
-  const solved = picked.includes(answer);
+  // 오늘의 공부는 문제를 다 맞혀야 끝난다.
+  const allSolved = PREVIEW_QUIZZES.every((quiz, i) => picked[i].includes(quiz.answer));
 
   return (
     <View style={styles.quizSolver}>
-      <CardHeading text={PREVIEW_QUIZ.title} />
-      <Text style={styles.quizQuestion}>{PREVIEW_QUIZ.question}</Text>
+      {/* 제목은 맨 위에 한 번만 — 아래로 문제만 이어 붙는다. */}
+      <CardHeading text={PREVIEW_QUIZZES[0].title} />
 
-      <View style={styles.quizChoices}>
-        {PREVIEW_QUIZ.choices.map((choice, i) => {
-          const no = i + 1;
-          const tried = picked.includes(no);
-          const right = tried && no === answer;
-          const wrong = tried && !right;
-          return (
-            <Pressable
-              key={choice}
-              // 이미 짚어 본 보기와 정답을 맞힌 뒤에는 더 누르지 않는다.
-              disabled={tried || solved}
-              onPress={() => setPicked((prev) => [...prev, no])}
-              style={[
-                styles.quizChoice,
-                styles.quizChoiceBox,
-                right && styles.quizChoiceRight,
-                wrong && styles.quizChoiceWrong,
-              ]}>
-              <Text
-                style={[
-                  styles.quizChoiceNo,
-                  right && styles.quizChoiceNoRight,
-                  wrong && styles.quizChoiceNoWrong,
-                ]}>
-                {no}
-              </Text>
-              <Text style={styles.quizChoiceText}>{choice}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {PREVIEW_QUIZZES.map((quiz, qi) => {
+        const tries = picked[qi];
+        const solved = tries.includes(quiz.answer);
+        return (
+          <View key={quiz.question} style={styles.quizItem}>
+            <Text style={styles.quizItemNo}>{`${qi + 1} / ${PREVIEW_QUIZZES.length}`}</Text>
+            <Text style={styles.quizQuestion}>{quiz.question}</Text>
 
-      {solved ? (
-        <>
-          <Text style={styles.quizExplanation}>{PREVIEW_QUIZ.explanation}</Text>
-          {/* 오늘의 공부는 여기서 맺는다 — 해설까지 읽고 나면 더 볼 것이 없다. */}
-          <ScaleButton
-            accessibilityLabel="오늘의 공부 마치기"
-            style={styles.finishButton}
-            onPress={onFinish}>
-            <Text style={styles.finishText}>오늘의 공부 마치기</Text>
-          </ScaleButton>
-        </>
+            <View style={styles.quizChoices}>
+              {quiz.choices.map((choice, i) => {
+                const no = i + 1;
+                const tried = tries.includes(no);
+                const right = tried && no === quiz.answer;
+                const wrong = tried && !right;
+                return (
+                  <Pressable
+                    key={choice}
+                    // 이미 짚어 본 보기와 정답을 맞힌 뒤에는 더 누르지 않는다.
+                    disabled={tried || solved}
+                    onPress={() =>
+                      setPicked((prev) => prev.map((list, i2) => (i2 === qi ? [...list, no] : list)))
+                    }
+                    style={[
+                      styles.quizChoice,
+                      styles.quizChoiceBox,
+                      right && styles.quizChoiceRight,
+                      wrong && styles.quizChoiceWrong,
+                    ]}>
+                    <Text
+                      style={[
+                        styles.quizChoiceNo,
+                        right && styles.quizChoiceNoRight,
+                        wrong && styles.quizChoiceNoWrong,
+                      ]}>
+                      {no}
+                    </Text>
+                    <Text style={styles.quizChoiceText}>{choice}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {solved ? <Text style={styles.quizExplanation}>{quiz.explanation}</Text> : null}
+          </View>
+        );
+      })}
+
+      {allSolved ? (
+        // 오늘의 공부는 여기서 맺는다 — 해설까지 읽고 나면 더 볼 것이 없다.
+        <ScaleButton
+          accessibilityLabel="오늘의 공부 마치기"
+          style={styles.finishButton}
+          onPress={onFinish}>
+          <Text style={styles.finishText}>오늘의 공부 마치기</Text>
+        </ScaleButton>
       ) : null}
     </View>
   );
@@ -1453,6 +1467,19 @@ const styles = StyleSheet.create({
   },
   quizChoices: {
     gap: 10,
+  },
+  /** 문제 하나 묶음 — 여러 문제가 한 화면에 이어지므로 위에 줄을 그어 경계를 준다. */
+  quizItem: {
+    gap: 12,
+    paddingTop: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.brown10,
+  },
+  quizItemNo: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 12,
+    letterSpacing: tracking(12),
+    color: Colors.beige100,
   },
   /** 퀴즈 팝업 — 카드가 아니라 화면을 쓰므로 위에서부터 채운다. */
   quizModalContent: {

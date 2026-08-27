@@ -27,34 +27,39 @@ for (const file of fs.readdirSync(DIR).filter((f) => f.endsWith('.json'))) {
   console.log(`\n${file} (${lessons.length}개 항목)`);
 
   for (const lesson of lessons) {
-    const quiz = lesson.quiz;
-    if (!quiz) {
+    // 한 항목이 문제 여러 개를 든다. 예전 모양(quiz 하나)도 그대로 읽는다.
+    const quizzes = lesson.quizzes ?? (lesson.quiz ? [lesson.quiz] : []);
+    if (quizzes.length === 0) {
       note(`${lesson.id}: 퀴즈 없음`);
       continue;
     }
-    withQuiz += 1;
 
-    const where = `${lesson.id}`;
-    if (!Array.isArray(quiz.choices) || quiz.choices.length !== 4) {
-      note(`${where}: 보기가 4개여야 하는데 ${quiz.choices?.length ?? 0}개`);
-    } else {
-      if (quiz.choices.some((c) => typeof c !== 'string' || !c.trim())) {
-        note(`${where}: 비어 있는 보기가 있다`);
+    for (const [i, quiz] of quizzes.entries()) {
+      withQuiz += 1;
+
+      // 한 항목에 여러 문제가 있으면 몇 번째인지 함께 짚어 준다.
+      const where = quizzes.length > 1 ? `${lesson.id}[${i + 1}]` : `${lesson.id}`;
+      if (!Array.isArray(quiz.choices) || quiz.choices.length !== 4) {
+        note(`${where}: 보기가 4개여야 하는데 ${quiz.choices?.length ?? 0}개`);
+      } else {
+        if (quiz.choices.some((c) => typeof c !== 'string' || !c.trim())) {
+          note(`${where}: 비어 있는 보기가 있다`);
+        }
+        if (new Set(quiz.choices).size !== 4) {
+          note(`${where}: 같은 보기가 두 번 들어 있다`);
+        }
       }
-      if (new Set(quiz.choices).size !== 4) {
-        note(`${where}: 같은 보기가 두 번 들어 있다`);
+
+      if (![1, 2, 3, 4].includes(quiz.answer)) {
+        note(`${where}: answer는 1~4여야 하는데 ${quiz.answer}`);
+      } else {
+        answers[quiz.answer] = (answers[quiz.answer] ?? 0) + 1;
       }
-    }
 
-    if (![1, 2, 3, 4].includes(quiz.answer)) {
-      note(`${where}: answer는 1~4여야 하는데 ${quiz.answer}`);
-    } else {
-      answers[quiz.answer] = (answers[quiz.answer] ?? 0) + 1;
-    }
-
-    for (const field of ['title', 'question', 'explanation']) {
-      if (typeof quiz[field] !== 'string' || !quiz[field].trim()) {
-        note(`${where}: ${field}가 비어 있다`);
+      for (const field of ['title', 'question', 'explanation']) {
+        if (typeof quiz[field] !== 'string' || !quiz[field].trim()) {
+          note(`${where}: ${field}가 비어 있다`);
+        }
       }
     }
   }
@@ -69,7 +74,7 @@ for (const file of fs.readdirSync(DIR).filter((f) => f.endsWith('.json'))) {
   }
 
   const spread = [1, 2, 3, 4].map((n) => `${n}번 ${answers[n] ?? 0}`).join(' · ');
-  console.log(`  퀴즈 ${withQuiz}/${lessons.length}   정답 분포: ${spread}`);
+  console.log(`  문항 ${withQuiz}개 / 항목 ${lessons.length}개   정답 분포: ${spread}`);
 }
 
 console.log(problems === 0 ? '\n문제 없음 ✓' : `\n문제 ${problems}건`);
