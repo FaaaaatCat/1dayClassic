@@ -10,6 +10,8 @@ interface ScaleButtonProps {
   style?: StyleProp<ViewStyle>;
   children: React.ReactNode;
   accessibilityLabel?: string;
+  /** 눌리지 않는 상태 — 손가락을 받지 않고 줄어드는 효과도 내지 않는다. */
+  disabled?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -20,6 +22,7 @@ export default function ScaleButton({
   style,
   children,
   accessibilityLabel,
+  disabled,
 }: ScaleButtonProps) {
   const scale = useSharedValue(1);
 
@@ -31,10 +34,14 @@ export default function ScaleButton({
     <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
       onPressIn={() => {
+        if (disabled) return;
         scale.value = withTiming(0.96, { duration: 120 });
       }}
       onPressOut={() => {
+        if (disabled) return;
         scale.value = withTiming(1, { duration: 160 });
       }}
       onPress={onPress}

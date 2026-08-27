@@ -436,6 +436,9 @@ export default function CardSlidePreviewScreen() {
 
       {/**
         * 퀴즈 — 구매 안내 장의 버튼으로 전체 화면에 뜬다. 감상 노트 팝업과 같은 틀이다.
+        *
+        * 닫기 버튼을 여기서 띄우지 않고 QuizSolver에 맡기는 건 제목과 한 줄에 세우기
+        * 위해서다. 노트 팝업의 CloseButton은 절대 위치라 옆에 무엇을 나란히 둘 수 없다.
         */}
       <Modal visible={quizOpen} animationType="fade" onRequestClose={closeQuiz}>
         <View
@@ -443,13 +446,7 @@ export default function CardSlidePreviewScreen() {
             styles.noteModal,
             { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
           ]}>
-          <CloseButton top={insets.top + 24} onPress={closeQuiz} />
-          <ScrollView
-            style={styles.noteModalBody}
-            contentContainerStyle={styles.quizModalContent}
-            showsVerticalScrollIndicator={false}>
-            <QuizSolver onFinish={finishStudy} />
-          </ScrollView>
+          <QuizSolver onClose={closeQuiz} onFinish={finishStudy} />
         </View>
       </Modal>
     </View>
@@ -745,82 +742,102 @@ function CardContent({
  * 카드 위가 아니라 팝업이라 보기를 손가락으로 고를 수 있다. 카드 덱에서는 탭이 페이지
  * 넘김에 쓰여서 같은 자리에서 '넘기기'와 '고르기'를 함께 둘 수 없었다.
  *
- * 틀린 보기는 표시만 하고 그대로 남긴다 — 무엇을 짚었는지 보이고 다시 고를 수 있다.
- * 정답을 맞히면 그 아래에 해설이 열리고 더는 고를 수 없다.
+ * 한 화면에 한 문제씩 보여 주고 아래 '다음'으로 넘어간다. 보기는 문제마다 한 번만
+ * 고를 수 있고, 고르는 순간 맞든 틀리든 해설이 열린다 — 다시 고르게 하면 정답을 맞힐
+ * 때까지 찍게 되어 해설을 읽을 이유가 없어진다. 틀렸으면 짚은 보기를 붉게, 정답을
+ * 초록으로 함께 보여 준다(다시 고를 수 없으니 정답이 무엇인지는 알려 줘야 한다).
  */
-function QuizSolver({ onFinish }: { onFinish: () => void }) {
-  // 문제마다 짚어 본 보기를 따로 쌓는다 — 한 문제의 오답이 옆 문제에 번지면 안 된다.
-  const [picked, setPicked] = useState<number[][]>(() => PREVIEW_QUIZZES.map(() => []));
+function QuizSolver({ onClose, onFinish }: { onClose: () => void; onFinish: () => void }) {
+  // 문제마다 고른 보기 하나 — 아직 안 골랐으면 null이다.
+  const [picked, setPicked] = useState<(number | null)[]>(() => PREVIEW_QUIZZES.map(() => null));
+  const [page, setPage] = useState(0);
+  // 해설까지 읽느라 내려온 스크롤을 그대로 두면 다음 문제가 중간부터 보인다.
+  const bodyRef = useRef<ScrollView>(null);
+  const goNext = () => {
+    setPage((p) => p + 1);
+    bodyRef.current?.scrollTo({ y: 0, animated: false });
+  };
 
   if (PREVIEW_QUIZZES.length === 0) {
     return <Text style={styles.quizText}>퀴즈를 찾지 못했습니다.</Text>;
   }
 
-  // 오늘의 공부는 문제를 다 맞혀야 끝난다.
-  const allSolved = PREVIEW_QUIZZES.every((quiz, i) => picked[i].includes(quiz.answer));
+  const quiz = PREVIEW_QUIZZES[page];
+  const pick = picked[page];
+  const answered = pick !== null;
+  const last = page === PREVIEW_QUIZZES.length - 1;
 
   return (
-    <View style={styles.quizSolver}>
-      {/* 제목은 맨 위에 한 번만 — 아래로 문제만 이어 붙는다. */}
-      <CardHeading text={PREVIEW_QUIZZES[0].title} />
-
-      {PREVIEW_QUIZZES.map((quiz, qi) => {
-        const tries = picked[qi];
-        const solved = tries.includes(quiz.answer);
-        return (
-          <View key={quiz.question} style={styles.quizItem}>
-            <Text style={styles.quizItemNo}>{`${qi + 1} / ${PREVIEW_QUIZZES.length}`}</Text>
-            <Text style={styles.quizQuestion}>{quiz.question}</Text>
-
-            <View style={styles.quizChoices}>
-              {quiz.choices.map((choice, i) => {
-                const no = i + 1;
-                const tried = tries.includes(no);
-                const right = tried && no === quiz.answer;
-                const wrong = tried && !right;
-                return (
-                  <Pressable
-                    key={choice}
-                    // 이미 짚어 본 보기와 정답을 맞힌 뒤에는 더 누르지 않는다.
-                    disabled={tried || solved}
-                    onPress={() =>
-                      setPicked((prev) => prev.map((list, i2) => (i2 === qi ? [...list, no] : list)))
-                    }
-                    style={[
-                      styles.quizChoice,
-                      styles.quizChoiceBox,
-                      right && styles.quizChoiceRight,
-                      wrong && styles.quizChoiceWrong,
-                    ]}>
-                    <Text
-                      style={[
-                        styles.quizChoiceNo,
-                        right && styles.quizChoiceNoRight,
-                        wrong && styles.quizChoiceNoWrong,
-                      ]}>
-                      {no}
-                    </Text>
-                    <Text style={styles.quizChoiceText}>{choice}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {solved ? <Text style={styles.quizExplanation}>{quiz.explanation}</Text> : null}
-          </View>
-        );
-      })}
-
-      {allSolved ? (
-        // 오늘의 공부는 여기서 맺는다 — 해설까지 읽고 나면 더 볼 것이 없다.
-        <ScaleButton
-          accessibilityLabel="오늘의 공부 마치기"
-          style={styles.finishButton}
-          onPress={onFinish}>
-          <Text style={styles.finishText}>오늘의 공부 마치기</Text>
+    <>
+      {/* 제목과 닫기 버튼을 한 줄에 세운다. */}
+      <View style={styles.quizHeader}>
+        <CardHeading text={quiz.title} />
+        <ScaleButton accessibilityLabel="퀴즈 닫기" style={styles.closeHit} onPress={onClose}>
+          <SymbolView
+            name={{ ios: 'xmark', android: 'close', web: 'close' }}
+            tintColor={Colors.brown50}
+            size={24}
+          />
         </ScaleButton>
-      ) : null}
-    </View>
+      </View>
+
+      <ScrollView
+        ref={bodyRef}
+        style={styles.quizBody}
+        contentContainerStyle={styles.quizPage}
+        showsVerticalScrollIndicator={false}>
+        <Text style={styles.quizItemNo}>{`${page + 1} / ${PREVIEW_QUIZZES.length}`}</Text>
+        <Text style={styles.quizQuestion}>{quiz.question}</Text>
+
+        <View style={styles.quizChoices}>
+          {quiz.choices.map((choice, i) => {
+            const no = i + 1;
+            const right = answered && no === quiz.answer;
+            const wrong = answered && no === pick && pick !== quiz.answer;
+            return (
+              <Pressable
+                key={choice}
+                // 한 문제에 한 번만 고른다. 고르고 나면 더 누르지 않는다.
+                disabled={answered}
+                onPress={() => setPicked((prev) => prev.map((v, i2) => (i2 === page ? no : v)))}
+                style={[
+                  styles.quizChoice,
+                  styles.quizChoiceBox,
+                  right && styles.quizChoiceRight,
+                  wrong && styles.quizChoiceWrong,
+                ]}>
+                <Text
+                  style={[
+                    styles.quizChoiceNo,
+                    right && styles.quizChoiceNoRight,
+                    wrong && styles.quizChoiceNoWrong,
+                  ]}>
+                  {no}
+                </Text>
+                <Text style={styles.quizChoiceText}>{choice}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {answered ? (
+          <View style={styles.quizExplanationBox}>
+            <Text style={styles.quizExplanation}>{quiz.explanation}</Text>
+          </View>
+        ) : null}
+      </ScrollView>
+
+      {/* 하단 버튼 — 보기를 고르기 전에는 눌리지 않고, 마지막 문제에서는 마치기가 된다. */}
+      <ScaleButton
+        accessibilityLabel={last ? '오늘의 공부 마치기' : '다음'}
+        disabled={!answered}
+        style={[styles.finishButton, !answered && styles.quizNextOff]}
+        onPress={last ? onFinish : goNext}>
+        <Text style={[styles.finishText, !answered && styles.quizNextOffText]}>
+          {last ? '오늘의 공부 마치기' : '다음'}
+        </Text>
+      </ScaleButton>
+    </>
   );
 }
 
@@ -1468,25 +1485,27 @@ const styles = StyleSheet.create({
   quizChoices: {
     gap: 10,
   },
-  /** 문제 하나 묶음 — 여러 문제가 한 화면에 이어지므로 위에 줄을 그어 경계를 준다. */
-  quizItem: {
-    gap: 12,
-    paddingTop: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.brown10,
-  },
   quizItemNo: {
     fontFamily: Fonts.semiBold,
     fontSize: 12,
     letterSpacing: tracking(12),
     color: Colors.beige100,
   },
-  /** 퀴즈 팝업 — 카드가 아니라 화면을 쓰므로 위에서부터 채운다. */
-  quizModalContent: {
-    paddingBottom: 24,
+  /** 제목과 닫기 버튼이 나란히 서는 줄 — 높이는 닫기 버튼에 맞춘다. */
+  quizHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 41,
   },
-  quizSolver: {
+  /** 문제 한 장이 들어갈 자리 — 남는 높이를 다 차지하고 아래에 버튼이 붙는다. */
+  quizBody: {
+    flex: 1,
+  },
+  quizPage: {
     gap: 16,
+    paddingTop: 24,
+    paddingBottom: 24,
   },
   /** 고를 수 있는 보기는 눌리는 자리가 보이도록 테두리와 여백을 준다. */
   quizChoiceBox: {
@@ -1495,6 +1514,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.brown10,
+    backgroundColor: Colors.white,
   },
   quizChoiceRight: {
     borderColor: Colors.green100,
@@ -1537,11 +1557,26 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(13),
     color: Colors.brown100,
   },
+  /** 해설도 보기처럼 박스로 감싼다 — 흰 보기와 구분되게 바탕은 종이색 그대로 둔다. */
+  quizExplanationBox: {
+    padding: 16,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.brown10,
+    backgroundColor: Colors.beige10,
+  },
   quizExplanation: {
     fontFamily: Fonts.regular,
     fontSize: 13,
     lineHeight: 22,
     letterSpacing: tracking(13),
+    color: Colors.brown50,
+  },
+  /** 보기를 고르기 전의 '다음' — 눌리지 않는다는 게 색으로 보여야 한다. */
+  quizNextOff: {
+    backgroundColor: Colors.brown10,
+  },
+  quizNextOffText: {
     color: Colors.brown50,
   },
 
