@@ -765,6 +765,7 @@ function QuizSolver({ onClose, onFinish }: { onClose: () => void; onFinish: () =
   const quiz = PREVIEW_QUIZZES[page];
   const pick = picked[page];
   const answered = pick !== null;
+  const correct = pick === quiz.answer;
   const last = page === PREVIEW_QUIZZES.length - 1;
 
   return (
@@ -793,7 +794,7 @@ function QuizSolver({ onClose, onFinish }: { onClose: () => void; onFinish: () =
           {quiz.choices.map((choice, i) => {
             const no = i + 1;
             const right = answered && no === quiz.answer;
-            const wrong = answered && no === pick && pick !== quiz.answer;
+            const wrong = answered && no === pick && !correct;
             return (
               <Pressable
                 key={choice}
@@ -822,6 +823,14 @@ function QuizSolver({ onClose, onFinish }: { onClose: () => void; onFinish: () =
 
         {answered ? (
           <View style={styles.quizExplanationBox}>
+            {/* 맞았는지 틀렸는지 한 줄로 먼저 알려 주고 해설로 넘어간다. */}
+            <Text
+              style={[
+                styles.quizVerdict,
+                correct ? styles.quizVerdictRight : styles.quizVerdictWrong,
+              ]}>
+              {correct ? '정답입니다!' : `아쉬워요 정답은 ${quiz.answer}번 입니다.`}
+            </Text>
             <Text style={styles.quizExplanation}>{quiz.explanation}</Text>
           </View>
         ) : null}
@@ -1559,11 +1568,25 @@ const styles = StyleSheet.create({
   },
   /** 해설도 보기처럼 박스로 감싼다 — 흰 보기와 구분되게 바탕은 종이색 그대로 둔다. */
   quizExplanationBox: {
+    gap: 8,
     padding: 16,
     borderRadius: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.brown10,
     backgroundColor: Colors.beige10,
+  },
+  /** 맞고 틀림을 알리는 한 줄 — 보기에 켠 초록·붉은색과 같은 색을 쓴다. */
+  quizVerdict: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    lineHeight: 22,
+    letterSpacing: tracking(14),
+  },
+  quizVerdictRight: {
+    color: Colors.green100,
+  },
+  quizVerdictWrong: {
+    color: Colors.red100,
   },
   quizExplanation: {
     fontFamily: Fonts.regular,
