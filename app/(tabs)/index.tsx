@@ -95,7 +95,7 @@ export default function HomeScreen() {
 
           <View style={styles.alarmRow}>
             <View style={styles.alarmIconBadge}>
-              <Ionicons name="alarm-outline" color={Colors.beige100} size={17} />
+              <Ionicons name="time-outline" color={Colors.beige100} size={17} />
             </View>
             <View style={styles.alarmInfoWrap}>
               <ScaleButton
