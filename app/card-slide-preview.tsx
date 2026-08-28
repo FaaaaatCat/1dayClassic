@@ -15,6 +15,8 @@ import {
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type StyleProp,
+  type TextStyle,
 } from 'react-native';
 import Animated, {
   Extrapolation,
@@ -32,7 +34,11 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
-import { useCardNarration, type NarrationStep } from '@/hooks/useCardNarration';
+import {
+  useCardNarration,
+  type NarrationStep,
+  type SpokenRange,
+} from '@/hooks/useCardNarration';
 import StudyReport from '@/components/StudyReport';
 import listeningData from '@/data/listening.json';
 import { getCatalogBooks } from '@/lib/catalog';
@@ -210,13 +216,25 @@ const PAGES: Page[] = [
  * 인용문의 출처(epigraphBy)는 읽지 않는다. 구매 안내 장도 읽을 것이 아니다 —
  * 본문이 끝나면 그대로 엔딩으로 간다.
  */
+/**
+ * 문단 하나를 문장 덩이로 쪼개면서, 각 문장이 문단 어디서 시작했는지를 함께 적어 둔다.
+ * 그 자리를 알아야 TTS가 알려 주는 단어 위치를 카드 위의 글자로 옮길 수 있다.
+ */
+function stepsFor(page: number, paragraph: string): NarrationStep[] {
+  let cursor = 0;
+  return splitSentences(paragraph).map((text) => {
+    const offset = paragraph.indexOf(text, cursor);
+    cursor = offset + text.length;
+    return { page, text, offset };
+  });
+}
+
 const NARRATION_STEPS: NarrationStep[] = [
+  // 표지는 그린 글("001번째 듣는 법")과 읽는 말이 달라 하이라이트를 걸지 않는다.
   { page: 0, text: PREVIEW_BOOK_TITLE },
   { page: 0, text: `${KOREAN_ORDINALS[PREVIEW_NO] ?? PREVIEW_NO} 번째 듣는 법` },
-  ...splitSentences(QUOTE_TEXT).map((text): NarrationStep => ({ page: 1, text })),
-  ...DESC_PARAGRAPHS.flatMap((paragraph, i) =>
-    splitSentences(paragraph).map((text): NarrationStep => ({ page: 2 + i, text })),
-  ),
+  ...stepsFor(1, QUOTE_TEXT),
+  ...DESC_PARAGRAPHS.flatMap((paragraph, i) => stepsFor(2 + i, paragraph)),
 ];
 
 /**
@@ -407,9 +425,15 @@ export default function CardSlidePreviewScreen() {
    * goTo를 그대로 넘기는 건 사람이 탭해서 넘길 때와 같은 길로 보내려는 것이다. 넘김
    * 애니메이션도, 정착 처리도 한 군데에만 있어야 어긋나지 않는다.
    */
-  const narration = useCardNarration({ steps: NARRATION_STEPS, onPage: goTo });
   /** 헤드폰 버튼이 펼쳐져 조작 아이콘을 드러내고 있는지. */
   const [readerOpen, setReaderOpen] = useState(false);
+  const narration = useCardNarration({
+    steps: NARRATION_STEPS,
+    onPage: goTo,
+    // 끝까지 다 읽으면 듣기 모드도 함께 접는다. 도중에 멈춘 경우에는 열어 둔다 —
+    // 다시 듣거나 이어 갈 사람이 버튼을 다시 찾아 눌러야 하면 번거롭다.
+    onFinish: () => setReaderOpen(false),
+  });
 
   return (
     <View style={styles.screen}>
@@ -483,6 +507,7 @@ export default function CardSlidePreviewScreen() {
             flipX={flipX}
             enter={enter}
             interactive={INTERACTIVE_KINDS.includes(p.kind) && page === index}
+            spoken={narration.spoken?.page === index ? narration.spoken : null}
             onOpenQuiz={() => setQuizOpen(true)}
           />
         ))}
@@ -669,6 +694,7 @@ function DeckCard({
   flipX,
   enter,
   interactive,
+  spoken,
   onOpenQuiz,
 }: {
   index: number;
@@ -679,6 +705,8 @@ function DeckCard({
   enter: SharedValue<number>;
   /** 이 장이 지금 손가락을 받을 수 있는가(구매 버튼 같은 것). */
   interactive: boolean;
+  /** 낭독이 지금 이 장에서 읽고 있는 글자 범위. 다른 장이면 null이다. */
+  spoken: SpokenRange | null;
   onOpenQuiz: () => void;
 }) {
   /**
@@ -762,7 +790,12 @@ function DeckCard({
           style={[styles.cardFace, kind === 'buy' && styles.cardFaceBuy, frontStyle]}
           pointerEvents="box-none">
           <Animated.View style={[styles.cardBody, bodyStyle]} pointerEvents="box-none">
-            <CardContent kind={kind} paragraph={paragraph} onOpenQuiz={onOpenQuiz} />
+            <CardContent
+              kind={kind}
+              paragraph={paragraph}
+              spoken={spoken}
+              onOpenQuiz={onOpenQuiz}
+            />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
             <LinearGradient
@@ -803,13 +836,50 @@ function DeckCard({
   );
 }
 
+/**
+ * 낭독이 읽고 있는 자리에 밑칠을 하는 글.
+ *
+ * 밀리·리디처럼 지금 소리 나는 단어를 따라간다. 자리는 TTS가 단어를 시작할 때마다
+ * 알려 주는 값이다(안드로이드 onRangeStart / iOS willSpeakRangeOfSpeechString).
+ *
+ * 세 조각으로 나눠 가운데만 다른 스타일을 주는 건, 리액트 네이티브에서 글의 일부만
+ * 칠하는 방법이 중첩 Text뿐이기 때문이다. 줄바꿈과 자간은 바깥 Text의 것을 그대로
+ * 물려받으므로 글이 밀리지 않는다.
+ */
+function SpokenText({
+  text,
+  style,
+  spoken,
+}: {
+  text: string;
+  style: StyleProp<TextStyle>;
+  spoken: SpokenRange | null;
+}) {
+  // 범위가 글 밖으로 나가면(문장 자리 계산이 어긋나면) 그냥 평범한 글로 둔다.
+  if (!spoken || spoken.start >= text.length || spoken.end <= spoken.start) {
+    return <Text style={style}>{text}</Text>;
+  }
+  const end = Math.min(spoken.end, text.length);
+
+  return (
+    <Text style={style}>
+      {text.slice(0, spoken.start)}
+      <Text style={styles.spokenWord}>{text.slice(spoken.start, end)}</Text>
+      {text.slice(end)}
+    </Text>
+  );
+}
+
 function CardContent({
   kind,
   paragraph,
+  spoken,
   onOpenQuiz,
 }: {
   kind: PageKind;
   paragraph?: string;
+  /** 낭독이 지금 읽고 있는 글자 범위. 이 카드가 아니면 null이다. */
+  spoken: SpokenRange | null;
   /** 구매 안내 장의 '퀴즈 풀러 가기' — 퀴즈를 전체 화면으로 연다. */
   onOpenQuiz: () => void;
 }) {
@@ -831,7 +901,7 @@ function CardContent({
   if (kind === 'quote') {
     return (
       <View style={styles.quoteBlock}>
-        <Text style={styles.quoteText}>{QUOTE_TEXT}</Text>
+        <SpokenText text={QUOTE_TEXT} style={styles.quoteText} spoken={spoken} />
         <Text style={styles.quoteSource}>{QUOTE_SOURCE}</Text>
       </View>
     );
@@ -840,7 +910,7 @@ function CardContent({
   if (kind === 'desc') {
     return (
       <View style={styles.descBlock}>
-        <Text style={styles.descText}>{paragraph}</Text>
+        <SpokenText text={paragraph ?? ''} style={styles.descText} spoken={spoken} />
       </View>
     );
   }
@@ -1817,6 +1887,11 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
+  },
+  /** 낭독이 지금 읽는 단어에 깔리는 밑칠. 종이색 위에서 또렷한 따뜻한 색을 쓴다. */
+  spokenWord: {
+    backgroundColor: Colors.beige50,
+    color: Colors.brown100,
   },
   descText: {
     fontFamily: Fonts.regular,

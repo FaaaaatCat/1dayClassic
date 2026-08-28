@@ -27,6 +27,30 @@ export interface NarrationStep {
   page: number;
   /** 읽을 말. 한 카드가 여러 덩이를 가질 수 있다(표지의 책 이름과 회차처럼). */
   text: string;
+  /**
+   * 이 덩이가 카드에 그려진 글의 몇 번째 글자에서 시작하는지.
+   *
+   * TTS는 지금 읽는 단어의 자리를 '넘겨준 말 안에서의 위치'로 알려 준다. 우리는 문장씩
+   * 끊어 넘기므로, 카드 위의 자리를 알려면 문장이 문단 어디서 시작했는지를 더해야 한다.
+   * 없으면 하이라이트를 하지 않는다 — 표지처럼 읽는 말과 그린 글이 다른 장이 그렇다.
+   */
+  offset?: number;
+}
+
+/**
+ * TTS가 단어를 시작할 때 넘겨주는 자리. expo-speech가 이 타입을 밖으로 내보내지 않아
+ * 여기서 모양만 적어 둔다(build/Speech.types의 NativeBoundaryEvent와 같다).
+ */
+interface BoundaryEvent {
+  charIndex: number;
+  charLength: number;
+}
+
+/** 지금 읽고 있는 자리. 카드에 그려진 글에서의 글자 범위다. */
+export interface SpokenRange {
+  page: number;
+  start: number;
+  end: number;
 }
 
 /** 지금 무엇을 하고 있는지. 버튼 모양과 아이콘이 여기에 붙는다. */
@@ -48,14 +72,19 @@ export type NarrationPhase = 'idle' | 'opening' | 'reading' | 'ending';
 export function useCardNarration({
   steps,
   onPage,
+  onFinish,
 }: {
   steps: NarrationStep[];
   /** 이 장을 펼쳐 달라는 신호. 낭독이 카드를 끌고 간다. */
   onPage: (page: number) => void;
+  /** 끝까지 다 읽고 음악까지 걷힌 뒤. 도중에 멈춘 경우에는 부르지 않는다. */
+  onFinish?: () => void;
 }) {
   const player = useExpoAudioPlayer(undefined, { updateInterval: 250 });
   const { bgm } = useBgm();
   const [phase, setPhase] = useState<NarrationPhase>('idle');
+  /** 지금 읽고 있는 글자 자리 — 단어가 넘어갈 때마다 바뀐다. */
+  const [spoken, setSpoken] = useState<SpokenRange | null>(null);
 
   const sessionRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,9 +95,11 @@ export function useCardNarration({
   /** URL 조회 중 연타를 막는 재진입 가드. */
   const resolvingRef = useRef(false);
 
-  // onPage는 화면이 매 렌더 새로 만들어 넘기므로, 흐름이 붙들지 않도록 ref에 담아 둔다.
+  // 화면이 매 렌더 새로 만들어 넘기는 콜백들 — 흐름이 붙들지 않도록 ref에 담아 둔다.
   const onPageRef = useRef(onPage);
   onPageRef.current = onPage;
+  const onFinishRef = useRef(onFinish);
+  onFinishRef.current = onFinish;
 
   useEffect(() => {
     setAudioModeAsync({
@@ -121,7 +152,7 @@ export function useCardNarration({
     }
   }, [bgm.source, player]);
 
-  const speakThen = useCallback((session: number, text: string, next: () => void) => {
+  const speakThen = useCallback((session: number, step: NarrationStep, next: () => void) => {
     let advanced = false;
     const advance = () => {
       if (advanced || session !== sessionRef.current) return;
@@ -132,7 +163,28 @@ export function useCardNarration({
       }
       next();
     };
-    Speech.speak(text, { ...koreanSpeech(voiceRef.current), onDone: advance, onError: advance });
+
+    Speech.speak(step.text, {
+      ...koreanSpeech(voiceRef.current),
+      // 지금 읽는 단어의 자리. 안드로이드는 UtteranceProgressListener.onRangeStart,
+      // iOS는 willSpeakRangeOfSpeechString이 넘겨준다.
+      onBoundary: (event: BoundaryEvent) => {
+        if (session !== sessionRef.current) return;
+        const base = step.offset;
+        if (base == null) return;
+        const { charIndex, charLength } = event;
+        if (typeof charIndex !== 'number') return;
+        const start = base + charIndex;
+        const end = start + (charLength || 0);
+        setSpoken((prev) =>
+          prev && prev.page === step.page && prev.start === start && prev.end === end
+            ? prev
+            : { page: step.page, start, end },
+        );
+      },
+      onDone: advance,
+      onError: advance,
+    });
     timerRef.current = setTimeout(advance, SPEAK_MAX_WAIT_MS);
   }, []);
 
@@ -151,8 +203,10 @@ export function useCardNarration({
 
       // 3. 엔딩 — 낭독 없이 음악만 남아 사라진다.
       const ending = () => {
+        setSpoken(null);
         if (!withBgm) {
           setPhase('idle');
+          onFinishRef.current?.();
           return;
         }
         setPhase('ending');
@@ -161,6 +215,7 @@ export function useCardNarration({
           if (!completed || session !== sessionRef.current) return;
           stopBgm();
           setPhase('idle');
+          onFinishRef.current?.();
         });
       };
 
@@ -178,7 +233,7 @@ export function useCardNarration({
           if (session !== sessionRef.current) return;
           if (turned) onPageRef.current(step.page);
           setPhase('reading');
-          speakThen(session, step.text, () => read(index + 1));
+          speakThen(session, step, () => read(index + 1));
         };
 
         if (previous && turned) waitThen(session, PAGE_GAP_MS, go);
@@ -202,6 +257,7 @@ export function useCardNarration({
   const stop = useCallback(() => {
     cancelFlow();
     stopBgm();
+    setSpoken(null);
     setPhase('idle');
   }, [cancelFlow, stopBgm]);
 
@@ -210,6 +266,7 @@ export function useCardNarration({
     if (resolvingRef.current) return;
     cancelFlow();
     stopBgm();
+    setSpoken(null);
     try {
       startFlow(await loadBgm());
     } catch {
@@ -237,5 +294,5 @@ export function useCardNarration({
     [cancelFlow, stopBgm],
   );
 
-  return { phase, playing: phase !== 'idle', toggle, restart, stop };
+  return { phase, playing: phase !== 'idle', spoken, toggle, restart, stop };
 }
