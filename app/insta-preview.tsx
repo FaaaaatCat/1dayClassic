@@ -2,10 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
-  FadeIn,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -13,9 +13,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import QuizSolver, { quizModalStyles } from '@/components/preview/QuizSolver';
 import ScaleButton from '@/components/ScaleButton';
+import StudyReport from '@/components/StudyReport';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { useCardNarration, type SpokenRange } from '@/hooks/useCardNarration';
+import { openPreviewBookDetail } from '@/lib/preview-nav';
 import {
   DESC_PARAGRAPHS,
   NARRATION_STEPS,
@@ -35,10 +38,13 @@ import {
  * 보여 주는 글과 순서는 카드 슬라이드와 한 곳(lib/preview-content)에서 나온다. 여기서
  * 정하는 것은 옷뿐이다 — 위의 칸 진행 바, 계정 줄, 어두운 바닥 위의 밝은 판, 아래 아이콘.
  *
- * 스토리를 흉내 내되 가져오지 않은 것이 둘 있다. 메시지 보내기는 만들지 않는다(보낼 곳이
- * 없다). 시간이 차면 저절로 넘어가는 것도 하지 않는다 — 카드 슬라이드와 '똑같은 형식'이
- * 어야 하고, 그쪽은 손으로 넘긴다. 그래서 진행 바는 시간이 아니라 몇 장째인지를 말한다.
+ * 넘기는 방법은 스토리 그대로 셋이다 — 시간이 차면 저절로, 좌우를 탭하면 곧바로,
+ * 붙잡고 있으면 멈춘다. 메시지 보내기만 만들지 않았다(보낼 곳이 없다).
+ *
+ * 퀴즈와 리포트는 카드 슬라이드와 같은 것을 쓴다(components/preview/QuizSolver,
+ * components/StudyReport). 두 미리보기가 갈라지면 안 되는 흐름이다.
  */
+
 /** 진행 바 칸 사이 틈. 칸 폭을 재려면 이 값이 필요하다. */
 const BAR_GAP = 4;
 /** 글이 없는 장(표지·구매 안내)에 주는 시간. */
@@ -71,14 +77,21 @@ export default function InstaPreviewScreen() {
 
   const current = PAGES[page];
   const last = page === PAGES.length - 1;
-  /**
-   * 시간이 차면 저절로 넘어간다. 다만 두 자리에서는 멈춘다 —
-   * 낭독 중에는 낭독이 장을 끌고 가므로 둘이 싸우면 안 되고, 마지막 장에서는 갈 곳이 없다.
-   */
-  const paused = narration.playing || last;
+  /** 손가락을 대고 있는 동안. 스토리처럼 글을 더 보려고 붙잡는 자리다. */
+  const [held, setHeld] = useState(false);
+  /** 시간이 흐를 자리가 아닌 경우 — 낭독이 장을 끌고 가는 중이거나, 갈 곳이 없는 마지막 장. */
+  const filled = narration.playing || last;
   const advance = useCallback(() => {
     setPage((p) => (p + 1 < PAGES.length ? p + 1 : p));
   }, []);
+
+  /**
+   * 퀴즈와 리포트 — 카드 슬라이드와 같은 흐름이다.
+   * 마지막 장의 '퀴즈 풀러 가기' → 문제를 다 풀면 '오늘의 공부 마치기' → 리포트 →
+   * '리포트 보러가기' → 서재 상세.
+   */
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 8 }]}>
@@ -88,7 +101,8 @@ export default function InstaPreviewScreen() {
       <ProgressBars
         page={page}
         duration={durationFor(current)}
-        paused={paused}
+        held={held}
+        filled={filled}
         onDone={advance}
       />
 
@@ -116,11 +130,8 @@ export default function InstaPreviewScreen() {
 
       {/* 스토리의 사진 자리 — 어두운 바닥 위에 종이색 판을 얹는다. */}
       <View style={styles.stage}>
-        <Animated.View
-          // 장이 바뀔 때마다 새로 그려져 스며든다. 스토리는 종이를 넘기지 않고 갈아 끼운다.
-          key={page}
-          entering={FadeIn.duration(260)}
-          style={styles.panel}>
+        {/* 스토리는 장을 갈아 끼울 뿐 아무 효과도 주지 않는다 — 그래서 여기도 없다. */}
+        <View style={styles.panel}>
           <ScrollView
             contentContainerStyle={styles.panelBody}
             showsVerticalScrollIndicator={false}>
@@ -128,22 +139,38 @@ export default function InstaPreviewScreen() {
               kind={current.kind}
               paragraph={current.paragraph}
               spoken={narration.spoken?.page === page ? narration.spoken : null}
+              onOpenQuiz={() => setQuizOpen(true)}
             />
           </ScrollView>
-        </Animated.View>
+        </View>
 
-        {/* 좌우 탭 — 스토리와 같은 자리, 같은 뜻이다. 가운데는 일부러 비워 둔다. */}
+        {/*
+          좌우 탭 — 스토리와 같은 자리, 같은 뜻이다.
+          가운데까지 손가락을 받는 건 길게 누르기 때문이다. 탭으로는 아무 일도 하지 않되
+          붙잡으면 멈춘다 — 스토리도 화면 어디를 붙잡든 멈춘다.
+          onPressIn/Out으로 붙잡는 걸 보는 건 onLongPress가 500ms 뒤에야 오기 때문이다.
+          글을 더 보려고 누르는 사람은 그 전에 이미 멈췄기를 바란다.
+        */}
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           <View style={styles.tapRow} pointerEvents="box-none">
             <Pressable
               accessibilityLabel="이전 장"
               style={styles.tapZone}
+              onPressIn={() => setHeld(true)}
+              onPressOut={() => setHeld(false)}
               onPress={() => goTo(page - 1)}
             />
-            <View style={styles.tapGap} pointerEvents="none" />
+            <Pressable
+              accessibilityLabel="잠시 멈춤"
+              style={styles.tapZone}
+              onPressIn={() => setHeld(true)}
+              onPressOut={() => setHeld(false)}
+            />
             <Pressable
               accessibilityLabel="다음 장"
               style={styles.tapZone}
+              onPressIn={() => setHeld(true)}
+              onPressOut={() => setHeld(false)}
               onPress={() => goTo(page + 1)}
             />
           </View>
@@ -172,6 +199,39 @@ export default function InstaPreviewScreen() {
           </ScaleButton>
         </View>
       </View>
+
+      {/* 오늘의 퀴즈 — 카드 슬라이드와 같은 것을 쓴다(components/preview/QuizSolver). */}
+      <Modal visible={quizOpen} animationType="fade" onRequestClose={() => setQuizOpen(false)}>
+        <View
+          style={[
+            quizModalStyles.screen,
+            { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
+          ]}>
+          <QuizSolver
+            onClose={() => setQuizOpen(false)}
+            onFinish={() => {
+              setQuizOpen(false);
+              setReportOpen(true);
+            }}
+          />
+        </View>
+      </Modal>
+
+      {/* 오늘의 공부 리포트 — statusBarTranslucent가 없으면 검은 화면 위쪽에 밝은 띠가 남는다. */}
+      <Modal
+        visible={reportOpen}
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setReportOpen(false)}>
+        <StudyReport
+          date={PREVIEW_DATE}
+          bookTitle={PREVIEW_BOOK_TITLE}
+          onOpenReport={() => {
+            setReportOpen(false);
+            openPreviewBookDetail(router);
+          }}
+        />
+      </Modal>
     </View>
   );
 }
@@ -189,32 +249,53 @@ export default function InstaPreviewScreen() {
 function ProgressBars({
   page,
   duration,
-  paused,
+  held,
+  filled,
   onDone,
 }: {
   page: number;
   duration: number;
-  paused: boolean;
+  /** 손가락을 대고 있다. 차오르던 자리에 그대로 세운다. */
+  held: boolean;
+  /** 시간이 흐를 자리가 아니다(낭독 중·마지막 장). 지금 칸을 채운 채로 둔다. */
+  filled: boolean;
   onDone: () => void;
 }) {
   const [barWidth, setBarWidth] = useState(0);
   const progress = useSharedValue(0);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
+  /** 지금 타이머가 걸려 있는 장. 장이 바뀐 것과 붙잡았다 놓은 것을 가른다. */
+  const timedPage = useRef(-1);
 
   const fire = useCallback(() => onDoneRef.current(), []);
 
   useEffect(() => {
-    // 멈춘 자리(낭독 중·마지막 장)에서는 지금 칸을 채운 채로 세워 둔다.
-    if (paused) {
+    // 장이 바뀌었으면 무조건 처음부터.
+    if (timedPage.current !== page) {
+      timedPage.current = page;
+      cancelAnimation(progress);
+      progress.value = 0;
+    }
+
+    if (filled) {
+      cancelAnimation(progress);
       progress.value = 1;
       return;
     }
-    progress.value = 0;
-    progress.value = withTiming(1, { duration, easing: Easing.linear }, (finished) => {
+    if (held) {
+      // 차오르던 그 자리에서 멈춘다. 채워 버리면 손을 떼기도 전에 다 본 것처럼 보이고,
+      // 0으로 되돌리면 붙잡을 때마다 처음부터 다시 읽어야 한다.
+      cancelAnimation(progress);
+      return;
+    }
+
+    // 남은 만큼만 마저 채운다 — 붙잡았다 놓으면 이어서 간다.
+    const remaining = duration * (1 - progress.value);
+    progress.value = withTiming(1, { duration: remaining, easing: Easing.linear }, (finished) => {
       if (finished) runOnJS(fire)();
     });
-  }, [page, duration, paused, progress, fire]);
+  }, [page, duration, held, filled, progress, fire]);
 
   const fillStyle = useAnimatedStyle(() => ({ width: progress.value * barWidth }));
 
@@ -264,10 +345,12 @@ function PageContent({
   kind,
   paragraph,
   spoken,
+  onOpenQuiz,
 }: {
   kind: PageKind;
   paragraph?: string;
   spoken: SpokenRange | null;
+  onOpenQuiz: () => void;
 }) {
   if (kind === 'intro') {
     return (
@@ -314,6 +397,13 @@ function PageContent({
       <View style={styles.buySticker}>
         <Text style={styles.buyStickerText}>￦8,820</Text>
       </View>
+      {/* 스토리의 '더 보기'처럼 아래로 붙는 한 줄 — 여기서 퀴즈로 들어간다. */}
+      <ScaleButton
+        accessibilityLabel="퀴즈 풀러 가기"
+        style={styles.quizEntry}
+        onPress={onOpenQuiz}>
+        <Text style={styles.quizEntryText}>퀴즈 풀러 가기</Text>
+      </ScaleButton>
     </View>
   );
 }
@@ -539,6 +629,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 6,
     backgroundColor: Colors.brown100,
+  },
+  /** 스토리의 '더 보기'처럼 아래에 붙는 줄. 값표와 성격이 달라 테두리만 두른다. */
+  quizEntry: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.brown100,
+  },
+  quizEntryText: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 15,
+    letterSpacing: tracking(15),
+    color: Colors.brown100,
   },
   buyStickerText: {
     fontFamily: Fonts.semiBold,

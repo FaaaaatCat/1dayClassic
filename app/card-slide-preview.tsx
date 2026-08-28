@@ -33,6 +33,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import QuizSolver, { quizModalStyles } from '@/components/preview/QuizSolver';
 import ScaleButton from '@/components/ScaleButton';
 import {
   useCardNarration,
@@ -53,6 +54,7 @@ import {
   type Page,
   type PageKind,
 } from '@/lib/preview-content';
+import { openPreviewBookDetail } from '@/lib/preview-nav';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
 /**
@@ -246,28 +248,10 @@ export default function CardSlidePreviewScreen() {
     setReportOpen(true);
   };
 
-  /**
-   * 리포트에서 이어 가기 — 지금 읽던 책의 서재 상세로 보낸다.
-   *
-   * 상세로 바로 replace하면 미리보기가 스택에서 빠지면서 아래에 아무것도 남지 않아,
-   * 상세에서 뒤로가기를 누르면 앱이 통째로 종료된다. 그래서 서재 목록으로 먼저 옮긴 뒤
-   * 그 위에 상세를 얹는다 — 서재에서 책을 열었을 때와 같은 자리에 놓인다.
-   *
-   * 상세 라우트의 id는 학습 콘텐츠가 있는 책이면 BookId, 아니면 카탈로그 uuid다
-   * (서재 목록의 openBook과 같은 식). 서재에 담겼는지와는 무관하다 — 상세 화면이 id를
-   * 카탈로그에서 푸므로 담기지 않은 책도 열린다.
-   */
+  /** 리포트에서 이어 가기 — 스택을 거치는 순서는 lib/preview-nav 주석 참고. */
   const openBookDetail = () => {
     setReportOpen(false);
-    if (!PREVIEW_BOOK) {
-      router.replace('/settings');
-      return;
-    }
-    router.replace('/library');
-    router.push({
-      pathname: '/library/book/[id]',
-      params: { id: PREVIEW_BOOK.bookId ?? PREVIEW_BOOK.id },
-    });
+    openPreviewBookDetail(router);
   };
 
   useEffect(() => {
@@ -493,7 +477,7 @@ export default function CardSlidePreviewScreen() {
       <Modal visible={quizOpen} animationType="fade" onRequestClose={closeQuiz}>
         <View
           style={[
-            styles.noteModal,
+            quizModalStyles.screen,
             { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
           ]}>
           <QuizSolver onClose={closeQuiz} onFinish={finishStudy} />
@@ -851,119 +835,6 @@ function CardContent({
   return null;
 }
 
-/**
- * 퀴즈 풀기 — 구매 안내 장의 버튼으로 전체 화면에 뜬다.
- *
- * 카드 위가 아니라 팝업이라 보기를 손가락으로 고를 수 있다. 카드 덱에서는 탭이 페이지
- * 넘김에 쓰여서 같은 자리에서 '넘기기'와 '고르기'를 함께 둘 수 없었다.
- *
- * 한 화면에 한 문제씩 보여 주고 아래 '다음'으로 넘어간다. 보기는 문제마다 한 번만
- * 고를 수 있고, 고르는 순간 맞든 틀리든 해설이 열린다 — 다시 고르게 하면 정답을 맞힐
- * 때까지 찍게 되어 해설을 읽을 이유가 없어진다. 틀렸으면 짚은 보기를 붉게, 정답을
- * 초록으로 함께 보여 준다(다시 고를 수 없으니 정답이 무엇인지는 알려 줘야 한다).
- */
-function QuizSolver({ onClose, onFinish }: { onClose: () => void; onFinish: () => void }) {
-  // 문제마다 고른 보기 하나 — 아직 안 골랐으면 null이다.
-  const [picked, setPicked] = useState<(number | null)[]>(() => PREVIEW_QUIZZES.map(() => null));
-  const [page, setPage] = useState(0);
-  // 해설까지 읽느라 내려온 스크롤을 그대로 두면 다음 문제가 중간부터 보인다.
-  const bodyRef = useRef<ScrollView>(null);
-  const goNext = () => {
-    setPage((p) => p + 1);
-    bodyRef.current?.scrollTo({ y: 0, animated: false });
-  };
-
-  if (PREVIEW_QUIZZES.length === 0) {
-    return <Text style={styles.quizText}>퀴즈를 찾지 못했습니다.</Text>;
-  }
-
-  const quiz = PREVIEW_QUIZZES[page];
-  const pick = picked[page];
-  const answered = pick !== null;
-  const correct = pick === quiz.answer;
-  const last = page === PREVIEW_QUIZZES.length - 1;
-
-  return (
-    <>
-      {/* 제목과 닫기 버튼을 한 줄에 세운다. */}
-      <View style={styles.quizHeader}>
-        <CardHeading text={quiz.title} />
-        <ScaleButton accessibilityLabel="퀴즈 닫기" style={styles.closeHit} onPress={onClose}>
-          <Ionicons
-            name="close"
-            color={Colors.brown50}
-            size={24}
-          />
-        </ScaleButton>
-      </View>
-
-      <ScrollView
-        ref={bodyRef}
-        style={styles.quizBody}
-        contentContainerStyle={styles.quizPage}
-        showsVerticalScrollIndicator={false}>
-        <Text style={styles.quizItemNo}>{`${page + 1} / ${PREVIEW_QUIZZES.length}`}</Text>
-        <Text style={styles.quizQuestion}>{quiz.question}</Text>
-
-        <View style={styles.quizChoices}>
-          {quiz.choices.map((choice, i) => {
-            const no = i + 1;
-            const right = answered && no === quiz.answer;
-            const wrong = answered && no === pick && !correct;
-            return (
-              <Pressable
-                key={choice}
-                // 한 문제에 한 번만 고른다. 고르고 나면 더 누르지 않는다.
-                disabled={answered}
-                onPress={() => setPicked((prev) => prev.map((v, i2) => (i2 === page ? no : v)))}
-                style={[
-                  styles.quizChoice,
-                  styles.quizChoiceBox,
-                  right && styles.quizChoiceRight,
-                  wrong && styles.quizChoiceWrong,
-                ]}>
-                <Text
-                  style={[
-                    styles.quizChoiceNo,
-                    right && styles.quizChoiceNoRight,
-                    wrong && styles.quizChoiceNoWrong,
-                  ]}>
-                  {no}
-                </Text>
-                <Text style={styles.quizChoiceText}>{choice}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {answered ? (
-          <View style={styles.quizExplanationBox}>
-            {/* 맞았는지 틀렸는지 한 줄로 먼저 알려 주고 해설로 넘어간다. */}
-            <Text
-              style={[
-                styles.quizVerdict,
-                correct ? styles.quizVerdictRight : styles.quizVerdictWrong,
-              ]}>
-              {correct ? '정답입니다!' : `아쉬워요 정답은 ${quiz.answer}번 입니다.`}
-            </Text>
-            <Text style={styles.quizExplanation}>{quiz.explanation}</Text>
-          </View>
-        ) : null}
-      </ScrollView>
-
-      {/* 하단 버튼 — 보기를 고르기 전에는 눌리지 않고, 마지막 문제에서는 마치기가 된다. */}
-      <ScaleButton
-        accessibilityLabel={last ? '오늘의 공부 마치기' : '다음'}
-        disabled={!answered}
-        style={[styles.finishButton, !answered && styles.quizNextOff]}
-        onPress={last ? onFinish : goNext}>
-        <Text style={[styles.finishText, !answered && styles.quizNextOffText]}>
-          {last ? '오늘의 공부 마치기' : '다음'}
-        </Text>
-      </ScaleButton>
-    </>
-  );
-}
 
 
 /**
@@ -1017,6 +888,16 @@ function BuyBlock({ onOpenQuiz }: { onOpenQuiz: () => void }) {
       <Pressable style={[styles.cardButton, styles.buyButton, styles.quizButton]} onPress={onOpenQuiz}>
         <Text style={[styles.cardButtonText, styles.quizButtonText]}>퀴즈 풀러 가기</Text>
       </Pressable>
+    </View>
+  );
+}
+
+/** 노트 제목 줄 — 연필과 글자를 한 줄에. */
+function CardHeading({ text }: { text: string }) {
+  return (
+    <View style={styles.cardHeading}>
+      <Ionicons name="pencil" color={Colors.brown100} size={14} />
+      <Text style={styles.cardHeadingText}>{text}</Text>
     </View>
   );
 }
@@ -1121,18 +1002,6 @@ function Toast({ bottom, at, text }: { bottom: number; at: number; text: string 
   );
 }
 
-function CardHeading({ text }: { text: string }) {
-  return (
-    <View style={styles.cardHeading}>
-      <Ionicons
-        name="pencil"
-        color={Colors.brown100}
-        size={14}
-      />
-      <Text style={styles.cardHeadingText}>{text}</Text>
-    </View>
-  );
-}
 
 // ── 버튼 · 인디케이터 ──────────────────────────────────────────────────────
 
