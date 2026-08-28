@@ -11,11 +11,11 @@ import { koreanSpeech, pickKoreanVoice } from '@/lib/tts';
 /** 배경음악 볼륨 — 낭독을 덮지 않도록 낮게 깐다. 음악은 주인공이 아니라 바닥이다. */
 const BGM_VOLUME = 0.25;
 /** 오프닝 — 낭독 없이 음악만 흐르며 올라오는 시간. */
-const OPENING_MS = 5000;
+const OPENING_MS = 3000;
 /** 엔딩 — 낭독이 끝난 뒤 음악만 남아 사라지는 시간. */
 const ENDING_MS = 5000;
 /** 한 장을 다 읽고 다음 장으로 넘어가기 전의 정적. */
-const PAGE_GAP_MS = 4000;
+const PAGE_GAP_MS = 3000;
 /**
  * TTS가 onDone/onError를 안 주는 환경에서도 흐름이 멈추지 않게 하는 최대 대기.
  * 한 덩이는 문장 하나라 이만큼 걸릴 일이 없다 — 순전히 안전장치다.
