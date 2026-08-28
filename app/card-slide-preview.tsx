@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -437,6 +438,7 @@ export default function CardSlidePreviewScreen() {
             이 층 다툼이 없었지만, 이것은 카드 사각형 안에 앉는 첫 버튼이다. */}
         <DescBookmark
           flipX={flipX}
+          gliding={gliding}
           page={page}
           active={PAGES[page]?.kind === 'desc'}
           saved={marked.has(page)}
@@ -1154,12 +1156,15 @@ function CloseButton({
  */
 function DescBookmark({
   flipX,
+  gliding,
   page,
   active,
   saved,
   onToggle,
 }: {
   flipX: SharedValue<number>;
+  /** 넘김이 돌고 있는지. 탭한 순간 켜지므로 이걸로 즉시 지운다. */
+  gliding: SharedValue<boolean>;
   /** 지금 앉아 있는 장. 본문에서 본문으로 넘어가도 다시 배어 나오게 하는 열쇠다. */
   page: number;
   active: boolean;
@@ -1179,9 +1184,11 @@ function DescBookmark({
   }, [active, page, appear]);
 
   const style = useAnimatedStyle(() => {
+    // 탭한 순간 끊는다 — 위치로만 흐리면 넘김 초반에 잠깐 남아 겉돈다.
+    if (gliding.value) return { opacity: 0 };
+    // 손으로 끄는 중일 때는 gliding이 아직 꺼져 있으므로 위치로 흐린다.
     const x = flipX.value / PAGE_W;
     const i = Math.round(x);
-    // 조금이라도 넘어가는 중이면 지운다 — 종이와 함께 돌지 않아 떠 있으면 겉돈다.
     return { opacity: appear.value * (1 - Math.min(Math.abs(x - i) * 2, 1)) };
   });
 
@@ -1191,15 +1198,11 @@ function DescBookmark({
         accessibilityLabel={saved ? '북마크 해지' : '북마크'}
         style={styles.descBookmarkHit}
         onPress={onToggle}>
-        <SymbolView
-          // 꽂아 둔 장은 속을 채운 책갈피로 바꾼다. 안드로이드는 예전 머티리얼 이름
-          // 그대로 bookmark가 채운 것, bookmark_border가 테두리만 있는 것이다.
-          name={
-            saved
-              ? { ios: 'bookmark.fill', android: 'bookmark', web: 'bookmark' }
-              : { ios: 'bookmark', android: 'bookmark_border', web: 'bookmark_border' }
-          }
-          tintColor={saved ? Colors.red100 : Colors.brown50}
+        {/* 탭바와 같은 방식 — Ionicons에는 채움과 테두리가 짝으로 있다. expo-symbols가
+            안드로이드에서 쓰는 머티리얼 심볼은 폰트 한 벌뿐이라 채움 축을 못 건드린다. */}
+        <Ionicons
+          name={saved ? 'bookmark' : 'bookmark-outline'}
+          color={saved ? Colors.red100 : Colors.brown50}
           size={18}
         />
       </ScaleButton>
