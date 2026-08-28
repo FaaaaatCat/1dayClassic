@@ -135,6 +135,8 @@ const NOTE_LINE_H = 26;
 /** 토스트가 떠 있는 시간과 뜨고 지는 시간(ms). */
 const TOAST_HOLD = 1800;
 const TOAST_FADE = 220;
+/** 장이 앉은 뒤 책갈피가 배어 나오는 시간 — 넘김이 끝난 것을 보고 나서 눈에 든다. */
+const BOOKMARK_FADE_IN = 520;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
@@ -225,6 +227,30 @@ export default function CardSlidePreviewScreen() {
    */
   const [toastAt, setToastAt] = useState(0);
   const showToast = () => setToastAt(Date.now());
+
+  /**
+   * 책갈피를 꽂아 둔 장들. '이 페이지를' 저장하는 것이라 화면 하나가 아니라 장마다
+   * 따로 기억한다 — 넘겨 돌아오면 꽂아 둔 그대로 보인다.
+   *
+   * 저장은 아직 없다(테스트 화면). 화면을 나가면 사라진다.
+   */
+  const [marked, setMarked] = useState<ReadonlySet<number>>(() => new Set());
+  /** 책갈피 토스트 — 켰는지 껐는지에 따라 문구가 다르다(Toast의 at 주석 참고). */
+  const [markToast, setMarkToast] = useState({ at: 0, text: '' });
+
+  const toggleMark = (index: number) => {
+    const saving = !marked.has(index);
+    setMarked((prev) => {
+      const next = new Set(prev);
+      if (saving) next.add(index);
+      else next.delete(index);
+      return next;
+    });
+    setMarkToast({
+      at: Date.now(),
+      text: saving ? '이 페이지를 북마크에 저장했습니다.' : '북마크를 해지했습니다.',
+    });
+  };
   /** 감상 노트 팝업이 열려 있는지. */
   const [noteOpen, setNoteOpen] = useState(false);
   const closeNote = () => setNoteOpen(false);
@@ -409,8 +435,17 @@ export default function CardSlidePreviewScreen() {
             받게 되어 본문의 탭 넘김이 막힌다. 덱의 마지막 자식이자 zIndex가 가장 높아
             카드 위에 그려진다 — 다른 크롬(닫기·점·하단 버튼)은 죄다 카드 바깥이라
             이 층 다툼이 없었지만, 이것은 카드 사각형 안에 앉는 첫 버튼이다. */}
-        <DescBookmark flipX={flipX} active={PAGES[page]?.kind === 'desc'} />
+        <DescBookmark
+          flipX={flipX}
+          page={page}
+          active={PAGES[page]?.kind === 'desc'}
+          saved={marked.has(page)}
+          onToggle={() => toggleMark(page)}
+        />
       </View>
+
+      {/* 책갈피 토스트 — 하단 버튼 줄 위에 뜬다. 감상 노트의 것은 모달 안에 따로 있다. */}
+      <Toast bottom={insets.bottom + 40 + 48 + 12} at={markToast.at} text={markToast.text} />
 
       {/**
         * 감상 노트 — 넘김 흐름에서 빠지고 하단 메모 버튼으로 전체 화면에 뜬다.
@@ -433,7 +468,11 @@ export default function CardSlidePreviewScreen() {
             <NoteBlock onSaved={showToast} />
           </View>
           {/* 기록하기/수정하기 버튼 바로 위 — 버튼을 가리지 않게 그 높이만큼 띄운다. */}
-          <Toast bottom={insets.bottom + 24 + 44 + 12} at={toastAt} />
+          <Toast
+            bottom={insets.bottom + 24 + 44 + 12}
+            at={toastAt}
+            text="감상노트에 저장되었습니다."
+          />
         </KeyboardAvoidingView>
       </Modal>
 
@@ -1004,13 +1043,13 @@ function todayLabel() {
 }
 
 /**
- * 화면 아래 토스트 — 감상 노트를 기록했을 때 잠깐 떴다 사라진다.
+ * 화면 아래 토스트 — 감상 노트를 기록했을 때, 책갈피를 켜고 껐을 때 잠깐 떴다 사라진다.
  *
  * at은 '띄운 시각'이다. 같은 버튼을 연달아 눌러도 값이 매번 달라져 그때마다 다시
  * 뜬다(불리언이면 true→true라 리액트가 갱신을 건너뛴다). 0은 아직 한 번도 안 띄운
  * 상태라 입장하자마자 뜨는 일이 없다.
  */
-function Toast({ bottom, at }: { bottom: number; at: number }) {
+function Toast({ bottom, at, text }: { bottom: number; at: number; text: string }) {
   const shown = useSharedValue(0);
 
   useEffect(() => {
@@ -1031,7 +1070,7 @@ function Toast({ bottom, at }: { bottom: number; at: number }) {
 
   return (
     <Animated.View style={[styles.toast, { bottom }, style]} pointerEvents="none">
-      <Text style={styles.toastText}>감상노트에 저장되었습니다.</Text>
+      <Text style={styles.toastText}>{text}</Text>
     </Animated.View>
   );
 }
@@ -1113,24 +1152,54 @@ function CloseButton({
  * 대신 종이와 함께 돌지 않으므로, 넘기는 동안에는 지웠다가 장이 앉으면 다시 띄운다.
  * 손가락은 리액트 상태(active)로 끊는다 — opacity가 0이어도 터치는 그대로 받는다.
  */
-function DescBookmark({ flipX, active }: { flipX: SharedValue<number>; active: boolean }) {
-  // 워크릿에는 배열이 아니라 숫자 하나만 넘긴다 — 잡아 가는 값이 단순할수록 안전하다.
-  const on = active ? 1 : 0;
+function DescBookmark({
+  flipX,
+  page,
+  active,
+  saved,
+  onToggle,
+}: {
+  flipX: SharedValue<number>;
+  /** 지금 앉아 있는 장. 본문에서 본문으로 넘어가도 다시 배어 나오게 하는 열쇠다. */
+  page: number;
+  active: boolean;
+  saved: boolean;
+  onToggle: () => void;
+}) {
+  // 장이 앉고 나서 천천히 배어 나온다. 사라질 때는 종이를 따라가야 하므로 아래
+  // 워크릿이 즉시 지운다 — 여기서 늦추는 건 나타나는 쪽뿐이다.
+  //
+  // page까지 보는 건 본문에서 본문으로 넘어갈 때 active가 true 그대로라, 그것만
+  // 보면 넘김마다 다시 배어 나오지 않고 종이 속도로 휙 돌아오기 때문이다.
+  const appear = useSharedValue(0);
+  useEffect(() => {
+    appear.value = 0;
+    if (!active) return;
+    appear.value = withTiming(1, { duration: BOOKMARK_FADE_IN });
+  }, [active, page, appear]);
+
   const style = useAnimatedStyle(() => {
     const x = flipX.value / PAGE_W;
     const i = Math.round(x);
-    // 장이 앉아 있을 때만 1 — 조금이라도 넘어가는 중이면 빠르게 지운다.
-    return { opacity: on * (1 - Math.min(Math.abs(x - i) * 2, 1)) };
-  }, [on]);
+    // 조금이라도 넘어가는 중이면 지운다 — 종이와 함께 돌지 않아 떠 있으면 겉돈다.
+    return { opacity: appear.value * (1 - Math.min(Math.abs(x - i) * 2, 1)) };
+  });
 
   return (
-    <Animated.View
-      style={[styles.descBookmark, style]}
-      pointerEvents={active ? 'auto' : 'none'}>
-      <ScaleButton accessibilityLabel="책갈피" style={styles.descBookmarkHit} onPress={() => {}}>
+    <Animated.View style={[styles.descBookmark, style]} pointerEvents={active ? 'auto' : 'none'}>
+      <ScaleButton
+        accessibilityLabel={saved ? '북마크 해지' : '북마크'}
+        style={styles.descBookmarkHit}
+        onPress={onToggle}>
         <SymbolView
-          name={{ ios: 'bookmark', android: 'bookmark', web: 'bookmark' }}
-          tintColor={Colors.brown50}
+          // 꽂아 둔 장은 속을 채운 책갈피로 바꾼다. 안드로이드는 예전 머티리얼 이름
+          // 그대로 bookmark가 채운 것, bookmark_border가 테두리만 있는 것이다.
+          name={
+            saved
+              ? { ios: 'bookmark.fill', android: 'bookmark', web: 'bookmark' }
+              : { ios: 'bookmark', android: 'bookmark_border', web: 'bookmark_border' }
+          }
+          tintColor={saved ? Colors.red100 : Colors.brown50}
           size={18}
         />
       </ScaleButton>
