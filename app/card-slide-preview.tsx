@@ -190,9 +190,15 @@ const PAGES: Page[] = [
 
 /**
  * 카드 안에 눌러야 할 것이 있는 장 — 이 장이 펼쳐져 있을 때만 손가락을 받는다.
- * 본문 장은 오른쪽 아래 책갈피 하나 때문에 들어 있다.
+ *
+ * 본문 장은 여기 넣지 않는다. 본문은 탭으로 넘기는 장이라 카드가 손가락을 받기 시작하면
+ * 넘김이 막힌다(실제로 그랬다). 본문의 책갈피는 카드 안이 아니라 위에 얹었다 —
+ * DescBookmark 주석 참고.
  */
-const INTERACTIVE_KINDS: PageKind[] = ['desc', 'buy'];
+const INTERACTIVE_KINDS: PageKind[] = ['buy'];
+
+/** 본문 장인지 미리 표시해 둔다 — 책갈피를 띄울지 워크릿에서 매 프레임 본다. */
+const DESC_FLAGS = PAGES.map((p) => p.kind === 'desc');
 
 export default function CardSlidePreviewScreen() {
   const router = useRouter();
@@ -346,6 +352,8 @@ export default function CardSlidePreviewScreen() {
       <CloseButton top={insets.top + 24} onPress={() => router.replace('/settings')} />
 
       <Dots flipX={flipX} />
+
+      <DescBookmark flipX={flipX} active={PAGES[page]?.kind === 'desc'} />
 
       <Actions bottom={insets.bottom + 40} onOpenNote={() => setNoteOpen(true)} />
 
@@ -738,22 +746,8 @@ function CardContent({
 
   if (kind === 'desc') {
     return (
-      // 눌러야 할 것은 책갈피 하나뿐이다. 글은 터치를 흘려보내야 본문 위를 탭했을 때
-      // 그대로 페이지가 넘어간다(카드층이 제스처 층 위에 있다).
-      <View style={styles.descBlock} pointerEvents="box-none">
-        <Text style={styles.descText} pointerEvents="none">
-          {paragraph}
-        </Text>
-        <ScaleButton
-          accessibilityLabel="책갈피"
-          style={styles.descBookmark}
-          onPress={() => {}}>
-          <SymbolView
-            name={{ ios: 'bookmark', android: 'bookmark', web: 'bookmark' }}
-            tintColor={Colors.brown50}
-            size={18}
-          />
-        </ScaleButton>
+      <View style={styles.descBlock}>
+        <Text style={styles.descText}>{paragraph}</Text>
       </View>
     );
   }
@@ -1107,6 +1101,40 @@ function CloseButton({
         />
       </ScaleButton>
     </View>
+  );
+}
+
+/**
+ * 본문 장의 책갈피 — 카드 오른쪽 아래에 얹는 작은 버튼.
+ *
+ * 카드 안이 아니라 카드 위 층에 둔다. 본문은 탭으로 넘기는 장이라, 카드가 손가락을
+ * 받기 시작하면 넘김이 막힌다. 닫기·점·하단 버튼과 같은 층에 두면 이 다툼이 없다.
+ *
+ * 대신 종이와 함께 돌지 않으므로, 넘기는 동안에는 지웠다가 장이 앉으면 다시 띄운다.
+ * 손가락은 리액트 상태(active)로 끊는다 — opacity가 0이어도 터치는 그대로 받는다.
+ */
+function DescBookmark({ flipX, active }: { flipX: SharedValue<number>; active: boolean }) {
+  const style = useAnimatedStyle(() => {
+    const x = flipX.value / PAGE_W;
+    const i = Math.round(x);
+    const onDesc = DESC_FLAGS[i] ? 1 : 0;
+    // 장이 앉아 있을 때만 1 — 조금이라도 넘어가는 중이면 빠르게 지운다.
+    const settled = 1 - Math.min(Math.abs(x - i) * 2, 1);
+    return { opacity: onDesc * settled };
+  });
+
+  return (
+    <Animated.View
+      style={[styles.descBookmark, style]}
+      pointerEvents={active ? 'auto' : 'none'}>
+      <ScaleButton accessibilityLabel="책갈피" style={styles.descBookmarkHit} onPress={() => {}}>
+        <SymbolView
+          name={{ ios: 'bookmark', android: 'bookmark', web: 'bookmark' }}
+          tintColor={Colors.brown50}
+          size={18}
+        />
+      </ScaleButton>
+    </Animated.View>
   );
 }
 
@@ -1575,18 +1603,25 @@ const styles = StyleSheet.create({
   },
 
   // 본문 카드 — 문단 하나를 카드 한 장에 꽉 채운다(다른 카드처럼 alignSelf: stretch).
-  // 책갈피를 오른쪽 아래에 붙이려면 이 묶음이 카드 몸통을 다 차지해야 한다. 글은
-  // 그 안에서 가운데에 서므로 보이는 자리는 예전과 같다.
   descBlock: {
-    flex: 1,
     alignSelf: 'stretch',
-    justifyContent: 'center',
   },
-  /** 본문 장 오른쪽 아래의 작은 책갈피 — 글을 밀어내지 않게 띄워 얹는다. */
+  /**
+   * 본문 장 오른쪽 아래의 작은 책갈피 — 카드 안이 아니라 위에 얹는다.
+   *
+   * 자리는 카드에 맞춰 잡는다. 세로는 점(dots)과 같은 이유로 화면 높이가 아니라
+   * top 50%에서 재고(카드도 컨테이너 높이의 절반에 앉는다), 카드 아래 모서리에서
+   * 카드 안쪽 여백(28)만큼 올린 뒤 버튼 높이(32)를 뺀다. 가로는 카드 오른쪽
+   * 모서리에서 안쪽 여백(24)만큼 들어온다.
+   */
   descBookmark: {
     position: 'absolute',
-    right: 0,
-    bottom: 0,
+    top: '50%',
+    marginTop: CARD_H / 2 - 28 - 32,
+    left: (SCREEN_W - CARD_W) / 2 + CARD_W - 24 - 32,
+    zIndex: 2,
+  },
+  descBookmarkHit: {
     width: 32,
     height: 32,
     borderRadius: 16,
