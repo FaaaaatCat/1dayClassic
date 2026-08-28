@@ -197,9 +197,6 @@ const PAGES: Page[] = [
  */
 const INTERACTIVE_KINDS: PageKind[] = ['buy'];
 
-/** 본문 장인지 미리 표시해 둔다 — 책갈피를 띄울지 워크릿에서 매 프레임 본다. */
-const DESC_FLAGS = PAGES.map((p) => p.kind === 'desc');
-
 export default function CardSlidePreviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -353,8 +350,6 @@ export default function CardSlidePreviewScreen() {
 
       <Dots flipX={flipX} />
 
-      <DescBookmark flipX={flipX} active={PAGES[page]?.kind === 'desc'} />
-
       <Actions bottom={insets.bottom + 40} onOpenNote={() => setNoteOpen(true)} />
 
       {/* 제스처 층 — 페이지마다 좌/중/우 3등분 탭 영역만 있다(가운데는 무동작). */}
@@ -410,6 +405,11 @@ export default function CardSlidePreviewScreen() {
           />
         ))}
         <FoldShade />
+        {/* 책갈피는 카드 '안'이 아니라 덱 위에 얹는다. 카드 안에 넣으면 그 장이 손가락을
+            받게 되어 본문의 탭 넘김이 막힌다. 덱의 마지막 자식이자 zIndex가 가장 높아
+            카드 위에 그려진다 — 다른 크롬(닫기·점·하단 버튼)은 죄다 카드 바깥이라
+            이 층 다툼이 없었지만, 이것은 카드 사각형 안에 앉는 첫 버튼이다. */}
+        <DescBookmark flipX={flipX} active={PAGES[page]?.kind === 'desc'} />
       </View>
 
       {/**
@@ -1114,14 +1114,14 @@ function CloseButton({
  * 손가락은 리액트 상태(active)로 끊는다 — opacity가 0이어도 터치는 그대로 받는다.
  */
 function DescBookmark({ flipX, active }: { flipX: SharedValue<number>; active: boolean }) {
+  // 워크릿에는 배열이 아니라 숫자 하나만 넘긴다 — 잡아 가는 값이 단순할수록 안전하다.
+  const on = active ? 1 : 0;
   const style = useAnimatedStyle(() => {
     const x = flipX.value / PAGE_W;
     const i = Math.round(x);
-    const onDesc = DESC_FLAGS[i] ? 1 : 0;
     // 장이 앉아 있을 때만 1 — 조금이라도 넘어가는 중이면 빠르게 지운다.
-    const settled = 1 - Math.min(Math.abs(x - i) * 2, 1);
-    return { opacity: onDesc * settled };
-  });
+    return { opacity: on * (1 - Math.min(Math.abs(x - i) * 2, 1)) };
+  }, [on]);
 
   return (
     <Animated.View
@@ -1619,7 +1619,8 @@ const styles = StyleSheet.create({
     top: '50%',
     marginTop: CARD_H / 2 - 28 - 32,
     left: (SCREEN_W - CARD_W) / 2 + CARD_W - 24 - 32,
-    zIndex: 2,
+    // 덱 안에서 가장 위 — 골 그늘(FoldShade)의 100보다 높다.
+    zIndex: 101,
   },
   descBookmarkHit: {
     width: 32,
