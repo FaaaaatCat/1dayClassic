@@ -1,9 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  FadeIn,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
@@ -32,6 +39,28 @@ import {
  * 없다). 시간이 차면 저절로 넘어가는 것도 하지 않는다 — 카드 슬라이드와 '똑같은 형식'이
  * 어야 하고, 그쪽은 손으로 넘긴다. 그래서 진행 바는 시간이 아니라 몇 장째인지를 말한다.
  */
+/** 진행 바 칸 사이 틈. 칸 폭을 재려면 이 값이 필요하다. */
+const BAR_GAP = 4;
+/** 글이 없는 장(표지·구매 안내)에 주는 시간. */
+const PLAIN_MS = 5000;
+/** 글 한 자에 주는 시간. 한국어를 눈으로 읽는 속도에 맞춘 값이다. */
+const MS_PER_CHAR = 110;
+const MIN_MS = 5000;
+const MAX_MS = 15000;
+
+/**
+ * 이 장에 줄 시간.
+ *
+ * 스토리는 모든 장이 같은 시간이지만 여기는 글의 길이가 제각각이라(87자에서 201자까지)
+ * 같은 시간을 주면 짧은 장은 지루하고 긴 장은 다 못 읽고 넘어간다. 그래서 글자 수로
+ * 정하되 위아래를 잘라 둔다 — 너무 짧아 놓치거나 너무 길어 늘어지지 않게.
+ */
+function durationFor(page: (typeof PAGES)[number]): number {
+  const text = page.kind === 'quote' ? QUOTE_TEXT : (page.paragraph ?? '');
+  if (!text) return PLAIN_MS;
+  return Math.min(MAX_MS, Math.max(MIN_MS, 1200 + text.length * MS_PER_CHAR));
+}
+
 export default function InstaPreviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -41,17 +70,27 @@ export default function InstaPreviewScreen() {
   const narration = useCardNarration({ steps: NARRATION_STEPS, onPage: goTo });
 
   const current = PAGES[page];
+  const last = page === PAGES.length - 1;
+  /**
+   * 시간이 차면 저절로 넘어간다. 다만 두 자리에서는 멈춘다 —
+   * 낭독 중에는 낭독이 장을 끌고 가므로 둘이 싸우면 안 되고, 마지막 장에서는 갈 곳이 없다.
+   */
+  const paused = narration.playing || last;
+  const advance = useCallback(() => {
+    setPage((p) => (p + 1 < PAGES.length ? p + 1 : p));
+  }, []);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 8 }]}>
       <StatusBar style="light" />
 
-      {/* 위 진행 바 — 장 수만큼 칸을 나눠 지나온 자리를 채운다. */}
-      <View style={styles.bars}>
-        {PAGES.map((_, i) => (
-          <View key={i} style={[styles.bar, i <= page && styles.barFilled]} />
-        ))}
-      </View>
+      {/* 위 진행 바 — 지나온 칸은 채우고, 지금 칸은 시간에 맞춰 차오른다. */}
+      <ProgressBars
+        page={page}
+        duration={durationFor(current)}
+        paused={paused}
+        onDone={advance}
+      />
 
       {/* 계정 줄 — 스토리의 프로필·이름·시간 자리에 책 표지·책 이름·날짜를 넣는다. */}
       <View style={styles.header}>
@@ -133,6 +172,64 @@ export default function InstaPreviewScreen() {
           </ScaleButton>
         </View>
       </View>
+    </View>
+  );
+}
+
+/**
+ * 위의 칸 진행 바 — 지나온 칸은 채워 두고, 지금 칸만 시간에 맞춰 차오른다.
+ *
+ * 차오르는 폭은 퍼센트가 아니라 픽셀로 준다. 칸이 flex로 나뉘어 있어 폭을 미리 알 수
+ * 없으므로 onLayout으로 한 번 재 둔다. transformOrigin으로 왼쪽에서 늘리는 방법도 있지만
+ * 안드로이드에서 행렬 분해 오차가 있어 쓰지 않는다.
+ *
+ * 다 차면 onDone으로 다음 장을 부른다. 그 콜백을 ref에 담아 두는 건, 매 렌더 새로 만들어진
+ * 함수가 의존성으로 들어오면 타이머가 계속 다시 걸려 영영 차지 않기 때문이다.
+ */
+function ProgressBars({
+  page,
+  duration,
+  paused,
+  onDone,
+}: {
+  page: number;
+  duration: number;
+  paused: boolean;
+  onDone: () => void;
+}) {
+  const [barWidth, setBarWidth] = useState(0);
+  const progress = useSharedValue(0);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  const fire = useCallback(() => onDoneRef.current(), []);
+
+  useEffect(() => {
+    // 멈춘 자리(낭독 중·마지막 장)에서는 지금 칸을 채운 채로 세워 둔다.
+    if (paused) {
+      progress.value = 1;
+      return;
+    }
+    progress.value = 0;
+    progress.value = withTiming(1, { duration, easing: Easing.linear }, (finished) => {
+      if (finished) runOnJS(fire)();
+    });
+  }, [page, duration, paused, progress, fire]);
+
+  const fillStyle = useAnimatedStyle(() => ({ width: progress.value * barWidth }));
+
+  return (
+    <View
+      style={styles.bars}
+      onLayout={(event) => {
+        const total = event.nativeEvent.layout.width;
+        setBarWidth((total - BAR_GAP * (PAGES.length - 1)) / PAGES.length);
+      }}>
+      {PAGES.map((_, i) => (
+        <View key={i} style={[styles.bar, i < page && styles.barFilled]}>
+          {i === page ? <Animated.View style={[styles.barFill, fillStyle]} /> : null}
+        </View>
+      ))}
     </View>
   );
 }
@@ -231,7 +328,7 @@ const styles = StyleSheet.create({
   // 위 진행 바
   bars: {
     flexDirection: 'row',
-    gap: 4,
+    gap: BAR_GAP,
     paddingHorizontal: 4,
   },
   bar: {
@@ -239,8 +336,18 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 1.5,
     backgroundColor: Colors.brown50,
+    overflow: 'hidden',
   },
   barFilled: {
+    backgroundColor: Colors.white,
+  },
+  /** 지금 칸에서 차오르는 부분. 왼쪽에 붙어 폭만 늘어난다. */
+  barFill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 1.5,
     backgroundColor: Colors.white,
   },
 
