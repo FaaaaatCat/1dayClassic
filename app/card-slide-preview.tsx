@@ -142,8 +142,6 @@ type PageKind = 'intro' | 'quote' | 'desc' | 'buy';
 
 interface Page {
   kind: PageKind;
-  /** 카드 위에 뜨는 안내 문구. 본문(desc) 카드에는 없다. */
-  headline?: string;
   /** desc 카드 전용 — 이 카드 한 장에 담을 문단 하나. */
   paragraph?: string;
 }
@@ -181,8 +179,8 @@ const DESC_PARAGRAPHS = PREVIEW_LESSON?.story ?? [];
 const PREVIEW_QUIZZES = PREVIEW_LESSON?.quizzes ?? [];
 
 const PAGES: Page[] = [
-  { kind: 'intro', headline: '듣기 공부의 시간입니다.' },
-  { kind: 'quote', headline: '듣기 공부의 시간입니다.' },
+  { kind: 'intro' },
+  { kind: 'quote' },
   // 본문은 문단마다 카드 한 장 — 문단이 늘거나 줄면 카드 수도 그만큼 자동으로 바뀐다.
   ...DESC_PARAGRAPHS.map((paragraph): Page => ({ kind: 'desc', paragraph })),
   // 본문이 끝나면 구매 안내 한 장으로 맺는다. 퀴즈와 감상 노트는 넘김 흐름이 아니라
@@ -190,26 +188,11 @@ const PAGES: Page[] = [
   { kind: 'buy' },
 ];
 
-/** 카드 안에 눌러야 할 것이 있는 장 — 이 장이 펼쳐져 있을 때만 손가락을 받는다. */
-const INTERACTIVE_KINDS: PageKind[] = ['buy'];
-
 /**
- * 같은 문구가 이어지는 페이지는 한 덩어리로 묶는다 — 안 그러면 0→1처럼 문구가 같은
- * 구간에서도 글자가 한 번 사라졌다 다시 나타나 깜빡인다.
+ * 카드 안에 눌러야 할 것이 있는 장 — 이 장이 펼쳐져 있을 때만 손가락을 받는다.
+ * 본문 장은 오른쪽 아래 책갈피 하나 때문에 들어 있다.
  */
-const HEADLINE_GROUPS = PAGES.reduce<{ text: string; from: number; to: number }[]>(
-  (groups, page, index) => {
-    if (!page.headline) return groups;
-    const last = groups[groups.length - 1];
-    if (last && last.text === page.headline && last.to === index - 1) {
-      last.to = index;
-      return groups;
-    }
-    groups.push({ text: page.headline, from: index, to: index });
-    return groups;
-  },
-  [],
-);
+const INTERACTIVE_KINDS: PageKind[] = ['desc', 'buy'];
 
 export default function CardSlidePreviewScreen() {
   const router = useRouter();
@@ -360,11 +343,9 @@ export default function CardSlidePreviewScreen() {
 
   return (
     <View style={styles.screen}>
-      <Headlines top={insets.top + 24} flipX={flipX} />
-
       <CloseButton top={insets.top + 24} onPress={() => router.replace('/settings')} />
 
-      <Dots flipX={flipX} bottom={insets.bottom + 104} />
+      <Dots flipX={flipX} />
 
       <Actions bottom={insets.bottom + 40} onOpenNote={() => setNoteOpen(true)} />
 
@@ -757,8 +738,22 @@ function CardContent({
 
   if (kind === 'desc') {
     return (
-      <View style={styles.descBlock}>
-        <Text style={styles.descText}>{paragraph}</Text>
+      // 눌러야 할 것은 책갈피 하나뿐이다. 글은 터치를 흘려보내야 본문 위를 탭했을 때
+      // 그대로 페이지가 넘어간다(카드층이 제스처 층 위에 있다).
+      <View style={styles.descBlock} pointerEvents="box-none">
+        <Text style={styles.descText} pointerEvents="none">
+          {paragraph}
+        </Text>
+        <ScaleButton
+          accessibilityLabel="책갈피"
+          style={styles.descBookmark}
+          onPress={() => {}}>
+          <SymbolView
+            name={{ ios: 'bookmark', android: 'bookmark', web: 'bookmark' }}
+            tintColor={Colors.brown50}
+            size={18}
+          />
+        </ScaleButton>
       </View>
     );
   }
@@ -1060,46 +1055,13 @@ function CardHeading({ text }: { text: string }) {
   );
 }
 
-// ── 문구 · 버튼 · 인디케이터 ───────────────────────────────────────────────
-
-/** 카드가 바뀌면 위 문구도 함께 바뀐다. 같은 문구가 이어지는 구간은 켜 둔 채로 넘어간다. */
-function Headlines({ top, flipX }: { top: number; flipX: SharedValue<number> }) {
-  return (
-    <View style={[styles.headlineArea, { top }]} pointerEvents="none">
-      {HEADLINE_GROUPS.map((group) => (
-        <Headline key={group.text} group={group} flipX={flipX} />
-      ))}
-    </View>
-  );
-}
-
-function Headline({
-  group,
-  flipX,
-}: {
-  group: { text: string; from: number; to: number };
-  flipX: SharedValue<number>;
-}) {
-  const style = useAnimatedStyle(() => {
-    const x = flipX.value / PAGE_W;
-    return {
-      opacity: interpolate(
-        x,
-        [group.from - 1, group.from, group.to, group.to + 1],
-        [0, 1, 1, 0],
-        Extrapolation.CLAMP,
-      ),
-    };
-  });
-  return (
-    <Animated.Text style={[styles.headline, style]} numberOfLines={2}>
-      {group.text}
-    </Animated.Text>
-  );
-}
+// ── 버튼 · 인디케이터 ──────────────────────────────────────────────────────
 
 /**
- * 하단 버튼 — 책갈피·오디오·메모. 어느 장에서나 그대로 떠 있다.
+ * 하단 버튼 — 오디오·메모. 어느 장에서나 그대로 떠 있다.
+ *
+ * 책갈피는 여기 있다가 본문 장 오른쪽 아래로 옮겼다(CardContent의 desc). 읽던 자리를
+ * 접어 두는 일이라 읽는 종이 위에 있는 편이 맞다.
  *
  * 예전에는 마지막 장에서 '오늘의 공부 마치기'로 바뀌었는데, 그 버튼은 퀴즈 팝업의
  * 해설 아래로 옮겼다. 해설까지 읽은 지점이 공부를 맺는 자리라서다.
@@ -1108,13 +1070,6 @@ function Actions({ bottom, onOpenNote }: { bottom: number; onOpenNote: () => voi
   return (
     <View style={[styles.actions, { bottom }]} pointerEvents="box-none">
       <View style={styles.roundRow}>
-        <ScaleButton accessibilityLabel="책갈피" style={styles.roundButton} onPress={() => {}}>
-          <SymbolView
-            name={{ ios: 'bookmark', android: 'bookmark', web: 'bookmark' }}
-            tintColor={Colors.white}
-            size={24}
-          />
-        </ScaleButton>
         <ScaleButton accessibilityLabel="오디오 듣기" style={styles.roundButton} onPress={() => {}}>
           <SymbolView
             name={{ ios: 'headphones', android: 'headphones', web: 'headphones' }}
@@ -1155,10 +1110,10 @@ function CloseButton({
   );
 }
 
-/** 몇 장 중 몇 번째인지 알려 주는 점. */
-function Dots({ flipX, bottom }: { flipX: SharedValue<number>; bottom: number }) {
+/** 몇 장 중 몇 번째인지 알려 주는 점 — 카드 윗변 위에 붙는다. */
+function Dots({ flipX }: { flipX: SharedValue<number> }) {
   return (
-    <View style={[styles.dots, { bottom }]} pointerEvents="none">
+    <View style={styles.dots} pointerEvents="none">
       {PAGES.map((_, i) => (
         <Dot key={i} index={i} flipX={flipX} />
       ))}
@@ -1202,25 +1157,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // 위 문구와 닫기 버튼
-  headlineArea: {
-    position: 'absolute',
-    left: 20,
-    right: 72,
-    height: 56,
-    zIndex: 2,
-  },
-  headline: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    fontFamily: Fonts.semiBold,
-    fontSize: 20,
-    lineHeight: 28,
-    letterSpacing: tracking(20),
-    color: Colors.brown50,
-  },
+  // 닫기 버튼
   closeButton: {
     position: 'absolute',
     right: 20,
@@ -1638,8 +1575,21 @@ const styles = StyleSheet.create({
   },
 
   // 본문 카드 — 문단 하나를 카드 한 장에 꽉 채운다(다른 카드처럼 alignSelf: stretch).
+  // 책갈피를 오른쪽 아래에 붙이려면 이 묶음이 카드 몸통을 다 차지해야 한다. 글은
+  // 그 안에서 가운데에 서므로 보이는 자리는 예전과 같다.
   descBlock: {
+    flex: 1,
     alignSelf: 'stretch',
+    justifyContent: 'center',
+  },
+  /** 본문 장 오른쪽 아래의 작은 책갈피 — 글을 밀어내지 않게 띄워 얹는다. */
+  descBookmark: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   descText: {
     fontFamily: Fonts.regular,
@@ -1683,10 +1633,19 @@ const styles = StyleSheet.create({
   },
 
   // 인디케이터
+  /**
+   * 카드 윗변에서 20 띄워 올린다(점 높이 6 + 여백 20 = 26).
+   *
+   * 화면 높이가 아니라 카드와 똑같이 top 50%에서 잡는 건, 카드가 Dimensions가 아니라
+   * 실제 컨테이너 높이의 절반에 앉기 때문이다. 상태바·내비게이션바가 잡아먹는 만큼
+   * 둘이 어긋나면 안 된다.
+   */
   dots: {
     position: 'absolute',
     left: 0,
     right: 0,
+    top: '50%',
+    marginTop: -CARD_H / 2 - 26,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
