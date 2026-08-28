@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { BackHandler, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -107,9 +107,9 @@ export default function LessonDetailShell({ bookLesson, children }: Props) {
               style={styles.closeButton}
               onPress={() => router.replace('/')}
             >
-              <SymbolView
-                name={{ ios: 'xmark', android: 'close', web: 'close' }}
-                tintColor={Colors.brown50}
+              <Ionicons
+                name="close"
+                color={Colors.brown50}
                 size={18}
               />
             </ScaleButton>

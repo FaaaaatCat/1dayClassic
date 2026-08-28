@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -70,9 +70,9 @@ export default function QuizBlock({ quiz }: Props) {
       {/* 블록 안의 모든 내용을 파란 카드 하나로 감싼다 — 배경이 어두워서 안쪽 글자는 흰색이다. */}
       <View style={styles.card}>
         <View style={styles.titleRow}>
-          <SymbolView
-            name={{ ios: 'questionmark.circle.fill', android: 'help', web: 'help' }}
-            tintColor={Colors.white}
+          <Ionicons
+            name="help-circle"
+            color={Colors.white}
             size={14}
           />
           <Text style={styles.title}>{quiz.title}</Text>

@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,9 +37,9 @@ export default function BlockSheet({ visible, title, onClose, done, children }: 
       <View style={styles.screen}>
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <ScaleButton accessibilityLabel="뒤로가기" style={styles.backButton} onPress={onClose}>
-            <SymbolView
-              name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }}
-              tintColor={Colors.brown100}
+            <Ionicons
+              name="arrow-back"
+              color={Colors.brown100}
               size={20}
             />
           </ScaleButton>

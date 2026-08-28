@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -84,13 +84,9 @@ export default function NoteBlock() {
         {notes.map((note) => (
           <View key={note.id} style={styles.noteItem}>
             <View style={styles.noteItemIcon}>
-              <SymbolView
-                name={
-                  isMusicBook
-                    ? { ios: 'music.note', android: 'music_note', web: 'music_note' }
-                    : { ios: 'book', android: 'menu_book', web: 'menu_book' }
-                }
-                tintColor={Colors.beige100}
+              <Ionicons
+                name={isMusicBook ? 'musical-note' : 'book'}
+                color={Colors.beige100}
                 size={14}
               />
             </View>

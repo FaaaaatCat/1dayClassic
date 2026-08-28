@@ -1,6 +1,5 @@
 import * as WebBrowser from 'expo-web-browser';
-import type { AndroidSymbol, SFSymbol } from 'expo-symbols';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useLessonDetail } from '@/components/lesson/LessonDetailContext';
@@ -8,19 +7,12 @@ import { blockStyles } from '@/components/lesson/blocks/blockStyles';
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
-/**
- * `SymbolView`의 `name` prop 모양을 그대로 따른다 — 웹은 AndroidSymbol 세트를 쓴다
- * (expo-symbols의 실제 타입 정의와 같다).
- */
-interface SymbolName {
-  ios: SFSymbol;
-  android: AndroidSymbol;
-  web: AndroidSymbol;
-}
+/** 탭바와 같은 아이콘 세트(Ionicons)를 쓴다 — 이름 하나로 iOS·안드로이드가 같다. */
+type IconName = keyof typeof Ionicons.glyphMap;
 
 export type IntroAction =
   | { kind: 'audio' }
-  | { kind: 'link'; label: string; icon: SymbolName; url: string };
+  | { kind: 'link'; label: string; icon: IconName; url: string };
 
 interface Props {
   /** "7월 21일" — 없으면 줄이 통째로 빠진다 */
@@ -31,7 +23,7 @@ interface Props {
 }
 
 /** 헤드폰 아이콘 — 'audio' 액션 전용 고정 아이콘 */
-const AUDIO_ICON: SymbolName = { ios: 'headphones', android: 'headset', web: 'headset' };
+const AUDIO_ICON: IconName = 'headset';
 
 /**
  * 항목 상세의 인트로 — 날짜 문구와 액션 버튼들. Figma를 따라 가운데 정렬한다
@@ -64,7 +56,7 @@ export default function IntroBlock({ date, tagline, actions }: Props) {
               style={styles.button}
               onPress={openAudio}
             >
-              <SymbolView name={AUDIO_ICON} tintColor={Colors.white} size={18} />
+              <Ionicons name={AUDIO_ICON} color={Colors.white} size={18} />
               <Text style={styles.buttonText}>오디오 듣기</Text>
             </ScaleButton>
           ) : (
@@ -74,7 +66,7 @@ export default function IntroBlock({ date, tagline, actions }: Props) {
               style={styles.button}
               onPress={() => WebBrowser.openBrowserAsync(action.url)}
             >
-              <SymbolView name={action.icon} tintColor={Colors.white} size={18} />
+              <Ionicons name={action.icon} color={Colors.white} size={18} />
               <Text style={styles.buttonText}>{action.label}</Text>
             </ScaleButton>
           ),

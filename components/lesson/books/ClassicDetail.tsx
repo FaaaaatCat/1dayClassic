@@ -38,7 +38,7 @@ export default function ClassicDetail({ lesson }: Props) {
                 {
                   kind: 'link' as const,
                   label: '노래 듣기',
-                  icon: { ios: 'play.rectangle.fill', android: 'smart_display', web: 'smart_display' } as const,
+                  icon: 'play-circle' as const,
                   url: lesson.youtubeUrl,
                 },
               ]

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -82,11 +82,7 @@ export default function HomeScreen() {
                 )}
               </View>
               <View style={styles.todayButton}>
-                <SymbolView
-                  name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-                  tintColor={Colors.brown100}
-                  size={28}
-                />
+                <Ionicons name="chevron-forward" color={Colors.brown100} size={28} />
               </View>
             </View>
           </ScaleButton>
@@ -99,11 +95,7 @@ export default function HomeScreen() {
 
           <View style={styles.alarmRow}>
             <View style={styles.alarmIconBadge}>
-              <SymbolView
-                name={{ ios: 'alarm', android: 'alarm', web: 'alarm' }}
-                tintColor={Colors.beige100}
-                size={17}
-              />
+              <Ionicons name="alarm-outline" color={Colors.beige100} size={17} />
             </View>
             <View style={styles.alarmInfoWrap}>
               <ScaleButton

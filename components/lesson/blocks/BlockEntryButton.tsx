@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
@@ -26,9 +26,9 @@ export default function BlockEntryButton({ label, done, onPress }: Props) {
 
       {done && (
         <View style={styles.done}>
-          <SymbolView
-            name={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }}
-            tintColor={Colors.green100}
+          <Ionicons
+            name="checkmark-circle"
+            color={Colors.green100}
             size={18}
           />
           <Text style={styles.doneText}>완료</Text>

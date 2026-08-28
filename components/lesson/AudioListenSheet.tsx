@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
@@ -39,18 +39,18 @@ export default function AudioListenSheet({
               왼쪽 위)에 뜬다. 그래서 위치는 이 wrapper가 잡고 ScaleButton은 크기만 갖는다. */}
           <View style={styles.closeButtonWrap}>
             <ScaleButton accessibilityLabel="닫기" style={styles.closeButton} onPress={onClose}>
-              <SymbolView
-                name={{ ios: 'xmark', android: 'close', web: 'close' }}
-                tintColor={Colors.brown100}
+              <Ionicons
+                name="close"
+                color={Colors.brown100}
                 size={18}
               />
             </ScaleButton>
           </View>
 
           <View style={styles.iconCircle}>
-            <SymbolView
-              name={{ ios: 'headphones', android: 'headset', web: 'headset' }}
-              tintColor={Colors.beige100}
+            <Ionicons
+              name="headset"
+              color={Colors.beige100}
               size={48}
             />
           </View>
@@ -70,13 +70,9 @@ export default function AudioListenSheet({
                 {isLoading ? (
                   <ActivityIndicator color={Colors.white} size="small" />
                 ) : (
-                  <SymbolView
-                    name={
-                      isPlaying
-                        ? { ios: 'pause.fill', android: 'pause', web: 'pause' }
-                        : { ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' }
-                    }
-                    tintColor={Colors.white}
+                  <Ionicons
+                    name={isPlaying ? 'pause' : 'play'}
+                    color={Colors.white}
                     size={26}
                   />
                 )}
@@ -85,9 +81,9 @@ export default function AudioListenSheet({
             </View>
             <View style={styles.controlColumn}>
               <ScaleButton accessibilityLabel="다시듣기" style={styles.primaryButton} onPress={onRestart}>
-                <SymbolView
-                  name={{ ios: 'arrow.counterclockwise', android: 'replay', web: 'replay' }}
-                  tintColor={Colors.white}
+                <Ionicons
+                  name="refresh"
+                  color={Colors.white}
                   size={26}
                 />
               </ScaleButton>
