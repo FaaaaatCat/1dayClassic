@@ -11,6 +11,7 @@ import { resolveMediaUrl } from "@/lib/firebase";
 import { MEDIA_HEADERS } from "@/lib/lessons";
 import { buildNarrationUnits } from "@/lib/narration";
 import { fadeVolume, type FadeHandle } from "@/lib/fade";
+import { koreanSpeech, pickKoreanVoice } from "@/lib/tts";
 import type { DailyLesson } from "@/types";
 
 /**
@@ -91,25 +92,9 @@ export function useAudioPlayer() {
       interruptionMode: "duckOthers",
     });
 
-    // 사용 가능한 한국어 목소리 중 가장 품질 좋은 것을 고른다.
-    // (Enhanced > 네트워크 보이스 > 첫 번째 한국어 보이스)
-    Speech.getAvailableVoicesAsync()
-      .then((voices) => {
-        const korean = voices.filter((v) => {
-          // 'ko'로 시작만 검사하면 콘칸어(kok-IN)까지 걸리므로 언어 코드를 정확히 비교한다.
-          const lang = v.language?.toLowerCase().replace("_", "-");
-          return lang === "ko" || lang?.startsWith("ko-");
-        });
-        if (korean.length === 0) return;
-        const preferred =
-          korean.find((v) => v.quality === Speech.VoiceQuality.Enhanced) ??
-          korean.find((v) => v.identifier.includes("network")) ??
-          korean[0];
-        voiceRef.current = preferred.identifier;
-      })
-      .catch(() => {
-        // 목소리 조회 실패 시 엔진 기본값으로 말한다.
-      });
+    pickKoreanVoice().then((voice) => {
+      voiceRef.current = voice;
+    });
   }, []);
 
   /** 진행 중인 흐름(타이머·페이드·TTS)을 전부 무효화한다. 음악은 건드리지 않는다. */
@@ -138,12 +123,7 @@ export function useAudioPlayer() {
         next();
       };
       Speech.speak(text, {
-        language: "ko-KR",
-        voice: voiceRef.current,
-        // 시스템 TTS 설정(음높이·속도)에 좌우되지 않도록 고정한다.
-        // 기기 음높이가 비정상(예: 186%)이면 목소리가 짓눌린 것처럼 들린다.
-        pitch: 1.0,
-        rate: 1.0,
+        ...koreanSpeech(voiceRef.current),
         onDone: advance,
         onError: advance,
       });

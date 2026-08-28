@@ -32,9 +32,11 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
+import { useCardNarration, type NarrationStep } from '@/hooks/useCardNarration';
 import StudyReport from '@/components/StudyReport';
 import listeningData from '@/data/listening.json';
 import { getCatalogBooks } from '@/lib/catalog';
+import { splitSentences } from '@/lib/narration';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
 /**
@@ -136,6 +138,12 @@ const NOTE_LINE_H = 26;
 const TOAST_HOLD = 1800;
 const TOAST_FADE = 220;
 
+/** 하단 동그란 버튼의 지름. 자동으로 읽기는 펼쳐져도 이 높이를 지킨다. */
+const ROUND_SIZE = 48;
+/** 자동으로 읽기가 펼쳐졌을 때의 가로 — 아이콘 셋과 구분선이 들어갈 만큼. */
+const READER_WIDTH = 176;
+const READER_OPEN_MS = 260;
+
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
 type PageKind = 'intro' | 'quote' | 'desc' | 'buy';
@@ -154,6 +162,10 @@ const BUY_COVER_H = 152;
 
 /** 구매 안내 장에서 소개하는 책 — 카탈로그에서 제목으로 찾는다(BuyBlock 주석 참고). */
 const PREVIEW_BOOK_TITLE = '듣기의 말들';
+
+/** 표지에 뜨는 회차. 낭독은 같은 값을 우리말 서수로 읽는다("001" → "첫 번째"). */
+const PREVIEW_NO = 1;
+const KOREAN_ORDINALS = ['', '첫', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
 
 /**
  * 이 미리보기가 보여 주는 항목 — 인용문·본문·퀴즈를 전부 여기서 읽는다.
@@ -186,6 +198,25 @@ const PAGES: Page[] = [
   // 본문이 끝나면 구매 안내 한 장으로 맺는다. 퀴즈와 감상 노트는 넘김 흐름이 아니라
   // 하단 버튼으로 여는 전체 화면 팝업이다.
   { kind: 'buy' },
+];
+
+/**
+ * 자동으로 읽기가 읽어 줄 대본.
+ *
+ * 문장 단위로 쪼개는 건 TTS 한 번에 넘기는 말을 짧게 유지하려는 것이다 — 엔진이 끝을
+ * 알려 주지 않을 때를 대비한 안전 대기가 덩이마다 따로 걸린다. 같은 장 안에서는 이어
+ * 읽고, 장이 바뀌는 자리에서만 쉰다(useCardNarration).
+ *
+ * 인용문의 출처(epigraphBy)는 읽지 않는다. 구매 안내 장도 읽을 것이 아니다 —
+ * 본문이 끝나면 그대로 엔딩으로 간다.
+ */
+const NARRATION_STEPS: NarrationStep[] = [
+  { page: 0, text: PREVIEW_BOOK_TITLE },
+  { page: 0, text: `${KOREAN_ORDINALS[PREVIEW_NO] ?? PREVIEW_NO} 번째 듣는 법` },
+  ...splitSentences(QUOTE_TEXT).map((text): NarrationStep => ({ page: 1, text })),
+  ...DESC_PARAGRAPHS.flatMap((paragraph, i) =>
+    splitSentences(paragraph).map((text): NarrationStep => ({ page: 2 + i, text })),
+  ),
 ];
 
 /**
@@ -361,12 +392,24 @@ export default function CardSlidePreviewScreen() {
    * 층이라 빨라도 상관없고, 다음 드래그가 정확한 지점에서 시작되려면 필요하다.
    * 화면에 보이는 넘김 자체는 flipX를 우리 속도로 직접 움직여서 만든다.
    */
-  const goBy = (delta: number) => {
-    const next = Math.max(0, Math.min(PAGES.length - 1, targetPage.current + delta));
+  const goTo = (page: number) => {
+    const next = Math.max(0, Math.min(PAGES.length - 1, page));
     if (next === targetPage.current) return;
     scrollRef.current?.scrollTo({ x: next * PAGE_W, animated: true });
     startTurn(next);
   };
+
+  const goBy = (delta: number) => goTo(targetPage.current + delta);
+
+  /**
+   * 자동으로 읽기 — 낭독이 카드를 끌고 간다.
+   *
+   * goTo를 그대로 넘기는 건 사람이 탭해서 넘길 때와 같은 길로 보내려는 것이다. 넘김
+   * 애니메이션도, 정착 처리도 한 군데에만 있어야 어긋나지 않는다.
+   */
+  const narration = useCardNarration({ steps: NARRATION_STEPS, onPage: goTo });
+  /** 헤드폰 버튼이 펼쳐져 조작 아이콘을 드러내고 있는지. */
+  const [readerOpen, setReaderOpen] = useState(false);
 
   return (
     <View style={styles.screen}>
@@ -374,7 +417,22 @@ export default function CardSlidePreviewScreen() {
 
       <Dots flipX={flipX} />
 
-      <Actions bottom={insets.bottom + 40} onOpenNote={() => setNoteOpen(true)} />
+      <Actions
+        bottom={insets.bottom + 40}
+        onOpenNote={() => setNoteOpen(true)}
+        readerOpen={readerOpen}
+        playing={narration.playing}
+        onOpenReader={() => {
+          setReaderOpen(true);
+          narration.restart();
+        }}
+        onTogglePlay={narration.toggle}
+        onRestart={narration.restart}
+        onCloseReader={() => {
+          setReaderOpen(false);
+          narration.stop();
+        }}
+      />
 
       {/* 제스처 층 — 페이지마다 좌/중/우 3등분 탭 영역만 있다(가운데는 무동작). */}
       <Animated.ScrollView
@@ -760,10 +818,10 @@ function CardContent({
       <>
         <Text style={styles.introMark}>{') ) )'}</Text>
         <View style={styles.labelChip}>
-          <Text style={styles.labelText}>듣기의 말들</Text>
+          <Text style={styles.labelText}>{PREVIEW_BOOK_TITLE}</Text>
         </View>
         <View style={styles.titleRow}>
-          <Text style={styles.no}>001</Text>
+          <Text style={styles.no}>{String(PREVIEW_NO).padStart(3, '0')}</Text>
           <Text style={styles.title}>번째 듣는 법</Text>
         </View>
       </>
@@ -1087,7 +1145,7 @@ function CardHeading({ text }: { text: string }) {
 // ── 버튼 · 인디케이터 ──────────────────────────────────────────────────────
 
 /**
- * 하단 버튼 — 오디오·메모. 어느 장에서나 그대로 떠 있다.
+ * 하단 버튼 — 자동으로 읽기·메모. 어느 장에서나 그대로 떠 있다.
  *
  * 책갈피는 여기 있다가 본문 장 오른쪽 아래로 옮겼다(CardContent의 desc). 읽던 자리를
  * 접어 두는 일이라 읽는 종이 위에 있는 편이 맞다.
@@ -1095,26 +1153,119 @@ function CardHeading({ text }: { text: string }) {
  * 예전에는 마지막 장에서 '오늘의 공부 마치기'로 바뀌었는데, 그 버튼은 퀴즈 팝업의
  * 해설 아래로 옮겼다. 해설까지 읽은 지점이 공부를 맺는 자리라서다.
  */
-function Actions({ bottom, onOpenNote }: { bottom: number; onOpenNote: () => void }) {
+function Actions({
+  bottom,
+  onOpenNote,
+  readerOpen,
+  playing,
+  onOpenReader,
+  onTogglePlay,
+  onRestart,
+  onCloseReader,
+}: {
+  bottom: number;
+  onOpenNote: () => void;
+  readerOpen: boolean;
+  playing: boolean;
+  onOpenReader: () => void;
+  onTogglePlay: () => void;
+  onRestart: () => void;
+  onCloseReader: () => void;
+}) {
   return (
     <View style={[styles.actions, { bottom }]} pointerEvents="box-none">
       <View style={styles.roundRow}>
-        <ScaleButton accessibilityLabel="오디오 듣기" style={styles.roundButton} onPress={() => {}}>
-          <Ionicons
-            name="headset"
-            color={Colors.white}
-            size={24}
-          />
-        </ScaleButton>
+        <ReadAloudButton
+          open={readerOpen}
+          playing={playing}
+          onOpen={onOpenReader}
+          onTogglePlay={onTogglePlay}
+          onRestart={onRestart}
+          onClose={onCloseReader}
+        />
         <ScaleButton accessibilityLabel="감상 노트" style={styles.roundButton} onPress={onOpenNote}>
-          <Ionicons
-            name="create"
-            color={Colors.white}
-            size={24}
-          />
+          <Ionicons name="create" color={Colors.white} size={24} />
         </ScaleButton>
       </View>
     </View>
+  );
+}
+
+/**
+ * 자동으로 읽기 버튼 — 누르면 높이는 그대로 두고 가로로만 늘어나 조작 아이콘을 드러낸다.
+ *
+ * 늘어난 폭을 상수로 박아 둔 건 리액트 네이티브가 width를 'auto'로 애니메이션하지
+ * 못해서다. 안의 아이콘은 그 폭을 space-evenly로 나눠 갖는다.
+ *
+ * 접힌 얼굴과 펼친 얼굴을 둘 다 자리에 두고 투명도만 엇갈리게 한다 — 하나를 빼고
+ * 하나를 끼우면 늘어나는 도중에 내용이 튄다.
+ */
+function ReadAloudButton({
+  open,
+  playing,
+  onOpen,
+  onTogglePlay,
+  onRestart,
+  onClose,
+}: {
+  open: boolean;
+  playing: boolean;
+  onOpen: () => void;
+  onTogglePlay: () => void;
+  onRestart: () => void;
+  onClose: () => void;
+}) {
+  const spread = useSharedValue(0);
+  useEffect(() => {
+    spread.value = withTiming(open ? 1 : 0, { duration: READER_OPEN_MS });
+  }, [open, spread]);
+
+  const shellStyle = useAnimatedStyle(() => ({
+    width: ROUND_SIZE + (READER_WIDTH - ROUND_SIZE) * spread.value,
+  }));
+  // 두 얼굴이 중간에서 교대한다 — 겹쳐 보이지 않게 구간을 나눠 둔다.
+  const closedFace = useAnimatedStyle(() => ({
+    opacity: interpolate(spread.value, [0, 0.45], [1, 0], Extrapolation.CLAMP),
+  }));
+  const openFace = useAnimatedStyle(() => ({
+    opacity: interpolate(spread.value, [0.55, 1], [0, 1], Extrapolation.CLAMP),
+  }));
+
+  return (
+    <Animated.View style={[styles.readerShell, shellStyle]}>
+      {open ? (
+        <Animated.View style={[StyleSheet.absoluteFill, styles.readerControls, openFace]}>
+          <ScaleButton
+            accessibilityLabel={playing ? '읽기 멈추기' : '읽기 재생'}
+            style={styles.readerHit}
+            onPress={onTogglePlay}>
+            <Ionicons name={playing ? 'pause' : 'play'} color={Colors.white} size={20} />
+          </ScaleButton>
+          <ScaleButton
+            accessibilityLabel="처음부터 다시 듣기"
+            style={styles.readerHit}
+            onPress={onRestart}>
+            <Ionicons name="refresh" color={Colors.white} size={20} />
+          </ScaleButton>
+          <View style={styles.readerDivider} />
+          <ScaleButton
+            accessibilityLabel="자동으로 읽기 닫기"
+            style={styles.readerHit}
+            onPress={onClose}>
+            <Ionicons name="close" color={Colors.white} size={20} />
+          </ScaleButton>
+        </Animated.View>
+      ) : (
+        <Animated.View style={[StyleSheet.absoluteFill, styles.readerFace, closedFace]}>
+          <ScaleButton
+            accessibilityLabel="자동으로 읽기"
+            style={styles.readerClosedHit}
+            onPress={onOpen}>
+            <Ionicons name="headset" color={Colors.white} size={24} />
+          </ScaleButton>
+        </Animated.View>
+      )}
+    </Animated.View>
   );
 }
 
@@ -1688,13 +1839,46 @@ const styles = StyleSheet.create({
   roundRow: {
     position: 'absolute',
     flexDirection: 'row',
-    gap: 66,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
   },
   roundButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: ROUND_SIZE,
+    height: ROUND_SIZE,
+    borderRadius: ROUND_SIZE / 2,
     backgroundColor: Colors.brown50,
+  },
+  /** 자동으로 읽기 — 접히면 동그라미, 펼치면 같은 높이의 알약. */
+  readerShell: {
+    height: ROUND_SIZE,
+    borderRadius: ROUND_SIZE / 2,
+    backgroundColor: Colors.brown50,
+    overflow: 'hidden',
+  },
+  readerFace: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  readerClosedHit: {
+    width: ROUND_SIZE,
+    height: ROUND_SIZE,
+    borderRadius: ROUND_SIZE / 2,
+  },
+  readerControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+  },
+  readerHit: {
+    width: 36,
+    height: ROUND_SIZE,
+  },
+  /** 닫기를 앞의 둘과 갈라 두는 선 — 성격이 다른 버튼이다. */
+  readerDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 18,
+    backgroundColor: Colors.brown10,
   },
   finishButton: {
     height: 52,
