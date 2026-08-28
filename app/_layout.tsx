@@ -117,6 +117,12 @@ export default function RootLayout() {
                     name="card-slide-preview"
                     options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
                   />
+                  {/* 인스타 스토리 미리보기 — 카드 슬라이드와 같은 이유로 전면에 띄운다.
+                      좌우 탭이 장 넘김이라 뒤로가기 제스처와 부딪히므로 막는다. */}
+                  <Stack.Screen
+                    name="insta-preview"
+                    options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+                  />
                 </Stack>
               </ToastProvider>
               </BgmProvider>

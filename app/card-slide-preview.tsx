@@ -40,9 +40,19 @@ import {
   type SpokenRange,
 } from '@/hooks/useCardNarration';
 import StudyReport from '@/components/StudyReport';
-import listeningData from '@/data/listening.json';
-import { getCatalogBooks } from '@/lib/catalog';
-import { splitSentences } from '@/lib/narration';
+import {
+  DESC_PARAGRAPHS,
+  NARRATION_STEPS,
+  PAGES,
+  PREVIEW_BOOK,
+  PREVIEW_BOOK_TITLE,
+  PREVIEW_NO,
+  PREVIEW_QUIZZES,
+  QUOTE_SOURCE,
+  QUOTE_TEXT,
+  type Page,
+  type PageKind,
+} from '@/lib/preview-content';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
 /**
@@ -152,98 +162,17 @@ const READER_OPEN_MS = 260;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
-type PageKind = 'intro' | 'quote' | 'desc' | 'buy';
-
-interface Page {
-  kind: PageKind;
-  /** desc 카드 전용 — 이 카드 한 장에 담을 문단 하나. */
-  paragraph?: string;
-}
-
 /**
  * 구매 안내 장 표지의 높이(dp). 카드 높이를 다 쓰지 않고 문구·버튼과 한 덩어리로
  * 묶여 가운데에 모이도록, 늘어나는 값이 아니라 정해진 높이를 쓴다.
  */
 const BUY_COVER_H = 152;
 
-/** 구매 안내 장에서 소개하는 책 — 카탈로그에서 제목으로 찾는다(BuyBlock 주석 참고). */
-const PREVIEW_BOOK_TITLE = '듣기의 말들';
-
-/** 표지에 뜨는 회차. 낭독은 같은 값을 우리말 서수로 읽는다("001" → "첫 번째"). */
-const PREVIEW_NO = 1;
-const KOREAN_ORDINALS = ['', '첫', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
-
 /**
- * 이 미리보기가 보여 주는 항목 — 인용문·본문·퀴즈를 전부 여기서 읽는다.
- *
- * 예전에는 같은 글이 이 파일에도 하드코딩돼 있었는데, 데이터가 생기고 나니 한 문장이
- * 두 군데에 사는 꼴이라 실제로 어긋나 있었다(책 본문은 다섯 문단인데 화면에는 네
- * 문단만 들어 있었다). 이제 여기 한 곳에서만 읽는다.
- *
- * 제목이 아니라 id로 찾는 건 이 화면이 항목 하나를 콕 집어 쓰기 때문이다.
+ * 무엇을 보여 줄지는 lib/preview-content 한 곳에서 온다 — 인스타 스토리 미리보기와
+ * 같은 항목을 쓰기 때문이다. 여기서 정하는 것은 그것을 어떻게 보여 줄지뿐이다.
  */
-const PREVIEW_LESSON_ID = 'listening_2_admit_first';
-const PREVIEW_LESSON = (() => {
-  const lesson = listeningData.lessons.find((l) => l.id === PREVIEW_LESSON_ID);
-  if (!lesson) console.warn(`[card-slide-preview] 없는 항목입니다: ${PREVIEW_LESSON_ID}`);
-  return lesson;
-})();
 
-const QUOTE_TEXT = PREVIEW_LESSON?.epigraph ?? '';
-const QUOTE_SOURCE = PREVIEW_LESSON?.epigraphBy ?? '';
-/** 본문 — 문단마다 카드 한 장씩 담는다(PAGES 참고). */
-const DESC_PARAGRAPHS = PREVIEW_LESSON?.story ?? [];
-/** 오늘의 퀴즈 — 항목 하나가 문제 여러 개를 든다. */
-const PREVIEW_QUIZZES = PREVIEW_LESSON?.quizzes ?? [];
-
-const PAGES: Page[] = [
-  { kind: 'intro' },
-  { kind: 'quote' },
-  // 본문은 문단마다 카드 한 장 — 문단이 늘거나 줄면 카드 수도 그만큼 자동으로 바뀐다.
-  ...DESC_PARAGRAPHS.map((paragraph): Page => ({ kind: 'desc', paragraph })),
-  // 본문이 끝나면 구매 안내 한 장으로 맺는다. 퀴즈와 감상 노트는 넘김 흐름이 아니라
-  // 하단 버튼으로 여는 전체 화면 팝업이다.
-  { kind: 'buy' },
-];
-
-/**
- * 자동으로 읽기가 읽어 줄 대본.
- *
- * 문장 단위로 쪼개는 건 TTS 한 번에 넘기는 말을 짧게 유지하려는 것이다 — 엔진이 끝을
- * 알려 주지 않을 때를 대비한 안전 대기가 덩이마다 따로 걸린다. 같은 장 안에서는 이어
- * 읽고, 장이 바뀌는 자리에서만 쉰다(useCardNarration).
- *
- * 인용문의 출처(epigraphBy)는 읽지 않는다. 구매 안내 장도 읽을 것이 아니다 —
- * 본문이 끝나면 그대로 엔딩으로 간다.
- */
-/**
- * 문단 하나를 문장 덩이로 쪼개면서, 각 문장이 문단 어디서 시작했는지를 함께 적어 둔다.
- * 그 자리를 알아야 TTS가 알려 주는 단어 위치를 카드 위의 글자로 옮길 수 있다.
- */
-function stepsFor(page: number, paragraph: string): NarrationStep[] {
-  let cursor = 0;
-  return splitSentences(paragraph).map((text) => {
-    const offset = paragraph.indexOf(text, cursor);
-    cursor = offset + text.length;
-    return { page, text, offset };
-  });
-}
-
-const NARRATION_STEPS: NarrationStep[] = [
-  // 표지는 그린 글("001번째 듣는 법")과 읽는 말이 달라 하이라이트를 걸지 않는다.
-  { page: 0, text: PREVIEW_BOOK_TITLE },
-  { page: 0, text: `${KOREAN_ORDINALS[PREVIEW_NO] ?? PREVIEW_NO} 번째 듣는 법` },
-  ...stepsFor(1, QUOTE_TEXT),
-  ...DESC_PARAGRAPHS.flatMap((paragraph, i) => stepsFor(2 + i, paragraph)),
-];
-
-/**
- * 카드 안에 눌러야 할 것이 있는 장 — 이 장이 펼쳐져 있을 때만 손가락을 받는다.
- *
- * 본문 장은 여기 넣지 않는다. 본문은 탭으로 넘기는 장이라 카드가 손가락을 받기 시작하면
- * 넘김이 막힌다(실제로 그랬다). 본문의 책갈피는 카드 안이 아니라 위에 얹었다 —
- * DescBookmark 주석 참고.
- */
 const INTERACTIVE_KINDS: PageKind[] = ['buy'];
 
 export default function CardSlidePreviewScreen() {
@@ -1049,18 +978,11 @@ function QuizSolver({ onClose, onFinish }: { onClose: () => void; onFinish: () =
  * 버튼이 '수정하기'가 된다.
  */
 /**
- * 구매 안내 장 — 본문이 끝나고 감상 노트로 넘어가기 전에 낀다.
+ * 구매 안내 장 — 본문이 끝나고 맺는 자리.
  *
  * 표지는 새로 받지 않고 카탈로그에 있는 것을 그대로 쓴다(상세 화면도 같은 URL을
- * <Image source={{ uri }}>로 그린다). 제목으로 찾는 건 lib/purchase.ts와 같은 이유다 —
- * 사람이 읽고 고치기 쉽고, 카탈로그 제목은 서로 겹치지 않는다.
+ * <Image source={{ uri }}>로 그린다). 어느 책인지는 lib/preview-content가 정한다.
  */
-const PREVIEW_BOOK = (() => {
-  const book = getCatalogBooks().find((b) => b.title === PREVIEW_BOOK_TITLE);
-  if (!book) console.warn(`[card-slide-preview] 카탈로그에 없는 제목입니다: ${PREVIEW_BOOK_TITLE}`);
-  return book;
-})();
-
 function BuyBlock({ onOpenQuiz }: { onOpenQuiz: () => void }) {
   const router = useRouter();
 

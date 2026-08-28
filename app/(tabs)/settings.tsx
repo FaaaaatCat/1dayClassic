@@ -115,6 +115,20 @@ export default function SettingsScreen() {
         </ScaleButton>
       </Animated.View>
 
+      <Animated.View entering={FadeIn.duration(700).delay(450)} style={styles.card}>
+        <Text style={styles.sectionTitle}>인스타 스토리 미리보기</Text>
+        <Text style={styles.sectionHint}>
+          같은 내용을 인스타그램 스토리 형식으로 봅니다. 좌우를 탭해 넘기고, 우측 상단 ✕로
+          닫습니다.
+        </Text>
+        <ScaleButton
+          accessibilityLabel="인스타 스토리 미리보기 열기"
+          style={styles.testButton}
+          onPress={() => router.push('/insta-preview')}>
+          <Text style={styles.testButtonLabel}>스토리로 보기</Text>
+        </ScaleButton>
+      </Animated.View>
+
       <Animated.View entering={FadeIn.duration(700).delay(500)} style={styles.card}>
         <SettingRow label="버전" value="1.0.0 (데모)" />
       </Animated.View>
