@@ -135,8 +135,6 @@ const NOTE_LINE_H = 26;
 /** 토스트가 떠 있는 시간과 뜨고 지는 시간(ms). */
 const TOAST_HOLD = 1800;
 const TOAST_FADE = 220;
-/** 장이 앉은 뒤 책갈피가 배어 나오는 시간 — 넘김이 끝난 것을 보고 나서 눈에 든다. */
-const BOOKMARK_FADE_IN = 520;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
@@ -436,9 +434,6 @@ export default function CardSlidePreviewScreen() {
             카드 위에 그려진다 — 다른 크롬(닫기·점·하단 버튼)은 죄다 카드 바깥이라
             이 층 다툼이 없었지만, 이것은 카드 사각형 안에 앉는 첫 버튼이다. */}
         <DescBookmark
-          flipX={flipX}
-          gliding={gliding}
-          page={page}
           active={PAGES[page]?.kind === 'desc'}
           saved={marked.has(page)}
           onToggle={() => toggleMark(page)}
@@ -1150,49 +1145,24 @@ function CloseButton({
  * 카드 안이 아니라 카드 위 층에 둔다. 본문은 탭으로 넘기는 장이라, 카드가 손가락을
  * 받기 시작하면 넘김이 막힌다. 닫기·점·하단 버튼과 같은 층에 두면 이 다툼이 없다.
  *
- * 대신 종이와 함께 돌지 않으므로, 넘기는 동안에는 지웠다가 장이 앉으면 다시 띄운다.
- * 손가락은 리액트 상태(active)로 끊는다 — opacity가 0이어도 터치는 그대로 받는다.
+ * 나타나고 사라지는 연출은 없다. 넘김마다 흐려졌다 배어 나오게 했더니 본문에서 본문으로
+ * 이어 넘길 때 깜빡이는 것처럼 보였다 — 종이를 따라 돌지도 않는 것이 종이 속도에 맞춰
+ * 명멸하니 어느 쪽에 속한 물건인지 흐려진 탓이다. 본문 장에 있는 동안에는 붙박이로
+ * 서 있고, 본문을 벗어나면 그 자리에서 빠진다.
  */
 function DescBookmark({
-  flipX,
-  gliding,
-  page,
   active,
   saved,
   onToggle,
 }: {
-  flipX: SharedValue<number>;
-  /** 넘김이 돌고 있는지. 탭한 순간 켜지므로 이걸로 즉시 지운다. */
-  gliding: SharedValue<boolean>;
-  /** 지금 앉아 있는 장. 본문에서 본문으로 넘어가도 다시 배어 나오게 하는 열쇠다. */
-  page: number;
   active: boolean;
   saved: boolean;
   onToggle: () => void;
 }) {
-  // 장이 앉고 나서 천천히 배어 나온다. 사라질 때는 종이를 따라가야 하므로 아래
-  // 워크릿이 즉시 지운다 — 여기서 늦추는 건 나타나는 쪽뿐이다.
-  //
-  // page까지 보는 건 본문에서 본문으로 넘어갈 때 active가 true 그대로라, 그것만
-  // 보면 넘김마다 다시 배어 나오지 않고 종이 속도로 휙 돌아오기 때문이다.
-  const appear = useSharedValue(0);
-  useEffect(() => {
-    appear.value = 0;
-    if (!active) return;
-    appear.value = withTiming(1, { duration: BOOKMARK_FADE_IN });
-  }, [active, page, appear]);
-
-  const style = useAnimatedStyle(() => {
-    // 탭한 순간 끊는다 — 위치로만 흐리면 넘김 초반에 잠깐 남아 겉돈다.
-    if (gliding.value) return { opacity: 0 };
-    // 손으로 끄는 중일 때는 gliding이 아직 꺼져 있으므로 위치로 흐린다.
-    const x = flipX.value / PAGE_W;
-    const i = Math.round(x);
-    return { opacity: appear.value * (1 - Math.min(Math.abs(x - i) * 2, 1)) };
-  });
+  if (!active) return null;
 
   return (
-    <Animated.View style={[styles.descBookmark, style]} pointerEvents={active ? 'auto' : 'none'}>
+    <View style={styles.descBookmark}>
       <ScaleButton
         accessibilityLabel={saved ? '북마크 해지' : '북마크'}
         style={styles.descBookmarkHit}
@@ -1204,7 +1174,7 @@ function DescBookmark({
           size={18}
         />
       </ScaleButton>
-    </Animated.View>
+    </View>
   );
 }
 
