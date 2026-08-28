@@ -75,6 +75,32 @@ export default function InstaPreviewScreen() {
   const goTo = (next: number) => setPage(Math.max(0, Math.min(PAGES.length - 1, next)));
   const narration = useCardNarration({ steps: NARRATION_STEPS, onPage: goTo });
 
+  /**
+   * 들어오자마자 읽기 시작한다 — 스토리는 열면 소리가 나는 물건이라 누르게 하지 않는다.
+   * (카드 슬라이드는 헤드폰을 눌러야 시작한다. 거기는 읽는 화면이고 여기는 보는 화면이다.)
+   *
+   * ref로 한 번만 걸리게 막는다. restart는 매 렌더 새로 만들어지므로 의존성만 믿으면
+   * 렌더마다 처음부터 다시 읽는다.
+   */
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStarted.current) return;
+    autoStarted.current = true;
+    narration.restart();
+  }, [narration]);
+
+  /**
+   * 손으로 넘기면 낭독은 물러난다.
+   *
+   * 낭독도 장을 끌고 가므로 그대로 두면 둘이 싸운다 — 손으로 넘긴 자리를 낭독이 다음
+   * 문장에서 도로 끌어온다. 카드 슬라이드에서는 낭독이 눌러야 시작하는 것이라 부딪힐
+   * 일이 드물지만, 여기서는 열자마자 돌기 때문에 탭할 때마다 부딪힌다.
+   */
+  const goByTap = (next: number) => {
+    narration.stop();
+    goTo(next);
+  };
+
   const current = PAGES[page];
   const last = page === PAGES.length - 1;
   /** 손가락을 대고 있는 동안. 스토리처럼 글을 더 보려고 붙잡는 자리다. */
@@ -158,7 +184,7 @@ export default function InstaPreviewScreen() {
               style={styles.tapZone}
               onPressIn={() => setHeld(true)}
               onPressOut={() => setHeld(false)}
-              onPress={() => goTo(page - 1)}
+              onPress={() => goByTap(page - 1)}
             />
             <Pressable
               accessibilityLabel="잠시 멈춤"
@@ -171,7 +197,7 @@ export default function InstaPreviewScreen() {
               style={styles.tapZone}
               onPressIn={() => setHeld(true)}
               onPressOut={() => setHeld(false)}
-              onPress={() => goTo(page + 1)}
+              onPress={() => goByTap(page + 1)}
             />
           </View>
         </View>
