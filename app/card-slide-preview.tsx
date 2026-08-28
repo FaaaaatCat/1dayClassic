@@ -32,6 +32,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
+import StudyReport from '@/components/StudyReport';
 import listeningData from '@/data/listening.json';
 import { getCatalogBooks } from '@/lib/catalog';
 import { Colors, Fonts, tracking } from '@/constants/theme';
@@ -244,8 +245,21 @@ export default function CardSlidePreviewScreen() {
   /** 퀴즈 팝업이 열려 있는지. */
   const [quizOpen, setQuizOpen] = useState(false);
   const closeQuiz = () => setQuizOpen(false);
+  /** 오늘의 공부 리포트가 떠 있는지. */
+  const [reportOpen, setReportOpen] = useState(false);
+
   /**
-   * 해설까지 읽고 마치기 — 지금 읽던 책의 서재 상세로 보낸다.
+   * 해설까지 읽고 마치기 — 바로 상세로 보내지 않고 리포트를 한 장 거친다.
+   *
+   * 퀴즈 팝업을 먼저 닫는 건 리포트가 그 위에 겹쳐 뜨지 않게 하기 위해서다.
+   */
+  const finishStudy = () => {
+    setQuizOpen(false);
+    setReportOpen(true);
+  };
+
+  /**
+   * 리포트에서 이어 가기 — 지금 읽던 책의 서재 상세로 보낸다.
    *
    * 상세로 바로 replace하면 미리보기가 스택에서 빠지면서 아래에 아무것도 남지 않아,
    * 상세에서 뒤로가기를 누르면 앱이 통째로 종료된다. 그래서 서재 목록으로 먼저 옮긴 뒤
@@ -255,8 +269,8 @@ export default function CardSlidePreviewScreen() {
    * (서재 목록의 openBook과 같은 식). 서재에 담겼는지와는 무관하다 — 상세 화면이 id를
    * 카탈로그에서 푸므로 담기지 않은 책도 열린다.
    */
-  const finishStudy = () => {
-    setQuizOpen(false);
+  const openBookDetail = () => {
+    setReportOpen(false);
     if (!PREVIEW_BOOK) {
       router.replace('/settings');
       return;
@@ -448,6 +462,26 @@ export default function CardSlidePreviewScreen() {
           ]}>
           <QuizSolver onClose={closeQuiz} onFinish={finishStudy} />
         </View>
+      </Modal>
+
+      {/**
+        * 오늘의 공부 리포트 — 마치기를 누르면 뜨는 검은 화면.
+        *
+        * 서재 상세는 여기 '리포트 보러가기'로 간다. 뒤로가기(onRequestClose)는 일부러
+        * 비워 두지 않았다 — 리포트에서 물러나면 방금까지 보던 미리보기로 돌아간다.
+        */}
+      {/* statusBarTranslucent — 이것이 없으면 상태바 자리에 앱의 밝은 바탕이 남아
+          검은 화면 위쪽에 띠로 보인다. 안쪽 여백은 insets.top으로 이미 잡아 뒀다. */}
+      <Modal
+        visible={reportOpen}
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setReportOpen(false)}>
+        <StudyReport
+          date={todayLabel()}
+          bookTitle={PREVIEW_BOOK_TITLE}
+          onOpenReport={openBookDetail}
+        />
       </Modal>
     </View>
   );
