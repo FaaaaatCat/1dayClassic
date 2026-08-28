@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
 import { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
@@ -838,9 +837,9 @@ function QuizSolver({ onClose, onFinish }: { onClose: () => void; onFinish: () =
       <View style={styles.quizHeader}>
         <CardHeading text={quiz.title} />
         <ScaleButton accessibilityLabel="퀴즈 닫기" style={styles.closeHit} onPress={onClose}>
-          <SymbolView
-            name={{ ios: 'xmark', android: 'close', web: 'close' }}
-            tintColor={Colors.brown50}
+          <Ionicons
+            name="close"
+            color={Colors.brown50}
             size={24}
           />
         </ScaleButton>
@@ -1080,9 +1079,9 @@ function Toast({ bottom, at, text }: { bottom: number; at: number; text: string 
 function CardHeading({ text }: { text: string }) {
   return (
     <View style={styles.cardHeading}>
-      <SymbolView
-        name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
-        tintColor={Colors.brown100}
+      <Ionicons
+        name="pencil"
+        color={Colors.brown100}
         size={14}
       />
       <Text style={styles.cardHeadingText}>{text}</Text>
@@ -1106,16 +1105,16 @@ function Actions({ bottom, onOpenNote }: { bottom: number; onOpenNote: () => voi
     <View style={[styles.actions, { bottom }]} pointerEvents="box-none">
       <View style={styles.roundRow}>
         <ScaleButton accessibilityLabel="오디오 듣기" style={styles.roundButton} onPress={() => {}}>
-          <SymbolView
-            name={{ ios: 'headphones', android: 'headphones', web: 'headphones' }}
-            tintColor={Colors.white}
+          <Ionicons
+            name="headset"
+            color={Colors.white}
             size={24}
           />
         </ScaleButton>
         <ScaleButton accessibilityLabel="감상 노트" style={styles.roundButton} onPress={onOpenNote}>
-          <SymbolView
-            name={{ ios: 'square.and.pencil', android: 'edit', web: 'edit' }}
-            tintColor={Colors.white}
+          <Ionicons
+            name="create"
+            color={Colors.white}
             size={24}
           />
         </ScaleButton>
@@ -1135,9 +1134,9 @@ function CloseButton({
   return (
     <View style={[styles.closeButton, { top }]}>
       <ScaleButton accessibilityLabel="미리보기 닫기" style={styles.closeHit} onPress={onPress}>
-        <SymbolView
-          name={{ ios: 'xmark', android: 'close', web: 'close' }}
-          tintColor={Colors.brown50}
+        <Ionicons
+          name="close"
+          color={Colors.brown50}
           size={24}
         />
       </ScaleButton>
@@ -1198,8 +1197,7 @@ function DescBookmark({
         accessibilityLabel={saved ? '북마크 해지' : '북마크'}
         style={styles.descBookmarkHit}
         onPress={onToggle}>
-        {/* 탭바와 같은 방식 — Ionicons에는 채움과 테두리가 짝으로 있다. expo-symbols가
-            안드로이드에서 쓰는 머티리얼 심볼은 폰트 한 벌뿐이라 채움 축을 못 건드린다. */}
+        {/* 꽂아 둔 장은 속을 채운 책갈피로 바꾼다 — Ionicons는 채움과 테두리가 짝이다. */}
         <Ionicons
           name={saved ? 'bookmark' : 'bookmark-outline'}
           color={saved ? Colors.red100 : Colors.brown50}

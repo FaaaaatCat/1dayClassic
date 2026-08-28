@@ -1,5 +1,5 @@
 import { StyleSheet, Text } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 
 import ScaleButton from '@/components/ScaleButton';
 import { Palette, Radius, Spacing, tracking } from '@/constants/theme';
@@ -8,9 +8,9 @@ import { Palette, Radius, Spacing, tracking } from '@/constants/theme';
 export default function ReadMoreButton() {
   return (
     <ScaleButton style={styles.button} accessibilityLabel="책으로 더 읽기">
-      <SymbolView
-        name={{ ios: 'book', android: 'menu_book', web: 'menu_book' }}
-        tintColor={Palette.card}
+      <Ionicons
+        name="book"
+        color={Palette.card}
         size={20}
       />
       <Text style={styles.text}>책으로 더 읽기</Text>

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
@@ -51,9 +51,9 @@ export default function SettingsScreen() {
                     {option.label}
                   </Text>
                   {selected && (
-                    <SymbolView
-                      name={{ ios: 'checkmark', android: 'check', web: 'check' }}
-                      tintColor={Colors.green100}
+                    <Ionicons
+                      name="checkmark"
+                      color={Colors.green100}
                       size={18}
                     />
                   )}

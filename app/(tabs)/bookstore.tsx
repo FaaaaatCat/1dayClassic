@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
@@ -247,9 +247,9 @@ export default function BookstoreScreen() {
           hitSlop={12}
           onPress={openSearch}
         >
-          <SymbolView
-            name={{ ios: "magnifyingglass", android: "search", web: "search" }}
-            tintColor={Colors.brown100}
+          <Ionicons
+            name="search"
+            color={Colors.brown100}
             size={22}
           />
         </Pressable>
@@ -273,9 +273,9 @@ export default function BookstoreScreen() {
               hitSlop={10}
               onPress={closeSearch}
             >
-              <SymbolView
-                name={{ ios: "xmark", android: "close", web: "close" }}
-                tintColor={Colors.brown50}
+              <Ionicons
+                name="close"
+                color={Colors.brown50}
                 size={18}
               />
             </Pressable>

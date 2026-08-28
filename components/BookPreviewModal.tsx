@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
   Image,
@@ -77,9 +77,9 @@ export default function BookPreviewModal({ visible, onClose }: BookPreviewModalP
               style={styles.closeButton}
               onPress={onClose}
             >
-              <SymbolView
-                name={{ ios: "xmark", android: "close", web: "close" }}
-                tintColor={Colors.brown100}
+              <Ionicons
+                name="close"
+                color={Colors.brown100}
                 size={24}
               />
             </ScaleButton>

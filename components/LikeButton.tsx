@@ -1,5 +1,5 @@
 import { StyleSheet, Text } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 
 import ScaleButton from '@/components/ScaleButton';
 import { Palette, Radius, Spacing, Typography } from '@/constants/theme';
@@ -16,13 +16,9 @@ export default function LikeButton({ liked, onToggle }: LikeButtonProps) {
       onPress={onToggle}
       style={styles.button}
       accessibilityLabel={liked ? '좋아요 취소' : '좋아요'}>
-      <SymbolView
-        name={{
-          ios: liked ? 'heart.fill' : 'heart',
-          android: liked ? 'favorite' : 'favorite_border',
-          web: liked ? 'favorite' : 'favorite_border',
-        }}
-        tintColor={liked ? Palette.accent : Palette.subText}
+      <Ionicons
+        name={liked ? 'heart' : 'heart-outline'}
+        color={liked ? Palette.accent : Palette.subText}
         size={22}
       />
       <Text style={[styles.text, liked && styles.textLiked]}>

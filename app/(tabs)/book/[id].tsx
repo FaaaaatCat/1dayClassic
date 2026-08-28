@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -259,9 +259,9 @@ export default function BookDetailScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.ctaBase}
           >
-            <SymbolView
-              name={{ ios: "checkmark", android: "check", web: "check" }}
-              tintColor={Colors.white}
+            <Ionicons
+              name="checkmark"
+              color={Colors.white}
               size={18}
             />
             <Text style={styles.selectButtonText}>현재 선택중</Text>
@@ -278,13 +278,9 @@ export default function BookDetailScreen() {
           style={styles.selectButton}
           onPress={chooseBook}
         >
-          <SymbolView
-            name={{
-              ios: "arrow.triangle.2.circlepath",
-              android: "sync",
-              web: "sync",
-            }}
-            tintColor={Colors.white}
+          <Ionicons
+            name="sync"
+            color={Colors.white}
             size={18}
           />
           <Text style={styles.selectButtonText}>이 책으로 변경하기</Text>
@@ -337,9 +333,9 @@ export default function BookDetailScreen() {
             onPress={goToLibraryBook}
           >
             <Text style={[styles.heroButtonText, styles.goToLibraryButtonText]}>보러가기</Text>
-            <SymbolView
-              name={{ ios: "chevron.right", android: "chevron_right", web: "chevron_right" }}
-              tintColor={Colors.brown100}
+            <Ionicons
+              name="chevron-forward"
+              color={Colors.brown100}
               size={18}
             />
           </ScaleButton>
@@ -353,9 +349,9 @@ export default function BookDetailScreen() {
           style={[styles.heroButton, styles.addShelfButton]}
           onPress={addBookToShelf}
         >
-          <SymbolView
-            name={{ ios: "bookmark", android: "bookmark_border", web: "bookmark_border" }}
-            tintColor={Colors.white}
+          <Ionicons
+            name="bookmark-outline"
+            color={Colors.white}
             size={18}
           />
           <Text style={styles.heroButtonText}>내 서재에 담기</Text>
@@ -365,9 +361,9 @@ export default function BookDetailScreen() {
           style={[styles.heroButton, styles.previewButton]}
           onPress={() => setPreviewOpen(true)}
         >
-          <SymbolView
-            name={{ ios: "eye", android: "visibility", web: "visibility" }}
-            tintColor={Colors.brown50}
+          <Ionicons
+            name="eye-outline"
+            color={Colors.brown50}
             size={18}
           />
           <Text style={[styles.heroButtonText, styles.previewButtonText]}>미리보기</Text>
@@ -460,9 +456,9 @@ export default function BookDetailScreen() {
             style={styles.headerIconButton}
             onPress={() => router.replace(closeDestination)}
           >
-            <SymbolView
-              name={{ ios: "xmark", android: "close", web: "close" }}
-              tintColor={Colors.brown100}
+            <Ionicons
+              name="close"
+              color={Colors.brown100}
               size={24}
             />
           </ScaleButton>
@@ -506,9 +502,9 @@ export default function BookDetailScreen() {
                   style={styles.moreButton}
                   onPress={() => setMoreMenuOpen((open) => !open)}
                 >
-                  <SymbolView
-                    name={{ ios: "ellipsis", android: "more_vert", web: "more_vert" }}
-                    tintColor={Colors.brown100}
+                  <Ionicons
+                    name="ellipsis-vertical"
+                    color={Colors.brown100}
                     size={20}
                   />
                 </ScaleButton>
@@ -548,9 +544,9 @@ export default function BookDetailScreen() {
                 style={styles.moreMenuItem}
                 onPress={openPreviewFromMenu}
               >
-                <SymbolView
-                  name={{ ios: "eye", android: "visibility", web: "visibility" }}
-                  tintColor={Colors.brown100}
+                <Ionicons
+                  name="eye-outline"
+                  color={Colors.brown100}
                   size={18}
                 />
                 <Text style={styles.moreMenuItemText}>미리보기</Text>
@@ -562,9 +558,9 @@ export default function BookDetailScreen() {
                 style={styles.moreMenuItem}
                 onPress={removeBookFromShelfFromMenu}
               >
-                <SymbolView
-                  name={{ ios: "trash", android: "delete", web: "delete" }}
-                  tintColor={Colors.red100}
+                <Ionicons
+                  name="trash-outline"
+                  color={Colors.red100}
                   size={18}
                 />
                 <Text style={[styles.moreMenuItemText, styles.moreMenuDeleteText]}>
@@ -635,9 +631,9 @@ function LegacyLibraryDetail({
             style={libraryStyles.closeButton}
             onPress={() => router.replace("/library")}
           >
-            <SymbolView
-              name={{ ios: "xmark", android: "close", web: "close" }}
-              tintColor={Colors.brown100}
+            <Ionicons
+              name="close"
+              color={Colors.brown100}
               size={24}
             />
           </ScaleButton>
@@ -670,9 +666,9 @@ function LegacyLibraryDetail({
                 style={[libraryStyles.actionButton, libraryStyles.changeButton]}
                 onPress={onChangeBook}
               >
-                <SymbolView
-                  name={{ ios: "arrow.triangle.2.circlepath", android: "sync", web: "sync" }}
-                  tintColor={Colors.white}
+                <Ionicons
+                  name="sync"
+                  color={Colors.white}
                   size={18}
                 />
                 <Text style={libraryStyles.changeButtonText}>이 책으로 변경하기</Text>
@@ -689,9 +685,9 @@ function LegacyLibraryDetail({
                 style={[libraryStyles.actionButton, libraryStyles.moreButton]}
                 onPress={() => setMoreMenuOpen((open) => !open)}
               >
-                <SymbolView
-                  name={{ ios: "ellipsis", android: "more_vert", web: "more_vert" }}
-                  tintColor={Colors.brown100}
+                <Ionicons
+                  name="ellipsis-vertical"
+                  color={Colors.brown100}
                   size={20}
                 />
               </ScaleButton>
@@ -705,9 +701,9 @@ function LegacyLibraryDetail({
                   style={libraryStyles.moreMenuItem}
                   onPress={removeBook}
                 >
-                  <SymbolView
-                    name={{ ios: "trash", android: "delete", web: "delete" }}
-                    tintColor={Colors.red100}
+                  <Ionicons
+                    name="trash-outline"
+                    color={Colors.red100}
                     size={18}
                   />
                   <Text style={libraryStyles.deleteText}>내 서재에서 삭제하기</Text>

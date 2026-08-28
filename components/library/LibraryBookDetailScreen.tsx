@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { SymbolView } from "expo-symbols";
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -83,7 +83,7 @@ export default function LibraryBookDetailScreen() {
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <Text style={styles.headerTitle}>내 서재</Text>
           <ScaleButton accessibilityLabel="내 서재로 돌아가기" style={styles.closeButton} onPress={() => router.replace("/library")}>
-            <SymbolView name={{ ios: "xmark", android: "close", web: "close" }} tintColor={Colors.brown100} size={24} />
+            <Ionicons name="close" color={Colors.brown100} size={24} />
           </ScaleButton>
         </View>
 
@@ -104,21 +104,21 @@ export default function LibraryBookDetailScreen() {
 
             <View style={styles.buttonRow}>
               <ScaleButton accessibilityLabel={`${view.title} 오늘의 책으로 변경하기`} style={[styles.actionButton, styles.changeButton]} onPress={changeBook}>
-                <SymbolView name={{ ios: "arrow.triangle.2.circlepath", android: "sync", web: "sync" }} tintColor={Colors.white} size={18} />
+                <Ionicons name="sync" color={Colors.white} size={18} />
                 <Text style={styles.changeButtonText} numberOfLines={1}>이 책으로 변경하기</Text>
               </ScaleButton>
               <ScaleButton accessibilityLabel="미리보기" style={[styles.actionButton, styles.previewButton]} onPress={() => setPreviewOpen(true)}>
                 <Text style={styles.previewButtonText} numberOfLines={1}>미리보기</Text>
               </ScaleButton>
               <ScaleButton accessibilityLabel={moreMenuOpen ? "더보기 닫기" : "더보기"} style={[styles.actionButton, styles.moreButton]} onPress={() => setMoreMenuOpen((open) => !open)}>
-                <SymbolView name={{ ios: "ellipsis", android: "more_vert", web: "more_vert" }} tintColor={Colors.brown100} size={20} />
+                <Ionicons name="ellipsis-vertical" color={Colors.brown100} size={20} />
               </ScaleButton>
             </View>
 
             {moreMenuOpen && (
               <View style={styles.moreMenu}>
                 <Pressable accessibilityRole="button" accessibilityLabel="내 서재에서 삭제하기" style={styles.moreMenuItem} onPress={removeBook}>
-                  <SymbolView name={{ ios: "trash", android: "delete", web: "delete" }} tintColor={Colors.red100} size={18} />
+                  <Ionicons name="trash-outline" color={Colors.red100} size={18} />
                   <Text style={styles.deleteText}>내 서재에서 삭제하기</Text>
                 </Pressable>
               </View>
