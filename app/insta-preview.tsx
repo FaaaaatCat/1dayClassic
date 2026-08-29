@@ -18,7 +18,7 @@ import ScaleButton from '@/components/ScaleButton';
 import StudyReport from '@/components/StudyReport';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { useCardNarration, type SpokenRange } from '@/hooks/useCardNarration';
-import { openPreviewBookDetail } from '@/lib/preview-nav';
+import { openBookDetail } from '@/lib/preview-nav';
 import {
   DESC_PARAGRAPHS,
   NARRATION_STEPS,
@@ -254,7 +254,7 @@ export default function InstaPreviewScreen() {
           bookTitle={PREVIEW_BOOK_TITLE}
           onOpenReport={() => {
             setReportOpen(false);
-            openPreviewBookDetail(router);
+            openBookDetail(router, PREVIEW_BOOK);
           }}
         />
       </Modal>
