@@ -8,7 +8,7 @@ import { getBookLesson } from '@/lib/books';
 import type { BookId } from '@/types';
 
 /**
- * 하루 시리즈 9권이 공유하는 항목 상세 화면.
+ * 하루 시리즈이 공유하는 항목 상세 화면.
  *
  * 이 파일은 항목을 해석해서 껍데기(`LessonDetailShell`)에 넘기는 일만 한다 — 스크롤·닫기
  * 버튼·오디오 팝업은 Shell이, 화면 내용(인트로·히어로·표제부·본문·감상 노트 등)은 책별

@@ -11,7 +11,8 @@ export type BookId =
   | 'psychology'
   | 'writing'
   | 'hanmun'
-  | 'english';
+  | 'english'
+  | 'listening';
 
 /**
  * 목차 한 행에 노출되는 표제. 어느 필드에서 뽑는지는 책마다 다르므로
@@ -63,6 +64,11 @@ export interface DailyLesson {
   coverImage: string;
   /** 오늘의 퀴즈. 없는 날은 생략하며, 그러면 화면에 퀴즈 영역이 나오지 않는다. */
   quiz?: Quiz;
+  /**
+   * 한 항목이 여러 문제를 드는 책은 이쪽을 쓴다(듣기의 말들은 세 문제다).
+   * 상세 화면의 퀴즈 칸은 한 문제만 보여 주므로 첫 문제를 꺼낸다 — lib/quiz.ts 참고.
+   */
+  quizzes?: Quiz[];
   /** 데모: true면 로테이션 대신 오늘의 항목으로 고정 */
   featured?: boolean;
 }
@@ -218,4 +224,18 @@ export interface WritingLesson extends DailyLesson {
 
 export interface WritingData {
   lessons: WritingLesson[];
+}
+
+/** 듣기의 말들 — 쓰기와 같은 문장 시리즈라 지면 구성이 같다(제목 + 인용문 + 본문). */
+export interface ListeningLesson extends DailyLesson {
+  /** 글 제목 (예: "내가 잘 듣는 사람이 아니라는 것") */
+  title: string;
+  /** 본문 위에 놓이는 인용문 */
+  epigraph: string;
+  /** 인용문의 출처 */
+  epigraphBy: string;
+}
+
+export interface ListeningData {
+  lessons: ListeningLesson[];
 }

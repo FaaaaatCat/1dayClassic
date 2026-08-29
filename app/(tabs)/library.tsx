@@ -11,7 +11,7 @@ import { getCatalogBooks, type CatalogBook } from '@/lib/catalog';
 import { isCatalogBookPurchased } from '@/lib/purchase';
 import { fieldsOf, seriesOf } from '@/lib/tags';
 
-/** 학습 가능한 9권은 표지를 로컬 에셋으로 갖고 있다 — bookstore.tsx와 같은 패턴. */
+/** 학습 가능한 책은 표지를 로컬 에셋으로 갖고 있다 — bookstore.tsx와 같은 패턴. */
 const LOCAL_COVERS = new Map(BOOKSTORE_BOOKS.map((book) => [book.id as string, book.coverImage]));
 
 interface Entry {

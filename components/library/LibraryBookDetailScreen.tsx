@@ -60,7 +60,7 @@ export default function LibraryBookDetailScreen() {
 
   const changeBook = () => {
     // studyBook이 없으면(카탈로그 전용 책) BUILD_CALENDAR에 없는 키라 selectBook을 호출할 수
-    // 없다(book/[id].tsx의 chooseBook 주석 참고). liberal처럼 9권에는 있지만 아직 MVP가
+    // 없다(book/[id].tsx의 chooseBook 주석 참고). liberal처럼 학습 가능한 책에는 있지만 아직 MVP가
     // 제공하지 않는 책도 같은 이유로 막는다.
     if (!studyBook || !isMvpBook(studyBook.id)) {
       showToast("MVP에서는 제공하지 않는 콘텐츠입니다.");

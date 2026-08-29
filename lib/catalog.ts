@@ -12,14 +12,14 @@ export interface CatalogSection {
 /**
  * 유유출판사 도서 카탈로그 한 권 — 하루 서점의 '전시용' 데이터.
  *
- * BOOKSTORE_BOOKS(lib/bookstore.ts)의 9권과는 성격이 다르다. 그쪽은 365일 목차와
+ * BOOKSTORE_BOOKS(lib/bookstore.ts)의 학습 가능한 책들과는 성격이 다르다. 그쪽은 365일 목차와
  * 알람 에셋을 갖춘 '학습 가능한 책'이고, 이쪽은 표지·서지 정보·책 소개만 있는 목록이다.
  * 두 쪽 모두에 있는 책은 bookId로 이어진다 — 그 책만 목차를 열고 선택할 수 있다.
  */
 export interface CatalogBook {
   /** Notion 페이지 id. 라우트 파라미터(/book/[id])로 그대로 쓰인다. */
   id: string;
-  /** 학습 콘텐츠가 있는 9권이면 그 BookId, 아니면 null. */
+  /** 학습 콘텐츠가 있는 책이면 그 BookId, 아니면 null. */
   bookId: BookId | null;
   title: string;
   /** "데이미언 설스 지음, 홍한별 옮김" */
@@ -49,7 +49,7 @@ export function getCatalogBook(id: string): CatalogBook | undefined {
 }
 
 /**
- * 학습 가능한 9권의 카탈로그 정보(가격·책 소개). 9권은 표지와 제목을 로컬 에셋으로
+ * 학습 가능한 책들의 카탈로그 정보(가격·책 소개). 그 책들은 표지와 제목을 로컬 에셋으로
  * 갖고 있지만 가격과 소개글은 여기에만 있으므로, 상세 화면이 이 함수로 채워 넣는다.
  */
 export function getCatalogBookByBookId(bookId: BookId): CatalogBook | undefined {

@@ -9,7 +9,8 @@ import type { DailyLesson, Quiz } from '@/types';
  * 한 번 확인하고 무엇이 잘못됐는지 알린다.
  */
 export function getLessonQuiz(lesson: DailyLesson): Quiz | undefined {
-  const quiz = lesson.quiz;
+  // 여러 문제를 드는 책은 첫 문제를 보여 준다 — 상세의 퀴즈 칸은 한 문제 자리다.
+  const quiz = lesson.quiz ?? lesson.quizzes?.[0];
   if (!quiz) return undefined;
   if (__DEV__) warnIfMalformed(lesson.id, quiz);
   return quiz;

@@ -10,7 +10,7 @@ export const MEDIA_HEADERS: Record<string, string> = {
 };
 
 /**
- * 커버 이미지 해석기 — 9권이 함께 쓴다.
+ * 커버 이미지 해석기 — 학습 가능한 책들이 함께 쓴다.
  *
  * 책마다 데이터 파일과 표제 필드는 다르지만 coverImage는 DailyLesson 공통부라 여기
  * 한 곳에서만 해석한다. 실제 변환은 resolveMediaUrl 하나로 모이므로 다운로드 URL

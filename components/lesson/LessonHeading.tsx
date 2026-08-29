@@ -47,6 +47,9 @@ export default function LessonHeading({ bookLesson, bookName }: Props) {
       return <HanmunHeading lesson={bookLesson.lesson} bookName={bookName} />;
     case 'english':
       return <EnglishHeading lesson={bookLesson.lesson} bookName={bookName} />;
+    // 듣기의 말들은 쓰기의 말들과 같은 문장 시리즈라 지면 구성이 같다.
+    case 'listening':
+      return <WritingHeading lesson={bookLesson.lesson} bookName={bookName} />;
   }
 }
 

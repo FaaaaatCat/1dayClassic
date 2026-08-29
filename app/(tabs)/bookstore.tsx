@@ -28,7 +28,7 @@ import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
 import { isCatalogBookPurchased } from "@/lib/purchase";
 import { FIELD_NAMES, fieldsOf, SERIES_NAMES, seriesOf } from "@/lib/tags";
 
-/** 학습 가능한 9권은 표지를 로컬 에셋으로 갖고 있다 — 원격 URL보다 선명하고 오프라인에서도 뜬다. */
+/** 학습 가능한 책은 표지를 로컬 에셋으로 갖고 있다 — 원격 URL보다 선명하고 오프라인에서도 뜬다. */
 const LOCAL_COVERS = new Map(
   BOOKSTORE_BOOKS.map((book) => [book.id as string, book.coverImage]),
 );
@@ -54,7 +54,7 @@ interface Entry {
   series: string[];
   fields: string[];
   purchased: boolean;
-  /** 학습 가능한 9권 중 지금 MVP가 제공하는 책인지(liberal 제외). */
+  /** 학습 가능한 책 중 지금 MVP가 제공하는 책인지(liberal 제외). */
   mvp: boolean;
   /** 제목+저자를 공백 없이 소문자로 붙여 둔 검색용 문자열. */
   searchKey: string;
@@ -163,7 +163,7 @@ export default function BookstoreScreen() {
     return { bySeries, byField };
   }, [tagged]);
 
-  /** 학습 가능한 9권은 BookId로 열어야 상세 화면이 목차와 '이 책으로 변경하기'를 띄운다. */
+  /** 학습 가능한 책은 BookId로 열어야 상세 화면이 목차와 '이 책으로 변경하기'를 띄운다. */
   const openBook = (book: CatalogBook) => {
     router.push({
       pathname: "/book/[id]",

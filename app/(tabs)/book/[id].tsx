@@ -44,7 +44,7 @@ const MINI_SLIDE_OFFSET = 10;
 /**
  * 하루 서점의 책 상세 페이지 — 두 종류가 이 화면 하나를 함께 쓴다.
  *
- * 1) 학습 가능한 '하루 시리즈' 9권: 표지가 로컬 에셋이다.
+ * 1) 학습 가능한 '하루 시리즈': 표지가 로컬 에셋이다(듣기의 말들만 아직 URL이다).
  * 2) 유유출판사 카탈로그의 나머지 책: 표지가 원격 URL이다.
  *
  * 하단 CTA 바는 catalogBook이 있으면 늘 뜨고, 진입 경로(from)로 버튼 역할이 완전히
@@ -54,7 +54,7 @@ const MINI_SLIDE_OFFSET = 10;
  *   '내 서재에 담기'(누르면 담길 뿐 오늘의 책은 안 바뀐다), 이미 담겼으면 눌러도 아무 일도
  *   안 하는 안내용 비활성 버튼('서재에 담긴 책입니다.')이다.
  * - 내 서재(from === 'library')에서는 오늘의 책 선택 여부로 갈린다. 아직 선택 전이면
- *   '이 책으로 변경하기'. 다만 실제 선택(selectBook)은 학습 콘텐츠가 있는 9권에서만
+ *   '이 책으로 변경하기'. 다만 실제 선택(selectBook)은 학습 콘텐츠가 있는 책에서만
  *   일어나고, 나머지 268권은 버튼을 눌러도 선택되지 않고 '준비중' 토스트만 뜬다 — 이유는
  *   chooseBook 주석 참고. 이미 선택된 책이면 눌러도 아무 일도 안 하는 비활성 버튼('현재
  *   선택중', 히어로 배지와 같은 파란 그라데이션)이다.
@@ -85,7 +85,7 @@ export default function BookDetailScreen() {
   const isFromLibrary = from === "library";
   const closeDestination = isFromLibrary ? "/library" : "/bookstore";
 
-  // 학습 가능한 9권이 먼저다 — 그 9권은 카탈로그에도 있지만 표지를 로컬 에셋으로 쓴다.
+  // 학습 가능한 책이 먼저다 — 그 책들은 카탈로그에도 있지만 표지를 로컬 에셋으로 쓴다.
   const studyBook = BOOKSTORE_BOOKS.find((candidate) => candidate.id === id);
   const catalogBook: CatalogBook | undefined = studyBook
     ? getCatalogBookByBookId(studyBook.id)
@@ -108,14 +108,14 @@ export default function BookDetailScreen() {
       };
 
   const isSelected = studyBook?.id === selectedBookId;
-  // 서재의 키는 항상 catalogBook.id(노션 uuid) — 라우트 id는 9권일 때 BookId라 값이 달라
+  // 서재의 키는 항상 catalogBook.id(노션 uuid) — 라우트 id는 학습 가능한 책일 때 BookId라 값이 달라
   // 그대로 쓰면 안 된다(catalogBook은 studyBook 여부와 무관하게 항상 계산되어 있다).
   const inShelf = catalogBook ? isInShelf(catalogBook.id) : false;
 
-  // 시리즈 칩을 앞에, 분야 칩을 뒤에 둔다. 학습 가능한 9권도 카탈로그 태그를 그대로 쓴다.
+  // 시리즈 칩을 앞에, 분야 칩을 뒤에 둔다. 학습 가능한 책도 카탈로그 태그를 그대로 쓴다.
   const tags = catalogBook?.tags ?? [];
   const chips = [
-    // 제목 규칙이 걸린 시리즈도 있어서 카탈로그 쪽 제목을 넘긴다(9권은 표기가 조금 다르다).
+    // 제목 규칙이 걸린 시리즈도 있어서 카탈로그 쪽 제목을 넘긴다(표기가 조금 다르다).
     ...seriesOf(tags, catalogBook?.title ?? "").map((label) => ({
       label,
       variant: "series" as const,
@@ -144,11 +144,11 @@ export default function BookDetailScreen() {
   );
 
   const chooseBook = () => {
-    // selectedBookId는 학습 가능한 9권짜리 BookId 유니온이고, 홈 화면의
+    // selectedBookId는 학습 가능한 BookId 유니온이고, 홈 화면의
     // getTomorrowLesson → getBookCalendar → BUILD_CALENDAR[bookId]()가 이 값을 그대로 키로
     // 쓴다. 카탈로그 전용 책의 id를 selectBook에 넘기면 BUILD_CALENDAR에 없는 키라 홈 화면이
     // 그 자리에서 크래시한다 — 그래서 studyBook이 없을 때는 절대 selectBook을 호출하지 않고
-    // 안내 토스트만 띄운다. liberal처럼 9권에는 있지만 아직 MVP가 제공하지 않는 책도 같은 이유로 막는다.
+    // 안내 토스트만 띄운다. liberal처럼 학습 가능한 책에는 있지만 아직 MVP가 제공하지 않는 책도 같은 이유로 막는다.
     if (!studyBook || !isMvpBook(studyBook.id)) {
       showToast("MVP에서는 제공하지 않는 콘텐츠입니다.");
       return;

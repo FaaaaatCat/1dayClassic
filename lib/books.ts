@@ -22,6 +22,12 @@ import {
 } from '@/lib/hanmun';
 import { getLatinHeading, getLatinLessonById, getLatinLessons, getTodayLatinLesson } from '@/lib/latin';
 import {
+  getListeningHeading,
+  getListeningLessonById,
+  getListeningLessons,
+  getTodayListeningLesson,
+} from '@/lib/listening';
+import {
   getLiberalHeading,
   getLiberalLessonById,
   getLiberalLessons,
@@ -47,6 +53,7 @@ import type {
   HanmunLesson,
   LatinLesson,
   LessonHeading,
+  ListeningLesson,
   LiberalLesson,
   PsychologyLesson,
   QuoteLesson,
@@ -70,6 +77,7 @@ const BUILD_CALENDAR: Record<BookId, () => CalendarDay[]> = {
   writing: () => buildCalendarYear(getWritingLessons(), getWritingHeading),
   hanmun: () => buildCalendarYear(getHanmunLessons(), getHanmunHeading),
   english: () => buildCalendarYear(getEnglishLessons(), getEnglishHeading),
+  listening: () => buildCalendarYear(getListeningLessons(), getListeningHeading),
 };
 
 /** 한 번 만든 목차는 365행 그대로 재사용한다 — 화면을 다시 열 때마다 만들 이유가 없다. */
@@ -100,7 +108,8 @@ export type BookLesson =
   | { book: 'psychology'; lesson: PsychologyLesson }
   | { book: 'writing'; lesson: WritingLesson }
   | { book: 'hanmun'; lesson: HanmunLesson }
-  | { book: 'english'; lesson: EnglishLesson };
+  | { book: 'english'; lesson: EnglishLesson }
+  | { book: 'listening'; lesson: ListeningLesson };
 
 /** BookId 전체 — BUILD_CALENDAR의 키를 쓰므로 책을 더하면 여기도 자동으로 따라온다. */
 export const BOOK_IDS = Object.keys(BUILD_CALENDAR) as BookId[];
@@ -145,6 +154,10 @@ function lessonById(bookId: BookId, lessonId: string): BookLesson | undefined {
       const lesson = getHanmunLessonById(lessonId);
       return lesson && { book: 'hanmun', lesson };
     }
+    case 'listening': {
+      const lesson = getListeningLessonById(lessonId);
+      return lesson && { book: 'listening', lesson };
+    }
     case 'english': {
       const lesson = getEnglishLessonById(lessonId);
       return lesson && { book: 'english', lesson };
@@ -187,6 +200,10 @@ function todayLesson(bookId: BookId): BookLesson | undefined {
       const lesson = getTodayHanmunLesson();
       return lesson && { book: 'hanmun', lesson };
     }
+    case 'listening': {
+      const lesson = getTodayListeningLesson();
+      return lesson && { book: 'listening', lesson };
+    }
     case 'english': {
       const lesson = getTodayEnglishLesson();
       return lesson && { book: 'english', lesson };
@@ -217,7 +234,7 @@ export function getTomorrowLesson(bookId: BookId): BookLesson | undefined {
 }
 
 /**
- * 어느 책인지 모르는 항목 id를 9권에서 찾는다. 보관함은 담은 항목의 id만 들고 있어
+ * 어느 책인지 모르는 항목 id를 학습 가능한 책들에서 찾는다. 보관함은 담은 항목의 id만 들고 있어
  * 되살릴 때 이 함수를 쓴다. 항목 id에는 책 접두사가 붙어 있어(latin_1_…) 책끼리 겹치지 않는다.
  */
 export function findLesson(lessonId: string): BookLesson | undefined {
@@ -254,6 +271,8 @@ export function getLessonHeading(bookLesson: BookLesson): LessonHeading {
       return getHanmunHeading(bookLesson.lesson);
     case 'english':
       return getEnglishHeading(bookLesson.lesson);
+    case 'listening':
+      return getListeningHeading(bookLesson.lesson);
   }
 }
 

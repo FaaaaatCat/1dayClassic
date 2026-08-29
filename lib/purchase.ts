@@ -25,7 +25,7 @@ const PURCHASED_IDS = (() => {
   return ids;
 })();
 
-/** 학습 가능한 9권의 BookId → 카탈로그 id. 두 화면이 같은 구매 상태를 보게 잇는다. */
+/** 학습 가능한 책의 BookId → 카탈로그 id. 두 화면이 같은 구매 상태를 보게 잇는다. */
 const CATALOG_ID_BY_BOOK_ID = new Map(
   getCatalogBooks()
     .filter((book) => book.bookId !== null)
