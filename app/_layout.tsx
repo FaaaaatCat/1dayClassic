@@ -123,6 +123,9 @@ export default function RootLayout() {
                     name="insta-preview"
                     options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
                   />
+                  {/* 원페이지 미리보기 — 상세와 같은 껍데기라 탭바 없이 전면으로 떠야 한다.
+                      여기는 좌우 스와이프를 쓰지 않으므로 뒤로가기 제스처를 막지 않는다. */}
+                  <Stack.Screen name="onepage-preview" options={{ headerShown: false }} />
                 </Stack>
               </ToastProvider>
               </BgmProvider>

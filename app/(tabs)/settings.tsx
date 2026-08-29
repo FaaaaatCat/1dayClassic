@@ -130,6 +130,20 @@ export default function SettingsScreen() {
       </Animated.View>
 
       <Animated.View entering={FadeIn.duration(700).delay(500)} style={styles.card}>
+        <Text style={styles.sectionTitle}>원페이지 미리보기</Text>
+        <Text style={styles.sectionHint}>
+          지금 오늘의 공부 상세가 쓰는 형식입니다. 위의 두 가지와 같은 글을 견주어 보려고
+          같은 자리에 두었습니다. 우측 상단 ✕로 닫습니다.
+        </Text>
+        <ScaleButton
+          accessibilityLabel="원페이지 미리보기 열기"
+          style={styles.testButton}
+          onPress={() => router.push('/onepage-preview')}>
+          <Text style={styles.testButtonLabel}>원페이지로 보기</Text>
+        </ScaleButton>
+      </Animated.View>
+
+      <Animated.View entering={FadeIn.duration(700).delay(500)} style={styles.card}>
         <SettingRow label="버전" value="1.0.0 (데모)" />
       </Animated.View>
     </ScrollView>

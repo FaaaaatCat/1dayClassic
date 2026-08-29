@@ -15,6 +15,13 @@ import { useAlarmLockFlow } from '@/modules/alarm-clock';
 interface Props {
   bookLesson: BookLesson;
   children: ReactNode;
+  /**
+   * 닫기(X)를 눌렀을 때 갈 곳. 기본은 홈이다.
+   *
+   * 설정의 원페이지 미리보기가 이 껍데기를 그대로 빌려 쓰면서, 닫으면 홈이 아니라 설정으로
+   * 돌아가야 해서 열어 두었다. 다른 미리보기들도 닫으면 설정으로 돌아간다.
+   */
+  onClose?: () => void;
 }
 
 /**
@@ -24,7 +31,7 @@ interface Props {
  * 스크롤과 무관하게 항상 눌리게 두고, 나머지(children)는 스크롤되는 본문으로 그린다.
  * 재생 컨트롤은 `LessonDetailContext.openAudio`로 열리는 AudioListenSheet 팝업에 모여 있다.
  */
-export default function LessonDetailShell({ bookLesson, children }: Props) {
+export default function LessonDetailShell({ bookLesson, children, onClose }: Props) {
   const params = useLocalSearchParams<{ autoplay?: string }>();
   const { autoplay } = params;
   const router = useRouter();
@@ -105,7 +112,7 @@ export default function LessonDetailShell({ bookLesson, children }: Props) {
             <ScaleButton
               accessibilityLabel="닫기"
               style={styles.closeButton}
-              onPress={() => router.replace('/')}
+              onPress={onClose ?? (() => router.replace('/'))}
             >
               <Ionicons
                 name="close"

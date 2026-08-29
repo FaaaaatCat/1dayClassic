@@ -23,7 +23,7 @@ const KOREAN_ORDINALS = ['', '첫', '두', '세', '네', '다섯', '여섯', '�
 /**
  * 제목이 아니라 id로 찾는 건 미리보기가 항목 하나를 콕 집어 쓰기 때문이다.
  */
-const PREVIEW_LESSON_ID = 'listening_2_admit_first';
+export const PREVIEW_LESSON_ID = 'listening_2_admit_first';
 const PREVIEW_LESSON = (() => {
   const lesson = listeningData.lessons.find((l) => l.id === PREVIEW_LESSON_ID);
   if (!lesson) console.warn(`[preview] 없는 항목입니다: ${PREVIEW_LESSON_ID}`);
