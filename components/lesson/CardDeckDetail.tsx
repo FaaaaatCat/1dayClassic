@@ -44,6 +44,7 @@ import {
   type NarrationStep,
   type SpokenRange,
 } from '@/hooks/useCardNarration';
+import MusicPlayer from '@/components/lesson/MusicPlayer';
 import StudyReport from '@/components/StudyReport';
 import { useNotes } from '@/context/NotesContext';
 import { useAlarmLockFlow } from '@/modules/alarm-clock';
@@ -58,6 +59,8 @@ import {
   BODY_PADDING_Y,
   CARD_H,
   CARD_W,
+  PLAYER_BLOCK,
+  PLAYER_H,
   type CardCover,
   type CardEpigraph,
   type CardPage,
@@ -199,6 +202,8 @@ const BAR_GAP = 4;
 const BAR_PAD = 12;
 /** 한 장에 최소한 이만큼은 머문다 — 시간 계산이 어긋나도 장이 우르르 넘어가지 않게. */
 const MIN_REMAINING_MS = 600;
+/** 카드가 음악 재생기에 자리를 내주는 데 걸리는 시간. */
+const MUSIC_OPEN_MS = 320;
 const HEADER_H = 48;
 const FOOTER_H = 56;
 
@@ -440,6 +445,32 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
   /** 헤드폰 버튼이 펼쳐져 조작 아이콘을 드러내고 있는지. */
   const [readerOpen, setReaderOpen] = useState(false);
 
+  /**
+   * 카드 아래 음악 재생기가 열려 있는지. 하루 클래식만 갖는다.
+   *
+   * 0에서 1로 도는 music은 카드가 얼마나 자리를 내줬는지다 — 카드·골 그늘·책갈피가
+   * 모두 이 값 하나를 보고 함께 줄어든다.
+   */
+  const [musicOpen, setMusicOpen] = useState(false);
+  const music = useSharedValue(0);
+  useEffect(() => {
+    music.value = withTiming(musicOpen ? 1 : 0, { duration: MUSIC_OPEN_MS });
+  }, [musicOpen, music]);
+
+  /**
+   * 음악을 켜고 끈다. 낭독과 함께 틀지 않는 건 소리가 둘이 되기 때문이다 — 배경음악과
+   * 목소리 위에 유튜브까지 얹히면 무엇도 들리지 않는다.
+   */
+  const toggleMusic = () => {
+    setMusicOpen((open) => {
+      if (!open) {
+        setReaderOpen(false);
+        narrationRef.current?.stop();
+      }
+      return !open;
+    });
+  };
+
   const narration = useCardNarration({
     steps: narrationSteps,
     onPage: goTo,
@@ -447,6 +478,10 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
     // 다시 듣거나 이어 갈 사람이 버튼을 다시 찾아 눌러야 하면 번거롭다.
     onFinish: () => setReaderOpen(false),
   });
+  // toggleMusic이 낭독을 세우려면 낭독이 필요한데, 낭독은 그 아래에서 만들어진다.
+  // 불릴 때 꺼내 쓰도록 ref에 담아 둔다.
+  const narrationRef = useRef(narration);
+  narrationRef.current = narration;
 
   /**
    * 시간이 차면 저절로 다음 장으로 — 스토리에서 가져온 것이다. 다만 위 바는 차오르지
@@ -463,6 +498,8 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
    */
   const autoStopped =
     autoPaused || readerOpen || noteOpen || quizOpen || reportOpen;
+
+  const musicSlotStyle = useAnimatedStyle(() => ({ opacity: music.value }));
 
   return (
     <View style={styles.screen}>
@@ -545,7 +582,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
       <View
         style={[styles.deck, { top: insets.top, bottom: insets.bottom }]}
         pointerEvents="box-none">
-        <LeftEdge flipX={flipX} />
+        <LeftEdge flipX={flipX} music={music} />
         {pages.map((p, index) => (
           <DeckCard
             key={index}
@@ -554,6 +591,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             paragraph={p.paragraph}
             flipX={flipX}
             enter={enter}
+            music={music}
             total={pages.length}
             interactive={INTERACTIVE_KINDS.includes(p.kind) && page === index}
             spoken={narration.spoken?.page === index ? narration.spoken : null}
@@ -561,14 +599,25 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             epigraph={epigraph}
             catalogBook={catalogBook}
             onOpenQuiz={() => setQuizOpen(true)}
+            onToggleMusic={toggleMusic}
+            musicOpen={musicOpen}
           />
         ))}
-        <FoldShade />
+        <FoldShade music={music} />
+
+        {/* 붙박이 재생기 — 카드가 내준 자리에 앉는다. 카드 '안'이 아니라 덱 위에 있어야
+            장을 넘겨도 언마운트되지 않는다(그러면 음악이 끊긴다). */}
+        {musicOpen && cover.listenId ? (
+          <Animated.View style={[styles.musicSlot, musicSlotStyle]}>
+            <MusicPlayer videoId={cover.listenId} />
+          </Animated.View>
+        ) : null}
         {/* 책갈피는 카드 '안'이 아니라 덱 위에 얹는다. 카드 안에 넣으면 그 장이 손가락을
             받게 되어 본문의 탭 넘김이 막힌다. 덱의 마지막 자식이자 zIndex가 가장 높아
             카드 위에 그려진다 — 다른 크롬(닫기·점·하단 버튼)은 죄다 카드 바깥이라
             이 층 다툼이 없었지만, 이것은 카드 사각형 안에 앉는 첫 버튼이다. */}
         <DescBookmark
+          music={music}
           active={pages[page]?.kind === 'desc'}
           saved={marked.has(page)}
           onToggle={() => toggleMark(page)}
@@ -622,6 +671,17 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
               <Ionicons name="headset" color={Colors.white} size={24} />
             </ScaleButton>
           )}
+          {/* 음악을 켜 둔 동안에만 나오는 끄기 — 표지를 지나 읽는 중에도 끌 수 있어야
+              한다. 재생기 위에 겹쳐 놓지 않는 건 유튜브 약관이 재생기를 가리는 것을
+              막기 때문이다. */}
+          {musicOpen ? (
+            <ScaleButton
+              accessibilityLabel="음악 끄기"
+              style={styles.footerHit}
+              onPress={toggleMusic}>
+              <Ionicons name="musical-notes" color={Colors.white} size={24} />
+            </ScaleButton>
+          ) : null}
           <ScaleButton
             accessibilityLabel="감상 노트"
             style={styles.footerHit}
@@ -716,16 +776,17 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
  * 배경에서는 카드 바깥으로 지는 그림자가 보이지 않아(측정: 카드 밖은 배경값 10 그대로)
  * 그 그림자가 하던 일은 사실상 이 골 하나뿐이었다.
  */
-function FoldShade() {
+function FoldShade({ music }: { music: SharedValue<number> }) {
+  const style = useAnimatedStyle(() => ({ height: CARD_H - PLAYER_BLOCK * music.value }));
   return (
-    <View style={styles.foldShade} pointerEvents="none">
+    <Animated.View style={[styles.foldShade, style]} pointerEvents="none">
       <LinearGradient
         colors={['rgba(3,3,3,0)', 'rgba(3,3,3,0.22)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={StyleSheet.absoluteFill}
       />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -741,8 +802,9 @@ function FoldShade() {
  * 그 종이는 180도에 이를 즈음 이미 그림자가 걷혀 있고(SHADOW_FADE_*) 이 빈 종이도
  * 그림자가 없으므로, 교대하는 순간 화면에서 달라지는 것이 없다.
  */
-function LeftEdge({ flipX }: { flipX: SharedValue<number> }) {
+function LeftEdge({ flipX, music }: { flipX: SharedValue<number>; music: SharedValue<number> }) {
   const style = useAnimatedStyle(() => ({
+    height: CARD_H - PLAYER_BLOCK * music.value,
     opacity: interpolate(
       flipX.value / PAGE_W,
       [LEFT_EDGE_IN_FROM, LEFT_EDGE_IN_TO],
@@ -801,6 +863,7 @@ function DeckCard({
   paragraph,
   flipX,
   enter,
+  music,
   total,
   interactive,
   spoken,
@@ -808,6 +871,8 @@ function DeckCard({
   epigraph,
   catalogBook,
   onOpenQuiz,
+  onToggleMusic,
+  musicOpen,
 }: {
   index: number;
   kind: CardPageKind;
@@ -820,11 +885,15 @@ function DeckCard({
   flipX: SharedValue<number>;
   /** 입장할 때 한 번 도는 값 — 첫 장 본문이 떠오르는 연출에만 쓴다. */
   enter: SharedValue<number>;
+  /** 음악 재생기에 내준 자리(0~1). 카드가 그만큼 짧아진다. */
+  music: SharedValue<number>;
   /** 이 장이 지금 손가락을 받을 수 있는가(구매 버튼 같은 것). */
   interactive: boolean;
   /** 낭독이 지금 이 장에서 읽고 있는 글자 범위. 다른 장이면 null이다. */
   spoken: SpokenRange | null;
   onOpenQuiz: () => void;
+  onToggleMusic: () => void;
+  musicOpen: boolean;
 }) {
   /**
    * 이 장이 얼마나 젖혀져 있는지. 0(평평, 오른쪽에 놓임)~1(180도, 왼쪽에 엎어짐).
@@ -854,8 +923,11 @@ function DeckCard({
   const hingeStyle = useAnimatedStyle(() => {
     const p = index - flipX.value / PAGE_W;
     // 젖혀지는 종이도 밑장도 아니면 그리지 않는다.
-    if (p <= -1 || p > 1) return { opacity: 0, transform: rotateAtSpine(0) };
-    return { opacity: 1, transform: rotateAtSpine(-turnProgress(p) * 180) };
+    // 높이는 음악 재생기가 가져간 만큼 줄어든다. 경첩의 marginTop이 -CARD_H/2로
+    // 박혀 있어 윗변은 제자리에 있고 아랫변만 올라온다 — 카드가 위로 줄어든다.
+    const height = CARD_H - PLAYER_BLOCK * music.value;
+    if (p <= -1 || p > 1) return { height, opacity: 0, transform: rotateAtSpine(0) };
+    return { height, opacity: 1, transform: rotateAtSpine(-turnProgress(p) * 180) };
   });
 
   /**
@@ -915,6 +987,8 @@ function DeckCard({
               epigraph={epigraph}
               catalogBook={catalogBook}
               onOpenQuiz={onOpenQuiz}
+              onToggleMusic={onToggleMusic}
+              musicOpen={musicOpen}
             />
           </Animated.View>
           <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
@@ -1017,6 +1091,8 @@ function CardContent({
   epigraph,
   catalogBook,
   onOpenQuiz,
+  onToggleMusic,
+  musicOpen,
 }: {
   kind: CardPageKind;
   paragraph?: string;
@@ -1027,6 +1103,9 @@ function CardContent({
   catalogBook?: CatalogBook;
   /** 구매 안내 장의 '퀴즈 풀러 가기' — 퀴즈를 전체 화면으로 연다. */
   onOpenQuiz: () => void;
+  /** 표지의 '음악 듣기' — 카드 아래 재생기를 열고 닫는다. */
+  onToggleMusic: () => void;
+  musicOpen: boolean;
 }) {
   if (kind === 'cover') {
     return (
@@ -1059,8 +1138,13 @@ function CardContent({
           {cover.subtitle ? <Text style={styles.coverSubtitle}>{cover.subtitle}</Text> : null}
         </View>
 
-        {/* 하루 클래식만 갖는 버튼 — 그 곡을 바깥 브라우저에서 연다. */}
-        {cover.listenUrl ? (
+        {/* 하루 클래식만 갖는 버튼 — 카드 아래 재생기를 연다. 영상 ID가 없는 항목만
+            예전처럼 바깥 브라우저로 나간다(거기서는 다른 창을 열면 재생이 막힌다). */}
+        {cover.listenId ? (
+          <Pressable style={[styles.cardButton, styles.coverListenButton]} onPress={onToggleMusic}>
+            <Text style={styles.cardButtonText}>{musicOpen ? '음악 끄기' : '음악 듣기'}</Text>
+          </Pressable>
+        ) : cover.listenUrl ? (
           <Pressable
             style={[styles.cardButton, styles.coverListenButton]}
             onPress={() => WebBrowser.openBrowserAsync(cover.listenUrl!)}>
@@ -1285,16 +1369,22 @@ function CloseButton({
 function DescBookmark({
   active,
   saved,
+  music,
   onToggle,
 }: {
   active: boolean;
   saved: boolean;
+  /** 카드가 음악에 내준 자리 — 책갈피도 카드 아랫변을 따라 함께 올라온다. */
+  music: SharedValue<number>;
   onToggle: () => void;
 }) {
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: -PLAYER_BLOCK * music.value }],
+  }));
   if (!active) return null;
 
   return (
-    <View style={styles.descBookmark}>
+    <Animated.View style={[styles.descBookmark, style]}>
       <ScaleButton
         accessibilityLabel={saved ? '북마크 해지' : '북마크'}
         style={styles.descBookmarkHit}
@@ -1306,7 +1396,7 @@ function DescBookmark({
           size={18}
         />
       </ScaleButton>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -1476,8 +1566,10 @@ const styles = StyleSheet.create({
     // 경첩의 오른쪽 절반 — 카드의 왼쪽 모서리가 경첩의 중심선(=책등)에 맞물린다.
     left: CARD_W,
     top: 0,
+    // 높이를 박지 않고 경첩의 아랫변에 맞춘다 — 음악 재생기가 열리면 경첩이 짧아지고
+    // 카드도 따라 짧아진다.
+    bottom: 0,
     width: CARD_W,
-    height: CARD_H,
     borderRadius: 20,
     backgroundColor: Colors.bg,
     overflow: 'hidden',
@@ -2000,6 +2092,19 @@ const styles = StyleSheet.create({
    * 실제 컨테이너 높이의 절반에 앉기 때문이다. 상태바·내비게이션바가 잡아먹는 만큼
    * 둘이 어긋나면 안 된다.
    */
+  /**
+   * 음악 재생기가 앉는 자리 — 카드가 내준 만큼이다. 아랫변이 예전 카드 아랫변과
+   * 같은 자리라, 카드와 재생기를 합치면 원래 카드 높이 그대로다.
+   */
+  musicSlot: {
+    position: 'absolute',
+    left: (SCREEN_W - CARD_W) / 2,
+    top: '50%',
+    marginTop: CARD_H / 2 - PLAYER_H,
+    width: CARD_W,
+    zIndex: 102,
+  },
+
   /** 화면 맨 위 — 가로를 다 쓰고, 장 수만큼 나눠 갖는다. */
   bars: {
     flexDirection: 'row',

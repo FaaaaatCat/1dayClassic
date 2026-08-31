@@ -91,6 +91,13 @@ export interface Track extends DailyLesson {
   quoteBy?: string;
   /** '노래 듣기' 버튼이 여는 유튜브 주소. 없으면 버튼이 나오지 않는다. */
   youtubeUrl?: string;
+  /**
+   * 그 곡의 유튜브 영상 ID — 앱 안 재생기가 이것으로 영상을 띄운다.
+   *
+   * youtubeUrl(네이버 단축 링크)과 따로 두는 건 IFrame 재생기가 단축 링크를 받지
+   * 못해서다. 단축 링크를 따라가 얻은 값을 데이터에 적어 둔다.
+   */
+  youtubeId?: string;
 }
 
 export interface TracksData {

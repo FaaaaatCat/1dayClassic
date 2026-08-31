@@ -33,6 +33,17 @@ export const CARD_W = SCREEN_W - CARD_MARGIN_X * 2;
 export const CARD_H = SCREEN_H - CHROME_H;
 
 /**
+ * 음악 재생기의 높이. 유튜브 약관(필수 최소 기능)이 정한 값이라 더 줄일 수 없다 —
+ * "Embedded players must have a viewport that is at least 200px by 200px."
+ * 카드 아래에 앉으므로 그만큼 카드가 짧아진다.
+ */
+export const PLAYER_H = 200;
+/** 카드와 재생기 사이 틈. */
+export const PLAYER_GAP = 12;
+/** 재생기가 열릴 때 카드가 내주는 높이. */
+export const PLAYER_BLOCK = PLAYER_H + PLAYER_GAP;
+
+/**
  * 본문 글자 값 — 화면(styles.descText, styles.cardBody)과 같아야 줄 수가 맞는다.
  * 카드가 커지면서 한 번 키웠다가 되돌린 값이다 — 큰 화면에서는 18이 너무 굵어 보였다.
  */
@@ -53,12 +64,18 @@ const MIN_CHARS_PER_CARD = 200;
 /**
  * 카드가 실제로 담는 줄 수. 이보다 길어질 것 같으면 200자를 못 채웠어도 한 문장 앞에서 끊는다.
  *
+ * 재생기가 열린 '짧아진 카드'를 기준으로 센다. 음악을 켜면 카드가 그만큼 줄어드는데
+ * 장 수는 그대로여야 하기 때문이다 — 긴 카드에 맞춰 나눠 두면 음악을 켠 순간 글이
+ * 잘린다. 실측 아홉 권에서는 어느 쪽으로 세든 결과가 같다(가장 긴 장이 열세 줄).
+ *
  * 문장을 온전히 담다 보면 200자를 채운 뒤 붙는 문장이 길어 카드를 넘길 때가 있다
  * (실측 아홉 권에서 다섯 장, 최대 열아홉 줄). 카드 안에 스크롤을 두지 않으므로 — 이 화면은
  * '한 장에 한 덩이'라는 약속 위에 서 있고, 카드 안에서 또 스크롤하면 넘김과 스크롤이 같은
  * 손짓을 두고 다툰다 — 그 경우에는 앞 문장에서 맺는다. 문장은 여전히 온전하다.
  */
-const MAX_LINES_PER_CARD = Math.floor((CARD_H - BODY_PADDING_Y * 2) / BODY_LINE_HEIGHT);
+const MAX_LINES_PER_CARD = Math.floor(
+  (CARD_H - PLAYER_BLOCK - BODY_PADDING_Y * 2) / BODY_LINE_HEIGHT,
+);
 
 /** 한 줄에 들어가는 글자 폭. 전각 한 자를 1로 센다. */
 const LINE_CAPACITY = (CARD_W - BODY_PADDING_X * 2) / (BODY_FONT_SIZE + BODY_LETTER_SPACING);
@@ -158,6 +175,11 @@ export interface CardCover {
    * 있으면 표지 맨 아래에 '음악 듣기'가 선다.
    */
   listenUrl?: string;
+  /**
+   * 그 곡의 유튜브 영상 ID. 있으면 '음악 듣기'가 바깥 브라우저 대신 카드 아래 붙박이
+   * 재생기를 연다 — 브라우저로 나가면 유튜브가 다른 창에서의 재생을 막아 버린다.
+   */
+  listenId?: string;
 }
 
 /** 인용 장에 쓰는 글. 인용문이 없는 책(한자·심리·교양)은 이 장을 두지 않는다. */
@@ -204,8 +226,10 @@ export function getCardCover(bookLesson: BookLesson, bookName: string): CardCove
   const heading = getLessonHeading(bookLesson);
   const symbol = BOOKSTORE_BOOKS.find((book) => book.id === bookLesson.book)?.symbol;
   // 곡 링크는 클래식에만 있는 필드라 여기서 갈라 꺼낸다.
-  const listenUrl = bookLesson.book === 'classic' ? bookLesson.lesson.youtubeUrl : undefined;
-  return { bookName, title: heading.title, subtitle: heading.subtitle, symbol, listenUrl };
+  const classic = bookLesson.book === 'classic';
+  const listenUrl = classic ? bookLesson.lesson.youtubeUrl : undefined;
+  const listenId = classic ? bookLesson.lesson.youtubeId : undefined;
+  return { bookName, title: heading.title, subtitle: heading.subtitle, symbol, listenUrl, listenId };
 }
 
 /**
