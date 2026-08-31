@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
   Dimensions,
@@ -21,6 +21,8 @@ import {
   type TextStyle,
 } from 'react-native';
 import Animated, {
+  cancelAnimation,
+  Easing,
   Extrapolation,
   interpolate,
   runOnJS,
@@ -192,6 +194,9 @@ function durationFor(page: CardPage | undefined, epigraph: CardEpigraph | undefi
 
 /** 위 진행 바 줄과 아래 버튼 줄의 높이 — 덱은 이 사이에 눕는다. */
 const BARS_H = 14;
+/** 진행 바 칸 사이 틈과 좌우 여백 — 칸 하나의 폭을 재려면 둘 다 알아야 한다. */
+const BAR_GAP = 4;
+const BAR_PAD = 12;
 const HEADER_H = 48;
 const FOOTER_H = 56;
 
@@ -256,6 +261,8 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
    * 전부 flipX 하나로만 그려진다(DeckCard 주석 참고).
    */
   const [page, setPage] = useState(0);
+  /** 위 진행 바가 보는 장 — 넘김이 끝나기를 기다리지 않고 시작할 때 바로 바뀐다. */
+  const [barPage, setBarPage] = useState(0);
   /** 지금 향해 가고 있는 페이지. */
   const targetPage = useRef(0);
   /** 우리 속도의 넘김이 지금 돌고 있는지 — 같은 넘김을 두 번 걸지 않으려고 둔다. */
@@ -342,6 +349,9 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
     // 경우도 여기서 걸러진다.
     if (gliding.value && next === targetPage.current) return;
     targetPage.current = next;
+    // 바는 카드가 도착하기를 기다리지 않는다 — 넘기는 순간 다음 칸이 차기 시작해야
+    // 손에 맞는다(page는 넘김이 끝난 뒤에야 바뀐다).
+    setBarPage(next);
     gliding.value = true;
     flipX.value = withTiming(next * PAGE_W, { duration: TURN_DURATION }, (finished) => {
       // 도중에 다른 넘김이 끼어들면 finished가 false로 온다 — 그때는 그 넘김이
@@ -441,7 +451,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
    * 않는다. 이 화면의 바는 몇 장째인지만 말하는 물건이라 시간을 그리지 않는다.
    */
   const [autoPaused, setAutoPaused] = useState(false);
-  const last = page === pages.length - 1;
+  const last = barPage === pages.length - 1;
   /**
    * 시간이 흐르지 않는 자리들.
    * - 자동으로 읽기를 켜 둔 동안: 낭독이 장을 끌고 간다. 둘이 함께 넘기면 읽던
@@ -453,22 +463,20 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
   const autoStopped =
     autoPaused || readerOpen || last || noteOpen || quizOpen || reportOpen;
 
-  useEffect(() => {
-    if (autoStopped) return;
-    const timer = setTimeout(() => goBy(1), durationFor(pages[page], epigraph));
-    return () => clearTimeout(timer);
-    // goBy는 렌더마다 새로 만들어진다 — 의존성에 넣으면 타이머가 계속 다시 걸려
-    // 영영 차지 않는다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, autoStopped, pages, epigraph]);
-
   return (
     <View style={styles.screen}>
       {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니다.
           세이프에어리어를 스크린의 padding으로 주지 않는 건, 절대 배치된 덱·아래 줄이
           그 padding을 타지 않아서다(그러면 아래 줄이 내비게이션 바에 깔린다). */}
       <View style={{ height: insets.top }} />
-      <PageBars flipX={flipX} total={pages.length} />
+      <PageBars
+        page={barPage}
+        total={pages.length}
+        duration={durationFor(pages[barPage], epigraph)}
+        stopped={autoStopped}
+        filled={last}
+        onDone={() => goBy(1)}
+      />
 
       {/* 계정 줄 — 표지·책 이름·날짜, 그리고 닫기.
           잠금 위 알람에서는 닫기를 그리지 않는다 — 유일한 출구를 막아야 한다. */}
@@ -570,7 +578,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
       {/* 아래 줄 — 몇 장째인지와 버튼 둘. 책갈피는 여기가 아니라 카드 오른쪽 아래에 있다. */}
       <View style={[styles.footer, { bottom: insets.bottom + 8 }]}>
         <View style={styles.footerLeft}>
-          <Text style={styles.footerHint}>{`${page + 1} / ${pages.length}`}</Text>
+          <Text style={styles.footerHint}>{`${barPage + 1} / ${pages.length}`}</Text>
           {/* 가운데를 탭해 세워 둔 상태 — 왜 안 넘어가는지 보이게 표시한다. */}
           {autoPaused && !last ? <Ionicons name="pause" color={Colors.brown50} size={13} /> : null}
         </View>
@@ -1303,25 +1311,84 @@ function DescBookmark({
 }
 
 /**
- * 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니라서, 인스타에서는
- * 자리·가로 폭·높이만 가져오고 밝기 변화는 예전 점(dot)의 것을 그대로 쓴다.
+ * 위 진행 바 — 지나온 칸은 채워 두고, 지금 칸만 시간에 맞춰 차오른다. 다 차면 onDone으로
+ * 다음 장을 부른다. 즉, 저절로 넘어가는 시간을 세는 것이 이 바다(따로 도는 타이머가
+ * 없어야 화면과 시간이 어긋나지 않는다).
+ *
+ * 차오르는 폭은 퍼센트가 아니라 픽셀로 준다 — 칸이 flex로 나뉘어 있어 폭을 미리 알 수
+ * 없으므로 onLayout으로 한 번 재 둔다.
+ *
+ * onDone을 ref에 담는 건, 매 렌더 새로 만들어진 함수가 의존성으로 들어오면 타이머가
+ * 계속 다시 걸려 영영 차지 않기 때문이다.
  */
-function PageBars({ flipX, total }: { flipX: SharedValue<number>; total: number }) {
+function PageBars({
+  page,
+  total,
+  duration,
+  stopped,
+  filled,
+  onDone,
+}: {
+  page: number;
+  total: number;
+  duration: number;
+  /** 시간이 흐르지 않는다(듣는 중·손으로 세워 둠·팝업 위). 차오르던 자리에 세운다. */
+  stopped: boolean;
+  /** 갈 곳이 없는 마지막 장 — 비워 두면 고장으로 보여서 채운 채로 둔다. */
+  filled: boolean;
+  onDone: () => void;
+}) {
+  const [barWidth, setBarWidth] = useState(0);
+  const progress = useSharedValue(0);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+  /** 지금 시간이 걸려 있는 장. 장이 바뀐 것과 세웠다 푼 것을 가른다. */
+  const timedPage = useRef(-1);
+  const fire = useCallback(() => onDoneRef.current(), []);
+
+  useEffect(() => {
+    // 장이 바뀌었으면 무조건 처음부터.
+    if (timedPage.current !== page) {
+      timedPage.current = page;
+      cancelAnimation(progress);
+      progress.value = 0;
+    }
+    if (filled) {
+      cancelAnimation(progress);
+      progress.value = 1;
+      return;
+    }
+    if (stopped) {
+      // 차오르던 그 자리에 세운다. 채워 버리면 풀기도 전에 다 본 것처럼 보이고,
+      // 0으로 되돌리면 세울 때마다 처음부터 다시 봐야 한다.
+      cancelAnimation(progress);
+      return;
+    }
+    // 남은 만큼만 마저 채운다 — 세웠다 풀면 이어서 간다.
+    const remaining = duration * (1 - progress.value);
+    progress.value = withTiming(1, { duration: remaining, easing: Easing.linear }, (finished) => {
+      if (finished) runOnJS(fire)();
+    });
+  }, [page, duration, stopped, filled, progress, fire]);
+
+  const fillStyle = useAnimatedStyle(() => ({ width: progress.value * barWidth }));
+
   return (
-    <View style={styles.bars} pointerEvents="none">
+    <View
+      style={styles.bars}
+      pointerEvents="none"
+      onLayout={(event) => {
+        const inner = event.nativeEvent.layout.width - BAR_PAD * 2;
+        setBarWidth((inner - BAR_GAP * (total - 1)) / total);
+      }}>
       {Array.from({ length: total }, (_, i) => (
-        <Bar key={i} index={i} flipX={flipX} />
+        <View key={i} style={styles.bar}>
+          {i < page ? <View style={styles.barFilled} /> : null}
+          {i === page ? <Animated.View style={[styles.barFilled, fillStyle]} /> : null}
+        </View>
       ))}
     </View>
   );
-}
-
-function Bar({ index, flipX }: { index: number; flipX: SharedValue<number> }) {
-  const style = useAnimatedStyle(() => {
-    const d = Math.abs(index - flipX.value / PAGE_W);
-    return { opacity: interpolate(d, [0, 1], [1, 0.28], Extrapolation.CLAMP) };
-  });
-  return <Animated.View style={[styles.bar, style]} />;
 }
 
 const styles = StyleSheet.create({
@@ -1933,13 +2000,19 @@ const styles = StyleSheet.create({
   bars: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: BAR_GAP,
     height: BARS_H,
-    paddingHorizontal: 12,
+    paddingHorizontal: BAR_PAD,
     zIndex: 3,
   },
   bar: {
     flex: 1,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: Colors.brown50,
+    overflow: 'hidden',
+  },
+  barFilled: {
     height: 3,
     borderRadius: 1.5,
     backgroundColor: Colors.white,

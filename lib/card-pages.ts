@@ -34,11 +34,11 @@ export const CARD_H = SCREEN_H - CHROME_H;
 
 /**
  * 본문 글자 값 — 화면(styles.descText, styles.cardBody)과 같아야 줄 수가 맞는다.
- * 카드가 커진 만큼 글자도 함께 키웠다.
+ * 카드가 커지면서 한 번 키웠다가 되돌린 값이다 — 큰 화면에서는 18이 너무 굵어 보였다.
  */
-export const BODY_FONT_SIZE = 18;
-export const BODY_LINE_HEIGHT = 32;
-const BODY_LETTER_SPACING = -0.36; // tracking(18)
+export const BODY_FONT_SIZE = 15;
+export const BODY_LINE_HEIGHT = 26;
+const BODY_LETTER_SPACING = -0.3; // tracking(15)
 export const BODY_PADDING_X = 28;
 export const BODY_PADDING_Y = 32;
 
