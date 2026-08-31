@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
   Dimensions,
@@ -197,6 +197,8 @@ const BARS_H = 14;
 /** 진행 바 칸 사이 틈과 좌우 여백 — 칸 하나의 폭을 재려면 둘 다 알아야 한다. */
 const BAR_GAP = 4;
 const BAR_PAD = 12;
+/** 한 장에 최소한 이만큼은 머문다 — 시간 계산이 어긋나도 장이 우르르 넘어가지 않게. */
+const MIN_REMAINING_MS = 600;
 const HEADER_H = 48;
 const FOOTER_H = 56;
 
@@ -1344,32 +1346,42 @@ function PageBars({
   onDoneRef.current = onDone;
   /** 지금 시간이 걸려 있는 장. 장이 바뀐 것과 세웠다 푼 것을 가른다. */
   const timedPage = useRef(-1);
-  const fire = useCallback(() => onDoneRef.current(), []);
+  /** 이 장에서 이미 흘러간 시간(ms). 세웠다 풀면 여기서 이어 간다. */
+  const elapsed = useRef(0);
 
   useEffect(() => {
-    // 장이 바뀌었으면 무조건 처음부터.
+    // 장이 바뀌었으면 처음부터.
     if (timedPage.current !== page) {
       timedPage.current = page;
-      cancelAnimation(progress);
-      progress.value = 0;
+      elapsed.current = 0;
     }
+    cancelAnimation(progress);
+
     if (filled) {
-      cancelAnimation(progress);
       progress.value = 1;
       return;
     }
-    if (stopped) {
-      // 차오르던 그 자리에 세운다. 채워 버리면 풀기도 전에 다 본 것처럼 보이고,
-      // 0으로 되돌리면 세울 때마다 처음부터 다시 봐야 한다.
-      cancelAnimation(progress);
-      return;
-    }
-    // 남은 만큼만 마저 채운다 — 세웠다 풀면 이어서 간다.
-    const remaining = duration * (1 - progress.value);
-    progress.value = withTiming(1, { duration: remaining, easing: Easing.linear }, (finished) => {
-      if (finished) runOnJS(fire)();
-    });
-  }, [page, duration, stopped, filled, progress, fire]);
+
+    // 차오른 만큼에서 다시 시작한다 — 세웠다 풀면 그 자리에서 이어 가고, 새 장이면 0이다.
+    const done = Math.min(elapsed.current / duration, 1);
+    progress.value = done;
+    // 세워 둔 동안에는 그 자리에 그대로. 채워 버리면 풀기도 전에 다 본 것처럼 보이고,
+    // 0으로 되돌리면 세울 때마다 처음부터 다시 봐야 한다.
+    if (stopped) return;
+
+    // 남은 시간은 흘러간 시간을 빼서 자바스크립트 쪽에서 센다. 차오르는 값에서 되읽지
+    // 않는 건, 그 값을 마지막에 쓴 것이 UI 스레드(애니메이션)라 여기서 읽으면 방금 쓴
+    // 0이 아니라 직전 장에서 다 찬 1이 돌아올 수 있어서다 — 그러면 남은 시간이 0이
+    // 되어 다음 장이 곧바로, 그 다음 장도 곧바로 넘어간다(장이 우르르 넘어가던 원인).
+    const remaining = Math.max(duration - elapsed.current, MIN_REMAINING_MS);
+    progress.value = withTiming(1, { duration: remaining, easing: Easing.linear });
+    const startedAt = Date.now();
+    const timer = setTimeout(() => onDoneRef.current(), remaining);
+    return () => {
+      clearTimeout(timer);
+      elapsed.current += Date.now() - startedAt;
+    };
+  }, [page, duration, stopped, filled, progress]);
 
   const fillStyle = useAnimatedStyle(() => ({ width: progress.value * barWidth }));
 
