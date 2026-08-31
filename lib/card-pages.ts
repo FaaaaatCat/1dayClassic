@@ -10,6 +10,43 @@ import type { NarrationStep } from '@/hooks/useCardNarration';
  * 책마다 다르다 — 그래서 표제는 getLessonHeading에 맡기고 인용문만 여기서 골라낸다.
  */
 
+/**
+ * 본문 한 장에 담는 최대 글자 수(공백 포함).
+ *
+ * 카드 안에 스크롤을 두지 않으므로, 한 장에 들어갈 만큼에서 끊어 다음 장으로 넘긴다.
+ * 이 화면은 '한 장에 한 덩이'라는 약속 위에 서 있고, 카드 안에서 또 스크롤하면 넘김과
+ * 스크롤이 같은 손짓을 두고 다툰다.
+ */
+const MAX_CHARS_PER_CARD = 250;
+
+/**
+ * 문단을 카드에 담기는 만큼씩 끊는다.
+ *
+ * 250자 이하면 그대로 한 장. 넘으면 250자까지를 첫 장에 두고 나머지를 다음 장으로 넘기며,
+ * 남은 것도 같은 규칙으로 계속 나눈다.
+ *
+ * 끊는 자리는 250자 안쪽의 마지막 공백이다 — 정확히 250번째 글자에서 자르면 낱말 가운데가
+ * 갈라진다. 그래서 한 장은 250자를 넘지 않되 조금 못 미칠 수 있다. 공백이 아예 없는 긴
+ * 덩이(주소 같은 것)만 250자에서 그대로 자른다.
+ */
+export function splitParagraphToCards(paragraph: string): string[] {
+  if (paragraph.length <= MAX_CHARS_PER_CARD) return [paragraph];
+
+  const cards: string[] = [];
+  let rest = paragraph;
+
+  while (rest.length > MAX_CHARS_PER_CARD) {
+    const window = rest.slice(0, MAX_CHARS_PER_CARD + 1);
+    const space = window.lastIndexOf(' ');
+    const at = space > 0 ? space : MAX_CHARS_PER_CARD;
+    cards.push(rest.slice(0, at).trimEnd());
+    rest = rest.slice(at).trimStart();
+  }
+  if (rest) cards.push(rest);
+
+  return cards;
+}
+
 export type CardPageKind = 'cover' | 'quote' | 'desc' | 'outro';
 
 export interface CardPage {
@@ -73,7 +110,8 @@ export function getCardCover(bookLesson: BookLesson, bookName: string): CardCove
 /**
  * 장 목록.
  *
- * 표지 → (인용) → 본문 문단마다 한 장 → (맺음). 인용문이 없는 책은 인용 장이 빠진다.
+ * 표지 → (인용) → 본문 → (맺음). 본문은 한 장에 한 문단이고, 250자를 넘는 문단만 여러
+ * 장으로 나뉜다. 인용문이 없는 책은 인용 장이 빠진다.
  *
  * 맺음 장은 본문을 다 읽고 나서 갈 곳을 주는 자리다. 오늘의 공부를 맺는 흐름
  * (퀴즈 → 마치기 → 리포트)이 전부 여기서 시작하므로, 퀴즈가 있는 한 이 장을 빼면 안 된다.
@@ -85,7 +123,10 @@ export function buildCardPages(
 ): CardPage[] {
   const pages: CardPage[] = [{ kind: 'cover' }];
   if (getLessonEpigraph(bookLesson)) pages.push({ kind: 'quote' });
-  for (const paragraph of bookLesson.lesson.story) pages.push({ kind: 'desc', paragraph });
+  for (const paragraph of bookLesson.lesson.story) {
+    // 한 장에는 한 문단. 250자가 넘는 문단만 여러 장으로 나뉜다.
+    for (const part of splitParagraphToCards(paragraph)) pages.push({ kind: 'desc', paragraph: part });
+  }
   if (hasQuiz) pages.push({ kind: 'outro' });
   return pages;
 }
