@@ -1,3 +1,5 @@
+import { Dimensions } from 'react-native';
+
 import { getLessonHeading, type BookLesson } from '@/lib/books';
 import { splitSentences } from '@/lib/narration';
 import type { NarrationStep } from '@/hooks/useCardNarration';
@@ -10,41 +12,113 @@ import type { NarrationStep } from '@/hooks/useCardNarration';
  * 책마다 다르다 — 그래서 표제는 getLessonHeading에 맡기고 인용문만 여기서 골라낸다.
  */
 
-/**
- * 본문 한 장에 담는 최대 글자 수(공백 포함).
- *
- * 카드 안에 스크롤을 두지 않으므로, 한 장에 들어갈 만큼에서 끊어 다음 장으로 넘긴다.
- * 이 화면은 '한 장에 한 덩이'라는 약속 위에 서 있고, 카드 안에서 또 스크롤하면 넘김과
- * 스크롤이 같은 손짓을 두고 다툰다.
- */
-const MAX_CHARS_PER_CARD = 220;
+const { width: SCREEN_W } = Dimensions.get('window');
+
+/** Figma 카드 비율 320×466. 좁은 기기에서는 화면 폭에 맞춰 줄인다(화면과 같은 값). */
+export const CARD_W = Math.min(320, SCREEN_W - 56);
+export const CARD_H = Math.round((CARD_W * 466) / 320);
+
+/** 본문 글자 값 — 화면(styles.descText, styles.cardBody)과 같아야 줄 수가 맞는다. */
+const BODY_FONT_SIZE = 16;
+const BODY_LINE_HEIGHT = 28;
+const BODY_LETTER_SPACING = -0.32; // tracking(16)
+const BODY_PADDING_X = 24;
+const BODY_PADDING_Y = 28;
 
 /**
- * 문단을 카드에 담기는 만큼씩 끊는다.
+ * 본문 한 장을 채우기 시작하는 기준(공백 포함).
  *
- * 220자 이하면 그대로 한 장. 넘으면 220자까지를 첫 장에 두고 나머지를 다음 장으로 넘기며,
- * 남은 것도 같은 규칙으로 계속 나눈다.
+ * 여기까지 차면 그 장을 맺되, 읽던 문장은 끝까지 보여 준다 — 그래서 한 장은 200자를
+ * 조금 넘긴 자리에서 문장 부호로 끝난다. 문장이 중간에 잘리면 읽는 흐름이 끊긴다.
+ */
+const MIN_CHARS_PER_CARD = 200;
+
+/**
+ * 카드가 실제로 담는 줄 수. 이보다 길어질 것 같으면 200자를 못 채웠어도 한 문장 앞에서 끊는다.
  *
- * 끊는 자리는 220자 안쪽의 마지막 공백이다 — 정확히 220번째 글자에서 자르면 낱말 가운데가
- * 갈라진다. 그래서 한 장은 220자를 넘지 않되 조금 못 미칠 수 있다. 공백이 아예 없는 긴
- * 덩이(주소 같은 것)만 220자에서 그대로 자른다.
+ * 문장을 온전히 담다 보면 200자를 채운 뒤 붙는 문장이 길어 카드를 넘길 때가 있다
+ * (실측 아홉 권에서 다섯 장, 최대 열아홉 줄). 카드 안에 스크롤을 두지 않으므로 — 이 화면은
+ * '한 장에 한 덩이'라는 약속 위에 서 있고, 카드 안에서 또 스크롤하면 넘김과 스크롤이 같은
+ * 손짓을 두고 다툰다 — 그 경우에는 앞 문장에서 맺는다. 문장은 여전히 온전하다.
+ */
+const MAX_LINES_PER_CARD = Math.floor((CARD_H - BODY_PADDING_Y * 2) / BODY_LINE_HEIGHT);
+
+/** 한 줄에 들어가는 글자 폭. 전각 한 자를 1로 센다. */
+const LINE_CAPACITY = (CARD_W - BODY_PADDING_X * 2) / (BODY_FONT_SIZE + BODY_LETTER_SPACING);
+
+/** 한글·한자·가나·전각 부호는 한 칸을 다 쓰고, 나머지(로마자·숫자·공백)는 대략 절반이다. */
+const FULL_WIDTH =
+  /[ᄀ-ᇿ⺀-꓏가-힣豈-﫿︰-﹏＀-｠]/;
+
+function textWidth(text: string): number {
+  let width = 0;
+  for (const ch of text) width += FULL_WIDTH.test(ch) ? 1 : 0.5;
+  return width;
+}
+
+/**
+ * 이 글이 카드에서 몇 줄이 될지 센다.
+ *
+ * 화면이 줄을 어떻게 접을지 어절 단위로 흉내 낸다. 실제로 재지 않는 건, 재려면 한 번 그린
+ * 뒤 다시 나눠야 해서 글이 눈앞에서 재배치되기 때문이다.
+ */
+function lineCount(text: string): number {
+  const words = text.split(' ').filter(Boolean);
+  let lines = 1;
+  let width = 0;
+
+  for (const word of words) {
+    const wordWidth = textWidth(word);
+    if (width === 0) {
+      width = wordWidth;
+      continue;
+    }
+    if (width + 0.5 + wordWidth <= LINE_CAPACITY) {
+      width += 0.5 + wordWidth;
+      continue;
+    }
+    lines += 1;
+    width = wordWidth;
+  }
+  return lines;
+}
+
+/**
+ * 문단을 카드에 담기는 만큼씩 끊는다. 끊는 자리는 언제나 문장의 끝이다.
+ *
+ * 문장을 차례로 쌓다가 200자에 이르면 그 장을 맺는다. 200자를 못 채웠더라도 다음 문장을
+ * 넣으면 카드를 넘칠 것 같으면 거기서 맺는다. 어느 쪽이든 장은 문장 부호로 끝난다.
+ *
+ * 문장 나누기는 lib/narration의 것을 그대로 쓴다 — 낭독이 쓰는 것과 같은 규칙이라
+ * "1.5"나 "T. S. 엘리엇"의 마침표에서 잘리지 않는다.
  */
 export function splitParagraphToCards(paragraph: string): string[] {
-  if (paragraph.length <= MAX_CHARS_PER_CARD) return [paragraph];
+  const sentences = splitSentences(paragraph);
+  if (sentences.length <= 1) return [paragraph];
 
   const cards: string[] = [];
-  let rest = paragraph;
+  let buffer: string[] = [];
 
-  while (rest.length > MAX_CHARS_PER_CARD) {
-    const window = rest.slice(0, MAX_CHARS_PER_CARD + 1);
-    const space = window.lastIndexOf(' ');
-    const at = space > 0 ? space : MAX_CHARS_PER_CARD;
-    cards.push(rest.slice(0, at).trimEnd());
-    rest = rest.slice(at).trimStart();
+  const flush = () => {
+    if (buffer.length === 0) return;
+    cards.push(buffer.join(' '));
+    buffer = [];
+  };
+
+  for (const sentence of sentences) {
+    const joined = buffer.length === 0 ? sentence : `${buffer.join(' ')} ${sentence}`;
+    // 넣으면 카드를 넘칠 문장은 다음 장으로 미룬다(이미 담긴 것이 있을 때만).
+    if (buffer.length > 0 && lineCount(joined) > MAX_LINES_PER_CARD) {
+      flush();
+      buffer.push(sentence);
+    } else {
+      buffer.push(sentence);
+    }
+    if (buffer.join(' ').length >= MIN_CHARS_PER_CARD) flush();
   }
-  if (rest) cards.push(rest);
+  flush();
 
-  return cards;
+  return cards.length > 0 ? cards : [paragraph];
 }
 
 export type CardPageKind = 'cover' | 'quote' | 'desc' | 'outro';
@@ -110,8 +184,8 @@ export function getCardCover(bookLesson: BookLesson, bookName: string): CardCove
 /**
  * 장 목록.
  *
- * 표지 → (인용) → 본문 → (맺음). 본문은 한 장에 한 문단이고, 220자를 넘는 문단만 여러
- * 장으로 나뉜다. 인용문이 없는 책은 인용 장이 빠진다.
+ * 표지 → (인용) → 본문 → (맺음). 본문은 한 장에 한 문단이고, 긴 문단은 문장 단위로 나뉜다.
+ * 인용문이 없는 책은 인용 장이 빠진다.
  *
  * 맺음 장은 본문을 다 읽고 나서 갈 곳을 주는 자리다. 오늘의 공부를 맺는 흐름
  * (퀴즈 → 마치기 → 리포트)이 전부 여기서 시작하므로, 퀴즈가 있는 한 이 장을 빼면 안 된다.
@@ -124,7 +198,7 @@ export function buildCardPages(
   const pages: CardPage[] = [{ kind: 'cover' }];
   if (getLessonEpigraph(bookLesson)) pages.push({ kind: 'quote' });
   for (const paragraph of bookLesson.lesson.story) {
-    // 한 장에는 한 문단. 220자가 넘는 문단만 여러 장으로 나뉜다.
+    // 한 장에는 한 문단. 긴 문단은 문장 끝에서 나뉜다.
     for (const part of splitParagraphToCards(paragraph)) pages.push({ kind: 'desc', paragraph: part });
   }
   if (hasQuiz) pages.push({ kind: 'outro' });
