@@ -79,8 +79,10 @@ export const BOOKSTORE_BOOKS: BookstoreBook[] = [
     title: '하루 클래식 공부',
     author: '글릿 [유유]',
     coverImage: coverOf('classic'),
-    // 클래식은 높은음자리표를 표식으로 쓴다.
-    symbol: '𝄞',
+    // 클래식은 높은음자리표를 표식으로 쓴다. 글자(U+1D11E)로 그렸더니 글꼴이 정한 상자보다
+    // 먹이 커서 위아래가 계속 잘려, 그림으로 바꿨다. 검은 그림이지만 화면에서 brown50으로
+    // 물들여 그린다(CardDeckDetail의 coverSymbolImage).
+    symbol: 'https://freesvg.org/img/rickvanderzwet_Treble_clef_1.png',
     alarmBackground: require('@/assets/images/alarm/bg-classic.webp'),
     alarmCover: require('@/assets/images/alarm/cover-classic.webp'),
   },

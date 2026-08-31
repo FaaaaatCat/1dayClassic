@@ -1456,9 +1456,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  /**
+   * 그림 표식 — 검게 그려진 그림을 표식 색(brown50)으로 물들인다.
+   *
+   * 리액트 네이티브에는 CSS filter가 없다. tintColor가 그 자리를 대신해서, 불투명한 자리를
+   * 통째로 이 색으로 칠하고 투명도는 그대로 둔다 — 한 가지 색으로 그린 표식에 딱 맞는다.
+   * 여러 색으로 그린 표식이 들어오면 그때 책마다 물들일지 말지를 고르게 하면 된다.
+   */
   coverSymbolImage: {
     width: '100%',
     height: '100%',
+    tintColor: Colors.brown50,
   },
   /** 로마자 범위 안의 표식(') ) )') — 본문 서체 그대로. */
   coverSymbol: {
