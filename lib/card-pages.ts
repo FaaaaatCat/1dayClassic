@@ -27,7 +27,7 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
  */
 const CARD_MARGIN_X = 28;
 /** 진행 바·계정 줄·하단 줄과 그 사이 여백, 그리고 기기마다 다른 세이프에어리어까지. */
-const CHROME_H = 240;
+const CHROME_H = 260;
 
 export const CARD_W = SCREEN_W - CARD_MARGIN_X * 2;
 export const CARD_H = SCREEN_H - CHROME_H;

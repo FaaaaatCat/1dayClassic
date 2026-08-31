@@ -58,6 +58,7 @@ import {
   CARD_W,
   type CardCover,
   type CardEpigraph,
+  type CardPage,
   type CardPageKind,
 } from '@/lib/card-pages';
 import { getBookName, type BookLesson } from '@/lib/books';
@@ -169,6 +170,26 @@ const TOAST_FADE = 220;
 const SYMBOL_BOX_H = 100;
 
 /** 하단 동그란 버튼의 지름. 자동으로 읽기는 펼쳐져도 이 높이를 지킨다. */
+/** 글이 없는 장(표지·마침)에 주는 시간. */
+const PLAIN_MS = 6000;
+/** 글 한 자에 주는 시간. 한국어를 눈으로 읽는 속도에 맞춘 값이다. */
+const MS_PER_CHAR = 110;
+const AUTO_MIN_MS = 6000;
+const AUTO_MAX_MS = 30000;
+
+/**
+ * 이 장에 줄 시간.
+ *
+ * 장마다 글 길이가 제각각이라(한 줄짜리 표제부터 200자 남짓 본문까지) 같은 시간을 주면
+ * 짧은 장은 지루하고 긴 장은 다 못 읽고 넘어간다. 글자 수로 정하되 위아래를 잘라 둔다.
+ */
+function durationFor(page: CardPage | undefined, epigraph: CardEpigraph | undefined): number {
+  if (!page) return PLAIN_MS;
+  const text = page.kind === 'quote' ? (epigraph?.text ?? '') : (page.paragraph ?? '');
+  if (!text) return PLAIN_MS;
+  return Math.min(AUTO_MAX_MS, Math.max(AUTO_MIN_MS, 1200 + text.length * MS_PER_CHAR));
+}
+
 /** 위 진행 바 줄과 아래 버튼 줄의 높이 — 덱은 이 사이에 눕는다. */
 const BARS_H = 14;
 const HEADER_H = 48;
@@ -415,9 +436,38 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
     onFinish: () => setReaderOpen(false),
   });
 
+  /**
+   * 시간이 차면 저절로 다음 장으로 — 스토리에서 가져온 것이다. 다만 위 바는 차오르지
+   * 않는다. 이 화면의 바는 몇 장째인지만 말하는 물건이라 시간을 그리지 않는다.
+   */
+  const [autoPaused, setAutoPaused] = useState(false);
+  const last = page === pages.length - 1;
+  /**
+   * 시간이 흐르지 않는 자리들.
+   * - 자동으로 읽기를 켜 둔 동안: 낭독이 장을 끌고 간다. 둘이 함께 넘기면 읽던
+   *   자리를 낭독이 도로 끌어온다.
+   * - 가운데를 탭해 세워 둔 뒤: 오래 보고 싶은 장이라는 뜻이다.
+   * - 마지막 장: 갈 곳이 없다.
+   * - 팝업(퀴즈·노트·리포트) 위: 뒤에서 장이 넘어가면 닫았을 때 딴 장이 나온다.
+   */
+  const autoStopped =
+    autoPaused || readerOpen || last || noteOpen || quizOpen || reportOpen;
+
+  useEffect(() => {
+    if (autoStopped) return;
+    const timer = setTimeout(() => goBy(1), durationFor(pages[page], epigraph));
+    return () => clearTimeout(timer);
+    // goBy는 렌더마다 새로 만들어진다 — 의존성에 넣으면 타이머가 계속 다시 걸려
+    // 영영 차지 않는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, autoStopped, pages, epigraph]);
+
   return (
-    <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니다. */}
+    <View style={styles.screen}>
+      {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니다.
+          세이프에어리어를 스크린의 padding으로 주지 않는 건, 절대 배치된 덱·아래 줄이
+          그 padding을 타지 않아서다(그러면 아래 줄이 내비게이션 바에 깔린다). */}
+      <View style={{ height: insets.top }} />
       <PageBars flipX={flipX} total={pages.length} />
 
       {/* 계정 줄 — 표지·책 이름·날짜, 그리고 닫기.
@@ -459,8 +509,12 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
               style={styles.tapZone}
               onPress={() => goBy(-1)}
             />
-            {/* 가운데는 일부러 아무것도 하지 않는다 — 읽는 중 실수로 넘어가지 않게. */}
-            <View style={styles.tapZone} />
+            {/* 가운데는 장을 넘기지 않는다 — 대신 저절로 넘어가는 시간을 세운다. */}
+            <Pressable
+              accessibilityLabel={autoPaused ? '자동 넘김 다시 시작' : '자동 넘김 멈추기'}
+              style={styles.tapZone}
+              onPress={() => setAutoPaused((v) => !v)}
+            />
             <Pressable
               accessibilityLabel="다음 장"
               style={styles.tapZone}
@@ -480,7 +534,9 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
           쌓임 순서는 인덱스 역순으로 한 번 박아 두고 다시는 건드리지 않는다. 어느
           순간에도 실제로 그려지는 건 두 장뿐이라, 앞장이 뒷장 위에만 있으면 그걸로
           끝이다 — DeckCard 주석 참고. */}
-      <View style={styles.deck} pointerEvents="box-none">
+      <View
+        style={[styles.deck, { top: insets.top, bottom: insets.bottom }]}
+        pointerEvents="box-none">
         <LeftEdge flipX={flipX} />
         {pages.map((p, index) => (
           <DeckCard
@@ -512,8 +568,12 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
       </View>
 
       {/* 아래 줄 — 몇 장째인지와 버튼 둘. 책갈피는 여기가 아니라 카드 오른쪽 아래에 있다. */}
-      <View style={styles.footer}>
-        <Text style={styles.footerHint}>{`${page + 1} / ${pages.length}`}</Text>
+      <View style={[styles.footer, { bottom: insets.bottom + 8 }]}>
+        <View style={styles.footerLeft}>
+          <Text style={styles.footerHint}>{`${page + 1} / ${pages.length}`}</Text>
+          {/* 가운데를 탭해 세워 둔 상태 — 왜 안 넘어가는지 보이게 표시한다. */}
+          {autoPaused && !last ? <Ionicons name="pause" color={Colors.brown50} size={13} /> : null}
+        </View>
         <View style={styles.footerIcons}>
           {readerOpen ? (
             <>
@@ -564,7 +624,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
       </View>
 
       {/* 책갈피 토스트 — 하단 줄 위에 뜬다. 감상 노트의 것은 모달 안에 따로 있다. */}
-      <Toast bottom={insets.bottom + 68 + 12} at={markToast.at} text={markToast.text} />
+      <Toast bottom={insets.bottom + 8 + FOOTER_H + 12} at={markToast.at} text={markToast.text} />
 
       {/**
         * 감상 노트 — 넘김 흐름에서 빠지고 하단 메모 버튼으로 전체 화면에 뜬다.
@@ -1827,6 +1887,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     height: FOOTER_H,
     zIndex: 3,
+  },
+  footerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   footerHint: {
     fontFamily: Fonts.regular,
