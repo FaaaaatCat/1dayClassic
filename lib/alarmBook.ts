@@ -80,13 +80,36 @@ export async function previewAlarmScreens(): Promise<void> {
  * 복사 도중에 알람이 울려도 반쯤 쓰인 이미지를 읽는 일이 없다.
  */
 async function placeImage(
-  source: ImageSourcePropType | undefined,
+  source: ImageSourcePropType | string | undefined,
   destinationUri: string,
 ): Promise<void> {
   const destination = new File(destinationUri);
+  const staging = new File(`${destinationUri}.tmp`);
 
-  // require()로 번들된 이미지는 모듈 id(숫자)다. 이미지를 원격으로 옮기면
-  // 여기서 URL 분기가 생긴다 — File.downloadFileAsync로 받아 같은 자리에 놓으면 된다.
+  /** 받아 둔 파일을 알람이 읽는 자리로 옮긴다. 옮기는 동안 반쪽짜리 파일이 보이지 않게 한다. */
+  const commit = async () => {
+    await staging.move(destination, { overwrite: true });
+  };
+
+  // 표지는 카탈로그의 주소다(lib/bookstore). 알람은 JS 없이 파일만 읽으므로 미리 받아 둔다.
+  if (typeof source === 'string') {
+    if (!source) {
+      if (destination.exists) destination.delete();
+      return;
+    }
+    try {
+      if (staging.exists) staging.delete();
+      await File.downloadFileAsync(source, staging);
+      await commit();
+    } catch (error) {
+      // 못 받아도 알람은 울려야 한다 — 그림 없이 바탕색만 나온다.
+      console.warn('[alarmBook] 표지를 받지 못했습니다:', error);
+      if (staging.exists) staging.delete();
+    }
+    return;
+  }
+
+  // require()로 번들된 이미지는 모듈 id(숫자)다. 알람 배경·목업 표지가 아직 그렇다.
   if (typeof source !== 'number') {
     if (destination.exists) destination.delete();
     return;
@@ -95,9 +118,7 @@ async function placeImage(
   const [asset] = await Asset.loadAsync(source);
   if (!asset.localUri) return;
 
-  const staging = new File(`${destinationUri}.tmp`);
   if (staging.exists) staging.delete();
-
   await new File(asset.localUri).copy(staging, { overwrite: true });
-  await staging.move(destination, { overwrite: true });
+  await commit();
 }

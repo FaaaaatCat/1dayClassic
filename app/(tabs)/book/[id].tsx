@@ -95,7 +95,7 @@ export default function BookDetailScreen() {
     ? {
         title: studyBook.title,
         author: studyBook.author,
-        cover: studyBook.coverImage,
+        cover: { uri: studyBook.coverImage },
         price: catalogBook?.price ?? null,
         sections: catalogBook?.sections ?? [],
       }

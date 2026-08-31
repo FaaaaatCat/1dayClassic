@@ -46,7 +46,7 @@ export default function LibraryBookDetailScreen() {
     ? getCatalogBookByBookId(studyBook.id)
     : getCatalogBook(id ?? "");
   const view = studyBook
-    ? { title: studyBook.title, author: studyBook.author, cover: studyBook.coverImage }
+    ? { title: studyBook.title, author: studyBook.author, cover: { uri: studyBook.coverImage } }
     : catalogBook && { title: catalogBook.title, author: catalogBook.author, cover: { uri: catalogBook.coverImage } };
 
   if (!view || !catalogBook) return null;

@@ -28,9 +28,6 @@ import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
 import { FIELD_NAMES, fieldsOf, SERIES_NAMES, seriesOf } from "@/lib/tags";
 
 /** 학습 가능한 책은 표지를 로컬 에셋으로 갖고 있다 — 원격 URL보다 선명하고 오프라인에서도 뜬다. */
-const LOCAL_COVERS = new Map(
-  BOOKSTORE_BOOKS.map((book) => [book.id as string, book.coverImage]),
-);
 
 /**
  * 방향이 바뀌었다고 인정하기까지 한 방향으로 움직여야 하는 거리(px).
@@ -396,7 +393,7 @@ export default function BookstoreScreen() {
                   author={entry.book.author}
                   cover={
                     (entry.book.bookId !== null &&
-                      LOCAL_COVERS.get(entry.book.bookId)) || {
+                      { uri: entry.book.coverImage }) || {
                       uri: entry.book.coverImage,
                     }
                   }

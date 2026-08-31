@@ -10,9 +10,6 @@ import { BOOKSTORE_BOOKS, isMvpBook } from '@/lib/bookstore';
 import { getCatalogBooks, type CatalogBook } from '@/lib/catalog';
 import { fieldsOf, seriesOf } from '@/lib/tags';
 
-/** 학습 가능한 책은 표지를 로컬 에셋으로 갖고 있다 — bookstore.tsx와 같은 패턴. */
-const LOCAL_COVERS = new Map(BOOKSTORE_BOOKS.map((book) => [book.id as string, book.coverImage]));
-
 interface Entry {
   book: CatalogBook;
   series: string[];
@@ -79,9 +76,7 @@ export default function LibraryScreen() {
                   title={entry.book.title}
                   author={entry.book.author}
                   cover={
-                    (entry.book.bookId !== null && LOCAL_COVERS.get(entry.book.bookId)) || {
-                      uri: entry.book.coverImage,
-                    }
+{ uri: entry.book.coverImage }
                   }
                   series={entry.series}
                   fields={entry.fields}

@@ -859,6 +859,20 @@ function SpokenText({
   );
 }
 
+/**
+ * 표식을 어떤 글꼴로 그릴지 가른다.
+ *
+ * 듣기의 말들의 ') ) )'처럼 로마자 범위 안에 있는 표식은 본문 서체(DM Serif Display)로
+ * 그린다. 클래식의 높은음자리표(𝄞, U+1D11E)처럼 그 밖의 글자는 그 서체에 자모가 없어
+ * 두부(□)로 나오므로, 글꼴을 지정하지 않고 기기 기본 글꼴이 대신 그리게 둔다.
+ */
+function isAsciiSymbol(symbol: string): boolean {
+  for (const ch of symbol) {
+    if (ch.codePointAt(0)! > 0x7f) return false;
+  }
+  return true;
+}
+
 function CardContent({
   kind,
   paragraph,
@@ -881,7 +895,12 @@ function CardContent({
   if (kind === 'cover') {
     return (
       <>
-        <Text style={styles.introMark}>{') ) )'}</Text>
+        {/* 책의 표식 — 없는 책은 이 자리가 빈다(lib/bookstore의 symbol). */}
+        {cover.symbol ? (
+          <Text style={isAsciiSymbol(cover.symbol) ? styles.coverSymbol : styles.coverGlyph}>
+            {cover.symbol}
+          </Text>
+        ) : null}
         <View style={styles.labelChip}>
           <Text style={styles.labelText}>{cover.bookName}</Text>
         </View>
@@ -1405,11 +1424,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 28,
   },
-  introMark: {
+  coverSymbol: {
     fontFamily: Fonts.serifDisplay,
     fontSize: 44,
     lineHeight: 52,
     letterSpacing: 6,
+    color: Colors.brown50,
+  },
+  /** 서체에 없는 글자(음악 기호 등) — 기기 기본 글꼴이 그린다. */
+  coverGlyph: {
+    fontSize: 52,
+    lineHeight: 64,
     color: Colors.brown50,
   },
   labelChip: {

@@ -1,6 +1,7 @@
 import { Dimensions } from 'react-native';
 
 import { getLessonHeading, type BookLesson } from '@/lib/books';
+import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 import { splitSentences } from '@/lib/narration';
 import type { NarrationStep } from '@/hooks/useCardNarration';
 
@@ -134,6 +135,8 @@ export interface CardCover {
   bookName: string;
   title: string;
   subtitle?: string;
+  /** 책의 표식. 없는 책은 그 자리가 빈다(lib/bookstore의 symbol). */
+  symbol?: string;
 }
 
 /** 인용 장에 쓰는 글. 인용문이 없는 책(한자·심리·교양)은 이 장을 두지 않는다. */
@@ -178,7 +181,8 @@ export function getLessonEpigraph(bookLesson: BookLesson): CardEpigraph | undefi
 
 export function getCardCover(bookLesson: BookLesson, bookName: string): CardCover {
   const heading = getLessonHeading(bookLesson);
-  return { bookName, title: heading.title, subtitle: heading.subtitle };
+  const symbol = BOOKSTORE_BOOKS.find((book) => book.id === bookLesson.book)?.symbol;
+  return { bookName, title: heading.title, subtitle: heading.subtitle, symbol };
 }
 
 /**
