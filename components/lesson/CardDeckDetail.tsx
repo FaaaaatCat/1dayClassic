@@ -50,6 +50,12 @@ import {
   buildCardPages,
   getCardCover,
   getLessonEpigraph,
+  BODY_FONT_SIZE,
+  BODY_LINE_HEIGHT,
+  BODY_PADDING_X,
+  BODY_PADDING_Y,
+  CARD_H,
+  CARD_W,
   type CardCover,
   type CardEpigraph,
   type CardPageKind,
@@ -92,10 +98,6 @@ import { Colors, Fonts, tracking } from '@/constants/theme';
  */
 
 const { width: SCREEN_W } = Dimensions.get('window');
-
-/** Figma 카드 비율 320×466. 좁은 기기에서는 화면 폭에 맞춰 줄인다. */
-const CARD_W = Math.min(320, SCREEN_W - 56);
-const CARD_H = Math.round((CARD_W * 466) / 320);
 
 /** 한 장 넘기는 데 필요한 스와이프 거리 — 페이지 스냅 단위와 같다. */
 const PAGE_W = SCREEN_W;
@@ -167,10 +169,10 @@ const TOAST_FADE = 220;
 const SYMBOL_BOX_H = 100;
 
 /** 하단 동그란 버튼의 지름. 자동으로 읽기는 펼쳐져도 이 높이를 지킨다. */
-const ROUND_SIZE = 48;
-/** 자동으로 읽기가 펼쳐졌을 때의 가로 — 아이콘 셋과 구분선이 들어갈 만큼. */
-const READER_WIDTH = 176;
-const READER_OPEN_MS = 260;
+/** 위 진행 바 줄과 아래 버튼 줄의 높이 — 덱은 이 사이에 눕는다. */
+const BARS_H = 14;
+const HEADER_H = 48;
+const FOOTER_H = 56;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
 
@@ -414,28 +416,31 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
   });
 
   return (
-    <View style={styles.screen}>
-      {/* 잠금 위 알람에서는 이 버튼을 그리지 않는다 — 유일한 출구를 막아야 한다. */}
-      {!lockFlow && <CloseButton top={insets.top + 24} onPress={onClose} />}
+    <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니다. */}
+      <PageBars flipX={flipX} total={pages.length} />
 
-      <Dots flipX={flipX} total={pages.length} />
-
-      <Actions
-        bottom={insets.bottom + 40}
-        onOpenNote={() => setNoteOpen(true)}
-        readerOpen={readerOpen}
-        playing={narration.playing}
-        onOpenReader={() => {
-          setReaderOpen(true);
-          narration.restart();
-        }}
-        onTogglePlay={narration.toggle}
-        onRestart={narration.restart}
-        onCloseReader={() => {
-          setReaderOpen(false);
-          narration.stop();
-        }}
-      />
+      {/* 계정 줄 — 표지·책 이름·날짜, 그리고 닫기.
+          잠금 위 알람에서는 닫기를 그리지 않는다 — 유일한 출구를 막아야 한다. */}
+      <View style={styles.header}>
+        {catalogBook ? (
+          <Image
+            source={{ uri: catalogBook.coverImage }}
+            style={styles.avatar}
+            accessibilityIgnoresInvertColors
+          />
+        ) : (
+          <View style={styles.avatar} />
+        )}
+        <Text style={styles.account}>{bookName}</Text>
+        {lesson.date ? <Text style={styles.when}>{lesson.date}</Text> : null}
+        <View style={styles.headerSpacer} />
+        {!lockFlow && (
+          <ScaleButton accessibilityLabel="닫기" style={styles.headerClose} onPress={onClose}>
+            <Ionicons name="close" color={Colors.white} size={24} />
+          </ScaleButton>
+        )}
+      </View>
 
       {/* 제스처 층 — 페이지마다 좌/중/우 3등분 탭 영역만 있다(가운데는 무동작). */}
       <Animated.ScrollView
@@ -506,8 +511,60 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
         />
       </View>
 
-      {/* 책갈피 토스트 — 하단 버튼 줄 위에 뜬다. 감상 노트의 것은 모달 안에 따로 있다. */}
-      <Toast bottom={insets.bottom + 40 + 48 + 12} at={markToast.at} text={markToast.text} />
+      {/* 아래 줄 — 몇 장째인지와 버튼 둘. 책갈피는 여기가 아니라 카드 오른쪽 아래에 있다. */}
+      <View style={styles.footer}>
+        <Text style={styles.footerHint}>{`${page + 1} / ${pages.length}`}</Text>
+        <View style={styles.footerIcons}>
+          {readerOpen ? (
+            <>
+              <ScaleButton
+                accessibilityLabel={narration.playing ? '읽기 멈추기' : '읽기 재생'}
+                style={styles.footerHit}
+                onPress={narration.toggle}>
+                <Ionicons
+                  name={narration.playing ? 'pause' : 'play'}
+                  color={Colors.white}
+                  size={24}
+                />
+              </ScaleButton>
+              <ScaleButton
+                accessibilityLabel="처음부터 다시 듣기"
+                style={styles.footerHit}
+                onPress={narration.restart}>
+                <Ionicons name="refresh" color={Colors.white} size={24} />
+              </ScaleButton>
+              <ScaleButton
+                accessibilityLabel="자동으로 읽기 닫기"
+                style={styles.footerHit}
+                onPress={() => {
+                  setReaderOpen(false);
+                  narration.stop();
+                }}>
+                <Ionicons name="close" color={Colors.white} size={24} />
+              </ScaleButton>
+            </>
+          ) : (
+            <ScaleButton
+              accessibilityLabel="자동으로 읽기"
+              style={styles.footerHit}
+              onPress={() => {
+                setReaderOpen(true);
+                narration.restart();
+              }}>
+              <Ionicons name="headset" color={Colors.white} size={24} />
+            </ScaleButton>
+          )}
+          <ScaleButton
+            accessibilityLabel="감상 노트"
+            style={styles.footerHit}
+            onPress={() => setNoteOpen(true)}>
+            <Ionicons name="create" color={Colors.white} size={24} />
+          </ScaleButton>
+        </View>
+      </View>
+
+      {/* 책갈피 토스트 — 하단 줄 위에 뜬다. 감상 노트의 것은 모달 안에 따로 있다. */}
+      <Toast bottom={insets.bottom + 68 + 12} at={markToast.at} text={markToast.text} />
 
       {/**
         * 감상 노트 — 넘김 흐름에서 빠지고 하단 메모 버튼으로 전체 화면에 뜬다.
@@ -1125,131 +1182,6 @@ function Toast({ bottom, at, text }: { bottom: number; at: number; text: string 
 
 // ── 버튼 · 인디케이터 ──────────────────────────────────────────────────────
 
-/**
- * 하단 버튼 — 자동으로 읽기·메모. 어느 장에서나 그대로 떠 있다.
- *
- * 책갈피는 여기 있다가 본문 장 오른쪽 아래로 옮겼다(CardContent의 desc). 읽던 자리를
- * 접어 두는 일이라 읽는 종이 위에 있는 편이 맞다.
- *
- * 예전에는 마지막 장에서 '오늘의 공부 마치기'로 바뀌었는데, 그 버튼은 퀴즈 팝업의
- * 해설 아래로 옮겼다. 해설까지 읽은 지점이 공부를 맺는 자리라서다.
- */
-function Actions({
-  bottom,
-  onOpenNote,
-  readerOpen,
-  playing,
-  onOpenReader,
-  onTogglePlay,
-  onRestart,
-  onCloseReader,
-}: {
-  bottom: number;
-  onOpenNote: () => void;
-  readerOpen: boolean;
-  playing: boolean;
-  onOpenReader: () => void;
-  onTogglePlay: () => void;
-  onRestart: () => void;
-  onCloseReader: () => void;
-}) {
-  return (
-    <View style={[styles.actions, { bottom }]} pointerEvents="box-none">
-      <View style={styles.roundRow}>
-        <ReadAloudButton
-          open={readerOpen}
-          playing={playing}
-          onOpen={onOpenReader}
-          onTogglePlay={onTogglePlay}
-          onRestart={onRestart}
-          onClose={onCloseReader}
-        />
-        <ScaleButton accessibilityLabel="감상 노트" style={styles.roundButton} onPress={onOpenNote}>
-          <Ionicons name="create" color={Colors.white} size={24} />
-        </ScaleButton>
-      </View>
-    </View>
-  );
-}
-
-/**
- * 자동으로 읽기 버튼 — 누르면 높이는 그대로 두고 가로로만 늘어나 조작 아이콘을 드러낸다.
- *
- * 늘어난 폭을 상수로 박아 둔 건 리액트 네이티브가 width를 'auto'로 애니메이션하지
- * 못해서다. 안의 아이콘은 그 폭을 space-evenly로 나눠 갖는다.
- *
- * 접힌 얼굴과 펼친 얼굴을 둘 다 자리에 두고 투명도만 엇갈리게 한다 — 하나를 빼고
- * 하나를 끼우면 늘어나는 도중에 내용이 튄다.
- */
-function ReadAloudButton({
-  open,
-  playing,
-  onOpen,
-  onTogglePlay,
-  onRestart,
-  onClose,
-}: {
-  open: boolean;
-  playing: boolean;
-  onOpen: () => void;
-  onTogglePlay: () => void;
-  onRestart: () => void;
-  onClose: () => void;
-}) {
-  const spread = useSharedValue(0);
-  useEffect(() => {
-    spread.value = withTiming(open ? 1 : 0, { duration: READER_OPEN_MS });
-  }, [open, spread]);
-
-  const shellStyle = useAnimatedStyle(() => ({
-    width: ROUND_SIZE + (READER_WIDTH - ROUND_SIZE) * spread.value,
-  }));
-  // 두 얼굴이 중간에서 교대한다 — 겹쳐 보이지 않게 구간을 나눠 둔다.
-  const closedFace = useAnimatedStyle(() => ({
-    opacity: interpolate(spread.value, [0, 0.45], [1, 0], Extrapolation.CLAMP),
-  }));
-  const openFace = useAnimatedStyle(() => ({
-    opacity: interpolate(spread.value, [0.55, 1], [0, 1], Extrapolation.CLAMP),
-  }));
-
-  return (
-    <Animated.View style={[styles.readerShell, shellStyle]}>
-      {open ? (
-        <Animated.View style={[StyleSheet.absoluteFill, styles.readerControls, openFace]}>
-          <ScaleButton
-            accessibilityLabel={playing ? '읽기 멈추기' : '읽기 재생'}
-            style={styles.readerHit}
-            onPress={onTogglePlay}>
-            <Ionicons name={playing ? 'pause' : 'play'} color={Colors.white} size={20} />
-          </ScaleButton>
-          <ScaleButton
-            accessibilityLabel="처음부터 다시 듣기"
-            style={styles.readerHit}
-            onPress={onRestart}>
-            <Ionicons name="refresh" color={Colors.white} size={20} />
-          </ScaleButton>
-          <View style={styles.readerDivider} />
-          <ScaleButton
-            accessibilityLabel="자동으로 읽기 닫기"
-            style={styles.readerHit}
-            onPress={onClose}>
-            <Ionicons name="close" color={Colors.white} size={20} />
-          </ScaleButton>
-        </Animated.View>
-      ) : (
-        <Animated.View style={[StyleSheet.absoluteFill, styles.readerFace, closedFace]}>
-          <ScaleButton
-            accessibilityLabel="자동으로 읽기"
-            style={styles.readerClosedHit}
-            onPress={onOpen}>
-            <Ionicons name="headset" color={Colors.white} size={24} />
-          </ScaleButton>
-        </Animated.View>
-      )}
-    </Animated.View>
-  );
-}
-
 /** 닫기 버튼 — 모든 카드에서 늘 같은 자리에 뜬다. */
 function CloseButton({
   top,
@@ -1310,26 +1242,26 @@ function DescBookmark({
   );
 }
 
-/** 몇 장 중 몇 번째인지 알려 주는 점 — 카드 윗변 위에 붙는다. */
-function Dots({ flipX, total }: { flipX: SharedValue<number>; total: number }) {
+/**
+ * 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니라서, 인스타에서는
+ * 자리·가로 폭·높이만 가져오고 밝기 변화는 예전 점(dot)의 것을 그대로 쓴다.
+ */
+function PageBars({ flipX, total }: { flipX: SharedValue<number>; total: number }) {
   return (
-    <View style={styles.dots} pointerEvents="none">
+    <View style={styles.bars} pointerEvents="none">
       {Array.from({ length: total }, (_, i) => (
-        <Dot key={i} index={i} flipX={flipX} />
+        <Bar key={i} index={i} flipX={flipX} />
       ))}
     </View>
   );
 }
 
-function Dot({ index, flipX }: { index: number; flipX: SharedValue<number> }) {
+function Bar({ index, flipX }: { index: number; flipX: SharedValue<number> }) {
   const style = useAnimatedStyle(() => {
     const d = Math.abs(index - flipX.value / PAGE_W);
-    return {
-      opacity: interpolate(d, [0, 1], [1, 0.28], Extrapolation.CLAMP),
-      width: interpolate(d, [0, 1], [18, 6], Extrapolation.CLAMP),
-    };
+    return { opacity: interpolate(d, [0, 1], [1, 0.28], Extrapolation.CLAMP) };
   });
-  return <Animated.View style={[styles.dot, style]} />;
+  return <Animated.View style={[styles.bar, style]} />;
 }
 
 const styles = StyleSheet.create({
@@ -1455,8 +1387,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 28,
+    paddingHorizontal: BODY_PADDING_X,
+    paddingVertical: BODY_PADDING_Y,
   },
   /** 표지 장 전체 — 가운데 묶음이 남는 높이를 갖고, 버튼은 맨 아래에 선다. */
   coverBlock: {
@@ -1534,8 +1466,8 @@ const styles = StyleSheet.create({
   },
   labelText: {
     fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    letterSpacing: tracking(12),
+    fontSize: 13,
+    letterSpacing: tracking(13),
     color: Colors.beige100,
   },
   titleRow: {
@@ -1552,18 +1484,18 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: Fonts.semiBold,
-    fontSize: 20,
-    lineHeight: 30,
-    letterSpacing: tracking(20),
+    fontSize: 24,
+    lineHeight: 34,
+    letterSpacing: tracking(24),
     textAlign: "center",
     color: Colors.brown100,
   },
   /** 표제 아래 한 줄 — 작곡가·훈음·뜻처럼 책마다 다른 것이 들어온다. */
   coverSubtitle: {
     fontFamily: Fonts.regular,
-    fontSize: 14,
-    lineHeight: 22,
-    letterSpacing: tracking(14),
+    fontSize: 16,
+    lineHeight: 26,
+    letterSpacing: tracking(16),
     textAlign: "center",
     color: Colors.brown50,
   },
@@ -1578,15 +1510,15 @@ const styles = StyleSheet.create({
   },
   quoteText: {
     fontFamily: Fonts.semiBold,
-    fontSize: 15,
-    lineHeight: 26,
-    letterSpacing: tracking(15),
+    fontSize: 17,
+    lineHeight: 30,
+    letterSpacing: tracking(17),
     color: Colors.brown100,
   },
   quoteSource: {
     fontFamily: Fonts.regular,
-    fontSize: 11,
-    lineHeight: 17,
+    fontSize: 13,
+    lineHeight: 20,
     letterSpacing: tracking(11),
     color: Colors.brown50,
   },
@@ -1599,7 +1531,7 @@ const styles = StyleSheet.create({
   },
   cardHeadingText: {
     fontFamily: Fonts.semiBold,
-    fontSize: 14,
+    fontSize: 15,
     letterSpacing: tracking(14),
     color: Colors.brown100,
   },
@@ -1692,7 +1624,7 @@ const styles = StyleSheet.create({
   },
   cardButtonText: {
     fontFamily: Fonts.semiBold,
-    fontSize: 14,
+    fontSize: 15,
     letterSpacing: tracking(14),
     color: Colors.brown100,
   },
@@ -1861,7 +1793,7 @@ const styles = StyleSheet.create({
   descBookmark: {
     position: 'absolute',
     top: '50%',
-    marginTop: CARD_H / 2 - 28 - 32,
+    marginTop: CARD_H / 2 - BODY_PADDING_Y - 32,
     left: (SCREEN_W - CARD_W) / 2 + CARD_W - 24 - 32,
     // 덱 안에서 가장 위 — 골 그늘(FoldShade)의 100보다 높다.
     zIndex: 101,
@@ -1878,65 +1810,39 @@ const styles = StyleSheet.create({
   },
   descText: {
     fontFamily: Fonts.regular,
-    fontSize: 16,
-    lineHeight: 28,
-    letterSpacing: tracking(16),
+    fontSize: BODY_FONT_SIZE,
+    lineHeight: BODY_LINE_HEIGHT,
+    letterSpacing: tracking(BODY_FONT_SIZE),
     color: Colors.brown100,
   },
 
-  // 하단 버튼
-  actions: {
+  // 아래 줄 — 몇 장째인지와 버튼 둘. 동그라미 없이 맨 아이콘만 놓는다.
+  footer: {
     position: 'absolute',
-    left: 0,
-    right: 0,
+    left: 20,
+    right: 20,
+    bottom: 0,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 52,
+    justifyContent: 'space-between',
+    height: FOOTER_H,
     zIndex: 3,
   },
-  roundRow: {
-    position: 'absolute',
+  footerHint: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    letterSpacing: tracking(13),
+    color: Colors.brown50,
+  },
+  footerIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 20,
+    gap: 16,
   },
-  roundButton: {
-    width: ROUND_SIZE,
-    height: ROUND_SIZE,
-    borderRadius: ROUND_SIZE / 2,
-    backgroundColor: Colors.brown50,
-  },
-  /** 자동으로 읽기 — 접히면 동그라미, 펼치면 같은 높이의 알약. */
-  readerShell: {
-    height: ROUND_SIZE,
-    borderRadius: ROUND_SIZE / 2,
-    backgroundColor: Colors.brown50,
-    overflow: 'hidden',
-  },
-  readerFace: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  readerClosedHit: {
-    width: ROUND_SIZE,
-    height: ROUND_SIZE,
-    borderRadius: ROUND_SIZE / 2,
-  },
-  readerControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-  },
-  readerHit: {
+  footerHit: {
     width: 36,
-    height: ROUND_SIZE,
-  },
-  /** 닫기를 앞의 둘과 갈라 두는 선 — 성격이 다른 버튼이다. */
-  readerDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 18,
-    backgroundColor: Colors.brown10,
+    height: 36,
+    borderRadius: 18,
   },
   finishButton: {
     height: 52,
@@ -1958,21 +1864,56 @@ const styles = StyleSheet.create({
    * 실제 컨테이너 높이의 절반에 앉기 때문이다. 상태바·내비게이션바가 잡아먹는 만큼
    * 둘이 어긋나면 안 된다.
    */
-  dots: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '50%',
-    marginTop: -CARD_H / 2 - 26,
+  /** 화면 맨 위 — 가로를 다 쓰고, 장 수만큼 나눠 갖는다. */
+  bars: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    zIndex: 2,
+    gap: 4,
+    height: BARS_H,
+    paddingHorizontal: 12,
+    zIndex: 3,
   },
-  dot: {
-    height: 6,
-    borderRadius: 3,
+  bar: {
+    flex: 1,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: Colors.white,
+  },
+
+  // 계정 줄 — 인스타의 윗줄 자리에 표지·책 이름·날짜·닫기를 놓는다.
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: HEADER_H,
+    paddingLeft: 16,
+    paddingRight: 8,
+    zIndex: 3,
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: Colors.brown50,
+  },
+  account: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 14,
+    letterSpacing: tracking(14),
+    color: Colors.white,
+  },
+  when: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    letterSpacing: tracking(13),
+    color: Colors.brown50,
+  },
+  headerSpacer: {
+    flex: 1,
+  },
+  headerClose: {
+    width: 41,
+    height: 41,
+    borderRadius: 20.5,
   },
 });

@@ -13,18 +13,34 @@ import type { NarrationStep } from '@/hooks/useCardNarration';
  * 책마다 다르다 — 그래서 표제는 getLessonHeading에 맡기고 인용문만 여기서 골라낸다.
  */
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
-/** Figma 카드 비율 320×466. 좁은 기기에서는 화면 폭에 맞춰 줄인다(화면과 같은 값). */
-export const CARD_W = Math.min(320, SCREEN_W - 56);
-export const CARD_H = Math.round((CARD_W * 466) / 320);
+/**
+ * 카드 크기 — 화면을 거의 다 쓴다.
+ *
+ * 예전에는 320×466으로 못박혀 있었다. 화면이 큰 기기에서 카드만 작게 떠 있어 읽는 자리가
+ * 좁았다. 이제 좌우로 여백만 남기고, 세로는 위아래 크롬을 뺀 만큼을 갖는다.
+ *
+ * 크롬 높이를 상수로 잡는 건 여기가 화면 밖(모듈 최상단)이라 세이프에어리어를 물어볼 수
+ * 없어서다. 넉넉하게 빼 둔다 — 모자라면 카드가 크롬을 밀고 올라가지만, 남으면 위아래
+ * 여백이 조금 더 생길 뿐이다. 카드는 어차피 자리 한가운데에 놓인다.
+ */
+const CARD_MARGIN_X = 28;
+/** 진행 바·계정 줄·하단 줄과 그 사이 여백, 그리고 기기마다 다른 세이프에어리어까지. */
+const CHROME_H = 240;
 
-/** 본문 글자 값 — 화면(styles.descText, styles.cardBody)과 같아야 줄 수가 맞는다. */
-const BODY_FONT_SIZE = 16;
-const BODY_LINE_HEIGHT = 28;
-const BODY_LETTER_SPACING = -0.32; // tracking(16)
-const BODY_PADDING_X = 24;
-const BODY_PADDING_Y = 28;
+export const CARD_W = SCREEN_W - CARD_MARGIN_X * 2;
+export const CARD_H = SCREEN_H - CHROME_H;
+
+/**
+ * 본문 글자 값 — 화면(styles.descText, styles.cardBody)과 같아야 줄 수가 맞는다.
+ * 카드가 커진 만큼 글자도 함께 키웠다.
+ */
+export const BODY_FONT_SIZE = 18;
+export const BODY_LINE_HEIGHT = 32;
+const BODY_LETTER_SPACING = -0.36; // tracking(18)
+export const BODY_PADDING_X = 28;
+export const BODY_PADDING_Y = 32;
 
 /**
  * 본문 한 장을 채우기 시작하는 기준(공백 포함).
