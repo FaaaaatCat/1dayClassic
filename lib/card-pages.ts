@@ -137,6 +137,11 @@ export interface CardCover {
   subtitle?: string;
   /** 책의 표식. 없는 책은 그 자리가 빈다(lib/bookstore의 symbol). */
   symbol?: string;
+  /**
+   * 그 곡을 들을 수 있는 곳. 하루 클래식만 갖는다 — 다른 책은 들을 곡이 없다.
+   * 있으면 표지 맨 아래에 '음악 듣기'가 선다.
+   */
+  listenUrl?: string;
 }
 
 /** 인용 장에 쓰는 글. 인용문이 없는 책(한자·심리·교양)은 이 장을 두지 않는다. */
@@ -182,7 +187,9 @@ export function getLessonEpigraph(bookLesson: BookLesson): CardEpigraph | undefi
 export function getCardCover(bookLesson: BookLesson, bookName: string): CardCover {
   const heading = getLessonHeading(bookLesson);
   const symbol = BOOKSTORE_BOOKS.find((book) => book.id === bookLesson.book)?.symbol;
-  return { bookName, title: heading.title, subtitle: heading.subtitle, symbol };
+  // 곡 링크는 클래식에만 있는 필드라 여기서 갈라 꺼낸다.
+  const listenUrl = bookLesson.book === 'classic' ? bookLesson.lesson.youtubeUrl : undefined;
+  return { bookName, title: heading.title, subtitle: heading.subtitle, symbol, listenUrl };
 }
 
 /**

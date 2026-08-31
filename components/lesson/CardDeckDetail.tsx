@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
@@ -184,7 +185,9 @@ const BUY_COVER_H = 152;
  * 같은 항목을 쓰기 때문이다. 여기서 정하는 것은 그것을 어떻게 보여 줄지뿐이다.
  */
 
-const INTERACTIVE_KINDS: CardPageKind[] = ['outro'];
+// 표지는 클래식의 '음악 듣기' 때문에 들어 있다. 그 버튼이 없는 책에서는 카드 안이 전부
+// box-none이라 손가락이 그대로 아래 제스처 층으로 내려가고, 탭 넘김은 그대로다.
+const INTERACTIVE_KINDS: CardPageKind[] = ['cover', 'outro'];
 
 interface Props {
   bookLesson: BookLesson;
@@ -902,33 +905,44 @@ function CardContent({
 }) {
   if (kind === 'cover') {
     return (
-      <>
-        {/* 책의 표식 — 없는 책은 이 자리가 빈다(lib/bookstore의 symbol). */}
-        {cover.symbol ? (
-          <View style={styles.coverSymbolBox}>
-            {isSymbolImage(cover.symbol) ? (
-              <Image
-                source={{ uri: cover.symbol }}
-                style={styles.coverSymbolImage}
-                // 책마다 그림 크기가 달라도 잘리지 않고 상자 안에 들어오게 한다.
-                resizeMode="contain"
-                accessibilityIgnoresInvertColors
-              />
-            ) : (
-              <Text style={isAsciiSymbol(cover.symbol) ? styles.coverSymbol : styles.coverGlyph}>
-                {cover.symbol}
-              </Text>
-            )}
+      <View style={styles.coverBlock} pointerEvents="box-none">
+        <View style={styles.coverMain} pointerEvents="none">
+          {/* 책의 표식 — 없는 책은 이 자리가 빈다(lib/bookstore의 symbol). */}
+          {cover.symbol ? (
+            <View style={styles.coverSymbolBox}>
+              {isSymbolImage(cover.symbol) ? (
+                <Image
+                  source={{ uri: cover.symbol }}
+                  style={styles.coverSymbolImage}
+                  // 책마다 그림 크기가 달라도 잘리지 않고 상자 안에 들어오게 한다.
+                  resizeMode="contain"
+                  accessibilityIgnoresInvertColors
+                />
+              ) : (
+                <Text style={isAsciiSymbol(cover.symbol) ? styles.coverSymbol : styles.coverGlyph}>
+                  {cover.symbol}
+                </Text>
+              )}
+            </View>
+          ) : null}
+          <View style={styles.labelChip}>
+            <Text style={styles.labelText}>{cover.bookName}</Text>
           </View>
-        ) : null}
-        <View style={styles.labelChip}>
-          <Text style={styles.labelText}>{cover.bookName}</Text>
+          {/* 표제는 책마다 뽑는 곳이 달라 getLessonHeading이 정해 준다 — 곡명·한자·라틴어
+              원문이 모두 여기로 들어온다(lib/card-pages). */}
+          <Text style={styles.title}>{cover.title}</Text>
+          {cover.subtitle ? <Text style={styles.coverSubtitle}>{cover.subtitle}</Text> : null}
         </View>
-        {/* 표제는 책마다 뽑는 곳이 달라 getLessonHeading이 정해 준다 — 곡명·한자·라틴어
-            원문이 모두 여기로 들어온다(lib/card-pages). */}
-        <Text style={styles.title}>{cover.title}</Text>
-        {cover.subtitle ? <Text style={styles.coverSubtitle}>{cover.subtitle}</Text> : null}
-      </>
+
+        {/* 하루 클래식만 갖는 버튼 — 그 곡을 바깥 브라우저에서 연다. */}
+        {cover.listenUrl ? (
+          <Pressable
+            style={[styles.cardButton, styles.coverListenButton]}
+            onPress={() => WebBrowser.openBrowserAsync(cover.listenUrl!)}>
+            <Text style={styles.cardButtonText}>음악 듣기</Text>
+          </Pressable>
+        ) : null}
+      </View>
     );
   }
 
@@ -1443,6 +1457,22 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingHorizontal: 24,
     paddingVertical: 28,
+  },
+  /** 표지 장 전체 — 가운데 묶음이 남는 높이를 갖고, 버튼은 맨 아래에 선다. */
+  coverBlock: {
+    flex: 1,
+    alignSelf: 'stretch',
+  },
+  coverMain: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  /** 표지의 '음악 듣기' — 가로를 글자에 맞춰 가운데 세운다. */
+  coverListenButton: {
+    alignSelf: 'center',
+    paddingHorizontal: 28,
   },
   /**
    * 표식이 놓이는 자리 — 높이를 100으로 못박는다.
