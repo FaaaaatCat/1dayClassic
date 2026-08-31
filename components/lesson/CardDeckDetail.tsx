@@ -1397,18 +1397,13 @@ const styles = StyleSheet.create({
     // 때 뒷면 내용이 거울상이 아니라 똑바로 보인다.
     transform: [{ rotateY: '180deg' }],
   },
-  /**
-   * 세로 여백이 20인 건 250자(lib/card-pages)가 다 들어가야 하기 때문이다.
-   * 250자는 최대 열다섯 줄(420pt)까지 가는데, 28이면 쓸 수 있는 높이가 410pt라 마지막
-   * 줄이 잘렸다. 20이면 426pt가 되어 여섯 자리 남는다.
-   */
   cardBody: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingVertical: 28,
   },
   introMark: {
     fontFamily: Fonts.serifDisplay,
