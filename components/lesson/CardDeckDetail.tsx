@@ -182,7 +182,7 @@ const BUY_COVER_H = 152;
  * 같은 항목을 쓰기 때문이다. 여기서 정하는 것은 그것을 어떻게 보여 줄지뿐이다.
  */
 
-const INTERACTIVE_KINDS: CardPageKind[] = ['buy'];
+const INTERACTIVE_KINDS: CardPageKind[] = ['outro'];
 
 interface Props {
   bookLesson: BookLesson;
@@ -202,7 +202,8 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
 
   /** 이 항목이 몇 장인지, 무엇을 읽어 줄지 — 항목이 바뀌면 통째로 다시 만든다. */
   const { pages, cover, epigraph, narrationSteps, quizzes } = useMemo(() => {
-    const built = buildCardPages(bookLesson, { purchased });
+    const list = lesson.quizzes ?? (lesson.quiz ? [lesson.quiz] : []);
+    const built = buildCardPages(bookLesson, { purchased, hasQuiz: list.length > 0 });
     const coverInfo = getCardCover(bookLesson, bookName);
     const epi = getLessonEpigraph(bookLesson);
     return {
@@ -210,7 +211,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
       cover: coverInfo,
       epigraph: epi,
       narrationSteps: buildCardNarration(built, { cover: coverInfo, epigraph: epi }),
-      quizzes: lesson.quizzes ?? (lesson.quiz ? [lesson.quiz] : []),
+      quizzes: list,
     };
   }, [bookLesson, bookName, lesson, purchased]);
 
@@ -486,6 +487,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             cover={cover}
             epigraph={epigraph}
             catalogBook={catalogBook}
+            purchased={purchased}
             onOpenQuiz={() => setQuizOpen(true)}
           />
         ))}
@@ -545,7 +547,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             quizModalStyles.screen,
             { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
           ]}>
-          <QuizSolver onClose={closeQuiz} onFinish={finishStudy} />
+          <QuizSolver quizzes={quizzes} onClose={closeQuiz} onFinish={finishStudy} />
         </View>
       </Modal>
 
@@ -677,6 +679,7 @@ function DeckCard({
   cover,
   epigraph,
   catalogBook,
+  purchased,
   onOpenQuiz,
 }: {
   index: number;
@@ -687,6 +690,7 @@ function DeckCard({
   cover: CardCover;
   epigraph?: CardEpigraph;
   catalogBook?: CatalogBook;
+  purchased: boolean;
   flipX: SharedValue<number>;
   /** 입장할 때 한 번 도는 값 — 첫 장 본문이 떠오르는 연출에만 쓴다. */
   enter: SharedValue<number>;
@@ -774,7 +778,7 @@ function DeckCard({
           // 구매 안내 장만 종이를 한 단계 어둡게 — 넘김 흐름 안에서 성격이 다른 장이라
           // 바탕으로 구분한다. brown100을 10%로 덮은 것과 같은 색이라(계산: #E1DED6)
           // 겹을 더 쌓지 않고 팔레트 색을 그대로 쓴다.
-          style={[styles.cardFace, kind === 'buy' && styles.cardFaceBuy, frontStyle]}
+          style={[styles.cardFace, kind === 'outro' && styles.cardFaceBuy, frontStyle]}
           pointerEvents="box-none">
           <Animated.View style={[styles.cardBody, bodyStyle]} pointerEvents="box-none">
             <CardContent
@@ -784,6 +788,7 @@ function DeckCard({
               cover={cover}
               epigraph={epigraph}
               catalogBook={catalogBook}
+              purchased={purchased}
               onOpenQuiz={onOpenQuiz}
             />
           </Animated.View>
@@ -867,6 +872,7 @@ function CardContent({
   cover,
   epigraph,
   catalogBook,
+  purchased,
   onOpenQuiz,
 }: {
   kind: CardPageKind;
@@ -876,6 +882,7 @@ function CardContent({
   cover: CardCover;
   epigraph?: CardEpigraph;
   catalogBook?: CatalogBook;
+  purchased: boolean;
   /** 구매 안내 장의 '퀴즈 풀러 가기' — 퀴즈를 전체 화면으로 연다. */
   onOpenQuiz: () => void;
 }) {
@@ -911,8 +918,8 @@ function CardContent({
     );
   }
 
-  if (kind === 'buy') {
-    return <BuyBlock book={catalogBook} onOpenQuiz={onOpenQuiz} />;
+  if (kind === 'outro') {
+    return <OutroBlock book={catalogBook} purchased={purchased} onOpenQuiz={onOpenQuiz} />;
   }
 
   return null;
@@ -932,12 +939,23 @@ function CardContent({
  * 버튼이 '수정하기'가 된다.
  */
 /**
- * 구매 안내 장 — 본문이 끝나고 맺는 자리.
+ * 맺음 장 — 본문이 끝나고 오늘의 공부를 맺는 자리.
  *
- * 표지는 새로 받지 않고 카탈로그에 있는 것을 그대로 쓴다(상세 화면도 같은 URL을
- * <Image source={{ uri }}>로 그린다). 어느 책인지는 lib/preview-content가 정한다.
+ * 아직 안 산 책이면 표지와 값을 얹어 구매를 권하고, 산 책이면 그 권유 없이 퀴즈로 가는
+ * 길만 남긴다. '퀴즈 풀러 가기'는 어느 쪽이든 늘 있다 — 퀴즈 → 마치기 → 리포트로 이어지는
+ * 흐름이 전부 이 버튼에서 시작하므로, 조건에 따라 사라지면 흐름이 통째로 끊긴다.
+ *
+ * 표지는 새로 받지 않고 카탈로그에 있는 것을 그대로 쓴다(서점 상세도 같은 URL을 쓴다).
  */
-function BuyBlock({ book, onOpenQuiz }: { book?: CatalogBook; onOpenQuiz: () => void }) {
+function OutroBlock({
+  book,
+  purchased,
+  onOpenQuiz,
+}: {
+  book?: CatalogBook;
+  purchased: boolean;
+  onOpenQuiz: () => void;
+}) {
   const router = useRouter();
 
   return (
@@ -945,28 +963,33 @@ function BuyBlock({ book, onOpenQuiz }: { book?: CatalogBook; onOpenQuiz: () => 
       {/* 눌러야 할 것은 아래 버튼뿐이다. 나머지는 터치를 흘려보내야 카드 위를 탭했을 때
           그대로 페이지가 넘어간다 — 안 그러면 여기서 걸려 아무 일도 일어나지 않는다. */}
       <Text style={styles.buyLead} pointerEvents="none">
-        {`뒷 내용이 더 궁금하시다면\n『${book?.title ?? ''}』 을 구매해보세요.`}
+        {purchased
+          ? '오늘의 이야기는 여기까지입니다.\n읽은 것을 퀴즈로 확인해 보세요.'
+          : `뒷 내용이 더 궁금하시다면\n『${book?.title ?? ''}』 을 구매해보세요.`}
       </Text>
 
-      <View style={styles.buyCoverArea} pointerEvents="none">
-        {book ? (
-          <Image
-            source={{ uri: book.coverImage }}
-            style={styles.buyCover}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
-        ) : null}
-      </View>
+      {!purchased && (
+        <View style={styles.buyCoverArea} pointerEvents="none">
+          {book ? (
+            <Image
+              source={{ uri: book.coverImage }}
+              style={styles.buyCover}
+              resizeMode="contain"
+              accessibilityIgnoresInvertColors
+            />
+          ) : null}
+        </View>
+      )}
 
-      <Pressable
-        style={[styles.cardButton, styles.buyButton]}
-        onPress={() => book && router.push(`/book/${book.id}`)}
-      >
-        <Text style={styles.cardButtonText}>
-          {book?.price ? `￦${book.price.toLocaleString()}` : '구매하러 가기'}
-        </Text>
-      </Pressable>
+      {!purchased && (
+        <Pressable
+          style={[styles.cardButton, styles.buyButton]}
+          onPress={() => book && router.push(`/book/${book.id}`)}>
+          <Text style={styles.cardButtonText}>
+            {book?.price ? `￦${book.price.toLocaleString()}` : '구매하러 가기'}
+          </Text>
+        </Pressable>
+      )}
 
       <Pressable style={[styles.cardButton, styles.buyButton, styles.quizButton]} onPress={onOpenQuiz}>
         <Text style={[styles.cardButtonText, styles.quizButtonText]}>퀴즈 풀러 가기</Text>

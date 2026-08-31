@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
-import { PREVIEW_QUIZZES } from '@/lib/preview-content';
+import type { Quiz } from '@/types';
 
 /**
  * 오늘의 퀴즈 — 미리보기 화면들이 전체 화면 팝업으로 띄워 함께 쓴다.
@@ -18,15 +18,18 @@ import { PREVIEW_QUIZZES } from '@/lib/preview-content';
  * 준다(다시 고를 수 없으니 정답이 무엇인지는 알려 줘야 한다).
  */
 export default function QuizSolver({
+  quizzes,
   onClose,
   onFinish,
 }: {
+  /** 이 항목의 문제들. 책마다 개수가 다르다. */
+  quizzes: Quiz[];
   onClose: () => void;
   /** 마지막 문제까지 풀고 '오늘의 공부 마치기'를 누른 뒤. */
   onFinish: () => void;
 }) {
   // 문제마다 고른 보기 하나 — 아직 안 골랐으면 null이다.
-  const [picked, setPicked] = useState<(number | null)[]>(() => PREVIEW_QUIZZES.map(() => null));
+  const [picked, setPicked] = useState<(number | null)[]>(() => quizzes.map(() => null));
   const [page, setPage] = useState(0);
   // 해설까지 읽느라 내려온 스크롤을 그대로 두면 다음 문제가 중간부터 보인다.
   const bodyRef = useRef<ScrollView>(null);
@@ -35,15 +38,15 @@ export default function QuizSolver({
     bodyRef.current?.scrollTo({ y: 0, animated: false });
   };
 
-  if (PREVIEW_QUIZZES.length === 0) {
+  if (quizzes.length === 0) {
     return <Text style={styles.quizText}>퀴즈를 찾지 못했습니다.</Text>;
   }
 
-  const quiz = PREVIEW_QUIZZES[page];
+  const quiz = quizzes[page];
   const pick = picked[page];
   const answered = pick !== null;
   const correct = pick === quiz.answer;
-  const last = page === PREVIEW_QUIZZES.length - 1;
+  const last = page === quizzes.length - 1;
 
   return (
     <>
@@ -63,7 +66,7 @@ export default function QuizSolver({
         style={styles.quizBody}
         contentContainerStyle={styles.quizPage}
         showsVerticalScrollIndicator={false}>
-        <Text style={styles.quizItemNo}>{`${page + 1} / ${PREVIEW_QUIZZES.length}`}</Text>
+        <Text style={styles.quizItemNo}>{`${page + 1} / ${quizzes.length}`}</Text>
         <Text style={styles.quizQuestion}>{quiz.question}</Text>
 
         <View style={styles.quizChoices}>

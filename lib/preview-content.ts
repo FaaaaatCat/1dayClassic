@@ -2,6 +2,7 @@ import listeningData from '@/data/listening.json';
 import { getCatalogBooks } from '@/lib/catalog';
 import { splitSentences } from '@/lib/narration';
 import type { NarrationStep } from '@/hooks/useCardNarration';
+import type { Quiz } from '@/types';
 
 /**
  * 미리보기 화면들이 함께 읽는 내용.
@@ -35,7 +36,9 @@ export const QUOTE_SOURCE = PREVIEW_LESSON?.epigraphBy ?? '';
 /** 본문 — 문단마다 장 하나씩 담는다(PAGES 참고). */
 export const DESC_PARAGRAPHS = PREVIEW_LESSON?.story ?? [];
 /** 오늘의 퀴즈 — 항목 하나가 문제 여러 개를 든다. */
-export const PREVIEW_QUIZZES = PREVIEW_LESSON?.quizzes ?? [];
+// JSON은 타입 검사를 거치지 않아 answer가 number로 읽힌다. 데이터 층의 다른 곳과 같은
+// 방식으로 여기서 한 번 좁혀 둔다(check:quizzes가 실제 값이 1~4인지 확인한다).
+export const PREVIEW_QUIZZES = (PREVIEW_LESSON?.quizzes ?? []) as Quiz[];
 export const PREVIEW_DATE = PREVIEW_LESSON?.date ?? '';
 
 export const PREVIEW_BOOK = (() => {

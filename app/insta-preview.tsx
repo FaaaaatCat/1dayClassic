@@ -27,6 +27,7 @@ import {
   PREVIEW_BOOK_TITLE,
   PREVIEW_DATE,
   PREVIEW_NO,
+  PREVIEW_QUIZZES,
   QUOTE_SOURCE,
   QUOTE_TEXT,
   type PageKind,
@@ -234,6 +235,7 @@ export default function InstaPreviewScreen() {
             { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
           ]}>
           <QuizSolver
+            quizzes={PREVIEW_QUIZZES}
             onClose={() => setQuizOpen(false)}
             onFinish={() => {
               setQuizOpen(false);
