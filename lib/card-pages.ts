@@ -64,18 +64,20 @@ const MIN_CHARS_PER_CARD = 200;
 /**
  * 카드가 실제로 담는 줄 수. 이보다 길어질 것 같으면 200자를 못 채웠어도 한 문장 앞에서 끊는다.
  *
- * 재생기가 열린 '짧아진 카드'를 기준으로 센다. 음악을 켜면 카드가 그만큼 줄어드는데
- * 장 수는 그대로여야 하기 때문이다 — 긴 카드에 맞춰 나눠 두면 음악을 켠 순간 글이
- * 잘린다. 실측 아홉 권에서는 어느 쪽으로 세든 결과가 같다(가장 긴 장이 열세 줄).
+ * 음악이 있는 책(하루 클래식)만 재생기가 열린 '짧아진 카드'를 기준으로 센다. 음악을
+ * 켜면 카드가 그만큼 줄어드는데 장 수는 그대로여야 하기 때문이다 — 긴 카드에 맞춰
+ * 나눠 두면 음악을 켠 순간 글이 잘린다. 나머지 여덟 권은 카드가 줄어들 일이 없으므로
+ * 온전한 높이로 센다.
  *
  * 문장을 온전히 담다 보면 200자를 채운 뒤 붙는 문장이 길어 카드를 넘길 때가 있다
  * (실측 아홉 권에서 다섯 장, 최대 열아홉 줄). 카드 안에 스크롤을 두지 않으므로 — 이 화면은
  * '한 장에 한 덩이'라는 약속 위에 서 있고, 카드 안에서 또 스크롤하면 넘김과 스크롤이 같은
  * 손짓을 두고 다툰다 — 그 경우에는 앞 문장에서 맺는다. 문장은 여전히 온전하다.
  */
-const MAX_LINES_PER_CARD = Math.floor(
-  (CARD_H - PLAYER_BLOCK - BODY_PADDING_Y * 2) / BODY_LINE_HEIGHT,
-);
+function maxLinesPerCard(hasMusic: boolean): number {
+  const height = hasMusic ? CARD_H - PLAYER_BLOCK : CARD_H;
+  return Math.floor((height - BODY_PADDING_Y * 2) / BODY_LINE_HEIGHT);
+}
 
 /** 한 줄에 들어가는 글자 폭. 전각 한 자를 1로 센다. */
 const LINE_CAPACITY = (CARD_W - BODY_PADDING_X * 2) / (BODY_FONT_SIZE + BODY_LETTER_SPACING);
@@ -126,7 +128,8 @@ function lineCount(text: string): number {
  * 문장 나누기는 lib/narration의 것을 그대로 쓴다 — 낭독이 쓰는 것과 같은 규칙이라
  * "1.5"나 "T. S. 엘리엇"의 마침표에서 잘리지 않는다.
  */
-export function splitParagraphToCards(paragraph: string): string[] {
+export function splitParagraphToCards(paragraph: string, hasMusic = false): string[] {
+  const maxLines = maxLinesPerCard(hasMusic);
   const sentences = splitSentences(paragraph);
   if (sentences.length <= 1) return [paragraph];
 
@@ -142,7 +145,7 @@ export function splitParagraphToCards(paragraph: string): string[] {
   for (const sentence of sentences) {
     const joined = buffer.length === 0 ? sentence : `${buffer.join(' ')} ${sentence}`;
     // 넣으면 카드를 넘칠 문장은 다음 장으로 미룬다(이미 담긴 것이 있을 때만).
-    if (buffer.length > 0 && lineCount(joined) > MAX_LINES_PER_CARD) {
+    if (buffer.length > 0 && lineCount(joined) > maxLines) {
       flush();
       buffer.push(sentence);
     } else {
@@ -248,9 +251,12 @@ export function buildCardPages(
 ): CardPage[] {
   const pages: CardPage[] = [{ kind: 'cover' }];
   if (getLessonEpigraph(bookLesson)) pages.push({ kind: 'quote' });
+  // 이 항목에 음악이 있는가 — 있으면 재생기가 카드 아래를 가져가므로 더 짧게 나눈다.
+  const hasMusic = bookLesson.book === 'classic' && !!bookLesson.lesson.youtubeId;
   for (const paragraph of bookLesson.lesson.story) {
     // 한 장에는 한 문단. 긴 문단은 문장 끝에서 나뉜다.
-    for (const part of splitParagraphToCards(paragraph)) pages.push({ kind: 'desc', paragraph: part });
+    for (const part of splitParagraphToCards(paragraph, hasMusic))
+      pages.push({ kind: 'desc', paragraph: part });
   }
   if (hasQuiz) pages.push({ kind: 'outro' });
   return pages;
