@@ -162,6 +162,9 @@ const NOTE_LINE_H = 26;
 const TOAST_HOLD = 1800;
 const TOAST_FADE = 220;
 
+/** 카드 표지의 표식이 놓이는 자리의 높이. 표식이 무엇이든 이 높이는 변하지 않는다. */
+const SYMBOL_BOX_H = 100;
+
 /** 하단 동그란 버튼의 지름. 자동으로 읽기는 펼쳐져도 이 높이를 지킨다. */
 const ROUND_SIZE = 48;
 /** 자동으로 읽기가 펼쳐졌을 때의 가로 — 아이콘 셋과 구분선이 들어갈 만큼. */
@@ -866,6 +869,11 @@ function SpokenText({
  * 그린다. 클래식의 높은음자리표(𝄞, U+1D11E)처럼 그 밖의 글자는 그 서체에 자모가 없어
  * 두부(□)로 나오므로, 글꼴을 지정하지 않고 기기 기본 글꼴이 대신 그리게 둔다.
  */
+/** 표식이 그림 주소인지. 아니면 글자로 본다. */
+function isSymbolImage(symbol: string): boolean {
+  return symbol.startsWith('http://') || symbol.startsWith('https://');
+}
+
 function isAsciiSymbol(symbol: string): boolean {
   for (const ch of symbol) {
     if (ch.codePointAt(0)! > 0x7f) return false;
@@ -897,9 +905,21 @@ function CardContent({
       <>
         {/* 책의 표식 — 없는 책은 이 자리가 빈다(lib/bookstore의 symbol). */}
         {cover.symbol ? (
-          <Text style={isAsciiSymbol(cover.symbol) ? styles.coverSymbol : styles.coverGlyph}>
-            {cover.symbol}
-          </Text>
+          <View style={styles.coverSymbolBox}>
+            {isSymbolImage(cover.symbol) ? (
+              <Image
+                source={{ uri: cover.symbol }}
+                style={styles.coverSymbolImage}
+                // 책마다 그림 크기가 달라도 잘리지 않고 상자 안에 들어오게 한다.
+                resizeMode="contain"
+                accessibilityIgnoresInvertColors
+              />
+            ) : (
+              <Text style={isAsciiSymbol(cover.symbol) ? styles.coverSymbol : styles.coverGlyph}>
+                {cover.symbol}
+              </Text>
+            )}
+          </View>
         ) : null}
         <View style={styles.labelChip}>
           <Text style={styles.labelText}>{cover.bookName}</Text>
@@ -1424,17 +1444,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 28,
   },
+  /**
+   * 표식이 놓이는 자리 — 높이를 100으로 못박는다.
+   *
+   * 책마다 표식의 크기가 달라도 표제와 칩이 늘 같은 자리에 오게 하려는 것이다. 그림은
+   * contain으로 이 안에 맞춰 들어오고(잘리지 않는다), 글자는 가운데 선다.
+   */
+  coverSymbolBox: {
+    alignSelf: 'stretch',
+    height: SYMBOL_BOX_H,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverSymbolImage: {
+    width: '100%',
+    height: '100%',
+  },
+  /** 로마자 범위 안의 표식(') ) )') — 본문 서체 그대로. */
   coverSymbol: {
     fontFamily: Fonts.serifDisplay,
     fontSize: 44,
-    lineHeight: 52,
     letterSpacing: 6,
     color: Colors.brown50,
   },
-  /** 서체에 없는 글자(음악 기호 등) — 기기 기본 글꼴이 그린다. */
+  /**
+   * 서체에 없는 글자(음악 기호 등) — 기기 기본 글꼴이 그린다.
+   *
+   * lineHeight를 지정하지 않는다. 높은음자리표처럼 위아래로 긴 글자는 글꼴이 정한 줄높이가
+   * 필요한데, 우리가 값을 박으면 그 밖으로 나간 부분이 잘린다(실제로 상하가 잘렸다).
+   */
   coverGlyph: {
-    fontSize: 52,
-    lineHeight: 64,
+    fontSize: 76,
     color: Colors.brown50,
   },
   labelChip: {
