@@ -16,7 +16,6 @@ interface BookCardProps {
   series: string[];
   /** 이 책의 분야들 — 베이지 칩. */
   fields: string[];
-  purchased: boolean;
   /** MVP에서 제공하는 학습 콘텐츠면 구매 리본 대신 MVP 리본을 단다. */
   mvp: boolean;
   selected: boolean;
@@ -54,12 +53,11 @@ export default function BookCard({
   cover,
   series,
   fields,
-  purchased,
   mvp,
   selected,
   onPress,
 }: BookCardProps) {
-  const state = selected ? '현재 선택중' : mvp ? 'MVP' : purchased ? '구매함' : '미구매';
+  const state = selected ? '현재 선택중' : mvp ? 'MVP' : '';
 
   return (
     <Pressable

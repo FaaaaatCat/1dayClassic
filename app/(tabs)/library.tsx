@@ -8,7 +8,6 @@ import { useBookSelection } from '@/context/BookSelectionContext';
 import { useShelf } from '@/context/ShelfContext';
 import { BOOKSTORE_BOOKS, isMvpBook } from '@/lib/bookstore';
 import { getCatalogBooks, type CatalogBook } from '@/lib/catalog';
-import { isCatalogBookPurchased } from '@/lib/purchase';
 import { fieldsOf, seriesOf } from '@/lib/tags';
 
 /** 학습 가능한 책은 표지를 로컬 에셋으로 갖고 있다 — bookstore.tsx와 같은 패턴. */
@@ -18,7 +17,6 @@ interface Entry {
   book: CatalogBook;
   series: string[];
   fields: string[];
-  purchased: boolean;
   mvp: boolean;
 }
 
@@ -51,7 +49,6 @@ export default function LibraryScreen() {
         book,
         series: seriesOf(book.tags, book.title),
         fields: fieldsOf(book.tags),
-        purchased: isCatalogBookPurchased(book.id),
         mvp: book.bookId !== null && isMvpBook(book.bookId),
       }));
     return toRows(entries);
@@ -88,7 +85,6 @@ export default function LibraryScreen() {
                   }
                   series={entry.series}
                   fields={entry.fields}
-                  purchased={entry.purchased}
                   mvp={entry.mvp}
                   selected={entry.book.bookId !== null && entry.book.bookId === selectedBookId}
                   onPress={() => openBook(entry.book)}

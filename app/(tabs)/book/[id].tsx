@@ -182,14 +182,6 @@ export default function BookDetailScreen() {
     removeBookFromShelf();
   };
 
-  /** 실제 결제 연동이 없는 MVP라 구매를 완료 처리하지 않는다 — 왜 안 되는지만 안내한다. */
-  const notifyPurchaseUnavailable = () => {
-    Alert.alert(
-      "아직 준비 중인 기능이에요",
-      "MVP 단계라 구현되지 않은 기능이며, 출판사와의 협의가 필요합니다.",
-    );
-  };
-
   const scrollViewRef = useRef<ScrollView>(null);
   const infoHeightRef = useRef(0);
   // 절 제목 View의 onLayout에서 채워진다 — ScrollView 콘텐츠 기준 y좌표라 scrollTo에 그대로 쓴다.

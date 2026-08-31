@@ -56,7 +56,6 @@ import {
 import { getBookName, type BookLesson } from '@/lib/books';
 import { getCatalogBookByBookId, type CatalogBook } from '@/lib/catalog';
 import { openBookDetail } from '@/lib/preview-nav';
-import { isBookPurchased } from '@/lib/purchase';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
 /**
@@ -197,13 +196,12 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
 
   const bookName = getBookName(bookLesson.book);
   const lesson = bookLesson.lesson;
-  const purchased = isBookPurchased(bookLesson.book);
   const catalogBook = getCatalogBookByBookId(bookLesson.book);
 
   /** 이 항목이 몇 장인지, 무엇을 읽어 줄지 — 항목이 바뀌면 통째로 다시 만든다. */
   const { pages, cover, epigraph, narrationSteps, quizzes } = useMemo(() => {
     const list = lesson.quizzes ?? (lesson.quiz ? [lesson.quiz] : []);
-    const built = buildCardPages(bookLesson, { purchased, hasQuiz: list.length > 0 });
+    const built = buildCardPages(bookLesson, { hasQuiz: list.length > 0 });
     const coverInfo = getCardCover(bookLesson, bookName);
     const epi = getLessonEpigraph(bookLesson);
     return {
@@ -213,7 +211,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
       narrationSteps: buildCardNarration(built, { cover: coverInfo, epigraph: epi }),
       quizzes: list,
     };
-  }, [bookLesson, bookName, lesson, purchased]);
+  }, [bookLesson, bookName, lesson]);
 
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -487,7 +485,6 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             cover={cover}
             epigraph={epigraph}
             catalogBook={catalogBook}
-            purchased={purchased}
             onOpenQuiz={() => setQuizOpen(true)}
           />
         ))}
@@ -679,7 +676,6 @@ function DeckCard({
   cover,
   epigraph,
   catalogBook,
-  purchased,
   onOpenQuiz,
 }: {
   index: number;
@@ -690,7 +686,6 @@ function DeckCard({
   cover: CardCover;
   epigraph?: CardEpigraph;
   catalogBook?: CatalogBook;
-  purchased: boolean;
   flipX: SharedValue<number>;
   /** 입장할 때 한 번 도는 값 — 첫 장 본문이 떠오르는 연출에만 쓴다. */
   enter: SharedValue<number>;
@@ -788,7 +783,6 @@ function DeckCard({
               cover={cover}
               epigraph={epigraph}
               catalogBook={catalogBook}
-              purchased={purchased}
               onOpenQuiz={onOpenQuiz}
             />
           </Animated.View>
@@ -872,7 +866,6 @@ function CardContent({
   cover,
   epigraph,
   catalogBook,
-  purchased,
   onOpenQuiz,
 }: {
   kind: CardPageKind;
@@ -882,7 +875,6 @@ function CardContent({
   cover: CardCover;
   epigraph?: CardEpigraph;
   catalogBook?: CatalogBook;
-  purchased: boolean;
   /** 구매 안내 장의 '퀴즈 풀러 가기' — 퀴즈를 전체 화면으로 연다. */
   onOpenQuiz: () => void;
 }) {
@@ -919,7 +911,7 @@ function CardContent({
   }
 
   if (kind === 'outro') {
-    return <OutroBlock book={catalogBook} purchased={purchased} onOpenQuiz={onOpenQuiz} />;
+    return <OutroBlock onOpenQuiz={onOpenQuiz} />;
   }
 
   return null;
@@ -941,55 +933,17 @@ function CardContent({
 /**
  * 맺음 장 — 본문이 끝나고 오늘의 공부를 맺는 자리.
  *
- * 아직 안 산 책이면 표지와 값을 얹어 구매를 권하고, 산 책이면 그 권유 없이 퀴즈로 가는
- * 길만 남긴다. '퀴즈 풀러 가기'는 어느 쪽이든 늘 있다 — 퀴즈 → 마치기 → 리포트로 이어지는
- * 흐름이 전부 이 버튼에서 시작하므로, 조건에 따라 사라지면 흐름이 통째로 끊긴다.
- *
- * 표지는 새로 받지 않고 카탈로그에 있는 것을 그대로 쓴다(서점 상세도 같은 URL을 쓴다).
+ * 오늘의 공부를 맺는 흐름(퀴즈 → 마치기 → 리포트)이 전부 이 버튼에서 시작한다. 조건에
+ * 따라 이 장이 사라지면 흐름이 통째로 끊기므로, 퀴즈가 있는 한 늘 놓인다.
  */
-function OutroBlock({
-  book,
-  purchased,
-  onOpenQuiz,
-}: {
-  book?: CatalogBook;
-  purchased: boolean;
-  onOpenQuiz: () => void;
-}) {
-  const router = useRouter();
-
+function OutroBlock({ onOpenQuiz }: { onOpenQuiz: () => void }) {
   return (
     <View style={styles.buyBlock} pointerEvents="box-none">
       {/* 눌러야 할 것은 아래 버튼뿐이다. 나머지는 터치를 흘려보내야 카드 위를 탭했을 때
           그대로 페이지가 넘어간다 — 안 그러면 여기서 걸려 아무 일도 일어나지 않는다. */}
       <Text style={styles.buyLead} pointerEvents="none">
-        {purchased
-          ? '오늘의 이야기는 여기까지입니다.\n읽은 것을 퀴즈로 확인해 보세요.'
-          : `뒷 내용이 더 궁금하시다면\n『${book?.title ?? ''}』 을 구매해보세요.`}
+        {'오늘의 이야기는 여기까지입니다.\n읽은 것을 퀴즈로 확인해 보세요.'}
       </Text>
-
-      {!purchased && (
-        <View style={styles.buyCoverArea} pointerEvents="none">
-          {book ? (
-            <Image
-              source={{ uri: book.coverImage }}
-              style={styles.buyCover}
-              resizeMode="contain"
-              accessibilityIgnoresInvertColors
-            />
-          ) : null}
-        </View>
-      )}
-
-      {!purchased && (
-        <Pressable
-          style={[styles.cardButton, styles.buyButton]}
-          onPress={() => book && router.push(`/book/${book.id}`)}>
-          <Text style={styles.cardButtonText}>
-            {book?.price ? `￦${book.price.toLocaleString()}` : '구매하러 가기'}
-          </Text>
-        </Pressable>
-      )}
 
       <Pressable style={[styles.cardButton, styles.buyButton, styles.quizButton]} onPress={onOpenQuiz}>
         <Text style={[styles.cardButtonText, styles.quizButtonText]}>퀴즈 풀러 가기</Text>

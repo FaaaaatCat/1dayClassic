@@ -73,23 +73,20 @@ export function getCardCover(bookLesson: BookLesson, bookName: string): CardCove
 /**
  * 장 목록.
  *
- * 표지 → (인용) → 본문 문단마다 한 장 → 맺음. 인용문이 없는 책은 인용 장이 빠진다.
+ * 표지 → (인용) → 본문 문단마다 한 장 → (맺음). 인용문이 없는 책은 인용 장이 빠진다.
  *
- * 맺음 장은 본문을 다 읽고 나서 갈 곳을 주는 자리다 — 아직 안 산 책이면 구매 안내가 함께
- * 붙고, 산 책이면 퀴즈로 가는 길만 남는다. 이 장을 조건부로 빼면 안 된다. 오늘의 공부를
- * 맺는 흐름(퀴즈 → 마치기 → 리포트)이 전부 여기서 시작하기 때문이다. 예전에 구매한 책에서
- * 이 장을 뺐다가 그 흐름이 통째로 사라진 적이 있다.
- *
- * 살 것도 풀 것도 없을 때만(산 책인데 퀴즈까지 없을 때) 자리가 빈다.
+ * 맺음 장은 본문을 다 읽고 나서 갈 곳을 주는 자리다. 오늘의 공부를 맺는 흐름
+ * (퀴즈 → 마치기 → 리포트)이 전부 여기서 시작하므로, 퀴즈가 있는 한 이 장을 빼면 안 된다.
+ * 예전에 다른 조건으로 이 장을 뺐다가 그 흐름이 통째로 사라진 적이 있다.
  */
 export function buildCardPages(
   bookLesson: BookLesson,
-  { purchased, hasQuiz }: { purchased: boolean; hasQuiz: boolean },
+  { hasQuiz }: { hasQuiz: boolean },
 ): CardPage[] {
   const pages: CardPage[] = [{ kind: 'cover' }];
   if (getLessonEpigraph(bookLesson)) pages.push({ kind: 'quote' });
   for (const paragraph of bookLesson.lesson.story) pages.push({ kind: 'desc', paragraph });
-  if (!purchased || hasQuiz) pages.push({ kind: 'outro' });
+  if (hasQuiz) pages.push({ kind: 'outro' });
   return pages;
 }
 
@@ -110,7 +107,7 @@ function stepsFor(page: number, paragraph: string): NarrationStep[] {
  * 자동으로 읽기가 읽어 줄 대본.
  *
  * 표지는 책 이름과 표제를 읽되 하이라이트는 걸지 않는다 — 그린 글과 읽는 말이 꼭 같지
- * 않기 때문이다(한자의 표제는 글자, 라틴어의 표제는 원문이다). 구매 안내 장은 읽지 않고,
+ * 않기 때문이다(한자의 표제는 글자, 라틴어의 표제는 원문이다). 맺음 장은 읽지 않고,
  * 본문이 끝나면 그대로 엔딩으로 간다.
  */
 export function buildCardNarration(

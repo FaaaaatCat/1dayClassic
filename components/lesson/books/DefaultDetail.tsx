@@ -8,7 +8,6 @@ import QuizBlock from '@/components/lesson/blocks/QuizBlock';
 import QuoteBlock from '@/components/lesson/blocks/QuoteBlock';
 import LessonHeading from '@/components/lesson/LessonHeading';
 import { getBookName, type BookLesson } from '@/lib/books';
-import { isBookPurchased } from '@/lib/purchase';
 import { getLessonQuiz } from '@/lib/quiz';
 
 interface Props {
@@ -42,7 +41,6 @@ export default function DefaultDetail({ bookLesson }: Props) {
   const lesson = bookLesson.lesson;
   const bookName = getBookName(bookLesson.book);
   const quiz = getLessonQuiz(lesson);
-  const purchased = isBookPurchased(bookLesson.book);
 
   return (
     <>
@@ -61,7 +59,7 @@ export default function DefaultDetail({ bookLesson }: Props) {
         <QuoteBlock text={bookLesson.lesson.quote} by={bookLesson.lesson.quoteBy} />
       )}
 
-      <DescBlock paragraphs={lesson.story} purchased={purchased} />
+      <DescBlock paragraphs={lesson.story} />
       {quiz && <QuizBlock quiz={quiz} />}
       <NoteBlock />
     </>

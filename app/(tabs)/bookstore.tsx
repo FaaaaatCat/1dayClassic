@@ -25,7 +25,6 @@ import { Colors, Fonts, tracking } from "@/constants/theme";
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { BOOKSTORE_BOOKS, isMvpBook } from "@/lib/bookstore";
 import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
-import { isCatalogBookPurchased } from "@/lib/purchase";
 import { FIELD_NAMES, fieldsOf, SERIES_NAMES, seriesOf } from "@/lib/tags";
 
 /** 학습 가능한 책은 표지를 로컬 에셋으로 갖고 있다 — 원격 URL보다 선명하고 오프라인에서도 뜬다. */
@@ -53,7 +52,6 @@ interface Entry {
   book: CatalogBook;
   series: string[];
   fields: string[];
-  purchased: boolean;
   /** 학습 가능한 책 중 지금 MVP가 제공하는 책인지(liberal 제외). */
   mvp: boolean;
   /** 제목+저자를 공백 없이 소문자로 붙여 둔 검색용 문자열. */
@@ -111,7 +109,7 @@ export default function BookstoreScreen() {
   };
 
   /**
-   * 책마다 시리즈·분야·구매 여부를 미리 풀어 둔다 — 필터를 누를 때마다 277권치 태그를
+   * 책마다 시리즈·분야를 미리 풀어 둔다 — 필터를 누를 때마다 277권치 태그를
    * 다시 훑지 않기 위해서다. 선택 여부는 자주 바뀌므로 여기 넣지 않는다.
    */
   const tagged = useMemo<Entry[]>(
@@ -120,7 +118,6 @@ export default function BookstoreScreen() {
         book,
         series: seriesOf(book.tags, book.title),
         fields: fieldsOf(book.tags),
-        purchased: isCatalogBookPurchased(book.id),
         mvp: book.bookId !== null && isMvpBook(book.bookId),
         searchKey: normalize(`${book.title}${book.author}`),
       })),
@@ -138,12 +135,12 @@ export default function BookstoreScreen() {
       .filter((entry) => field === null || entry.fields.includes(field))
       .filter((entry) => needle === "" || entry.searchKey.includes(needle));
 
-    // 고른 책이 맨 앞, 그다음이 구매한 책. sort는 안정 정렬이라 같은 등급 안에서는
+    // 고른 책이 맨 앞. sort는 안정 정렬이라 같은 등급 안에서는
     // 카탈로그 순서(발행일 최신순)가 그대로 유지된다.
     const rank = (entry: Entry) => {
       if (entry.book.bookId !== null && entry.book.bookId === selectedBookId)
         return 0;
-      return entry.purchased ? 1 : 2;
+      return 1;
     };
     return toRows([...matched].sort((a, b) => rank(a) - rank(b)));
   }, [tagged, series, field, query, selectedBookId]);
@@ -405,7 +402,6 @@ export default function BookstoreScreen() {
                   }
                   series={entry.series}
                   fields={entry.fields}
-                  purchased={entry.purchased}
                   mvp={entry.mvp}
                   selected={
                     entry.book.bookId !== null &&
