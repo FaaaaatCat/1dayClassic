@@ -459,11 +459,10 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
    * - 자동으로 읽기를 켜 둔 동안: 낭독이 장을 끌고 간다. 둘이 함께 넘기면 읽던
    *   자리를 낭독이 도로 끌어온다.
    * - 가운데를 탭해 세워 둔 뒤: 오래 보고 싶은 장이라는 뜻이다.
-   * - 마지막 장: 갈 곳이 없다.
    * - 팝업(퀴즈·노트·리포트) 위: 뒤에서 장이 넘어가면 닫았을 때 딴 장이 나온다.
    */
   const autoStopped =
-    autoPaused || readerOpen || last || noteOpen || quizOpen || reportOpen;
+    autoPaused || readerOpen || noteOpen || quizOpen || reportOpen;
 
   return (
     <View style={styles.screen}>
@@ -476,7 +475,6 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
         total={pages.length}
         duration={durationFor(pages[barPage], epigraph)}
         stopped={autoStopped}
-        filled={last}
         onDone={() => goBy(1)}
       />
 
@@ -1314,7 +1312,8 @@ function DescBookmark({
 
 /**
  * 위 진행 바 — 지나온 칸은 채워 두고, 지금 칸만 시간에 맞춰 차오른다. 다 차면 onDone으로
- * 다음 장을 부른다. 즉, 저절로 넘어가는 시간을 세는 것이 이 바다(따로 도는 타이머가
+ * 다음 장을 부른다. 마지막 칸도 똑같이 차오른다 — 도착하자마자 채워 버리면 직전 칸과 함께
+ * 두 칸이 한꺼번에 하얘져 두 장을 건너뛴 것처럼 보인다. 다 차도 갈 곳이 없으니 그대로 멈춘다. 즉, 저절로 넘어가는 시간을 세는 것이 이 바다(따로 도는 타이머가
  * 없어야 화면과 시간이 어긋나지 않는다).
  *
  * 차오르는 폭은 퍼센트가 아니라 픽셀로 준다 — 칸이 flex로 나뉘어 있어 폭을 미리 알 수
@@ -1328,7 +1327,6 @@ function PageBars({
   total,
   duration,
   stopped,
-  filled,
   onDone,
 }: {
   page: number;
@@ -1336,8 +1334,7 @@ function PageBars({
   duration: number;
   /** 시간이 흐르지 않는다(듣는 중·손으로 세워 둠·팝업 위). 차오르던 자리에 세운다. */
   stopped: boolean;
-  /** 갈 곳이 없는 마지막 장 — 비워 두면 고장으로 보여서 채운 채로 둔다. */
-  filled: boolean;
+  /** 다 차면 부른다. 마지막 장에서는 갈 곳이 없어 아무 일도 일어나지 않는다. */
   onDone: () => void;
 }) {
   const [barWidth, setBarWidth] = useState(0);
@@ -1356,11 +1353,6 @@ function PageBars({
       elapsed.current = 0;
     }
     cancelAnimation(progress);
-
-    if (filled) {
-      progress.value = 1;
-      return;
-    }
 
     // 차오른 만큼에서 다시 시작한다 — 세웠다 풀면 그 자리에서 이어 가고, 새 장이면 0이다.
     const done = Math.min(elapsed.current / duration, 1);
@@ -1381,7 +1373,7 @@ function PageBars({
       clearTimeout(timer);
       elapsed.current += Date.now() - startedAt;
     };
-  }, [page, duration, stopped, filled, progress]);
+  }, [page, duration, stopped, progress]);
 
   const fillStyle = useAnimatedStyle(() => ({ width: progress.value * barWidth }));
 
