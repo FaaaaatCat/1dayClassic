@@ -11,7 +11,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
-import { Colors, Fonts, tracking } from '@/constants/theme';
+import { Corner, Ink, Surface, Type, trackBody } from '@/constants/theme';
 
 /**
  * 며칠째 이어 왔는지 — 아직 기록하는 곳이 없어 넣어 둔 값이다.
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     paddingHorizontal: 24,
-    backgroundColor: Colors.brown100,
+    backgroundColor: Ink.primary,
   },
   /** 숫자 묶음은 화면 한가운데. 버튼은 아래에 남는다. */
   center: {
@@ -143,36 +143,36 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   headline: {
-    fontFamily: Fonts.serifDisplay,
+    fontFamily: Type.serifDisplay,
     fontSize: 30,
-    color: Colors.white,
+    color: Surface.canvas,
   },
   /** 큰 숫자에는 흰 빛을 흘려 둔다 — 검은 바탕에서 이것만 떠 보여야 한다. */
   count: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 96,
     lineHeight: 112,
-    color: Colors.white,
+    color: Surface.canvas,
     textShadowColor: 'rgba(255, 255, 255, 0.45)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 24,
   },
   countUnit: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 36,
-    color: Colors.white,
+    color: Surface.canvas,
   },
   chip: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 18,
-    backgroundColor: Colors.brown90,
+    borderRadius: Corner.pill,
+    backgroundColor: Ink.strong,
   },
   chipText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.white,
+    letterSpacing: trackBody(14),
+    color: Surface.canvas,
   },
   /** 날짜와 책 제목 — 숫자보다 뒤로 물러나 앉는다. */
   meta: {
@@ -181,26 +181,26 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   date: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown50,
+    letterSpacing: trackBody(14),
+    color: Ink.body,
   },
   book: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown10,
+    letterSpacing: trackBody(16),
+    color: Surface.plate,
   },
   button: {
     height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.white,
+    borderRadius: Corner.pill,
+    backgroundColor: Surface.canvas,
   },
   buttonText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
+    letterSpacing: trackBody(16),
+    color: Ink.primary,
   },
 });

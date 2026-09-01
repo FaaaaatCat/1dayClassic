@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState, StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
-import { Colors, Fonts, tracking } from '@/constants/theme';
+import { Corner, Feedback, Ink, Surface, Type, trackBody } from '@/constants/theme';
 import {
   getPermissionStatus,
   hasAllAlarmPermissions,
@@ -125,28 +125,28 @@ export default function AlarmPermissionCard() {
 const styles = StyleSheet.create({
   card: {
     marginTop: 16,
-    backgroundColor: Colors.white,
-    borderRadius: 20,
+    backgroundColor: Surface.canvas,
+    borderRadius: Corner.card,
     padding: 24,
   },
   title: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
+    letterSpacing: trackBody(16),
+    color: Ink.primary,
   },
   notice: {
     marginTop: 12,
-    borderRadius: 10,
+    borderRadius: Corner.pill,
     padding: 12,
-    backgroundColor: Colors.red10,
+    backgroundColor: Feedback.wrongSurface,
   },
   noticeText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 13,
     lineHeight: 20,
-    letterSpacing: tracking(13),
-    color: Colors.red100,
+    letterSpacing: trackBody(13),
+    color: Feedback.wrong,
   },
   rows: {
     marginTop: 16,
@@ -155,8 +155,8 @@ const styles = StyleSheet.create({
   row: {
     alignItems: 'stretch',
     borderWidth: 1,
-    borderColor: Colors.brown10,
-    borderRadius: 10,
+    borderColor: Surface.plate,
+    borderRadius: Corner.pill,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
@@ -170,34 +170,34 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   rowLabel: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 15,
-    letterSpacing: tracking(15),
-    color: Colors.brown100,
+    letterSpacing: trackBody(15),
+    color: Ink.primary,
   },
   rowHint: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 12,
     lineHeight: 18,
-    letterSpacing: tracking(12),
-    color: Colors.brown50,
+    letterSpacing: trackBody(12),
+    color: Ink.body,
   },
   toggle: {
     width: 44,
     height: 24,
-    borderRadius: 12,
+    borderRadius: Corner.pill,
     padding: 3,
-    backgroundColor: Colors.beige50,
+    backgroundColor: Surface.plate,
     justifyContent: 'center',
   },
   toggleOn: {
-    backgroundColor: Colors.beige100,
+    backgroundColor: Ink.strong,
   },
   knob: {
     width: 18,
     height: 18,
-    borderRadius: 9,
-    backgroundColor: Colors.white,
+    borderRadius: Corner.pill,
+    backgroundColor: Surface.canvas,
   },
   knobOn: {
     transform: [{ translateX: 20 }],

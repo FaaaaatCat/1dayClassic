@@ -6,7 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import AlarmPermissionCard from '@/components/AlarmPermissionCard';
 import ScaleButton from '@/components/ScaleButton';
 import SettingRow from '@/components/SettingRow';
-import { Colors, Fonts, Palette, Radius, Shadow, Spacing, Surface, tracking, Typography } from '@/constants/theme';
+import { Corner, Elevation, Feedback, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 import { useBgm } from '@/context/BgmContext';
 import { previewAlarmScreens } from '@/lib/alarmBook';
 import { BGM_OPTIONS } from '@/lib/bgm';
@@ -53,7 +53,7 @@ export default function SettingsScreen() {
                   {selected && (
                     <Ionicons
                       name="checkmark"
-                      color={Colors.green100}
+                      color={Feedback.right}
                       size={18}
                     />
                   )}
@@ -156,60 +156,65 @@ const styles = StyleSheet.create({
     backgroundColor: Surface.canvas,
   },
   content: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.xxxl,
+    paddingHorizontal: Space[24],
+    paddingTop: Space[8],
+    paddingBottom: Space[48],
   },
   card: {
-    marginTop: Spacing.md,
-    backgroundColor: Palette.card,
-    borderRadius: Radius.card,
-    padding: Spacing.xl,
-    ...Shadow.card,
+    marginTop: Space[12],
+    backgroundColor: Surface.card,
+    borderRadius: Corner.card,
+    padding: Space[24],
+    ...Elevation.whisper,
   },
   appName: {
-    ...Typography.title,
+    ...TypeScale.headingSm,
+    fontFamily: Type.readingBold,
+    color: Ink.primary,
   },
   slogan: {
-    ...Typography.quote,
-    marginTop: Spacing.sm,
+    ...TypeScale.subheading,
+    fontFamily: Type.readingRegular,
+    color: Ink.body,
+    marginTop: Space[8],
   },
   intro: {
-    ...Typography.body,
-    color: Palette.subText,
-    marginTop: Spacing.lg,
+    ...TypeScale.body,
+    fontFamily: Type.ui,
+    color: Ink.body,
+    marginTop: Space[16],
   },
 
   // 낭독 배경음악 고르기
   sectionTitle: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
+    letterSpacing: trackBody(16),
+    color: Ink.primary,
   },
   sectionHint: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 13,
     lineHeight: 20,
-    letterSpacing: tracking(13),
-    color: Colors.brown50,
-    marginTop: Spacing.xs,
+    letterSpacing: trackBody(13),
+    color: Ink.body,
+    marginTop: Space[4],
   },
   bgmList: {
-    marginTop: Spacing.lg,
-    gap: Spacing.sm,
+    marginTop: Space[16],
+    gap: Space[8],
   },
   bgmRow: {
     alignItems: 'stretch',
     borderWidth: 1,
-    borderColor: Colors.brown10,
-    borderRadius: 10,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    borderColor: Surface.plate,
+    borderRadius: Corner.small,
+    paddingHorizontal: Space[16],
+    paddingVertical: Space[12],
   },
   bgmRowSelected: {
-    borderColor: Colors.green100,
-    backgroundColor: Colors.green10,
+    borderColor: Feedback.right,
+    backgroundColor: Feedback.rightSurface,
   },
   bgmRowInner: {
     flexDirection: 'row',
@@ -217,27 +222,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   bgmLabel: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 15,
-    letterSpacing: tracking(15),
-    color: Colors.brown100,
+    letterSpacing: trackBody(15),
+    color: Ink.primary,
   },
   bgmLabelSelected: {
-    fontFamily: Fonts.semiBold,
-    color: Colors.green100,
+    fontFamily: Type.uiMedium,
+    color: Feedback.right,
   },
 
   // 알람 화면 미리보기
   testButton: {
-    marginTop: Spacing.lg,
+    marginTop: Space[16],
     height: 44,
-    borderRadius: 10,
-    backgroundColor: Colors.beige100,
+    borderRadius: Corner.pill,
+    backgroundColor: Ink.strong,
   },
   testButtonLabel: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 15,
-    letterSpacing: tracking(15),
-    color: Colors.white,
+    letterSpacing: trackBody(15),
+    color: Surface.canvas,
   },
 });

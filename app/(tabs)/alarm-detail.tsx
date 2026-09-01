@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import WheelPicker from '@/components/WheelPicker';
-import { Colors, Fonts, tracking } from '@/constants/theme';
+import { Corner, Ink, Surface, Type, trackBody } from '@/constants/theme';
 import { type AlarmSound, useAlarm } from '@/context/AlarmContext';
 import { useToast } from '@/context/ToastContext';
 import { getNextAlarmMessage } from '@/lib/alarmTime';
@@ -130,7 +130,7 @@ export default function AlarmDetailScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   header: {
     flexDirection: 'row',
@@ -138,23 +138,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   headerButtonText: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown50,
+    letterSpacing: trackBody(16),
+    color: Ink.body,
   },
   headerSaveText: {
-    fontFamily: Fonts.semiBold,
-    color: Colors.beige100,
+    fontFamily: Type.uiMedium,
+    color: Ink.strong,
   },
   headerTitle: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
+    letterSpacing: trackBody(16),
+    color: Ink.primary,
   },
   body: {
     paddingHorizontal: 20,
@@ -168,18 +168,18 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   pickerColon: {
-    fontFamily: Fonts.serifDisplay,
+    fontFamily: Type.serifDisplay,
     fontSize: 26,
-    color: Colors.brown100,
+    color: Ink.primary,
   },
   section: {
     gap: 12,
   },
   sectionTitle: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown50,
+    letterSpacing: trackBody(14),
+    color: Ink.body,
   },
   daysRow: {
     flexDirection: 'row',
@@ -188,24 +188,24 @@ const styles = StyleSheet.create({
   dayCircle: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Corner.card,
     borderWidth: 1,
-    borderColor: Colors.brown10,
+    borderColor: Surface.plate,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayCircleActive: {
-    backgroundColor: Colors.beige100,
-    borderColor: Colors.beige100,
+    backgroundColor: Ink.strong,
+    borderColor: Ink.strong,
   },
   dayCircleText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown100,
+    letterSpacing: trackBody(14),
+    color: Ink.primary,
   },
   dayCircleTextActive: {
-    color: Colors.white,
+    color: Surface.canvas,
   },
   soundRow: {
     flexDirection: 'row',
@@ -216,21 +216,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 44,
-    borderRadius: 8,
+    borderRadius: Corner.small,
     borderWidth: 1,
-    borderColor: Colors.brown10,
+    borderColor: Surface.plate,
   },
   soundOptionActive: {
-    backgroundColor: Colors.beige100,
-    borderColor: Colors.beige100,
+    backgroundColor: Ink.strong,
+    borderColor: Ink.strong,
   },
   soundOptionText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown100,
+    letterSpacing: trackBody(14),
+    color: Ink.primary,
   },
   soundOptionTextActive: {
-    color: Colors.white,
+    color: Surface.canvas,
   },
 });

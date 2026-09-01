@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Fonts, tracking } from '@/constants/theme';
+import { Ink, Surface, Type, trackBody } from '@/constants/theme';
 
 interface TabConfig {
   name: string;
@@ -63,7 +63,8 @@ export default function AppTabBar({ state, navigation }: TabBarProps) {
           if (routeIndex === -1) return null;
           const route = state.routes[routeIndex];
           const focused = state.index === routeIndex;
-          const tint = focused ? Colors.beige100 : Colors.brown100;
+          // 고른 탭이 검정, 나머지는 물러난 잉크(위 buttonUnfocused가 더 흐리게 한다).
+          const tint = focused ? Ink.primary : Ink.body;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -102,12 +103,12 @@ export default function AppTabBar({ state, navigation }: TabBarProps) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   bar: {
     height: BAR_HEIGHT,
     flexDirection: 'row',
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   button: {
     flex: 1,
@@ -118,16 +119,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   buttonFocused: {
-    borderTopColor: Colors.beige100,
+    borderTopColor: Ink.primary,
   },
   buttonUnfocused: {
-    borderTopColor: Colors.brown10,
+    borderTopColor: Surface.plate,
     opacity: 0.3,
   },
   label: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 12,
-    letterSpacing: tracking(12),
+    letterSpacing: trackBody(12),
     textAlign: 'center',
   },
 });

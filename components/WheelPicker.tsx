@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 
-import { Colors, Fonts } from '@/constants/theme';
+import { Ink, Surface, Type } from '@/constants/theme';
 
 const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     height: ITEM_HEIGHT,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: Colors.brown10,
+    borderColor: Surface.plate,
   },
   item: {
     height: ITEM_HEIGHT,
@@ -88,13 +88,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   itemText: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 18,
-    color: Colors.brown50,
+    color: Ink.body,
   },
   itemTextSelected: {
-    fontFamily: Fonts.serifDisplay,
+    fontFamily: Type.serifDisplay,
     fontSize: 26,
-    color: Colors.brown100,
+    color: Ink.primary,
   },
 });

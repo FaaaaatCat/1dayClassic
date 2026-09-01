@@ -1,6 +1,6 @@
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
-import { Palette, Spacing, Typography } from '@/constants/theme';
+import { Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
 
 interface SettingRowProps {
   label: string;
@@ -25,10 +25,10 @@ export default function SettingRow({
         <Switch
           value={switchValue}
           onValueChange={onSwitchChange}
-          trackColor={{ true: Palette.accent, false: Palette.divider }}
-          thumbColor={Palette.card}
+          trackColor={{ true: Ink.strong, false: Surface.plate }}
+          thumbColor={Surface.card}
           // react-native-web은 thumbColor 대신 activeThumbColor를 읽는다
-          {...({ activeThumbColor: Palette.card } as object)}
+          {...({ activeThumbColor: Surface.card } as object)}
         />
       ) : (
         <Text style={styles.value}>{value}</Text>
@@ -42,13 +42,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
+    paddingVertical: Space[16],
+    paddingHorizontal: Space[16],
   },
   label: {
-    ...Typography.body,
+    ...TypeScale.body,
+    fontFamily: Type.ui,
+    color: Ink.primary,
   },
   value: {
-    ...Typography.caption,
+    ...TypeScale.bodySm,
+    fontFamily: Type.ui,
+    color: Ink.body,
   },
 });

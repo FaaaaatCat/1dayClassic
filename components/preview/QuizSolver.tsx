@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
-import { Colors, Fonts, tracking } from '@/constants/theme';
+import { Corner, Feedback, Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 import type { Quiz } from '@/types';
 
 /**
@@ -53,11 +53,11 @@ export default function QuizSolver({
       {/* 제목과 닫기 버튼을 한 줄에 세운다. */}
       <View style={styles.quizHeader}>
         <View style={styles.heading}>
-          <Ionicons name="pencil" color={Colors.brown100} size={14} />
+          <Ionicons name="pencil" color={Ink.primary} size={14} />
           <Text style={styles.headingText}>{quiz.title}</Text>
         </View>
         <ScaleButton accessibilityLabel="퀴즈 닫기" style={styles.closeHit} onPress={onClose}>
-          <Ionicons name="close" color={Colors.brown50} size={24} />
+          <Ionicons name="close" color={Ink.body} size={24} />
         </ScaleButton>
       </View>
 
@@ -134,17 +134,17 @@ export const quizModalStyles = StyleSheet.create({
   screen: {
     flex: 1,
     paddingHorizontal: 24,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
 });
 
 const styles = StyleSheet.create({
   quizText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 16,
     lineHeight: 26,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
+    letterSpacing: trackBody(16),
+    color: Ink.primary,
   },
   /** 제목과 닫기 버튼이 나란히 서는 줄 — 높이는 닫기 버튼에 맞춘다. */
   quizHeader: {
@@ -159,15 +159,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   headingText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown100,
+    letterSpacing: trackBody(14),
+    color: Ink.primary,
   },
   closeHit: {
     width: 41,
     height: 41,
-    borderRadius: 20.5,
+    borderRadius: Corner.pill,
   },
   /** 문제 한 장이 들어갈 자리 — 남는 높이를 다 차지하고 아래에 버튼이 붙는다. */
   quizBody: {
@@ -179,17 +179,17 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   quizItemNo: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 12,
-    letterSpacing: tracking(12),
-    color: Colors.beige100,
+    letterSpacing: trackBody(12),
+    color: Ink.strong,
   },
   quizQuestion: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 15,
     lineHeight: 24,
-    letterSpacing: tracking(15),
-    color: Colors.brown100,
+    letterSpacing: trackBody(15),
+    color: Ink.primary,
   },
   quizChoices: {
     gap: 10,
@@ -198,24 +198,24 @@ const styles = StyleSheet.create({
   quizChoiceBox: {
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 6,
+    borderRadius: Corner.small,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.brown10,
-    backgroundColor: Colors.white,
+    borderColor: Surface.plate,
+    backgroundColor: Surface.canvas,
   },
   quizChoiceRight: {
-    borderColor: Colors.green100,
-    backgroundColor: Colors.green10,
+    borderColor: Feedback.right,
+    backgroundColor: Feedback.rightSurface,
   },
   quizChoiceWrong: {
-    borderColor: Colors.red100,
-    backgroundColor: Colors.red10,
+    borderColor: Feedback.wrong,
+    backgroundColor: Feedback.wrongSurface,
   },
   quizChoiceNoRight: {
-    color: Colors.green100,
+    color: Feedback.right,
   },
   quizChoiceNoWrong: {
-    color: Colors.red100,
+    color: Feedback.wrong,
   },
   /** 번호와 보기를 한 줄에 — 보기가 두 줄로 넘어가도 번호는 첫 줄에 붙어 있게 한다. */
   quizChoice: {
@@ -224,64 +224,63 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quizChoiceNo: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 13,
     lineHeight: 21,
-    color: Colors.beige100,
+    color: Ink.strong,
   },
   quizChoiceText: {
     flex: 1,
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 13,
     lineHeight: 21,
-    letterSpacing: tracking(13),
-    color: Colors.brown100,
+    letterSpacing: trackBody(13),
+    color: Ink.primary,
   },
   /** 해설도 보기처럼 박스로 감싼다 — 흰 보기와 구분되게 바탕은 종이색 그대로 둔다. */
   quizExplanationBox: {
     gap: 8,
     padding: 16,
-    borderRadius: 6,
+    borderRadius: Corner.small,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.brown10,
-    backgroundColor: Colors.beige10,
+    borderColor: Surface.plate,
+    backgroundColor: Surface.card,
   },
   /** 맞고 틀림을 알리는 한 줄 — 보기에 켠 초록·붉은색과 같은 색을 쓴다. */
   quizVerdict: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 14,
     lineHeight: 22,
-    letterSpacing: tracking(14),
+    letterSpacing: trackBody(14),
   },
   quizVerdictRight: {
-    color: Colors.green100,
+    color: Feedback.right,
   },
   quizVerdictWrong: {
-    color: Colors.red100,
+    color: Feedback.wrong,
   },
   quizExplanation: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 13,
     lineHeight: 22,
-    letterSpacing: tracking(13),
-    color: Colors.brown50,
+    letterSpacing: trackBody(13),
+    color: Ink.body,
   },
   finishButton: {
     height: 52,
-    borderRadius: 26,
-    backgroundColor: Colors.yellow,
+    borderRadius: Corner.pill,
+    backgroundColor: Ink.primary,
   },
   finishText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
+    fontFamily: Type.uiMedium,
+    ...TypeScale.subheading,
+    color: Ink.onDark,
   },
   /** 보기를 고르기 전의 '다음' — 눌리지 않는다는 게 색으로 보여야 한다. */
   quizNextOff: {
-    backgroundColor: Colors.brown10,
+    backgroundColor: Surface.plate,
   },
   quizNextOffText: {
-    color: Colors.brown50,
+    color: Ink.body,
   },
 });

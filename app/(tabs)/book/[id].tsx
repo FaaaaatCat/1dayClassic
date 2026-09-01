@@ -823,7 +823,7 @@ const libraryStyles = StyleSheet.create({
     shadowRadius: 4,
   },
   infoColumn: { flex: 1, gap: 12, paddingTop: 20 },
-  title: { fontFamily: Type.uiMedium, fontSize: 22, letterSpacing: trackDisplay(22), color: Ink.primary },
+  title: { fontFamily: Type.readingBold, fontSize: 22, letterSpacing: trackDisplay(22), color: Ink.primary },
   author: { fontFamily: Type.ui, fontSize: 14, letterSpacing: trackBody(14), color: Ink.body },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
   buttonRow: { width: "100%", flexDirection: "row", gap: 8, alignItems: "center" },
@@ -1018,7 +1018,7 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 4,
-    fontFamily: Type.uiMedium,
+    fontFamily: Type.readingBold,
     fontSize: 22,
     letterSpacing: trackDisplay(22),
     color: Ink.primary,
