@@ -1111,8 +1111,10 @@ function CardContent({
     return (
       <View style={styles.coverBlock} pointerEvents="box-none">
         <View style={styles.coverMain} pointerEvents="none">
-          {/* 책의 표식 — 없는 책은 이 자리가 빈다(lib/bookstore의 symbol). */}
-          {cover.symbol ? (
+          {/* 책의 표식 — 없는 책은 이 자리가 빈다(lib/bookstore의 symbol).
+              음악을 켜면 접는다. 카드가 재생기에 자리를 내주고 나면 표식까지 세울
+              높이가 없어, 표제와 버튼이 서로 겹친다. */}
+          {cover.symbol && !musicOpen ? (
             <View style={styles.coverSymbolBox}>
               {isSymbolImage(cover.symbol) ? (
                 <Image

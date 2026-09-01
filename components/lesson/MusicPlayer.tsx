@@ -27,23 +27,35 @@ function loadWebView(): React.ComponentType<Record<string, unknown>> | null {
 }
 
 /**
- * 재생기 안에 띄우는 문서.
+ * 재생기 주소.
+ *
+ * 우리가 만든 HTML 안에 iframe을 넣지 않고 유튜브의 embed 쪽을 곧장 연다. 감싸는
+ * 문서를 쓰면 웹뷰가 loadDataWithBaseURL로 띄우게 되는데, 그때 iframe이 갖는 출처가
+ * 가짜라 재생기가 "이 동영상은 볼 수 없습니다(152)"로 막는다. 곧장 열면 출처가
+ * 진짜 youtube.com이라 그 검사에 걸리지 않는다.
  *
  * playsinline이 없으면 안드로이드 웹뷰가 전체 화면 재생기로 넘겨 버려 글을 읽을 수 없다.
- * baseUrl을 유튜브로 주는 건 iframe이 제대로 된 출처를 갖게 하려는 것이다 — about:blank
- * 위에서는 재생기가 오류를 낸다.
  */
-function playerHtml(videoId: string): string {
-  return `<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<style>
-  html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden}
-  iframe{border:0;width:100%;height:100%;display:block}
-</style></head><body>
-<iframe src="https://www.youtube.com/embed/${videoId}?playsinline=1&autoplay=1&rel=0&modestbranding=1"
-  allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-</body></html>`;
+function playerUrl(videoId: string): string {
+  const params = new URLSearchParams({
+    playsinline: '1',
+    autoplay: '1',
+    rel: '0',
+    modestbranding: '1',
+    fs: '0',
+  });
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
 }
+
+/**
+ * 웹뷰가 스스로를 밝히는 이름.
+ *
+ * 안드로이드 웹뷰의 기본값에는 'wv'가 들어 있어 유튜브가 앱 안 브라우저로 보고 다른
+ * 길로 보낼 때가 있다. 평범한 모바일 크롬으로 말해 두면 embed 쪽이 그대로 열린다.
+ */
+const USER_AGENT =
+  'Mozilla/5.0 (Linux; Android 14; SM-S911N) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+  'Chrome/120.0.0.0 Mobile Safari/537.36';
 
 /**
  * 카드 아래에 앉는 붙박이 재생기.
@@ -53,19 +65,21 @@ function playerHtml(videoId: string): string {
  */
 export default function MusicPlayer({ videoId }: { videoId: string }) {
   const WebView = useMemo(loadWebView, []);
-  const html = useMemo(() => playerHtml(videoId), [videoId]);
+  const url = useMemo(() => playerUrl(videoId), [videoId]);
 
   return (
     <View style={styles.player}>
       {WebView ? (
         <WebView
-          source={{ html, baseUrl: 'https://www.youtube.com' }}
+          source={{ uri: url }}
           style={styles.web}
+          userAgent={USER_AGENT}
           // 화면 안에서 재생한다 — 전체 화면으로 넘어가면 글을 함께 볼 수 없다.
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
           javaScriptEnabled
           domStorageEnabled
+          thirdPartyCookiesEnabled
           allowsFullscreenVideo={false}
           scrollEnabled={false}
           setBuiltInZoomControls={false}
