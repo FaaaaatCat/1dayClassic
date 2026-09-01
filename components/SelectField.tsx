@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Corner, Ink, Line, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { Corner, Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 
 export interface SelectOption {
   /** 고른 값. 전체를 뜻하는 항목은 null이다. */
@@ -172,8 +172,8 @@ export function SelectRow({ children }: { children: React.ReactNode }) {
 const rowStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    // 검은 띠 둘을 붙여 놓고 사이에만 실선을 남긴다 — 격자의 세로선과 같은 결이다.
+    // 검은 띠 둘을 붙여 놓고 사이에만 실선을 남긴다 — 카드 격자의 세로선과 같은 결이다.
     gap: StyleSheet.hairlineWidth,
-    backgroundColor: Line.color,
+    backgroundColor: Ink.strong,
   },
 });

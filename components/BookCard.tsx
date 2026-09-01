@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 
 import TagChip from '@/components/TagChip';
-import { Ink, Line, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 
 /** 모서리에서 잘라 낼 정사각 영역 — 띠는 이 안에서만 보인다. */
 const RIBBON_BOX = 72;
@@ -96,8 +96,10 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingHorizontal: 20,
     paddingVertical: 32,
+    // 격자의 선은 검정을 뺀 가장 어두운 잉크다. 굵기는 머리카락 하나로 두어,
+    // 진한 색인데도 선으로만 읽히고 면으로 보이지 않는다.
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Line.color,
+    borderColor: Ink.strong,
     backgroundColor: Surface.canvas,
   },
   ribbonCorner: {

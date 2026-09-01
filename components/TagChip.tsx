@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Corner, Ink, Line, Surface, Type, trackBody } from '@/constants/theme';
+import { Corner, Ink, Surface, Type, trackBody } from '@/constants/theme';
 
 interface TagChipProps {
   label: string;
@@ -99,11 +99,11 @@ const styles = StyleSheet.create({
    * 시리즈를 한 단 깊은 판(plate) 위에 올려 구분한다.
    */
   series: {
-    borderColor: Line.color,
+    borderColor: Surface.plate,
     backgroundColor: Surface.plate,
   },
   field: {
-    borderColor: Line.color,
+    borderColor: Surface.plate,
     backgroundColor: Surface.card,
   },
   selected: {

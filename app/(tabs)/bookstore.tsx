@@ -1,43 +1,16 @@
 import { useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import { useMemo, useState } from "react";
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BookCard from "@/components/BookCard";
 import SelectField, { SelectRow, type SelectOption } from "@/components/SelectField";
-import { Ink, Line, Surface, Type, trackBody } from '@/constants/theme';
+import { Ink, Surface, Type, trackBody } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { BOOKSTORE_BOOKS, isMvpBook } from "@/lib/bookstore";
 import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
 import { FIELD_NAMES, fieldsOf, SERIES_NAMES, seriesOf } from "@/lib/tags";
-
-/** 학습 가능한 책은 표지를 로컬 에셋으로 갖고 있다 — 원격 URL보다 선명하고 오프라인에서도 뜬다. */
-
-/**
- * 방향이 바뀌었다고 인정하기까지 한 방향으로 움직여야 하는 거리(px).
- *
- * 이벤트 하나의 이동량이 아니라 '같은 방향으로 누적한' 거리를 본다 — 천천히 스크롤하면
- * 한 프레임에 1~2px씩만 오므로, 프레임별로 재면 아무리 올려도 문턱을 못 넘는다.
- */
-const DIRECTION_THRESHOLD = 8;
-/** 오버레이가 나타날 때 위에서 살짝 내려오는 느낌을 주는 시작 오프셋(px). */
-const OVERLAY_SLIDE = 10;
 
 /**
  * 시리즈 필터에 얹는 MVP 칩의 라벨. 출판사 태그가 아니라 앱이 만든 합성 카테고리라
@@ -90,14 +63,8 @@ export default function BookstoreScreen() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  /**
-   * 검색 열기. 목록은 그 자리에 두고, 타이틀만 펴서 그 아래에 인풋이 붙게 한다
-   * (내리는 중이었다면 타이틀이 접혀 있어서 인풋까지 화면 밖으로 밀려난다).
-   */
-  const openSearch = () => {
-    setSearchOpen(true);
-    setShowTitle(true);
-  };
+  /** 검색 열기 — 제목 줄 아래에 인풋이 붙는다. */
+  const openSearch = () => setSearchOpen(true);
 
   /** 검색 닫기 — 검색어까지 비워서 목록을 원래대로 되돌린다. */
   const closeSearch = () => {
@@ -165,72 +132,14 @@ export default function BookstoreScreen() {
     });
   };
 
-  // ── 오버레이 상태 ──────────────────────────────────────────────
-  const headerHeightRef = useRef(0);
-  const [titleHeight, setTitleHeight] = useState(0);
-  const lastOffsetRef = useRef(0);
-  /** 방향이 안 바뀌는 동안 쌓아 온 이동 거리. 위로 올리면 음수, 내리면 양수. */
-  const dirAccumRef = useRef(0);
-  const [showFilters, setShowFilters] = useState(false);
-  const [showTitle, setShowTitle] = useState(false);
-
-  /**
-   * 칩을 가로로 스크롤해 둔 위치. 오버레이는 같은 줄을 새로 그리므로, 이걸 기억해 두지 않으면
-   * 오버레이가 뜰 때마다 칩이 맨 앞으로 되돌아간다.
-   */
-
-  const filtersProgress = useSharedValue(0);
-  const titleProgress = useSharedValue(0);
-
-  useEffect(() => {
-    filtersProgress.value = withTiming(showFilters ? 1 : 0, { duration: 200 });
-  }, [showFilters, filtersProgress]);
-
-  useEffect(() => {
-    titleProgress.value = withTiming(showTitle ? 1 : 0, { duration: 200 });
-  }, [showTitle, titleProgress]);
-
-  const overlayStyle = useAnimatedStyle(() => ({
-    opacity: filtersProgress.value,
-    transform: [{ translateY: (1 - filtersProgress.value) * -OVERLAY_SLIDE }],
-  }));
-
-  // 타이틀이 접히면 오버레이 안쪽 기둥을 그만큼 위로 밀어 필터가 맨 위로 올라오게 한다.
-  const columnStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -(1 - titleProgress.value) * titleHeight }],
-  }));
-
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = event.nativeEvent.contentOffset.y;
-    const delta = y - lastOffsetRef.current;
-    lastOffsetRef.current = y;
-
-    setShowFilters(y >= headerHeightRef.current && headerHeightRef.current > 0);
-
-    // 검색 중에는 인풋이 타이틀에 딸려 있으므로 타이틀을 접지 않는다 —
-    // 접으면 인풋까지 화면 밖으로 밀려난다.
-    // 튕김 구간(y<0)에서는 방향이 뒤집혀 들어와 타이틀이 깜빡인다.
-    if (searchOpen || y <= 0) {
-      dirAccumRef.current = 0;
-      setShowTitle(true);
-      return;
-    }
-
-    // 방향이 꺾이면 지금까지 쌓은 건 버리고 새 방향으로 다시 센다.
-    if (delta * dirAccumRef.current < 0) dirAccumRef.current = 0;
-    dirAccumRef.current += delta;
-
-    if (dirAccumRef.current <= -DIRECTION_THRESHOLD) setShowTitle(true);
-    else if (dirAccumRef.current >= DIRECTION_THRESHOLD) setShowTitle(false);
-  };
-
-  /**
-   * 타이틀 줄과 (열려 있으면) 검색 인풋. 흐름 속 헤더와 오버레이가 같은 것을 그린다.
+/**
+   * 타이틀 줄과 (열려 있으면) 검색 인풋.
    *
-   * 인풋이 둘 생기지만 값은 하나를 공유한다. 자동 포커스는 지금 눈에 보이는 쪽에만 주는데,
-   * 어느 쪽이 보이는지는 오버레이가 떠 있는지(showFilters)로 갈린다.
+   * 목록과 함께 스크롤되지 않고 화면 맨 위에 붙어 있다. 예전에는 스크롤 방향을 세어
+   * 접었다 폈다 했는데, 방향이 꺾이는 순간마다 상태가 두 번씩 바뀌며 화면이 튀었다.
+   * 책을 고르는 화면에서 제목 줄이 몇 픽셀 아끼자고 그렇게 흔들릴 이유가 없다.
    */
-  const titleSection = (isOverlay: boolean) => (
+  const titleSection = () => (
     <View>
       <View style={styles.titleBar}>
         <Text style={styles.title}>하루 서점</Text>
@@ -254,7 +163,7 @@ export default function BookstoreScreen() {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              autoFocus={isOverlay === showFilters}
+              autoFocus
               placeholder="제목이나 저자로 찾기"
               placeholderTextColor={Ink.body}
               returnKeyType="search"
@@ -317,32 +226,18 @@ export default function BookstoreScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
+      {/* 제목 줄과 필터는 목록 밖에 있다 — 스크롤과 무관하게 늘 같은 자리에 붙어 있다. */}
+      {titleSection()}
+      {filters}
+
       <FlatList
         contentContainerStyle={styles.content}
         data={rows}
         keyExtractor={(row) => row[0].book.id}
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         initialNumToRender={4}
         windowSize={5}
         removeClippedSubviews
-        ListHeaderComponent={
-          <View
-            onLayout={(event) => {
-              headerHeightRef.current = event.nativeEvent.layout.height;
-            }}
-          >
-            <View
-              onLayout={(event) =>
-                setTitleHeight(event.nativeEvent.layout.height)
-              }
-            >
-              {titleSection(false)}
-            </View>
-            {filters}
-          </View>
-        }
         ListEmptyComponent={
           <Text style={styles.empty}>조건에 맞는 책이 없습니다.</Text>
         }
@@ -374,17 +269,6 @@ export default function BookstoreScreen() {
         )}
       />
 
-      {/* 목록 위를 덮는 오버레이. 바깥 틀은 타이틀까지 펼쳤을 때의 높이를 잡아 두고 넘치는 부분을
-          잘라내며, box-none이라 타이틀이 접혀 빈 자리는 터치가 그대로 목록으로 지나간다. */}
-      <Animated.View
-        pointerEvents={showFilters ? "box-none" : "none"}
-        style={[styles.overlay, { top: insets.top }, overlayStyle]}
-      >
-        <Animated.View style={[styles.overlayColumn, columnStyle]}>
-          {titleSection(true)}
-          {filters}
-        </Animated.View>
-      </Animated.View>
     </View>
   );
 }
@@ -420,7 +304,7 @@ const styles = StyleSheet.create({
     paddingRight: 14,
     borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Line.color,
+    borderColor: Surface.plate,
     backgroundColor: Surface.canvas,
   },
   searchInput: {
@@ -437,18 +321,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     letterSpacing: trackBody(17),
     color: Ink.primary,
-  },
-  overlay: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    overflow: "hidden",
-    zIndex: 10,
-  },
-  overlayColumn: {
-    backgroundColor: Surface.canvas,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Line.color,
   },
   row: {
     flexDirection: "row",
