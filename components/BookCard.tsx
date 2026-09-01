@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 
 import TagChip from '@/components/TagChip';
-import { Colors, Fonts, tracking } from '@/constants/theme';
+import { Elevation, Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 
 /** 모서리에서 잘라 낼 정사각 영역 — 띠는 이 안에서만 보인다. */
 const RIBBON_BOX = 72;
@@ -97,8 +97,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 32,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.brown10,
-    backgroundColor: Colors.white,
+    borderColor: Surface.plate,
+    backgroundColor: Surface.canvas,
   },
   ribbonCorner: {
     position: 'absolute',
@@ -118,37 +118,34 @@ const styles = StyleSheet.create({
     width: RIBBON_BAND_WIDTH,
     alignItems: 'center',
     paddingVertical: 4,
-    backgroundColor: Colors.beige100,
+    backgroundColor: Ink.primary,
     transform: [{ rotate: '45deg' }],
   },
   ribbonText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 11,
     lineHeight: 13,
-    letterSpacing: tracking(11),
-    color: Colors.white,
+    letterSpacing: trackBody(11),
+    color: Ink.onDark,
   },
   cover: {
     width: 108,
     height: 160,
     borderRadius: 2,
-    shadowColor: Colors.brown100,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    // 책 표지는 종이 위에 놓인 것처럼만 뜬다 — 예전의 20% 그림자는 이 시스템에서 너무 무겁다.
+    ...Elevation.whisper,
   },
   title: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
+    fontFamily: Type.uiMedium,
+    ...TypeScale.subheading,
+    letterSpacing: trackBody(16),
+    color: Ink.primary,
     textAlign: 'center',
   },
   author: {
-    fontFamily: Fonts.regular,
-    fontSize: 12,
-    letterSpacing: tracking(12),
-    color: Colors.brown50,
+    fontFamily: Type.ui,
+    ...TypeScale.bodySm,
+    color: Ink.muted,
     textAlign: 'center',
   },
   chips: {

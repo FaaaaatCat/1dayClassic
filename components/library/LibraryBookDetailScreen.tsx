@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BookPreviewModal from "@/components/BookPreviewModal";
 import ScaleButton from "@/components/ScaleButton";
 import TagChip from "@/components/TagChip";
-import { Colors, Fonts, tracking } from "@/constants/theme";
+import { Corner, Elevation, Feedback, Ink, Surface, Type, trackBody, trackDisplay } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { useShelf } from "@/context/ShelfContext";
 import { useToast } from "@/context/ToastContext";
@@ -83,7 +83,7 @@ export default function LibraryBookDetailScreen() {
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <Text style={styles.headerTitle}>내 서재</Text>
           <ScaleButton accessibilityLabel="내 서재로 돌아가기" style={styles.closeButton} onPress={() => router.replace("/library")}>
-            <Ionicons name="close" color={Colors.brown100} size={24} />
+            <Ionicons name="close" color={Ink.primary} size={24} />
           </ScaleButton>
         </View>
 
@@ -104,21 +104,21 @@ export default function LibraryBookDetailScreen() {
 
             <View style={styles.buttonRow}>
               <ScaleButton accessibilityLabel={`${view.title} 오늘의 책으로 변경하기`} style={[styles.actionButton, styles.changeButton]} onPress={changeBook}>
-                <Ionicons name="sync" color={Colors.white} size={18} />
+                <Ionicons name="sync" color={Surface.canvas} size={18} />
                 <Text style={styles.changeButtonText} numberOfLines={1}>이 책으로 변경하기</Text>
               </ScaleButton>
               <ScaleButton accessibilityLabel="미리보기" style={[styles.actionButton, styles.previewButton]} onPress={() => setPreviewOpen(true)}>
                 <Text style={styles.previewButtonText} numberOfLines={1}>미리보기</Text>
               </ScaleButton>
               <ScaleButton accessibilityLabel={moreMenuOpen ? "더보기 닫기" : "더보기"} style={[styles.actionButton, styles.moreButton]} onPress={() => setMoreMenuOpen((open) => !open)}>
-                <Ionicons name="ellipsis-vertical" color={Colors.brown100} size={20} />
+                <Ionicons name="ellipsis-vertical" color={Ink.primary} size={20} />
               </ScaleButton>
             </View>
 
             {moreMenuOpen && (
               <View style={styles.moreMenu}>
                 <Pressable accessibilityRole="button" accessibilityLabel="내 서재에서 삭제하기" style={styles.moreMenuItem} onPress={removeBook}>
-                  <Ionicons name="trash-outline" color={Colors.red100} size={18} />
+                  <Ionicons name="trash-outline" color={Feedback.wrong} size={18} />
                   <Text style={styles.deleteText}>내 서재에서 삭제하기</Text>
                 </Pressable>
               </View>
@@ -184,52 +184,52 @@ function ProgressDotGrid({ total, done }: { total: number; done: number }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.bg },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 12, backgroundColor: Colors.bg },
-  headerTitle: { fontFamily: Fonts.semiBold, fontSize: 22, letterSpacing: tracking(22), color: Colors.brown100 },
-  closeButton: { width: 41, height: 41, borderRadius: 21, alignItems: "center", justifyContent: "center" },
+  screen: { flex: 1, backgroundColor: Surface.canvas },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 12, backgroundColor: Surface.canvas },
+  headerTitle: { fontFamily: Type.uiMedium, fontSize: 22, letterSpacing: trackDisplay(22), color: Ink.primary },
+  closeButton: { width: 41, height: 41, borderRadius: Corner.pill, alignItems: "center", justifyContent: "center" },
   // 책 info — 표지+제목/저자/태그가 가로로 나란히, 그 아래 버튼 줄. 이 블록만 자체 좌우
   // padding 20을 갖는다(아래 카드 목록은 8로 훨씬 좁다).
   hero: { gap: 20, padding: 20 },
   coverRow: { flexDirection: "row", gap: 20, alignItems: "flex-start" },
   cover: { width: 95, height: 140, borderRadius: 2 },
   infoColumn: { flex: 1, gap: 12, paddingTop: 20 },
-  title: { fontFamily: Fonts.semiBold, fontSize: 22, letterSpacing: tracking(22), color: Colors.brown100 },
-  author: { fontFamily: Fonts.regular, fontSize: 14, letterSpacing: tracking(14), color: Colors.brown50 },
+  title: { fontFamily: Type.uiMedium, fontSize: 22, letterSpacing: trackDisplay(22), color: Ink.primary },
+  author: { fontFamily: Type.ui, fontSize: 14, letterSpacing: trackBody(14), color: Ink.body },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
   buttonRow: { width: "100%", flexDirection: "row", gap: 8, alignItems: "center" },
   // 세 버튼 모두 높이 40 · 모서리 10. 남는 폭은 변경 버튼만 가져가고 미리보기는 글자 폭에
   // 맞춰 둔다 — 둘 다 flex를 주면 "이 책으로 변경하기"가 두 줄로 접힌다.
-  actionButton: { height: 40, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 10, paddingHorizontal: 20 },
-  changeButton: { flex: 1, backgroundColor: Colors.beige100 },
-  changeButtonText: { fontFamily: Fonts.semiBold, fontSize: 15, letterSpacing: tracking(15), color: Colors.white },
-  previewButton: { backgroundColor: Colors.brown100 },
-  previewButtonText: { fontFamily: Fonts.semiBold, fontSize: 15, letterSpacing: tracking(15), color: Colors.white },
-  moreButton: { width: 40, paddingHorizontal: 0, borderWidth: 1, borderColor: Colors.brown10, backgroundColor: Colors.white },
-  moreMenu: { alignSelf: "stretch", backgroundColor: Colors.white, borderRadius: 10, shadowColor: Colors.brown100, shadowOpacity: 0.12, shadowRadius: 8, elevation: 4 },
+  actionButton: { height: 40, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: Corner.pill, paddingHorizontal: 20 },
+  changeButton: { flex: 1, backgroundColor: Ink.strong },
+  changeButtonText: { fontFamily: Type.uiMedium, fontSize: 15, letterSpacing: trackBody(15), color: Surface.canvas },
+  previewButton: { backgroundColor: Ink.primary },
+  previewButtonText: { fontFamily: Type.uiMedium, fontSize: 15, letterSpacing: trackBody(15), color: Surface.canvas },
+  moreButton: { width: 40, paddingHorizontal: 0, borderWidth: 1, borderColor: Surface.plate, backgroundColor: Surface.canvas },
+  moreMenu: { alignSelf: "stretch", backgroundColor: Surface.canvas, borderRadius: Corner.small, borderWidth: StyleSheet.hairlineWidth, borderColor: Surface.plate, ...Elevation.whisper },
   moreMenuItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 13 },
-  deleteText: { fontFamily: Fonts.regular, fontSize: 14, letterSpacing: tracking(14), color: Colors.red100 },
+  deleteText: { fontFamily: Type.ui, fontSize: 14, letterSpacing: trackBody(14), color: Feedback.wrong },
   // 카드 목록 — 화면 좌우 padding이 위 책 info 블록(20)보다 훨씬 좁다(8).
   cardList: { paddingHorizontal: 8, paddingTop: 8, gap: 20 },
-  card: { gap: 8, paddingHorizontal: 20, paddingVertical: 24, borderRadius: 20, backgroundColor: Colors.white },
-  bookmarkCard: { gap: 8, paddingHorizontal: 20, paddingVertical: 24, borderRadius: 20, backgroundColor: Colors.white },
-  cardTitle: { fontFamily: Fonts.semiBold, fontSize: 15, letterSpacing: tracking(15), color: Colors.brown100, paddingBottom: 8 },
+  card: { gap: 8, paddingHorizontal: 20, paddingVertical: 24, borderRadius: Corner.card, backgroundColor: Surface.canvas },
+  bookmarkCard: { gap: 8, paddingHorizontal: 20, paddingVertical: 24, borderRadius: Corner.card, backgroundColor: Surface.canvas },
+  cardTitle: { fontFamily: Type.uiMedium, fontSize: 15, letterSpacing: trackBody(15), color: Ink.primary, paddingBottom: 8 },
   // 값과 보조 설명이 한 줄에 나란히 온다 — "0p (총 320p)"처럼.
   valueRow: { flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" },
-  cardValue: { fontFamily: Fonts.semiBold, fontSize: 20, letterSpacing: tracking(20), color: Colors.brown100 },
-  cardNote: { fontFamily: Fonts.regular, fontSize: 15, letterSpacing: tracking(15), color: Colors.brown100 },
+  cardValue: { fontFamily: Type.uiMedium, fontSize: 20, letterSpacing: trackBody(20), color: Ink.primary },
+  cardNote: { fontFamily: Type.ui, fontSize: 15, letterSpacing: trackBody(15), color: Ink.primary },
   // 공부 진도 그리드 — 읽은 칸은 green100(Figma 원래 색 #34C759는 지정 팔레트에 없어
   // 대체), 남은 칸은 brown10으로 Figma와 같다.
   dotGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6, paddingVertical: 4 },
-  dot: { width: 8, height: 8, backgroundColor: Colors.brown10 },
-  dotDone: { backgroundColor: Colors.green100 },
+  dot: { width: 8, height: 8, backgroundColor: Surface.plate },
+  dotDone: { backgroundColor: Ink.primary },
   // 독서 기록 카드 — 문장 한 줄 아래에 세로 구분선으로 나눈 통계 한 줄.
-  readingSentence: { fontFamily: Fonts.semiBold, fontSize: 20, letterSpacing: tracking(20), color: Colors.brown100 },
+  readingSentence: { fontFamily: Type.uiMedium, fontSize: 20, letterSpacing: trackBody(20), color: Ink.primary },
   readingStatsRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  readingStatText: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 26, letterSpacing: tracking(15), color: Colors.brown100 },
-  readingStatDivider: { width: 1, height: 12, backgroundColor: Colors.brown10 },
+  readingStatText: { fontFamily: Type.ui, fontSize: 15, lineHeight: 26, letterSpacing: trackBody(15), color: Ink.primary },
+  readingStatDivider: { width: 1, height: 12, backgroundColor: Surface.plate },
   // 카드 하단 버튼 — 카드 폭을 채우는 줄이 아니라 글자 폭에 맞춘 작은 외곽선 버튼.
-  cardButton: { alignSelf: "flex-start", height: 32, justifyContent: "center", paddingHorizontal: 12, borderRadius: 4, borderWidth: 1, borderColor: Colors.brown50 },
-  cardButtonText: { fontFamily: Fonts.semiBold, fontSize: 14, letterSpacing: tracking(14), color: Colors.brown50 },
-  emptyBookmark: { fontFamily: Fonts.regular, fontSize: 14, letterSpacing: tracking(14), color: Colors.brown50 },
+  cardButton: { alignSelf: "flex-start", height: 32, justifyContent: "center", paddingHorizontal: 12, borderRadius: 4, borderWidth: 1, borderColor: Ink.body },
+  cardButtonText: { fontFamily: Type.uiMedium, fontSize: 14, letterSpacing: trackBody(14), color: Ink.body },
+  emptyBookmark: { fontFamily: Type.ui, fontSize: 14, letterSpacing: trackBody(14), color: Ink.body },
 });

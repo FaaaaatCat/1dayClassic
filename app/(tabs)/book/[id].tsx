@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,7 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BookPreviewModal from "@/components/BookPreviewModal";
 import ScaleButton from "@/components/ScaleButton";
 import TagChip from "@/components/TagChip";
-import { Colors, Fonts, tracking } from "@/constants/theme";
+import { Corner, Elevation, Feedback, Ink, Surface, Type, TypeScale, trackBody, trackDisplay } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { useShelf } from "@/context/ShelfContext";
 import { useToast } from "@/context/ToastContext";
@@ -245,19 +244,11 @@ export default function BookDetailScreen() {
     if (isFromLibrary) {
       if (isSelected) {
         return (
-          <LinearGradient
-            colors={[Colors.blue100, Colors.blue50]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.ctaBase}
-          >
-            <Ionicons
-              name="checkmark"
-              color={Colors.white}
-              size={18}
-            />
+          // 채워진 버튼은 검정 하나뿐이다 — 예전의 파랑 그라데이션은 이 시스템에 없다.
+          <View style={[styles.ctaBase, styles.ctaFilled]}>
+            <Ionicons name="checkmark" color={Ink.onDark} size={18} />
             <Text style={styles.selectButtonText}>현재 선택중</Text>
-          </LinearGradient>
+          </View>
         );
       }
       return (
@@ -272,7 +263,7 @@ export default function BookDetailScreen() {
         >
           <Ionicons
             name="sync"
-            color={Colors.white}
+            color={Ink.onDark}
             size={18}
           />
           <Text style={styles.selectButtonText}>이 책으로 변경하기</Text>
@@ -327,7 +318,7 @@ export default function BookDetailScreen() {
             <Text style={[styles.heroButtonText, styles.goToLibraryButtonText]}>보러가기</Text>
             <Ionicons
               name="chevron-forward"
-              color={Colors.brown100}
+              color={Ink.primary}
               size={18}
             />
           </ScaleButton>
@@ -343,7 +334,7 @@ export default function BookDetailScreen() {
         >
           <Ionicons
             name="bookmark-outline"
-            color={Colors.white}
+            color={Surface.canvas}
             size={18}
           />
           <Text style={styles.heroButtonText}>내 서재에 담기</Text>
@@ -355,7 +346,7 @@ export default function BookDetailScreen() {
         >
           <Ionicons
             name="eye-outline"
-            color={Colors.brown50}
+            color={Ink.body}
             size={18}
           />
           <Text style={[styles.heroButtonText, styles.previewButtonText]}>미리보기</Text>
@@ -450,7 +441,7 @@ export default function BookDetailScreen() {
           >
             <Ionicons
               name="close"
-              color={Colors.brown100}
+              color={Ink.primary}
               size={24}
             />
           </ScaleButton>
@@ -496,7 +487,7 @@ export default function BookDetailScreen() {
                 >
                   <Ionicons
                     name="ellipsis-vertical"
-                    color={Colors.brown100}
+                    color={Ink.primary}
                     size={20}
                   />
                 </ScaleButton>
@@ -538,7 +529,7 @@ export default function BookDetailScreen() {
               >
                 <Ionicons
                   name="eye-outline"
-                  color={Colors.brown100}
+                  color={Ink.primary}
                   size={18}
                 />
                 <Text style={styles.moreMenuItemText}>미리보기</Text>
@@ -552,7 +543,7 @@ export default function BookDetailScreen() {
               >
                 <Ionicons
                   name="trash-outline"
-                  color={Colors.red100}
+                  color={Feedback.wrong}
                   size={18}
                 />
                 <Text style={[styles.moreMenuItemText, styles.moreMenuDeleteText]}>
@@ -625,7 +616,7 @@ function LegacyLibraryDetail({
           >
             <Ionicons
               name="close"
-              color={Colors.brown100}
+              color={Ink.primary}
               size={24}
             />
           </ScaleButton>
@@ -660,7 +651,7 @@ function LegacyLibraryDetail({
               >
                 <Ionicons
                   name="sync"
-                  color={Colors.white}
+                  color={Surface.canvas}
                   size={18}
                 />
                 <Text style={libraryStyles.changeButtonText}>이 책으로 변경하기</Text>
@@ -679,7 +670,7 @@ function LegacyLibraryDetail({
               >
                 <Ionicons
                   name="ellipsis-vertical"
-                  color={Colors.brown100}
+                  color={Ink.primary}
                   size={20}
                 />
               </ScaleButton>
@@ -695,7 +686,7 @@ function LegacyLibraryDetail({
                 >
                   <Ionicons
                     name="trash-outline"
-                    color={Colors.red100}
+                    color={Feedback.wrong}
                     size={18}
                   />
                   <Text style={libraryStyles.deleteText}>내 서재에서 삭제하기</Text>
@@ -796,22 +787,22 @@ function ProgressDotGrid({ total, done }: { total: number; done: number }) {
 }
 
 const libraryStyles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.bg },
+  screen: { flex: 1, backgroundColor: Surface.canvas },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   headerTitle: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 18,
-    letterSpacing: tracking(18),
-    color: Colors.brown100,
+    letterSpacing: trackBody(18),
+    color: Ink.primary,
   },
-  closeButton: { width: 41, height: 41, borderRadius: 20.5, alignItems: "center", justifyContent: "center" },
+  closeButton: { width: 41, height: 41, borderRadius: Corner.pill, alignItems: "center", justifyContent: "center" },
   // 책 info 블록 — 표지+텍스트 줄, 버튼 줄 순서로 세로 gap 20, 자체 좌우 padding 20,
   // 아래 카드 목록과 얇은 구분선으로 나뉜다(Figma 원래 색 #F4F0F7는 팔레트에 없어
   // 앱이 이미 구분선으로 쓰는 brown10으로 대체).
@@ -819,48 +810,48 @@ const libraryStyles = StyleSheet.create({
     gap: 20,
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.brown10,
+    borderBottomColor: Surface.plate,
   },
   coverRow: { flexDirection: "row", gap: 20, alignItems: "flex-start" },
   cover: {
     width: 95,
     height: 140,
     borderRadius: 2,
-    shadowColor: Colors.brown100,
+    shadowColor: Ink.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   infoColumn: { flex: 1, gap: 12, paddingTop: 20 },
-  title: { fontFamily: Fonts.semiBold, fontSize: 22, letterSpacing: tracking(22), color: Colors.brown100 },
-  author: { fontFamily: Fonts.regular, fontSize: 14, letterSpacing: tracking(14), color: Colors.brown50 },
+  title: { fontFamily: Type.uiMedium, fontSize: 22, letterSpacing: trackDisplay(22), color: Ink.primary },
+  author: { fontFamily: Type.ui, fontSize: 14, letterSpacing: trackBody(14), color: Ink.body },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
   buttonRow: { width: "100%", flexDirection: "row", gap: 8, alignItems: "center" },
-  actionButton: { height: 40, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 10, paddingHorizontal: 20 },
-  changeButton: { flex: 1, backgroundColor: Colors.beige100 },
-  changeButtonText: { fontFamily: Fonts.semiBold, fontSize: 15, letterSpacing: tracking(15), color: Colors.white },
-  previewButton: { backgroundColor: Colors.brown100 },
-  previewButtonText: { fontFamily: Fonts.semiBold, fontSize: 15, letterSpacing: tracking(15), color: Colors.white },
-  moreButton: { width: 40, paddingHorizontal: 0, borderWidth: 1, borderColor: Colors.brown10, backgroundColor: Colors.white },
-  moreMenu: { alignSelf: "stretch", backgroundColor: Colors.white, borderRadius: 10, shadowColor: Colors.brown100, shadowOpacity: 0.12, shadowRadius: 8, elevation: 4 },
+  actionButton: { height: 40, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: Corner.pill, paddingHorizontal: 20 },
+  changeButton: { flex: 1, backgroundColor: Ink.strong },
+  changeButtonText: { fontFamily: Type.uiMedium, fontSize: 15, letterSpacing: trackBody(15), color: Surface.canvas },
+  previewButton: { backgroundColor: Ink.primary },
+  previewButtonText: { fontFamily: Type.uiMedium, fontSize: 15, letterSpacing: trackBody(15), color: Surface.canvas },
+  moreButton: { width: 40, paddingHorizontal: 0, borderWidth: 1, borderColor: Surface.plate, backgroundColor: Surface.canvas },
+  moreMenu: { alignSelf: "stretch", backgroundColor: Surface.canvas, borderRadius: Corner.small, borderWidth: StyleSheet.hairlineWidth, borderColor: Surface.plate, ...Elevation.whisper },
   moreMenuItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 13 },
-  deleteText: { fontFamily: Fonts.regular, fontSize: 14, letterSpacing: tracking(14), color: Colors.red100 },
+  deleteText: { fontFamily: Type.ui, fontSize: 14, letterSpacing: trackBody(14), color: Feedback.wrong },
   // 카드 목록 — 화면 padding이 hero 블록(20)보다 훨씬 좁다(8). 카드 사이 gap 20.
   cardList: { paddingHorizontal: 8, paddingTop: 8, gap: 20 },
-  card: { gap: 8, paddingHorizontal: 20, paddingVertical: 24, borderRadius: 20, backgroundColor: Colors.white },
-  cardTitle: { fontFamily: Fonts.semiBold, fontSize: 15, letterSpacing: tracking(15), color: Colors.brown100, paddingBottom: 8 },
+  card: { gap: 8, paddingHorizontal: 20, paddingVertical: 24, borderRadius: Corner.card, backgroundColor: Surface.canvas },
+  cardTitle: { fontFamily: Type.uiMedium, fontSize: 15, letterSpacing: trackBody(15), color: Ink.primary, paddingBottom: 8 },
   valueRow: { flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" },
-  cardValue: { fontFamily: Fonts.semiBold, fontSize: 20, letterSpacing: tracking(20), color: Colors.brown100 },
-  cardNote: { fontFamily: Fonts.regular, fontSize: 15, letterSpacing: tracking(15), color: Colors.brown100 },
-  readingSentence: { fontFamily: Fonts.semiBold, fontSize: 20, letterSpacing: tracking(20), color: Colors.brown100 },
+  cardValue: { fontFamily: Type.uiMedium, fontSize: 20, letterSpacing: trackBody(20), color: Ink.primary },
+  cardNote: { fontFamily: Type.ui, fontSize: 15, letterSpacing: trackBody(15), color: Ink.primary },
+  readingSentence: { fontFamily: Type.uiMedium, fontSize: 20, letterSpacing: trackBody(20), color: Ink.primary },
   readingStatsRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  readingStatText: { fontFamily: Fonts.regular, fontSize: 15, letterSpacing: tracking(15), color: Colors.brown100 },
-  readingStatDivider: { width: 1, height: 12, backgroundColor: Colors.brown10 },
+  readingStatText: { fontFamily: Type.ui, fontSize: 15, letterSpacing: trackBody(15), color: Ink.primary },
+  readingStatDivider: { width: 1, height: 12, backgroundColor: Surface.plate },
   // 공부 진도의 더미 진행 그리드 — 완료 칸은 green100(Figma 원래 색 #34C759는 팔레트에
   // 없어 지정 팔레트의 green100으로 대체), 미완료 칸은 brown10(Figma와 동일한 색).
   dotGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6, paddingVertical: 4 },
-  dot: { width: 8, height: 8, backgroundColor: Colors.brown10 },
-  dotDone: { backgroundColor: Colors.green100 },
+  dot: { width: 8, height: 8, backgroundColor: Surface.plate },
+  dotDone: { backgroundColor: Ink.primary },
   cardButton: {
     alignSelf: "flex-start",
     height: 32,
@@ -868,10 +859,10 @@ const libraryStyles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: Colors.brown50,
+    borderColor: Ink.body,
   },
-  cardButtonText: { fontFamily: Fonts.semiBold, fontSize: 14, letterSpacing: tracking(14), color: Colors.brown50 },
-  emptyBookmark: { fontFamily: Fonts.regular, fontSize: 14, letterSpacing: tracking(14), color: Colors.brown50 },
+  cardButtonText: { fontFamily: Type.uiMedium, fontSize: 14, letterSpacing: trackBody(14), color: Ink.body },
+  emptyBookmark: { fontFamily: Type.ui, fontSize: 14, letterSpacing: trackBody(14), color: Ink.body },
 });
 
 const ctaSize: ViewStyle = {
@@ -880,7 +871,7 @@ const ctaSize: ViewStyle = {
   gap: 6,
   height: 52,
   paddingHorizontal: 20,
-  borderRadius: 26,
+  borderRadius: Corner.pill,
   alignItems: "center" as const,
   justifyContent: "center" as const,
 };
@@ -888,14 +879,14 @@ const ctaSize: ViewStyle = {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   headerMini: {
     flex: 1,
@@ -911,15 +902,15 @@ const styles = StyleSheet.create({
   },
   headerMiniTitle: {
     flex: 1,
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 15,
-    letterSpacing: tracking(15),
-    color: Colors.brown100,
+    letterSpacing: trackBody(15),
+    color: Ink.primary,
   },
   headerIconButton: {
     width: 41,
     height: 41,
-    borderRadius: 20.5,
+    borderRadius: Corner.pill,
   },
   scrollView: {
     flex: 1,
@@ -934,7 +925,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 40,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.bg,
+    borderBottomColor: Surface.canvas,
   },
   subhero: {
     paddingHorizontal: 20,
@@ -944,8 +935,8 @@ const styles = StyleSheet.create({
   buyCard: {
     gap: 12,
     padding: 20,
-    backgroundColor: Colors.brown10,
-    borderRadius: 10,
+    backgroundColor: Surface.plate,
+    borderRadius: Corner.pill,
     alignItems: "flex-start",
   },
   buttonRow: {
@@ -962,53 +953,53 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
     paddingHorizontal: 12,
-    borderRadius: 26,
+    borderRadius: Corner.pill,
   },
   heroButtonText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.white,
+    letterSpacing: trackBody(14),
+    color: Surface.canvas,
   },
   addShelfButton: {
-    backgroundColor: Colors.brown100,
+    backgroundColor: Ink.primary,
   },
   shelfStatusButton: {
-    backgroundColor: Colors.brown50,
+    backgroundColor: Ink.body,
   },
   goToLibraryButton: {
     borderWidth: 1,
-    borderColor: Colors.brown100,
-    backgroundColor: Colors.white,
+    borderColor: Ink.primary,
+    backgroundColor: Surface.canvas,
   },
   goToLibraryButtonText: {
-    color: Colors.brown100,
+    color: Ink.primary,
   },
   price: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 15,
-    letterSpacing: tracking(15),
-    color: Colors.brown100,
+    letterSpacing: trackBody(15),
+    color: Ink.primary,
     textAlign: "center",
   },
   buyButton: {
     width: "100%",
     height: 48,
     paddingHorizontal: 20,
-    borderRadius: 24,
-    backgroundColor: Colors.beige100,
+    borderRadius: Corner.largeCard,
+    backgroundColor: Ink.strong,
   },
   buyButtonText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.white,
+    letterSpacing: trackBody(14),
+    color: Surface.canvas,
   },
   buyHint: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 12,
-    letterSpacing: tracking(12),
-    color: Colors.brown50,
+    letterSpacing: trackBody(12),
+    color: Ink.body,
     textAlign: "center",
     marginTop: 8,
     width: "100%",
@@ -1019,7 +1010,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 207,
     borderRadius: 2,
-    shadowColor: Colors.brown100,
+    shadowColor: Ink.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -1027,17 +1018,17 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 4,
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 22,
-    letterSpacing: tracking(22),
-    color: Colors.brown100,
+    letterSpacing: trackDisplay(22),
+    color: Ink.primary,
     textAlign: "center",
   },
   author: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown50,
+    letterSpacing: trackBody(14),
+    color: Ink.body,
     textAlign: "center",
   },
   chips: {
@@ -1050,17 +1041,17 @@ const styles = StyleSheet.create({
   // sticky로 상단에 고정되는 절 제목 — 아래 본문이 비쳐 보이지 않게 불투명 배경을 깔고,
   // 얇은 구분선으로 헤더와 경계를 준다.
   sectionTitleRow: {
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.brown10,
+    borderBottomColor: Surface.plate,
   },
   sectionTitleText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 18,
-    letterSpacing: tracking(18),
-    color: Colors.brown100,
+    letterSpacing: trackBody(18),
+    color: Ink.primary,
   },
   sectionBody: {
     gap: 14,
@@ -1069,24 +1060,24 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   paragraphText: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 15,
     lineHeight: 26,
-    letterSpacing: tracking(15),
-    color: Colors.brown100,
+    letterSpacing: trackBody(15),
+    color: Ink.primary,
   },
   // 화면 하단에 고정되는 CTA 영역 전체를 감싸는 래퍼 — 세이프에어리어 하단 패딩은
   // 여기서 한 번만 준다(ctaBar 아래에 삭제 링크가 붙어도 총 여백이 흔들리지 않게).
   ctaFooter: {
     display: "none",
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   // CTA 바 — sticky 절 제목 구분선과 같은 톤의 얇은 위쪽 경계선으로 스크롤 영역과 구분한다.
   ctaBar: {
     flexDirection: "row",
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.bg,
+    borderTopColor: Surface.canvas,
     paddingHorizontal: 20,
     paddingTop: 12,
     gap: 8,
@@ -1104,10 +1095,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 20,
     minWidth: 208,
-    backgroundColor: Colors.white,
-    borderRadius: 14,
+    backgroundColor: Surface.canvas,
+    borderRadius: Corner.small,
     paddingVertical: 4,
-    shadowColor: Colors.brown100,
+    shadowColor: Ink.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -1121,41 +1112,44 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   moreMenuItemText: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown100,
+    letterSpacing: trackBody(14),
+    color: Ink.primary,
   },
   moreMenuDeleteText: {
-    color: Colors.red100,
+    color: Feedback.wrong,
   },
   moreMenuDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.brown10,
+    backgroundColor: Surface.plate,
     marginHorizontal: 12,
   },
   ctaBase: ctaSize,
+  /** 이미 고른 책 — 누를 것은 없지만 채워진 얼굴로 지금 상태를 말한다. */
+  ctaFilled: {
+    backgroundColor: Ink.primary,
+  },
   selectButton: {
     ...ctaSize,
-    backgroundColor: Colors.beige100,
+    backgroundColor: Ink.primary,
   },
   selectButtonText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    letterSpacing: tracking(14),
-    color: Colors.white,
+    fontFamily: Type.uiMedium,
+    ...TypeScale.subheading,
+    color: Ink.onDark,
   },
   // 눌러도 아무 일도 하지 않는 안내용 버튼(하루 서점에서 이미 서재에 담긴 책) — 옅은 회색으로
   // 활성 버튼과 시각적으로 구분한다.
   ctaDisabled: {
     ...ctaSize,
-    backgroundColor: Colors.brown10,
+    backgroundColor: Surface.plate,
   },
   ctaDisabledText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown50,
+    letterSpacing: trackBody(14),
+    color: Ink.body,
   },
   previewButton: {
     flexDirection: "row",
@@ -1163,16 +1157,16 @@ const styles = StyleSheet.create({
     gap: 6,
     height: 52,
     paddingHorizontal: 12,
-    borderRadius: 26,
+    borderRadius: Corner.pill,
     borderWidth: 1,
-    borderColor: Colors.brown50,
-    backgroundColor: Colors.white,
+    borderColor: Ink.body,
+    backgroundColor: Surface.canvas,
   },
   previewButtonText: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 15,
-    letterSpacing: tracking(13),
-    color: Colors.brown50,
+    letterSpacing: trackBody(13),
+    color: Ink.body,
   },
   moreButton: {
     flexDirection: "row",
@@ -1180,9 +1174,9 @@ const styles = StyleSheet.create({
     gap: 6,
     height: 52,
     paddingHorizontal: 16,
-    borderRadius: 100,
+    borderRadius: Corner.pill,
     borderWidth: 1,
-    borderColor: Colors.brown10,
-    backgroundColor: Colors.white,
+    borderColor: Surface.plate,
+    backgroundColor: Surface.canvas,
   },
 });

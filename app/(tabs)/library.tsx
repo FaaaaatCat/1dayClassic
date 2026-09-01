@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import BookCard from '@/components/BookCard';
-import { Colors, Fonts, tracking } from '@/constants/theme';
+import { Ink, Surface, Type, trackBody } from '@/constants/theme';
 import { useBookSelection } from '@/context/BookSelectionContext';
 import { useShelf } from '@/context/ShelfContext';
 import { BOOKSTORE_BOOKS, isMvpBook } from '@/lib/bookstore';
@@ -96,7 +96,7 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   content: {
     flexGrow: 1,
@@ -109,10 +109,10 @@ const styles = StyleSheet.create({
     width: '50%',
   },
   empty: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown50,
+    letterSpacing: trackBody(14),
+    color: Ink.body,
     textAlign: 'center',
     paddingVertical: 40,
     paddingHorizontal: 20,
