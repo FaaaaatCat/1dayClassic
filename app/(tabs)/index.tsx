@@ -1,413 +1,470 @@
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import ScaleButton from '@/components/ScaleButton';
+import AlarmDetailScreen from '@/app/(tabs)/alarm-detail';
 import LessonCoverImage from '@/components/LessonCoverImage';
-import { Colors, Fonts, Radius, Shadow, tracking } from '@/constants/theme';
+import ScaleButton from '@/components/ScaleButton';
+import { Corner, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 import { useAlarm } from '@/context/AlarmContext';
 import { useBookSelection } from '@/context/BookSelectionContext';
-import { getBookLesson, getBookName, getLessonHeading, getTomorrowLesson } from '@/lib/books';
-import { TODAY_DAY, TODAY_MONTH } from '@/lib/calendar';
+import { useQuiz } from '@/context/QuizContext';
+import { getBookCalendar, getBookLesson, getLessonHeading } from '@/lib/books';
+import { getReadingProgress, timeLeftToday } from '@/lib/progress';
+import type { CalendarDay } from '@/lib/calendar';
 
-const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+/** 남은 시간을 다시 세는 주기 — 분 단위로 보여 주므로 1분이면 충분하다. */
+const TICK_MS = 60_000;
 
-/** hour(0~23) → "오전"/"오후" + 12시간제 표시 */
-function formatAlarmTime(hour: number, minute: number): { meridiem: string; time: string } {
+/** hour(0~23) → "오후 11:00" */
+function formatAlarmTime(hour: number, minute: number): string {
   const meridiem = hour < 12 ? '오전' : '오후';
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-  return { meridiem, time: `${hour12}:${String(minute).padStart(2, '0')}` };
+  return `${meridiem} ${hour12}:${String(minute).padStart(2, '0')}`;
 }
 
-/** 알람(홈) 화면. */
+/**
+ * 홈.
+ *
+ * 하루에 한 쪽만 편다. 그래서 화면의 중심은 오늘 한 장이고, 그 아래 목차는 지나온 날과
+ * 아직 잠긴 날을 보여 주는 자리다. 탭바를 걷어내고 위 줄의 버튼 셋이 그 자리를 대신한다.
+ */
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { alarm, toggleEnabled } = useAlarm();
+  const { alarm } = useAlarm();
   const { selectedBookId } = useBookSelection();
+  const { attemptOf } = useQuiz();
 
-  const bookName = getBookName(selectedBookId);
+  /** 알람 설정 — 화면을 갈아 끼우지 않고 이 위에 띄운다. */
+  const [alarmOpen, setAlarmOpen] = useState(false);
+  /** 목차 정렬 — 최신순(오늘이 위)과 오래된순을 오간다. */
+  const [newestFirst, setNewestFirst] = useState(true);
+
+  /** 남은 시간은 스스로 줄어들어야 한다 — 화면을 열어 둔 채로도 분이 넘어간다. */
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), TICK_MS);
+    return () => clearInterval(timer);
+  }, []);
+
   const todayLesson = getBookLesson(selectedBookId);
-  const tomorrowLesson = getTomorrowLesson(selectedBookId);
-  const { meridiem, time } = formatAlarmTime(alarm.hour, alarm.minute);
+  const progress = useMemo(
+    () => getReadingProgress(selectedBookId, (id) => attemptOf(id) !== undefined),
+    [selectedBookId, attemptOf],
+  );
 
-  // 데이터가 비면 홈 화면이 성립하지 않는다. 훅은 위에서 모두 호출한 뒤이므로 안전하다.
+  /**
+   * 목차 — 원고가 있는 날만 남긴다. 잠긴 날까지 365줄을 그리면 스크롤이 끝나지 않고,
+   * 아직 없는 것을 세는 목록이 된다.
+   */
+  const days = useMemo(() => {
+    const real = getBookCalendar(selectedBookId).filter((day) => day.lessonId !== undefined);
+    return newestFirst ? [...real].reverse() : real;
+  }, [selectedBookId, newestFirst]);
+
   if (!todayLesson) return null;
 
-  const todayHeading = getLessonHeading(todayLesson);
-  const tomorrowHeading = tomorrowLesson ? getLessonHeading(tomorrowLesson) : null;
+  const heading = getLessonHeading(todayLesson);
+  const todayRead = attemptOf(todayLesson.lesson.id) !== undefined;
 
-  const openLesson = () => {
+  const openToday = () => {
     router.push({
       pathname: '/today',
       params: { bookId: selectedBookId, lessonId: todayLesson.lesson.id },
     });
   };
 
-  const openAlarmDetail = () => {
-    router.push('/alarm-detail');
-  };
-
   return (
     <View style={styles.screen}>
       <ScrollView
-        contentContainerStyle={[styles.body, { paddingTop: insets.top }]}
+        contentContainerStyle={[styles.body, { paddingTop: insets.top + Space[12] }]}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.pageTitle}>
-          <Text style={styles.pageTitleText}>{bookName}</Text>
-          <View style={styles.pageTitleDateRow}>
-            <Text style={styles.pageTitleDateNumber}>{TODAY_MONTH}</Text>
-            <Text style={styles.pageTitleDateStar}>✦</Text>
-            <Text style={styles.pageTitleDateNumber}>{TODAY_DAY}</Text>
-          </View>
-        </View>
-
-        <View style={styles.todayCard}>
-          <LessonCoverImage lesson={todayLesson.lesson} style={styles.todayImage} resizeMode="cover" />
+        {/* 위 줄 — 왼쪽은 알람, 오른쪽은 이 앱의 다른 화면으로 가는 문 셋. */}
+        <View style={styles.topRow}>
           <ScaleButton
-            accessibilityLabel={`${todayHeading.title} 상세 보기`}
-            style={styles.todayCardBody}
-            onPress={openLesson}>
-            <Text style={styles.todayLabel}>오늘의 공부</Text>
-            <View style={styles.todayRow}>
-              <View style={styles.todayInfo}>
-                <Text style={styles.todayTitle} numberOfLines={1}>
-                  {todayHeading.title}
-                </Text>
-                {todayHeading.subtitle != null && (
-                  <Text style={styles.todayComposer} numberOfLines={1}>
-                    {todayHeading.subtitle}
-                  </Text>
-                )}
-              </View>
-              <View style={styles.todayButton}>
-                <Ionicons name="chevron-forward" color={Colors.brown100} size={28} />
-              </View>
-            </View>
+            accessibilityLabel={`알람 ${formatAlarmTime(alarm.hour, alarm.minute)} 설정`}
+            style={styles.alarmChip}
+            onPress={() => setAlarmOpen(true)}>
+            <Ionicons name="notifications-outline" color={Ink.primary} size={16} />
+            <Text style={styles.alarmText}>{formatAlarmTime(alarm.hour, alarm.minute)}</Text>
           </ScaleButton>
 
-          <View style={styles.cardDivider}>
-            <Text style={styles.cardDividerStar}>✦</Text>
-            <View style={styles.cardDividerLine} />
-            <Text style={styles.cardDividerStar}>✦</Text>
-          </View>
-
-          <View style={styles.alarmRow}>
-            <View style={styles.alarmIconBadge}>
-              <Ionicons name="time-outline" color={Colors.beige50} size={24} />
-            </View>
-            <View style={styles.alarmInfoWrap}>
-              <ScaleButton
-                accessibilityLabel="알람 편집"
-                style={styles.alarmInfo}
-                onPress={openAlarmDetail}>
-                <View style={styles.alarmDaysRow}>
-                  {DAY_LABELS.map((label, index) => (
-                    <Text
-                      key={label}
-                      style={[styles.alarmDayText, !alarm.repeatDays[index] && styles.alarmDayTextDimmed]}>
-                      {label}
-                    </Text>
-                  ))}
-                </View>
-                <View style={styles.alarmTimeRow}>
-                  <Text style={styles.alarmMeridiem}>{meridiem}</Text>
-                  <Text style={styles.alarmTimeValue}>{time}</Text>
-                </View>
-              </ScaleButton>
-            </View>
+          <View style={styles.topButtons}>
             <ScaleButton
-              accessibilityLabel={alarm.enabled ? '알람 끄기' : '알람 켜기'}
-              onPress={toggleEnabled}>
-              <View style={[styles.alarmToggle, alarm.enabled && styles.alarmToggleOn]}>
-                <View style={[styles.alarmToggleKnob, alarm.enabled && styles.alarmToggleKnobOn]} />
-              </View>
+              accessibilityLabel="내 서재"
+              style={styles.roundButton}
+              onPress={() => router.push('/library')}>
+              <Ionicons name="person" color={Ink.onDark} size={18} />
+            </ScaleButton>
+            <ScaleButton
+              accessibilityLabel="하루 서점"
+              style={styles.roundButton}
+              onPress={() => router.push('/bookstore')}>
+              <Ionicons name="book" color={Ink.onDark} size={18} />
+            </ScaleButton>
+            <ScaleButton
+              accessibilityLabel="설정"
+              style={styles.roundButton}
+              onPress={() => router.push('/settings')}>
+              <Ionicons name="settings-sharp" color={Ink.onDark} size={18} />
             </ScaleButton>
           </View>
         </View>
 
-        {tomorrowLesson && tomorrowHeading && (
-          <View style={styles.tomorrowRow}>
-            <View style={styles.tomorrowColumn}>
-              <View style={styles.tomorrowTitleRow}>
-                <Text style={styles.tomorrowLabel}>내일은?</Text>
-                <View style={styles.tomorrowDivider} />
-                <Text style={styles.tomorrowTitle} numberOfLines={1}>
-                  {tomorrowHeading.title}
-                </Text>
-              </View>
-              {tomorrowHeading.subtitle != null && (
-                <Text style={styles.tomorrowComposer} numberOfLines={1}>
-                  {tomorrowHeading.subtitle}
-                </Text>
+        {/* 완독까지 얼마나 남았는지 — 쪽수는 실제 책의 쪽수다(lib/progress 주석 참고). */}
+        <View style={styles.progressBar}>
+          <View style={styles.progressLeft}>
+            <Text style={styles.progressLabel}>완독까지</Text>
+            <Text style={styles.progressNumber}>{progress.remainingPages}P</Text>
+            <Text style={styles.progressLabel}>남음</Text>
+          </View>
+          <Text style={styles.progressTotal}>{`총 ${progress.totalPages}p`}</Text>
+        </View>
+
+        {/* 오늘 한 장. */}
+        <View style={styles.hero}>
+          <LessonCoverImage
+            lesson={todayLesson.lesson}
+            style={styles.heroImage}
+            placeholderLabelSize={16}
+          />
+          {/* 사진 위에 글을 얹으므로 어둠을 한 겹 깐다 — 밝은 사진에서도 글이 읽혀야 한다. */}
+          <View style={styles.heroScrim} pointerEvents="none" />
+
+          <Text style={styles.heroPage}>{`p.${progress.todayPage}`}</Text>
+
+          <View style={styles.heroBottom}>
+            <Text style={styles.heroTitle} numberOfLines={2}>
+              {heading.title}
+            </Text>
+            {heading.subtitle ? (
+              <Text style={styles.heroSubtitle} numberOfLines={1}>
+                {heading.subtitle}
+              </Text>
+            ) : null}
+
+            <View style={styles.heroButtons}>
+              <ScaleButton
+                accessibilityLabel="오늘의 공부 읽기"
+                style={styles.readButton}
+                onPress={openToday}>
+                <Ionicons name="play" color={Ink.primary} size={14} />
+                <Text style={styles.readText}>읽기</Text>
+              </ScaleButton>
+
+              {/* 다 읽은 날에만 나오는 표시 — 누르는 것이 아니라 알리는 것이다. */}
+              {todayRead && (
+                <View style={styles.doneButton}>
+                  <Ionicons name="checkmark" color={Ink.onDark} size={14} />
+                  <Text style={styles.doneText}>다 읽은 페이지</Text>
+                </View>
               )}
             </View>
-            <LessonCoverImage
-              lesson={tomorrowLesson.lesson}
-              style={styles.tomorrowCover}
-              resizeMode="cover"
-              placeholderLabelSize={8}
-            />
           </View>
-        )}
+        </View>
+
+        {/* 목차 정렬. */}
+        <ScaleButton
+          accessibilityLabel={`정렬 ${newestFirst ? '최신순' : '오래된순'}, 바꾸기`}
+          style={styles.sortButton}
+          onPress={() => setNewestFirst((v) => !v)}>
+          <Ionicons name="swap-vertical" color={Ink.primary} size={14} />
+          <Text style={styles.sortText}>{newestFirst ? '최신순' : '오래된순'}</Text>
+        </ScaleButton>
+
+        {/* 목차 — 오늘 줄만 남은 시간을 달고, 아직 오지 않은 날은 잠겨 있다. */}
+        <View style={styles.list}>
+          {days.map((day, index) => (
+            <TocRow
+              key={day.lessonId}
+              day={day}
+              last={index === days.length - 1}
+              timeLeft={day.isToday ? timeLeftToday(now) : undefined}
+              read={day.lessonId !== undefined && attemptOf(day.lessonId) !== undefined}
+              onPress={day.isToday ? openToday : undefined}
+            />
+          ))}
+        </View>
       </ScrollView>
+
+      {/* 알람 설정 — 화면을 옮기지 않고 이 위에 띄운다. */}
+      <Modal
+        visible={alarmOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setAlarmOpen(false)}>
+        <AlarmDetailScreen onClose={() => setAlarmOpen(false)} />
+      </Modal>
     </View>
+  );
+}
+
+/**
+ * 목차 한 줄.
+ *
+ * 오늘 줄만 누를 수 있다 — 지나간 날과 앞으로 올 날은 잠겨 있고, 그 사실을 자물쇠로
+ * 말한다. 하루에 한 쪽이라는 약속이 이 목록의 규칙이다.
+ */
+function TocRow({
+  day,
+  last,
+  timeLeft,
+  read,
+  onPress,
+}: {
+  day: CalendarDay;
+  last: boolean;
+  /** 오늘 줄에만 있는 값 — 자정까지 남은 시간. */
+  timeLeft?: string;
+  read: boolean;
+  onPress?: () => void;
+}) {
+  const body = (
+    <View style={[styles.row, last && styles.rowLast]}>
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle} numberOfLines={1}>
+          {day.title}
+        </Text>
+        {day.subtitle ? (
+          <Text style={styles.rowSubtitle} numberOfLines={1}>
+            {day.subtitle}
+          </Text>
+        ) : null}
+      </View>
+
+      {timeLeft ? (
+        <View style={styles.rowRight}>
+          <Ionicons name="time-outline" color={Ink.primary} size={14} />
+          <Text style={styles.rowTime}>{timeLeft}</Text>
+          {read && <Ionicons name="checkmark-circle" color={Ink.primary} size={16} />}
+        </View>
+      ) : (
+        <Ionicons name="lock-closed" color={Ink.muted} size={16} />
+      )}
+    </View>
+  );
+
+  if (!onPress) return body;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`${day.title} 읽기`} onPress={onPress}>
+      {body}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
-
-  // 본문
   body: {
-    padding: 8,
-    gap: 12,
-    paddingBottom: 24,
+    paddingHorizontal: Space[20],
+    paddingBottom: Space[40],
+    gap: Space[12],
   },
 
-  // 페이지 타이틀 — 헤더가 아니라 스크롤되는 본문의 일부
-  pageTitle: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingTop: 40,
-    paddingBottom: 16,
-  },
-  pageTitleText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 20,
-    lineHeight: 24,
-    letterSpacing: tracking(20),
-    color: Colors.brown100,
-  },
-  pageTitleDateRow: {
+  // 위 줄
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
   },
-  pageTitleDateNumber: {
-    fontFamily: Fonts.serifDisplay,
-    fontSize: 34,
-    lineHeight: 34,
-    letterSpacing: -0.85,
-    color: Colors.brown100,
+  /** 알람 — 누르는 자리라 알약으로 둔다. */
+  alarmChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space[8],
+    height: 36,
+    paddingHorizontal: Space[16],
+    borderRadius: Corner.pill,
+    backgroundColor: Surface.card,
   },
-  pageTitleDateStar: {
-    fontFamily: Fonts.regular,
-    fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown100,
+  alarmText: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.bodySm,
+    color: Ink.primary,
+  },
+  topButtons: {
+    flexDirection: 'row',
+    gap: Space[8],
+  },
+  roundButton: {
+    width: 36,
+    height: 36,
+    borderRadius: Corner.pill,
+    backgroundColor: Ink.primary,
   },
 
-  // 오늘의 알람 카드 (곡 정보 + 알람 시간 통합)
-  todayCard: {
-    backgroundColor: Colors.white,
-    borderRadius: Radius.card,
-    overflow: 'hidden',
-    width: '100%',
-    ...Shadow.card,
-  },
-  todayImage: {
-    width: '100%',
-    height: 160,
-  },
-  todayCardBody: {
-    alignItems: 'stretch',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    gap: 16,
-  },
-  todayLabel: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown50,
-  },
-  todayRow: {
+  // 진행 줄
+  progressBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: Space[16],
+    paddingVertical: Space[12],
+    borderRadius: Corner.small,
+    backgroundColor: Surface.card,
   },
-  todayInfo: {
-    flex: 1,
-    minWidth: 0,
-    gap: 6,
-  },
-  todayTitle: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 24,
-    letterSpacing: tracking(24),
-    color: Colors.brown100,
-  },
-  todayComposer: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-    letterSpacing: tracking(15),
-    color: Colors.brown100,
-  },
-  todayButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // 곡 정보 / 알람 시간 구분선
-  cardDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 20,
-    paddingVertical: 2,
-  },
-  cardDividerStar: {
-    fontFamily: Fonts.regular,
-    fontSize: 8,
-    letterSpacing: tracking(8),
-    color: Colors.brown10,
-  },
-  cardDividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.brown10,
-  },
-
-  // 알람 시간
-  alarmRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  alarmIconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: Colors.beige10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alarmInfoWrap: {
-    flex: 1,
-    minWidth: 0,
-  },
-  alarmInfo: {
-    alignItems: 'stretch',
-    width: '100%',
-    gap: 4,
-  },
-  alarmTimeRow: {
+  progressLeft: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 8,
+    gap: Space[4],
   },
-  alarmMeridiem: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 13,
-    letterSpacing: tracking(13),
-    color: Colors.brown100,
+  progressLabel: {
+    fontFamily: Type.ui,
+    ...TypeScale.bodySm,
+    color: Ink.body,
   },
-  alarmTimeValue: {
-    fontFamily: Fonts.serifDisplay,
-    fontSize: 34,
-    color: Colors.brown100,
+  /** 남은 쪽수 — 이 줄에서 유일하게 큰 글자다. */
+  progressNumber: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.headingSm,
+    color: Ink.primary,
   },
-  alarmDaysRow: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  alarmDayText: {
-    width: 15,
-    textAlign: 'center',
-    fontFamily: Fonts.semiBold,
-    fontSize: 10,
-    letterSpacing: tracking(10),
-    color: Colors.brown100,
-  },
-  alarmDayTextDimmed: {
-    opacity: 0.3,
-  },
-  alarmToggle: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    padding: 3,
-    backgroundColor: Colors.beige50,
-    justifyContent: 'center',
-  },
-  alarmToggleOn: {
-    backgroundColor: Colors.beige100,
-  },
-  alarmToggleKnob: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: Colors.white,
-    shadowColor: Colors.brown100,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  alarmToggleKnobOn: {
-    transform: [{ translateX: 20 }],
+  progressTotal: {
+    fontFamily: Type.ui,
+    ...TypeScale.bodySm,
+    color: Ink.muted,
   },
 
-  // 내일의 알람 프리뷰
-  tomorrowRow: {
-    opacity: 0.4,
+  // 오늘 한 장
+  hero: {
+    height: 380,
+    borderRadius: Corner.card,
+    overflow: 'hidden',
+    backgroundColor: Ink.primary,
+    justifyContent: 'flex-end',
+  },
+  heroImage: {
+    ...StyleSheet.absoluteFill,
+    width: '100%',
+    height: '100%',
+  },
+  /** 사진 위 어둠 — 글이 읽히게 하는 최소한만. */
+  heroScrim: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  heroPage: {
+    position: 'absolute',
+    top: Space[16],
+    left: Space[16],
+    fontFamily: Type.uiMedium,
+    ...TypeScale.bodySm,
+    color: Ink.onDark,
+  },
+  heroBottom: {
+    alignItems: 'center',
+    gap: Space[4],
+    padding: Space[16],
+  },
+  heroTitle: {
+    fontFamily: Type.readingBold,
+    ...TypeScale.headingSm,
+    textAlign: 'center',
+    color: Ink.onDark,
+  },
+  heroSubtitle: {
+    fontFamily: Type.ui,
+    ...TypeScale.bodySm,
+    textAlign: 'center',
+    color: Ink.onDark,
+  },
+  heroButtons: {
+    flexDirection: 'row',
+    alignSelf: 'stretch',
+    gap: Space[8],
+    marginTop: Space[12],
+  },
+  readButton: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: Space[8],
+    height: 44,
+    borderRadius: Corner.pill,
+    backgroundColor: Surface.canvas,
+  },
+  readText: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.body,
+    color: Ink.primary,
+  },
+  /** 다 읽었다는 표시 — 읽기 버튼과 나란히 서되 눌리지 않는다. */
+  doneButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    justifyContent: 'center',
+    gap: Space[8],
+    height: 44,
+    borderRadius: Corner.pill,
+    backgroundColor: 'rgba(253, 252, 252, 0.35)',
   },
-  tomorrowColumn: {
-    flex: 1,
-    minWidth: 0,
-    alignItems: 'flex-end',
-    gap: 4,
+  doneText: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.body,
+    color: Ink.onDark,
   },
-  tomorrowTitleRow: {
+
+  // 목차
+  sortButton: {
+    flexDirection: 'row',
+    alignSelf: 'flex-end',
+    gap: Space[4],
+    height: 32,
+    paddingHorizontal: Space[12],
+    borderRadius: Corner.pill,
+    backgroundColor: Surface.card,
+  },
+  sortText: {
+    fontFamily: Type.ui,
+    ...TypeScale.bodySm,
+    color: Ink.primary,
+  },
+  list: {
+    borderRadius: Corner.small,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Surface.plate,
+    overflow: 'hidden',
+  },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    width: '100%',
+    gap: Space[12],
+    paddingHorizontal: Space[16],
+    paddingVertical: Space[16],
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Surface.plate,
   },
-  tomorrowLabel: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown100,
+  /** 마지막 줄 — 목록의 테두리와 겹치지 않게 제 선을 지운다. */
+  rowLast: {
+    borderBottomWidth: 0,
   },
-  tomorrowDivider: {
+  rowText: {
     flex: 1,
-    height: 1,
-    backgroundColor: Colors.brown10,
+    gap: Space[4],
   },
-  tomorrowTitle: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 16,
-    letterSpacing: tracking(16),
-    color: Colors.brown100,
+  rowTitle: {
+    fontFamily: Type.readingBold,
+    ...TypeScale.subheading,
+    color: Ink.primary,
   },
-  tomorrowComposer: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 10,
-    letterSpacing: tracking(10),
-    color: Colors.brown100,
-    textAlign: 'right',
-    width: '100%',
+  rowSubtitle: {
+    fontFamily: Type.ui,
+    ...TypeScale.bodySm,
+    color: Ink.body,
   },
-  tomorrowCover: {
-    width: 40,
-    height: 40,
-    borderRadius: 4,
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space[4],
+  },
+  rowTime: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.bodySm,
+    color: Ink.primary,
   },
 });

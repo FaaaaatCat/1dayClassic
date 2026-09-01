@@ -1,18 +1,20 @@
 import { Tabs } from 'expo-router';
 
 import AppHeader from '@/components/AppHeader';
-import AppTabBar from '@/components/AppTabBar';
 import { Surface } from '@/constants/theme';
 
 /**
- * 하단 탭바(오늘의 공부/내 서재/하루 서점/설정) 레이아웃 — 탭바 자체는 AppTabBar가 그린다.
- * today, alarm-detail, book/[id]은 탭바에는 안 보이지만(AppTabBar의 TABS 목록에서 제외)
- * 이 네비게이터 안에서 목록 화면을 탭했을 때 라우팅되는 상세 화면이다 — 각자 자체 헤더(X 닫기 버튼)를 그린다.
+ * 화면들을 담는 네비게이터.
+ *
+ * 이름은 (tabs)지만 하단 탭바는 없다 — 홈 위 줄의 버튼 셋(내 서재·하루 서점·설정)이 그
+ * 자리를 대신한다. 하루에 한 쪽이라는 화면에서 늘 떠 있는 탭바는 갈 곳이 많다는 인상을
+ * 줘서 걷어냈다. 폴더 이름을 그대로 두는 건 경로(/library·/bookstore)가 이미 여러 곳에
+ * 박혀 있어서다.
  */
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={(props) => <AppTabBar {...props} />}
+      tabBar={() => null}
       screenOptions={({ route }) => ({
         headerShown: true,
         header: () => <AppHeader title={TITLES[route.name] ?? ''} />,

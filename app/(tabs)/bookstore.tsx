@@ -42,13 +42,9 @@ function toRows(entries: Entry[]): Entry[][] {
 /**
  * 하루 서점 — 유유출판사 277권을 한 격자에 놓는다.
  *
- * 타이틀과 필터는 목록과 함께 스크롤되어 올라간다(그래서 탭 네비게이터의 공용 헤더를 껐다).
- * 둘이 화면 밖으로 나가면 같은 내용이 위에서 덮듯 나타나는데, 책 상세 화면의 미니박스와
- * 같은 방식이다 — position:absolute 오버레이라 목록 레이아웃에는 영향을 주지 않는다.
- *
- * 나타나는 조건이 둘로 나뉜다:
- * - 필터: 위치로 판단한다. 흐름 속 필터가 화면 위로 사라지면 나타나고, 돌아오면 사라진다.
- * - 타이틀: 방향으로 판단한다. 목록 어디에 있든 위로 스크롤하는 동안 보이고, 내리면 접힌다.
+ * 제목 줄과 필터는 목록 밖에 있어 스크롤과 무관하게 늘 붙어 있다(그래서 탭 네비게이터의
+ * 공용 헤더를 껐다). 예전에는 스크롤 방향을 세어 접었다 폈다 했는데, 방향이 꺾이는 자리마다
+ * 상태가 엇갈려 화면이 튀었다.
  *
  * 격자는 numColumns 대신 두 권씩 묶은 줄을 항목으로 넘긴다 — 그래야 한 줄의 두 카드가
  * 같은 높이로 늘어난다.
@@ -132,7 +128,7 @@ export default function BookstoreScreen() {
     });
   };
 
-/**
+  /**
    * 타이틀 줄과 (열려 있으면) 검색 인풋.
    *
    * 목록과 함께 스크롤되지 않고 화면 맨 위에 붙어 있다. 예전에는 스크롤 방향을 세어
@@ -142,6 +138,15 @@ export default function BookstoreScreen() {
   const titleSection = () => (
     <View>
       <View style={styles.titleBar}>
+        {/* 탭바를 걷어냈으므로 돌아가는 길이 화면 안에 있어야 한다. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="뒤로"
+          hitSlop={12}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back" color={Ink.primary} size={22} />
+        </Pressable>
         <Text style={styles.title}>하루 서점</Text>
         <Pressable
           accessibilityRole="button"
@@ -284,8 +289,8 @@ const styles = StyleSheet.create({
   titleBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
+    gap: 8,
+    paddingHorizontal: 12,
     paddingTop: 16,
     paddingBottom: 16,
     backgroundColor: Surface.canvas,
@@ -317,6 +322,7 @@ const styles = StyleSheet.create({
     color: Ink.primary,
   },
   title: {
+    flex: 1,
     fontFamily: Type.uiMedium,
     fontSize: 17,
     letterSpacing: trackBody(17),

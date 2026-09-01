@@ -31,7 +31,7 @@ function to24Hour(meridiemIndex: number, hour12: number): number {
 }
 
 /** 알람 편집 화면 — 갤럭시/애플 기본 시계 앱의 알람 편집 화면을 참고한 레이아웃. */
-export default function AlarmDetailScreen() {
+export default function AlarmDetailScreen({ onClose }: { onClose?: () => void } = {}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { alarm, updateAlarm } = useAlarm();
@@ -48,8 +48,13 @@ export default function AlarmDetailScreen() {
     setRepeatDays((prev) => prev.map((value, i) => (i === index ? !value : value)));
   };
 
-  // Tabs 형제 화면 간 router.back()이 기대한 대로 동작하지 않아 홈으로 명시적 replace.
-  const goHome = () => router.replace('/');
+  /**
+   * 닫기 — 홈 위에 팝업으로 떠 있으면 그 팝업만 닫고, 화면으로 열렸으면 홈으로 돌아간다.
+   *
+   * Tabs 형제 화면 간 router.back()이 기대한 대로 동작하지 않아 화면일 때는 명시적으로
+   * replace한다(lib/preview-nav의 같은 사정).
+   */
+  const goHome = () => (onClose ? onClose() : router.replace('/'));
 
   const handleSave = () => {
     const hour = to24Hour(meridiemIndex, hour12);
