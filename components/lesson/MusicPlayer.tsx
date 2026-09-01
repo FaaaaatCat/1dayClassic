@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { CARD_W, PLAYER_H } from '@/lib/card-pages';
@@ -40,8 +40,26 @@ function loadPlayer(): React.ComponentType<Record<string, unknown>> | null {
  * 카드 '안'이 아니라 덱 위에 얹는다 — 카드 안에 두면 장을 넘길 때 함께 사라져 음악이
  * 끊긴다. 장을 넘겨도 이 뷰는 그대로 있으므로 소리가 이어진다.
  */
-export default function MusicPlayer({ videoId }: { videoId: string }) {
+export default function MusicPlayer({
+  videoId,
+  paused,
+}: {
+  videoId: string;
+  /** 밖에서 세워야 할 때(낭독을 켠 동안). 소리가 둘이 되면 아무것도 안 들린다. */
+  paused: boolean;
+}) {
   const YoutubePlayer = useMemo(loadPlayer, []);
+
+  /**
+   * 지금 재생 중인지.
+   *
+   * 이 값을 우리가 들고 있어야 밖에서 세울 수 있다. 재생기 제 버튼으로 시작한 것도
+   * onChangeState로 받아 적어 둔다 — 그래야 낭독을 켰을 때 값이 바뀌며 멈춘다.
+   */
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    if (paused) setPlaying(false);
+  }, [paused]);
 
   if (!YoutubePlayer) {
     return (
@@ -57,8 +75,12 @@ export default function MusicPlayer({ videoId }: { videoId: string }) {
         videoId={videoId}
         height={PLAYER_H}
         width={CARD_W}
-        // 열자마자 소리가 나야 한다 — 버튼을 눌러서 연 재생기다.
-        play
+        // 들어오자마자 소리를 내지 않는다 — 재생기는 늘 여기 있고, 들을지는 사람이 정한다.
+        play={playing && !paused}
+        onChangeState={(state: string) => {
+          if (state === 'playing') setPlaying(true);
+          else if (state === 'paused' || state === 'ended') setPlaying(false);
+        }}
         initialPlayerParams={{
           // 화면 안에서 재생한다. 전체 화면으로 넘어가면 글을 함께 볼 수 없다.
           preventFullScreen: true,

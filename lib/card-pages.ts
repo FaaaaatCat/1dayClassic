@@ -64,10 +64,8 @@ const MIN_CHARS_PER_CARD = 200;
 /**
  * 카드가 실제로 담는 줄 수. 이보다 길어질 것 같으면 200자를 못 채웠어도 한 문장 앞에서 끊는다.
  *
- * 음악이 있는 책(하루 클래식)만 재생기가 열린 '짧아진 카드'를 기준으로 센다. 음악을
- * 켜면 카드가 그만큼 줄어드는데 장 수는 그대로여야 하기 때문이다 — 긴 카드에 맞춰
- * 나눠 두면 음악을 켠 순간 글이 잘린다. 나머지 여덟 권은 카드가 줄어들 일이 없으므로
- * 온전한 높이로 센다.
+ * 유튜브가 딸린 항목은 재생기가 카드 아래를 늘 차지하므로 '짧아진 카드'를 기준으로
+ * 센다. 딸리지 않은 항목은 카드가 줄어들 일이 없으니 온전한 높이로 센다.
  *
  * 문장을 온전히 담다 보면 200자를 채운 뒤 붙는 문장이 길어 카드를 넘길 때가 있다
  * (실측 아홉 권에서 다섯 장, 최대 열아홉 줄). 카드 안에 스크롤을 두지 않으므로 — 이 화면은
@@ -174,13 +172,10 @@ export interface CardCover {
   /** 책의 표식. 없는 책은 그 자리가 빈다(lib/bookstore의 symbol). */
   symbol?: string;
   /**
-   * 그 곡을 들을 수 있는 곳. 하루 클래식만 갖는다 — 다른 책은 들을 곡이 없다.
-   * 있으면 표지 맨 아래에 '음악 듣기'가 선다.
-   */
-  listenUrl?: string;
-  /**
-   * 그 곡의 유튜브 영상 ID. 있으면 '음악 듣기'가 바깥 브라우저 대신 카드 아래 붙박이
-   * 재생기를 연다 — 브라우저로 나가면 유튜브가 다른 창에서의 재생을 막아 버린다.
+   * 이 항목에 딸린 유튜브 영상 ID. 있으면 카드 아래에 재생기가 늘 앉아 있다.
+   *
+   * 지금은 하루 클래식만 갖지만 책을 가리지 않는다 — 데이터에 youtubeId를 적어 두면
+   * 어느 책이든 그 자리가 생긴다.
    */
   listenId?: string;
 }
@@ -225,14 +220,28 @@ export function getLessonEpigraph(bookLesson: BookLesson): CardEpigraph | undefi
   }
 }
 
+/**
+ * 이 항목에 딸린 유튜브 영상 ID.
+ *
+ * 책마다 항목의 생김새가 달라(Track·LatinLesson·…) 필드가 있는 책과 없는 책이 섞여
+ * 있다. 있으면 꺼내고 없으면 없는 대로 둔다 — 나중에 다른 책이 youtubeId를 갖게 되면
+ * 여기를 고치지 않아도 그대로 걸린다.
+ */
+function lessonVideoId(lesson: BookLesson['lesson']): string | undefined {
+  return 'youtubeId' in lesson ? lesson.youtubeId : undefined;
+}
+
 export function getCardCover(bookLesson: BookLesson, bookName: string): CardCover {
   const heading = getLessonHeading(bookLesson);
   const symbol = BOOKSTORE_BOOKS.find((book) => book.id === bookLesson.book)?.symbol;
   // 곡 링크는 클래식에만 있는 필드라 여기서 갈라 꺼낸다.
-  const classic = bookLesson.book === 'classic';
-  const listenUrl = classic ? bookLesson.lesson.youtubeUrl : undefined;
-  const listenId = classic ? bookLesson.lesson.youtubeId : undefined;
-  return { bookName, title: heading.title, subtitle: heading.subtitle, symbol, listenUrl, listenId };
+  return {
+    bookName,
+    title: heading.title,
+    subtitle: heading.subtitle,
+    symbol,
+    listenId: lessonVideoId(bookLesson.lesson),
+  };
 }
 
 /**
@@ -251,8 +260,8 @@ export function buildCardPages(
 ): CardPage[] {
   const pages: CardPage[] = [{ kind: 'cover' }];
   if (getLessonEpigraph(bookLesson)) pages.push({ kind: 'quote' });
-  // 이 항목에 음악이 있는가 — 있으면 재생기가 카드 아래를 가져가므로 더 짧게 나눈다.
-  const hasMusic = bookLesson.book === 'classic' && !!bookLesson.lesson.youtubeId;
+  // 이 항목에 음악이 있는가 — 있으면 재생기가 카드 아래를 늘 차지하므로 더 짧게 나눈다.
+  const hasMusic = !!lessonVideoId(bookLesson.lesson);
   for (const paragraph of bookLesson.lesson.story) {
     // 한 장에는 한 문단. 긴 문단은 문장 끝에서 나뉜다.
     for (const part of splitParagraphToCards(paragraph, hasMusic))
