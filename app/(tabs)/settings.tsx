@@ -6,7 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import AlarmPermissionCard from '@/components/AlarmPermissionCard';
 import ScaleButton from '@/components/ScaleButton';
 import SettingRow from '@/components/SettingRow';
-import { Corner, Feedback, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { Corner, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 import { useBgm } from '@/context/BgmContext';
 import { previewAlarmScreens } from '@/lib/alarmBook';
 import { BGM_OPTIONS } from '@/lib/bgm';
@@ -51,11 +51,7 @@ export default function SettingsScreen() {
                     {option.label}
                   </Text>
                   {selected && (
-                    <Ionicons
-                      name="checkmark"
-                      color={Feedback.right}
-                      size={18}
-                    />
+                    <Ionicons name="checkmark" color={Ink.primary} size={18} />
                   )}
                 </View>
               </ScaleButton>
@@ -161,14 +157,14 @@ const styles = StyleSheet.create({
     paddingBottom: Space[48],
   },
   /**
-   * 카드 — 바탕과 같은 흰색이고, 가르는 것은 stone 선 하나다.
+   * 카드 — 바탕(eggshell)에서 한 단 올라온 taupe다. 경계는 stone 선이 맡는다.
    *
    * 떠 있는 것처럼 보이지 않게 그림자를 두지 않는다. 이 시스템은 종이 위에 인쇄된
-   * 것처럼 보여야 하고, 구역은 그림자가 아니라 선으로 나눈다.
+   * 것처럼 보여야 하고, 구역은 그림자가 아니라 색과 선으로 나눈다.
    */
   card: {
     marginTop: Space[12],
-    backgroundColor: Surface.canvas,
+    backgroundColor: Surface.card,
     borderRadius: Corner.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Surface.plate,
@@ -213,15 +209,17 @@ const styles = StyleSheet.create({
   },
   bgmRow: {
     alignItems: 'stretch',
+    // 카드(taupe) 위에서 한 단 내려온 밝은 면 — 눌러야 할 자리가 면으로 드러난다.
+    backgroundColor: Surface.canvas,
     borderWidth: 1,
     borderColor: Surface.plate,
     borderRadius: Corner.small,
     paddingHorizontal: Space[16],
     paddingVertical: Space[12],
   },
+  /** 고른 줄 — 이 시스템에서 '켜짐'은 색이 아니라 잉크다. */
   bgmRowSelected: {
-    borderColor: Feedback.right,
-    backgroundColor: Feedback.rightSurface,
+    borderColor: Ink.primary,
   },
   bgmRowInner: {
     flexDirection: 'row',
@@ -236,7 +234,7 @@ const styles = StyleSheet.create({
   },
   bgmLabelSelected: {
     fontFamily: Type.uiMedium,
-    color: Feedback.right,
+    color: Ink.primary,
   },
 
   // 알람 화면 미리보기
