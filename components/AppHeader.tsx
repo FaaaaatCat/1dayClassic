@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Fonts, tracking } from '@/constants/theme';
+import { Ink, Surface, Type, trackBody } from '@/constants/theme';
 
 interface AppHeaderProps {
   /** 헤더에 표시할 페이지 타이틀 */
@@ -25,14 +25,14 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.brown10,
+    borderBottomColor: Surface.plate,
   },
   title: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 17,
-    letterSpacing: tracking(17),
-    color: Colors.brown100,
+    letterSpacing: trackBody(17),
+    color: Ink.primary,
   },
 });

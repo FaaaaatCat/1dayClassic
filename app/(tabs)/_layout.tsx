@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 
 import AppHeader from '@/components/AppHeader';
 import AppTabBar from '@/components/AppTabBar';
-import { Colors } from '@/constants/theme';
+import { Surface } from '@/constants/theme';
 
 /**
  * 하단 탭바(오늘의 공부/내 서재/하루 서점/설정) 레이아웃 — 탭바 자체는 AppTabBar가 그린다.
@@ -16,7 +16,7 @@ export default function TabLayout() {
       screenOptions={({ route }) => ({
         headerShown: true,
         header: () => <AppHeader title={TITLES[route.name] ?? ''} />,
-        sceneStyle: { backgroundColor: Colors.bg },
+        sceneStyle: { backgroundColor: Surface.canvas },
       })}>
       <Tabs.Screen name="index" options={{ title: '오늘의 공부', headerShown: false }} />
       <Tabs.Screen name="today" options={{ headerShown: false, href: null }} />

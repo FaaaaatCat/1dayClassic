@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BookCard from "@/components/BookCard";
 import TagChip from "@/components/TagChip";
-import { Colors, Fonts, tracking } from "@/constants/theme";
+import { Ink, Surface, Type, trackBody } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { BOOKSTORE_BOOKS, isMvpBook } from "@/lib/bookstore";
 import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
@@ -243,7 +243,7 @@ export default function BookstoreScreen() {
         >
           <Ionicons
             name="search"
-            color={Colors.brown100}
+            color={Ink.primary}
             size={22}
           />
         </Pressable>
@@ -257,7 +257,7 @@ export default function BookstoreScreen() {
               onChangeText={setQuery}
               autoFocus={isOverlay === showFilters}
               placeholder="제목이나 저자로 찾기"
-              placeholderTextColor={Colors.brown50}
+              placeholderTextColor={Ink.body}
               returnKeyType="search"
               style={styles.searchInput}
             />
@@ -269,7 +269,7 @@ export default function BookstoreScreen() {
             >
               <Ionicons
                 name="close"
-                color={Colors.brown50}
+                color={Ink.body}
                 size={18}
               />
             </Pressable>
@@ -430,7 +430,7 @@ export default function BookstoreScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   content: {
     paddingBottom: 40,
@@ -442,12 +442,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 16,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   searchWrap: {
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
   },
   searchBox: {
     flexDirection: "row",
@@ -458,26 +458,26 @@ const styles = StyleSheet.create({
     paddingRight: 14,
     borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.brown10,
-    backgroundColor: Colors.white,
+    borderColor: Surface.plate,
+    backgroundColor: Surface.canvas,
   },
   searchInput: {
     flex: 1,
     // 안드로이드 TextInput은 기본 세로 여백이 있어 40px 상자 안에서 글자가 아래로 쏠린다.
     paddingVertical: 0,
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown100,
+    letterSpacing: trackBody(14),
+    color: Ink.primary,
   },
   title: {
-    fontFamily: Fonts.semiBold,
+    fontFamily: Type.uiMedium,
     fontSize: 17,
-    letterSpacing: tracking(17),
-    color: Colors.brown100,
+    letterSpacing: trackBody(17),
+    color: Ink.primary,
   },
   filters: {
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
     paddingTop: 4,
   },
   filterRow: {
@@ -494,9 +494,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   overlayColumn: {
-    backgroundColor: Colors.bg,
+    backgroundColor: Surface.canvas,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.brown10,
+    borderBottomColor: Surface.plate,
   },
   row: {
     flexDirection: "row",
@@ -505,10 +505,10 @@ const styles = StyleSheet.create({
     width: "50%",
   },
   empty: {
-    fontFamily: Fonts.regular,
+    fontFamily: Type.ui,
     fontSize: 14,
-    letterSpacing: tracking(14),
-    color: Colors.brown50,
+    letterSpacing: trackBody(14),
+    color: Ink.body,
     textAlign: "center",
     paddingVertical: 40,
   },

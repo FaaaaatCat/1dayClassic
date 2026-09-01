@@ -6,7 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import AlarmPermissionCard from '@/components/AlarmPermissionCard';
 import ScaleButton from '@/components/ScaleButton';
 import SettingRow from '@/components/SettingRow';
-import { Colors, Fonts, Palette, Radius, Shadow, Spacing, tracking, Typography } from '@/constants/theme';
+import { Colors, Fonts, Palette, Radius, Shadow, Spacing, Surface, tracking, Typography } from '@/constants/theme';
 import { useBgm } from '@/context/BgmContext';
 import { previewAlarmScreens } from '@/lib/alarmBook';
 import { BGM_OPTIONS } from '@/lib/bgm';
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Palette.background,
+    backgroundColor: Surface.canvas,
   },
   content: {
     paddingHorizontal: Spacing.xl,

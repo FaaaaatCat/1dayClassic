@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 
 import TagChip from '@/components/TagChip';
-import { Elevation, Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 
 /** 모서리에서 잘라 낼 정사각 영역 — 띠는 이 안에서만 보인다. */
 const RIBBON_BOX = 72;
@@ -132,11 +132,9 @@ const styles = StyleSheet.create({
     width: 108,
     height: 160,
     borderRadius: 2,
-    // 책 표지는 종이 위에 놓인 것처럼만 뜬다 — 예전의 20% 그림자는 이 시스템에서 너무 무겁다.
-    ...Elevation.whisper,
   },
   title: {
-    fontFamily: Type.uiMedium,
+    fontFamily: Type.readingBold,
     ...TypeScale.subheading,
     letterSpacing: trackBody(16),
     color: Ink.primary,
