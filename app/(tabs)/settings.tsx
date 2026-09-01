@@ -6,7 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import AlarmPermissionCard from '@/components/AlarmPermissionCard';
 import ScaleButton from '@/components/ScaleButton';
 import SettingRow from '@/components/SettingRow';
-import { Corner, Elevation, Feedback, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { Corner, Feedback, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 import { useBgm } from '@/context/BgmContext';
 import { previewAlarmScreens } from '@/lib/alarmBook';
 import { BGM_OPTIONS } from '@/lib/bgm';
@@ -69,7 +69,7 @@ export default function SettingsScreen() {
         켜는 곳은 여기가 유일하다. 네이티브 모듈이 없으면(Expo Go) 물어볼 대상이 없어 숨긴다.
       */}
       {isNativeAlarmAvailable() && (
-        <Animated.View entering={FadeIn.duration(700).delay(400)}>
+        <Animated.View entering={FadeIn.duration(700).delay(400)} style={styles.card}>
           <AlarmPermissionCard />
         </Animated.View>
       )}
@@ -160,12 +160,19 @@ const styles = StyleSheet.create({
     paddingTop: Space[8],
     paddingBottom: Space[48],
   },
+  /**
+   * 카드 — 바탕과 같은 흰색이고, 가르는 것은 stone 선 하나다.
+   *
+   * 떠 있는 것처럼 보이지 않게 그림자를 두지 않는다. 이 시스템은 종이 위에 인쇄된
+   * 것처럼 보여야 하고, 구역은 그림자가 아니라 선으로 나눈다.
+   */
   card: {
     marginTop: Space[12],
-    backgroundColor: Surface.card,
+    backgroundColor: Surface.canvas,
     borderRadius: Corner.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Surface.plate,
     padding: Space[24],
-    ...Elevation.whisper,
   },
   appName: {
     ...TypeScale.headingSm,

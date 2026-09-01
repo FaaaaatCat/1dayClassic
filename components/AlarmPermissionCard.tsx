@@ -91,13 +91,14 @@ export default function AlarmPermissionCard() {
       )}
 
       <View style={styles.rows}>
-        {ROWS.map((row) => {
+        {ROWS.map((row, index) => {
           const granted = status[row.kind];
+          const last = index === ROWS.length - 1;
           return (
             <ScaleButton
               key={row.kind}
               accessibilityLabel={`${row.label} 권한 ${granted ? '허용됨' : '허용하기'}`}
-              style={styles.row}
+              style={[styles.row, last && styles.rowLast]}
               onPress={() => {
                 requestAlarmPermission(row.kind).catch((error) =>
                   console.warn('[settings] 권한 요청 실패:', error),
@@ -123,12 +124,11 @@ export default function AlarmPermissionCard() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    marginTop: 16,
-    backgroundColor: Surface.canvas,
-    borderRadius: Corner.card,
-    padding: 24,
-  },
+  /**
+   * 카드 얼굴(바탕·모서리·선·여백)은 설정 화면이 씌운다. 여기서는 안쪽만 그린다 —
+   * 같은 카드가 두 군데에서 정의되면 한쪽만 고쳐져 서로 어긋난다.
+   */
+  card: {},
   title: {
     fontFamily: Type.uiMedium,
     fontSize: 16,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   notice: {
     marginTop: 12,
-    borderRadius: Corner.pill,
+    borderRadius: Corner.small,
     padding: 12,
     backgroundColor: Feedback.wrongSurface,
   },
@@ -150,15 +150,24 @@ const styles = StyleSheet.create({
   },
   rows: {
     marginTop: 16,
-    gap: 8,
   },
+  /**
+   * 항목 하나 — 상자가 아니라 목록의 한 줄이다.
+   *
+   * 넷을 각각 알약으로 감싸면 저마다 따로 누를 것처럼 보이고, 카드 안에 상자가 또
+   * 들어앉아 겹이 하나 늘어난다. 모서리를 없애고 아랫선 하나로만 나눈다.
+   */
   row: {
     alignItems: 'stretch',
-    borderWidth: 1,
-    borderColor: Surface.plate,
-    borderRadius: Corner.pill,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Surface.plate,
+    paddingVertical: 16,
+  },
+  /** 마지막 줄 — 카드의 아래 선과 겹치지 않게 제 선을 지운다. */
+  rowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
   },
   rowInner: {
     flexDirection: 'row',
