@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BookPreviewModal from "@/components/BookPreviewModal";
 import ScaleButton from "@/components/ScaleButton";
 import TagChip from "@/components/TagChip";
-import { Corner, Elevation, Feedback, Ink, Surface, Type, trackBody, trackDisplay } from '@/constants/theme';
+import { Corner, Elevation, Feedback, Ink, Line, Surface, Type, trackBody, trackDisplay } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { useShelf } from "@/context/ShelfContext";
 import { useToast } from "@/context/ToastContext";
@@ -205,8 +205,8 @@ const styles = StyleSheet.create({
   changeButtonText: { fontFamily: Type.uiMedium, fontSize: 15, letterSpacing: trackBody(15), color: Surface.canvas },
   previewButton: { backgroundColor: Ink.primary },
   previewButtonText: { fontFamily: Type.uiMedium, fontSize: 15, letterSpacing: trackBody(15), color: Surface.canvas },
-  moreButton: { width: 40, paddingHorizontal: 0, borderWidth: 1, borderColor: Surface.plate, backgroundColor: Surface.canvas },
-  moreMenu: { alignSelf: "stretch", backgroundColor: Surface.canvas, borderRadius: Corner.small, borderWidth: StyleSheet.hairlineWidth, borderColor: Surface.plate, ...Elevation.whisper },
+  moreButton: { width: 40, paddingHorizontal: 0, borderWidth: 1, borderColor: Line.color, backgroundColor: Surface.canvas },
+  moreMenu: { alignSelf: "stretch", backgroundColor: Surface.canvas, borderRadius: Corner.small, borderWidth: StyleSheet.hairlineWidth, borderColor: Line.color, ...Elevation.whisper },
   moreMenuItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 13 },
   deleteText: { fontFamily: Type.ui, fontSize: 14, letterSpacing: trackBody(14), color: Feedback.wrong },
   // 카드 목록 — 화면 좌우 padding이 위 책 info 블록(20)보다 훨씬 좁다(8).

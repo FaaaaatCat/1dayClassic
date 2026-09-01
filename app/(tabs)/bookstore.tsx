@@ -20,8 +20,8 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BookCard from "@/components/BookCard";
-import TagChip from "@/components/TagChip";
-import { Ink, Surface, Type, trackBody } from '@/constants/theme';
+import SelectField, { SelectRow, type SelectOption } from "@/components/SelectField";
+import { Ink, Line, Surface, Type, trackBody } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { BOOKSTORE_BOOKS, isMvpBook } from "@/lib/bookstore";
 import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
@@ -178,7 +178,6 @@ export default function BookstoreScreen() {
    * 칩을 가로로 스크롤해 둔 위치. 오버레이는 같은 줄을 새로 그리므로, 이걸 기억해 두지 않으면
    * 오버레이가 뜰 때마다 칩이 맨 앞으로 되돌아간다.
    */
-  const chipOffsetRef = useRef({ series: 0, field: 0 });
 
   const filtersProgress = useSharedValue(0);
   const titleProgress = useSharedValue(0);
@@ -279,78 +278,41 @@ export default function BookstoreScreen() {
     </View>
   );
 
-  const filterRow = (
-    axis: "series" | "field",
+  /**
+   * 고를 수 있는 것들 — '전체'가 맨 위에 오고, 나머지는 권수 많은 순이다. 0권인 항목은
+   * 아예 넣지 않는다(고르면 빈 화면이 나오는 선택지를 보여 줄 이유가 없다).
+   */
+  const optionsFor = (
     allLabel: string,
     names: string[],
     tally: Record<string, number>,
-    active: string | null,
-    setActive: (next: string | null) => void,
-    /** "전체" 바로 다음에 항상 고정으로 보여줄 칩(MVP처럼 권수 집계가 없는 합성 카테고리용). */
     pinned: string[] = [],
-  ) => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.filterRow}
-      contentOffset={{ x: chipOffsetRef.current[axis], y: 0 }}
-      scrollEventThrottle={64}
-      onScroll={(event) => {
-        chipOffsetRef.current[axis] = event.nativeEvent.contentOffset.x;
-      }}
-    >
-      <TagChip
-        label={allLabel}
-        variant={axis}
-        selected={active === null}
-        onPress={() => setActive(null)}
-      />
-      {pinned.map((name) => (
-        <TagChip
-          key={name}
-          label={name}
-          variant={axis}
-          selected={active === name}
-          onPress={() => setActive(active === name ? null : name)}
-        />
-      ))}
-      {names
-        .filter((name) => (tally[name] ?? 0) > 0)
-        // 권수 많은 시리즈·분야를 앞에 둔다 — 오른쪽으로 스크롤해야 보이는 칩일수록 덜 쓰인다.
-        .sort((a, b) => tally[b] - tally[a])
-        .map((name) => (
-          <TagChip
-            key={name}
-            label={name}
-            variant={axis}
-            selected={active === name}
-            // 같은 칩을 다시 누르면 해제한다.
-            onPress={() => setActive(active === name ? null : name)}
-          />
-        ))}
-    </ScrollView>
-  );
+  ): SelectOption[] => [
+    { value: null, label: allLabel },
+    ...pinned.map((name) => ({ value: name, label: name })),
+    ...names
+      .filter((name) => (tally[name] ?? 0) > 0)
+      .sort((a, b) => tally[b] - tally[a])
+      .map((name) => ({ value: name, label: name, count: tally[name] })),
+  ];
 
   const filters = (
-    <View style={styles.filters}>
-      {filterRow(
-        "series",
-        "시리즈 전체",
-        SERIES_NAMES,
-        counts.bySeries,
-        series,
-        setSeries,
-        [MVP_FILTER],
-      )}
-      {filterRow(
-        "field",
-        "분야 전체",
-        FIELD_NAMES,
-        counts.byField,
-        field,
-        setField,
-      )}
-    </View>
+    <SelectRow>
+      <SelectField
+        title="시리즈"
+        label={series ?? '시리즈 전체'}
+        options={optionsFor('시리즈 전체', SERIES_NAMES, counts.bySeries, [MVP_FILTER])}
+        value={series}
+        onChange={setSeries}
+      />
+      <SelectField
+        title="분야"
+        label={field ?? '분야 전체'}
+        options={optionsFor('분야 전체', FIELD_NAMES, counts.byField)}
+        value={field}
+        onChange={setField}
+      />
+    </SelectRow>
   );
 
   return (
@@ -458,7 +420,7 @@ const styles = StyleSheet.create({
     paddingRight: 14,
     borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Surface.plate,
+    borderColor: Line.color,
     backgroundColor: Surface.canvas,
   },
   searchInput: {
@@ -476,16 +438,6 @@ const styles = StyleSheet.create({
     letterSpacing: trackBody(17),
     color: Ink.primary,
   },
-  filters: {
-    backgroundColor: Surface.canvas,
-    paddingTop: 4,
-  },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-  },
   overlay: {
     position: "absolute",
     left: 0,
@@ -496,7 +448,7 @@ const styles = StyleSheet.create({
   overlayColumn: {
     backgroundColor: Surface.canvas,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Surface.plate,
+    borderBottomColor: Line.color,
   },
   row: {
     flexDirection: "row",

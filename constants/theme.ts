@@ -178,10 +178,20 @@ export const Elevation = {
   },
 } as const;
 
+/**
+ * 선의 색 — 표면과 따로 둔다.
+ *
+ * 처음에는 plate(#EBE8E4) 하나로 표면과 선을 겸했는데, canvas(#FDFCFC) 위에서는 두 색의
+ * 차이가 1%도 되지 않아 격자가 사라졌다. 선은 보이라고 긋는 것이라 한 단 진하게 둔다.
+ */
+export const Line = {
+  color: '#E0DBD5',
+} as const;
+
 /** 구역을 나누는 선 — 이 시스템에서 가장 자주 쓰는 경계다. */
 export const Hairline = {
   borderWidth: 1,
-  borderColor: Surface.plate,
+  borderColor: Line.color,
 } as const;
 
 /**

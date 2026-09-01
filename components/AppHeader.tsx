@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Ink, Surface, Type, trackBody } from '@/constants/theme';
+import { Ink, Line, Surface, Type, trackBody } from '@/constants/theme';
 
 interface AppHeaderProps {
   /** 헤더에 표시할 페이지 타이틀 */
@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     backgroundColor: Surface.canvas,
     borderBottomWidth: 1,
-    borderBottomColor: Surface.plate,
+    borderBottomColor: Line.color,
   },
   title: {
     fontFamily: Type.uiMedium,

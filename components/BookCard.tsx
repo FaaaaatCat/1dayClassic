@@ -1,7 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 
 import TagChip from '@/components/TagChip';
-import { Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { Ink, Line, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 
 /** 모서리에서 잘라 낼 정사각 영역 — 띠는 이 안에서만 보인다. */
 const RIBBON_BOX = 72;
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 32,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Surface.plate,
+    borderColor: Line.color,
     backgroundColor: Surface.canvas,
   },
   ribbonCorner: {
