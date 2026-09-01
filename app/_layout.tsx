@@ -44,10 +44,17 @@ const AppTheme = {
 };
 
 export default function RootLayout() {
-  // 을유1945 — 기본 서체. DM Serif Display — 인용문 블록 전용(라틴 전용, 한글은 폴백).
+  /**
+   * 서체는 둘로 나뉜다(constants/theme의 Fonts 주석 참고).
+   * 을유1945 — 읽는 글(본문·인용). Pretendard — UI(버튼·라벨·입력칸·표제).
+   * DM Serif Display — 인용문 블록 전용(라틴 전용, 한글은 폴백).
+   */
   const [fontsLoaded] = useFonts({
     'Eulyoo1945-Regular': require('../assets/fonts/Eulyoo1945-Regular.ttf'),
     'Eulyoo1945-SemiBold': require('../assets/fonts/Eulyoo1945-SemiBold.ttf'),
+    'Pretendard-Light': require('../assets/fonts/Pretendard-Light.otf'),
+    'Pretendard-Regular': require('../assets/fonts/Pretendard-Regular.otf'),
+    'Pretendard-Medium': require('../assets/fonts/Pretendard-Medium.otf'),
     DMSerifDisplay_400Regular,
   });
 
