@@ -46,6 +46,7 @@ import {
 import MusicPlayer from '@/components/lesson/MusicPlayer';
 import { StatusBarTint } from '@/components/StatusBarTint';
 import StudyReport from '@/components/StudyReport';
+import { useBookmarks } from '@/context/BookmarkContext';
 import { useNotes } from '@/context/NotesContext';
 import { useAlarmLockFlow } from '@/modules/alarm-clock';
 import {
@@ -284,26 +285,20 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
   const showToast = () => setToastAt(Date.now());
 
   /**
-   * 책갈피를 꽂아 둔 장들. '이 페이지를' 저장하는 것이라 화면 하나가 아니라 장마다
-   * 따로 기억한다 — 넘겨 돌아오면 꽂아 둔 그대로 보인다.
+   * 책갈피 — '이 페이지를' 접어 두는 일이라 화면 하나가 아니라 장마다 따로 기억한다.
    *
-   * 저장은 아직 없다(테스트 화면). 화면을 나가면 사라진다.
+   * 예전에는 이 화면 안의 useState 하나였고, 그래서 화면을 나가면 사라졌다. 이제
+   * BookmarkContext가 들고 앱을 껐다 켜도 남는다 — 마이페이지의 책 정보가 그 수를 센다.
    */
-  const [marked, setMarked] = useState<ReadonlySet<number>>(() => new Set());
+  const { isMarked, toggle: toggleBookmark } = useBookmarks();
   /** 책갈피 토스트 — 켰는지 껐는지에 따라 문구가 다르다(Toast의 at 주석 참고). */
   const [markToast, setMarkToast] = useState({ at: 0, text: '' });
 
   const toggleMark = (index: number) => {
-    const saving = !marked.has(index);
-    setMarked((prev) => {
-      const next = new Set(prev);
-      if (saving) next.add(index);
-      else next.delete(index);
-      return next;
-    });
+    const saved = toggleBookmark(lesson.id, index, bookLesson.book);
     setMarkToast({
       at: Date.now(),
-      text: saving ? '이 페이지를 북마크에 저장했습니다.' : '북마크를 해지했습니다.',
+      text: saved ? '이 페이지를 북마크에 저장했습니다.' : '북마크를 해지했습니다.',
     });
   };
   /** 감상 노트 팝업이 열려 있는지. */
@@ -631,7 +626,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
         <DescBookmark
           hasMusic={hasMusic}
           active={pages[page]?.kind === 'desc'}
-          saved={marked.has(page)}
+          saved={isMarked(lesson.id, page)}
           onToggle={() => toggleMark(page)}
         />
       </View>

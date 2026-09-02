@@ -10,6 +10,7 @@ import 'react-native-reanimated';
 
 import { AlarmProvider } from '@/context/AlarmContext';
 import { BgmProvider } from '@/context/BgmContext';
+import { BookmarkProvider } from '@/context/BookmarkContext';
 import { BookSelectionProvider } from '@/context/BookSelectionContext';
 import { NotesProvider } from '@/context/NotesContext';
 import { QuizProvider } from '@/context/QuizContext';
@@ -112,6 +113,7 @@ export default function RootLayout() {
           <ShelfProvider>
           <NotesProvider>
             <QuizProvider>
+              <BookmarkProvider>
               <BgmProvider>
               <ToastProvider>
                 <Stack>
@@ -141,6 +143,7 @@ export default function RootLayout() {
                 </Stack>
               </ToastProvider>
               </BgmProvider>
+              </BookmarkProvider>
             </QuizProvider>
           </NotesProvider>
           </ShelfProvider>
