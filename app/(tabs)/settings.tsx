@@ -1,19 +1,14 @@
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import AlarmPermissionCard from '@/components/AlarmPermissionCard';
 import ScaleButton from '@/components/ScaleButton';
 import SettingRow from '@/components/SettingRow';
 import { Corner, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
-import { useBgm } from '@/context/BgmContext';
 import { previewAlarmScreens } from '@/lib/alarmBook';
-import { BGM_OPTIONS } from '@/lib/bgm';
 import { isNativeAlarmAvailable } from '@/modules/alarm-clock';
 
 export default function SettingsScreen() {
-  const { bgmId, select } = useBgm();
   const router = useRouter();
 
   return (
@@ -22,53 +17,12 @@ export default function SettingsScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
       <Animated.View entering={FadeIn.duration(700).delay(200)} style={styles.card}>
-        <Text style={styles.appName}>하루 공부</Text>
-        <Text style={styles.slogan}>매일 아침, 하루치 공부로 하루를 시작하세요.</Text>
+        <Text style={styles.appName}>개발용 설정</Text>
         <Text style={styles.intro}>
-          하루 공부는 유유 '하루 시리즈' 아홉 권의 하루치 이야기를 매일 아침 전하는 앱입니다.
-          짧은 글과 낭독이 만나, 책을 읽는 시간이 하루의 가장 조용한 사치가 되기를 바랍니다.
+          만드는 동안 화면을 견주어 보려고 둔 자리입니다. 사용자가 쓰는 설정(배경음악·권한·
+          계정)은 마이페이지로 옮겼습니다. 출시 전에 이 화면을 지우거나 __DEV__로 감쌉니다.
         </Text>
       </Animated.View>
-
-      <Animated.View entering={FadeIn.duration(700).delay(350)} style={styles.card}>
-        <Text style={styles.sectionTitle}>낭독 배경음악</Text>
-        <Text style={styles.sectionHint}>
-          오디오 듣기를 누르면 여기서 고른 음악이 낭독 아래에 깔립니다.
-        </Text>
-
-        <View style={styles.bgmList}>
-          {BGM_OPTIONS.map((option) => {
-            const selected = option.id === bgmId;
-            return (
-              <ScaleButton
-                key={option.id}
-                accessibilityLabel={`배경음악 ${option.label}`}
-                style={[styles.bgmRow, selected && styles.bgmRowSelected]}
-                onPress={() => select(option.id)}
-              >
-                <View style={styles.bgmRowInner}>
-                  <Text style={[styles.bgmLabel, selected && styles.bgmLabelSelected]}>
-                    {option.label}
-                  </Text>
-                  {selected && (
-                    <Ionicons name="checkmark" color={Ink.primary} size={18} />
-                  )}
-                </View>
-              </ScaleButton>
-            );
-          })}
-        </View>
-      </Animated.View>
-
-      {/*
-        앱 시작 시의 권한 요청은 처음 한 번뿐이라(app/_layout.tsx), 그 뒤에 권한을 확인하고
-        켜는 곳은 여기가 유일하다. 네이티브 모듈이 없으면(Expo Go) 물어볼 대상이 없어 숨긴다.
-      */}
-      {isNativeAlarmAvailable() && (
-        <Animated.View entering={FadeIn.duration(700).delay(400)} style={styles.card}>
-          <AlarmPermissionCard />
-        </Animated.View>
-      )}
 
       {/*
         디자인 확인용. 실제 알람 화면을 그대로 띄우므로 여기서 보이는 게 곧 아침에 보일 화면이다.
@@ -175,12 +129,6 @@ const styles = StyleSheet.create({
     fontFamily: Type.readingBold,
     color: Ink.primary,
   },
-  slogan: {
-    ...TypeScale.subheading,
-    fontFamily: Type.readingRegular,
-    color: Ink.body,
-    marginTop: Space[8],
-  },
   intro: {
     ...TypeScale.body,
     fontFamily: Type.ui,
@@ -203,39 +151,7 @@ const styles = StyleSheet.create({
     color: Ink.body,
     marginTop: Space[4],
   },
-  bgmList: {
-    marginTop: Space[16],
-    gap: Space[8],
-  },
-  bgmRow: {
-    alignItems: 'stretch',
-    // 카드(taupe) 위에서 한 단 내려온 밝은 면 — 눌러야 할 자리가 면으로 드러난다.
-    backgroundColor: Surface.canvas,
-    borderWidth: 1,
-    borderColor: Surface.plate,
-    borderRadius: Corner.small,
-    paddingHorizontal: Space[16],
-    paddingVertical: Space[12],
-  },
   /** 고른 줄 — 이 시스템에서 '켜짐'은 색이 아니라 잉크다. */
-  bgmRowSelected: {
-    borderColor: Ink.primary,
-  },
-  bgmRowInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  bgmLabel: {
-    fontFamily: Type.ui,
-    fontSize: 15,
-    letterSpacing: trackBody(15),
-    color: Ink.primary,
-  },
-  bgmLabelSelected: {
-    fontFamily: Type.uiMedium,
-    color: Ink.primary,
-  },
 
   // 알람 화면 미리보기
   testButton: {
