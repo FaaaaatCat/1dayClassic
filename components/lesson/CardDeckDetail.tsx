@@ -44,6 +44,7 @@ import {
   type SpokenRange,
 } from '@/hooks/useCardNarration';
 import MusicPlayer from '@/components/lesson/MusicPlayer';
+import { StatusBarTint } from '@/components/StatusBarTint';
 import StudyReport from '@/components/StudyReport';
 import { useNotes } from '@/context/NotesContext';
 import { useAlarmLockFlow } from '@/modules/alarm-clock';
@@ -478,6 +479,9 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
 
   return (
     <View style={styles.screen}>
+      {/* 어두운 화면이라 상태바도 검게, 시계는 희게. */}
+      <StatusBarTint />
+
       {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니다.
           세이프에어리어를 스크린의 padding으로 주지 않는 건, 절대 배치된 덱·아래 줄이
           그 padding을 타지 않아서다(그러면 아래 줄이 내비게이션 바에 깔린다). */}

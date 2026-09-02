@@ -15,7 +15,8 @@ import { NotesProvider } from '@/context/NotesContext';
 import { QuizProvider } from '@/context/QuizContext';
 import { ShelfProvider } from '@/context/ShelfContext';
 import { ToastProvider } from '@/context/ToastContext';
-import { Ink, Palette } from '@/constants/theme';
+import { StatusTintProvider, useStatusTint } from '@/components/StatusBarTint';
+import { Palette } from '@/constants/theme';
 import {
   getPermissionStatus,
   hasAllAlarmPermissions,
@@ -104,6 +105,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <StatusTintProvider>
       <ThemeProvider value={AppTheme}>
       <AlarmProvider>
         <BookSelectionProvider>
@@ -145,10 +147,10 @@ export default function RootLayout() {
         </BookSelectionProvider>
         </AlarmProvider>
 
-        {/* 상태바 — 어느 화면 위에 있든 같은 띠와 같은 글자색을 쓴다. */}
+        {/* 상태바 — 지금 화면이 정한 색을 그대로 쓴다(components/StatusBarTint). */}
         <StatusBarBand />
-        <StatusBar style="light" />
       </ThemeProvider>
+      </StatusTintProvider>
     </SafeAreaProvider>
   );
 }
@@ -156,9 +158,9 @@ export default function RootLayout() {
 /**
  * 상태바 자리에 까는 띠.
  *
- * 이 앱은 흰 화면(홈·서재·설정)과 검은 화면(오늘의 공부 뷰어·리포트)이 섞여 있어서,
- * 시계와 배터리 글자색을 화면마다 바꾸면 넘나들 때마다 깜빡인다. 그래서 색을 바꾸는 대신
- * 그 자리를 짙은 회색으로 덮고 글자는 늘 흰색으로 둔다 — 어느 화면에서든 같게 보인다.
+ * 색은 지금 보이는 화면이 정한다(components/StatusBarTint). 띠가 페이지와 같은 색이라야
+ * 상태바가 화면 속으로 사라진다 — 하나로 고정하면 흰 화면 위에 띠 한 줄이 남는다. 글자
+ * 밝기도 함께 따라가므로 흰 화면에서는 검은 시계가, 검은 화면에서는 흰 시계가 보인다.
  *
  * 배경색을 StatusBar 컴포넌트로 주지 않고 직접 뷰를 까는 건, 안드로이드가 edge-to-edge로
  * 바뀌면서 상태바 배경색을 앱이 정할 수 없게 됐기 때문이다. 화면은 상태바 아래까지 그려지고,
@@ -169,7 +171,16 @@ export default function RootLayout() {
  */
 function StatusBarBand() {
   const insets = useSafeAreaInsets();
-  return <View style={[styles.band, { height: insets.top }]} pointerEvents="none" />;
+  const tint = useStatusTint();
+  return (
+    <>
+      <View
+        style={[styles.band, { height: insets.top, backgroundColor: tint.color }]}
+        pointerEvents="none"
+      />
+      <StatusBar style={tint.icons} />
+    </>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -178,7 +189,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: Ink.body,
     // 화면들 위에 얹혀야 한다. 뷰어의 카드나 팝업이 여기까지 올라오지 않도록.
     zIndex: 1000,
   },

@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import QuizSolver, { quizModalStyles } from '@/components/preview/QuizSolver';
 import ScaleButton from '@/components/ScaleButton';
+import { StatusBarTint } from '@/components/StatusBarTint';
 import StudyReport from '@/components/StudyReport';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { useCardNarration, type SpokenRange } from '@/hooks/useCardNarration';
@@ -122,7 +122,8 @@ export default function InstaPreviewScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 8 }]}>
-      <StatusBar style="light" />
+      {/* 어두운 화면이라 상태바도 검게, 시계는 희게. */}
+      <StatusBarTint />
 
       {/* 위 진행 바 — 지나온 칸은 채우고, 지금 칸은 시간에 맞춰 차오른다. */}
       <ProgressBars

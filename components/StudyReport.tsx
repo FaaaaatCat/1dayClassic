@@ -1,4 +1,3 @@
-import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -96,7 +95,6 @@ export default function StudyReport({
         { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
       ]}>
       {/* 검은 바탕에서는 앱의 기본 상태바(어두운 아이콘)가 묻힌다. 이 화면에서만 밝게. */}
-      <StatusBar style="light" />
 
       <View style={styles.center}>
         <Animated.Text style={[styles.headline, revealStyle]}>Keep it up!</Animated.Text>
