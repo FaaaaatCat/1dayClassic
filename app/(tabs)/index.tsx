@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
 
   // 진행 줄
   progressBar: {
-    borderRadius: Corner.small,
+    borderRadius: Corner.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Surface.plate,
     backgroundColor: Surface.card,
@@ -415,6 +415,14 @@ const styles = StyleSheet.create({
     fontSize: TypeScale.bodySm.fontSize,
     letterSpacing: TypeScale.bodySm.letterSpacing,
     color: Ink.body,
+    /*
+     * 큰 숫자와 눈으로 맞추기 위해 3px 올린다.
+     *
+     * baseline을 맞춰 놓아도 13pt와 22pt는 글자의 무게 중심이 다른 자리에 있어, 작은 쪽이
+     * 아래로 처져 보인다. 자리를 옮기는 것이라 layout을 건드리지 않는 transform을 쓴다 —
+     * absolute로 빼면 글줄의 폭 계산에서 빠져 옆 글자와 간격이 무너진다.
+     */
+    transform: [{ translateY: -3 }],
   },
   /** 남은 쪽수 — 이 줄에서 유일하게 큰 글자다. 줄 높이를 빼는 이유는 위와 같다. */
   progressNumber: {
