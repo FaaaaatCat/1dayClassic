@@ -90,13 +90,21 @@ export default function LessonCoverImage({
     setBox(Math.min(width, height));
   };
 
+  /**
+   * 표식을 가운데보다 조금 위에 앉힌다.
+   *
+   * 표지 아래쪽에는 제목과 버튼이 얹히므로, 한가운데에 두면 표식이 그 글자와 겹친다.
+   * 가운데 정렬을 유지한 채 아래 여백만 주면, 표식은 그 여백의 절반만큼 위로 올라간다.
+   */
+  const markLift = { marginBottom: box * 0.4 };
+
   return (
     <View style={[style, styles.typeCover]} onLayout={onLayout}>
       {box > 0 && book ? (
         book.symbol && isImageSymbol(book.symbol) ? (
           <Image
             source={{ uri: book.symbol }}
-            style={{ width: box * 0.42, height: box * 0.42, opacity: 0.4 }}
+            style={[markLift, { width: box * 0.42, height: box * 0.42, opacity: 0.4 }]}
             // 표식은 검게 그려진 그림이라, 어두운 바탕 위에서는 밝은 쪽으로 물들인다.
             tintColor={Ink.onDark}
             resizeMode="contain"
@@ -106,6 +114,7 @@ export default function LessonCoverImage({
           <Text
             style={[
               styles.mark,
+              markLift,
               book.symbol
                 ? { fontSize: box * 0.22, fontFamily: Type.serifDisplay }
                 : { fontSize: box * 0.11, letterSpacing: trackDisplay(box * 0.11) },
