@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BackHandler,
   Dimensions,
@@ -459,6 +459,38 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
     // 다시 듣거나 이어 갈 사람이 버튼을 다시 찾아 눌러야 하면 번거롭다.
     onFinish: () => setReaderOpen(false),
   });
+
+  /**
+   * 다시 열면 언제나 첫 장부터.
+   *
+   * 이 화면은 Tabs의 형제라 X로 닫아도 사라지지 않는다 — 넘겨 둔 자리와 열어 둔 팝업이
+   * 그대로 남아 있어서, 홈에 갔다 돌아오면 읽던 자리가 그대로 펼쳐진다. 하루에 한 쪽을
+   * 처음부터 읽는 화면이라 이어 보기가 아니라 다시 펴기가 맞다.
+   *
+   * 애니메이션 없이 값을 곧장 되돌린다. goTo를 쓰면 되돌아가는 장면이 그대로 보인다.
+   */
+  // 위 초기화가 낭독을 세우려면 낭독이 필요한데, 그 값은 렌더마다 새로 만들어진다.
+  const narrationRef = useRef(narration);
+  narrationRef.current = narration;
+
+  useFocusEffect(
+    useCallback(() => {
+      flipX.value = 0;
+      rawX.value = 0;
+      gliding.value = false;
+      targetPage.current = 0;
+      setPage(0);
+      setBarPage(0);
+      scrollRef.current?.scrollTo({ x: 0, animated: false });
+
+      setAutoPaused(false);
+      setNoteOpen(false);
+      setQuizOpen(false);
+      setReaderOpen(false);
+      narrationRef.current?.stop();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
 
 
   /**

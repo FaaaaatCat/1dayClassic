@@ -1,6 +1,6 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -58,6 +58,24 @@ export default function BookstoreScreen() {
   const [field, setField] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
+
+  /**
+   * 다시 들어올 때는 처음 상태로.
+   *
+   * 이 화면은 Tabs의 형제라 떠나도 사라지지 않는다 — 걸어 둔 필터와 검색어, 내려 둔
+   * 스크롤이 그대로 남는다. 저장한 것이 아니라 그때 잠깐 걸어 본 조건이므로, 다시 들어오면
+   * 277권 전체가 처음처럼 보이는 편이 맞다.
+   */
+  const listRef = useRef<FlatList<Entry[]>>(null);
+  useFocusEffect(
+    useCallback(() => {
+      setSeries(null);
+      setField(null);
+      setSearchOpen(false);
+      setQuery("");
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }, []),
+  );
 
   /** 검색 열기 — 제목 줄 아래에 인풋이 붙는다. */
   const openSearch = () => setSearchOpen(true);
@@ -236,6 +254,7 @@ export default function BookstoreScreen() {
       {filters}
 
       <FlatList
+        ref={listRef}
         contentContainerStyle={styles.content}
         data={rows}
         keyExtractor={(row) => row[0].book.id}

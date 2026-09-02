@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -54,6 +54,21 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  /**
+   * 다시 들어올 때는 처음 상태로.
+   *
+   * 홈도 Tabs의 형제라 떠나도 사라지지 않는다 — 목차를 내려 둔 자리와 바꿔 둔 정렬이
+   * 그대로 남는다. 저장한 것이 아니라 그때 잠깐 바꿔 본 것이므로 되돌린다.
+   */
+  const scrollRef = useRef<ScrollView>(null);
+  useFocusEffect(
+    useCallback(() => {
+      setNewestFirst(false);
+      setAlarmOpen(false);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, []),
+  );
+
   const todayLesson = getBookLesson(selectedBookId);
   const progress = useMemo(
     () => getReadingProgress(selectedBookId, (id) => attemptOf(id) !== undefined),
@@ -91,6 +106,7 @@ export default function HomeScreen() {
      */
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[styles.body, { paddingTop: Space[12] }]}
         showsVerticalScrollIndicator={false}
         /**

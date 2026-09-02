@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useRef } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -35,6 +36,20 @@ export default function MyPageShell({
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  /**
+   * 다시 들어올 때는 맨 위에서 시작한다.
+   *
+   * 이 화면들은 Tabs의 형제라 떠나도 사라지지 않는다 — 스크롤 자리가 그대로 남아 있어서,
+   * 홈에 갔다 돌아오면 아까 내려 둔 자리가 보인다. 저장하지 않은 것은 화면을 나가면
+   * 없던 일이 되는 편이 맞다.
+   */
+  const scrollRef = useRef<ScrollView>(null);
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, []),
+  );
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -52,6 +67,7 @@ export default function MyPageShell({
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + Space[40] }]}
         showsVerticalScrollIndicator={false}>
         {children}
