@@ -46,7 +46,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "check:queries": "node scripts/check-image-queries.mjs"
+    "check:queries": "node scripts/check-image-queries.mjs",
+    "fetch:unsplash": "node scripts/fetch-unsplash.mjs"
   },
   "private": true
 }
