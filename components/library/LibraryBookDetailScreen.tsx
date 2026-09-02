@@ -79,14 +79,14 @@ export default function LibraryBookDetailScreen() {
       <View style={styles.screen}>
         <View style={[styles.header, { paddingTop: insets.top }]}>
           <ScaleButton accessibilityLabel="뒤로" style={styles.iconButton} onPress={goBack}>
-            <Ionicons name="chevron-back" color={Ink.primary} size={22} />
+            <Ionicons name="chevron-back" color={Ink.onDark} size={22} />
           </ScaleButton>
           <Text style={styles.headerTitle}>책 정보</Text>
           <ScaleButton
             accessibilityLabel={menuOpen ? '더보기 닫기' : '더보기'}
             style={styles.iconButton}
             onPress={() => setMenuOpen((open) => !open)}>
-            <Ionicons name="ellipsis-vertical" color={Ink.primary} size={20} />
+            <Ionicons name="ellipsis-vertical" color={Ink.onDark} size={20} />
           </ScaleButton>
         </View>
 
@@ -151,33 +151,26 @@ export default function LibraryBookDetailScreen() {
             </View>
           )}
 
-          {/* 독서 기록 — 문장 한 줄과 그 아래 숫자들. */}
-          <Section title="독서 기록">
-            <Text style={styles.sentence}>{`${stats.daysRead}일 동안 이 책을 읽었어요.`}</Text>
-            <View style={styles.metaRow}>
-              <Text style={styles.meta}>{`${stats.readPages}p`}</Text>
-              <View style={styles.metaDivider} />
-              <Text style={styles.meta}>{`${stats.daysRead}일 독서`}</Text>
-            </View>
-          </Section>
-
-          <Section title="독서 진도">
+          <Section
+            title="독서 진도"
+            right={
+              <View style={styles.barSlot}>
+                <View
+                  style={[
+                    styles.barFill,
+                    {
+                      width: `${
+                        stats.totalPages > 0
+                          ? Math.min(100, Math.round((stats.readPages / stats.totalPages) * 100))
+                          : 0
+                      }%`,
+                    },
+                  ]}
+                />
+              </View>
+            }>
             <Text style={styles.value}>{`${stats.readPages}p`}</Text>
             <Text style={styles.note}>{`(총 ${stats.totalPages}p)`}</Text>
-            <View style={styles.bar}>
-              <View
-                style={[
-                  styles.barFill,
-                  {
-                    width: `${
-                      stats.totalPages > 0
-                        ? Math.min(100, Math.round((stats.readPages / stats.totalPages) * 100))
-                        : 0
-                    }%`,
-                  },
-                ]}
-              />
-            </View>
           </Section>
 
           <Section title="퀴즈 정답률" action="틀린 문제 보러가기" onAction={notReady}>
@@ -211,22 +204,25 @@ export default function LibraryBookDetailScreen() {
 }
 
 /**
- * 기록 한 칸 — 이름, 값, 그리고 (있으면) 오른쪽 버튼.
+ * 기록 한 칸 — 이름, 값, 그리고 오른쪽에 붙는 것(막대나 버튼).
  *
- * 값과 버튼을 한 줄에 두는 건 디자인이 그렇기도 하고, 값이 짧아서다. 값이 길어지는 칸
- * (독서 기록)은 children을 직접 그려 두 줄로 쓴다.
+ * 값과 그에 딸린 설명은 위아래로 쌓이고, 오른쪽 자리는 하나만 쓴다 — 진도는 막대를,
+ * 나머지는 버튼을 놓는다.
  */
 function Section({
   title,
   children,
   action,
   onAction,
+  right,
   last = false,
 }: {
   title: string;
   children: React.ReactNode;
   action?: string;
   onAction?: () => void;
+  /** 오른쪽에 놓을 것(진도 막대처럼). 버튼과 함께 쓰지는 않는다. */
+  right?: React.ReactNode;
   last?: boolean;
 }) {
   return (
@@ -234,6 +230,7 @@ function Section({
       <Text style={styles.sectionTitle}>{title}</Text>
       <View style={styles.sectionBody}>
         <View style={styles.sectionValue}>{children}</View>
+        {right}
         {action ? (
           <ScaleButton accessibilityLabel={action} style={styles.sectionButton} onPress={onAction}>
             <Text style={styles.sectionButtonText}>{action}</Text>
@@ -249,11 +246,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Surface.canvas,
   },
+  /** 검은 띠 위의 줄 — 글자와 아이콘이 모두 밝아야 보인다. */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 56,
     paddingHorizontal: Space[8],
-    paddingBottom: Space[8],
     backgroundColor: Ink.primary,
   },
   iconButton: {
@@ -374,19 +372,23 @@ const styles = StyleSheet.create({
     gap: Space[12],
     marginTop: Space[8],
   },
+  /**
+   * 값과 그에 딸린 설명 — 위아래로 놓는다.
+   *
+   * 한 줄에 두면 큰 숫자와 작은 글씨의 밑선을 맞춰야 하는데, 크기가 달라 어느 쪽으로
+   * 맞춰도 한쪽이 처져 보인다. 위아래로 놓으면 그 다툼이 없다.
+   */
   sectionValue: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: Space[8],
+    gap: Space[4],
   },
   /** 오른쪽 버튼 — 외곽선만. 이 화면의 채워진 것은 '이 책 읽기' 하나뿐이다. */
   sectionButton: {
     height: 36,
     paddingHorizontal: Space[12],
     borderRadius: Corner.small,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Surface.plate,
+    borderWidth: 1,
+    borderColor: Ink.muted,
   },
   sectionButtonText: {
     fontFamily: Type.ui,
@@ -410,33 +412,15 @@ const styles = StyleSheet.create({
     ...TypeScale.body,
     color: Ink.muted,
   },
-  sentence: {
-    fontFamily: Type.uiMedium,
-    fontSize: TypeScale.headingSm.fontSize,
-    letterSpacing: TypeScale.headingSm.letterSpacing,
-    color: Ink.primary,
-    marginTop: Space[8],
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space[8],
-    marginTop: Space[4],
-  },
-  meta: {
-    fontFamily: Type.ui,
-    ...TypeScale.bodySm,
-    color: Ink.muted,
-  },
-  metaDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 10,
-    backgroundColor: Surface.plate,
-  },
 
-  /** 진도 막대 — 값 옆에 붙어 남은 폭을 가져간다. */
-  bar: {
-    flex: 1,
+  /**
+   * 진도 막대 — 폭을 못박아 화면 오른쪽에 붙인다.
+   *
+   * 남는 폭을 다 가져가게 두면 쪽수의 자릿수에 따라 막대 길이가 달라져, 책마다 다른 화면처럼
+   * 보인다. 같은 자리에 같은 길이로 서 있어야 여러 책을 견줄 수 있다.
+   */
+  barSlot: {
+    width: 160,
     height: 6,
     borderRadius: 3,
     backgroundColor: Surface.plate,
