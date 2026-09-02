@@ -11,7 +11,7 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
-import { Ink, Type, TypeScale } from '@/constants/theme';
+import { Ink, Surface, Type, TypeScale } from '@/constants/theme';
 import { getCoverPlan, type UnsplashPhoto } from '@/lib/cover';
 import { MEDIA_HEADERS, resolveLessonCoverImageUrl } from '@/lib/lessons';
 import type { BookId, DailyLesson } from '@/types';
@@ -157,7 +157,7 @@ function UnsplashCredit({ photo }: { photo: UnsplashPhoto }) {
       hitSlop={8}
       onPress={() => Linking.openURL(photo.profile).catch(() => {})}>
       <Text style={styles.creditText} numberOfLines={1}>
-        {`Photo: ${photo.photographer} / Unsplash`}
+        {`Photo ${photo.photographer} / Unsplash`}
       </Text>
     </Pressable>
   );
@@ -186,8 +186,7 @@ const styles = StyleSheet.create({
   creditText: {
     fontFamily: Type.ui,
     ...TypeScale.caption,
-    color: Ink.onDark,
-    // 사진 위라 완전히 밝으면 시끄럽고, 너무 옅으면 크레딧 구실을 못 한다.
-    opacity: 0.75,
+    // stone — 사진 위에서 흰색만큼 튀지 않으면서 읽히는 밝기다.
+    color: Surface.plate,
   },
 });

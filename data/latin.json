@@ -51,7 +51,12 @@
           "answer": 3,
           "explanation": "bi-는 '둘'을 뜻하는 접두사로 bicycle(두 바퀴 자전거), bilingual(두 언어를 아는)에서 볼 수 있습니다. frons는 '이마'를 뜻하며 영어 frontal이 여기서 왔습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1771152787621-7c59ba99c6b5?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjJ8fG1vc2FpYyUyMGZsb29yfGVufDF8MHx8fDE3ODgzMzI2MDh8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Vjekoslav Domanović",
+        "profile": "https://unsplash.com/@vjeblackbirdlion?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_2_imitatio_et_aemulatio",
@@ -102,7 +107,12 @@
           "answer": 4,
           "explanation": "imitatio는 영어 imitation, et는 and, æmulatio는 emulation으로 맞먹으려 한다는 뜻입니다. 로마인이 그리스 문화에 대해 지녔던 모방과 경쟁의 태도를 가리킵니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1635798522688-7520a6d26e0e?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mnx8Y2xhc3NpY2FsJTIwYXJjaGl0ZWN0dXJlfGVufDF8MHx8fDE3ODgzMzI2MTB8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Botond Czapp",
+        "profile": "https://unsplash.com/@czapp_botond?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_3_spqr",
@@ -153,7 +163,12 @@
           "answer": 1,
           "explanation": "원로원 세나투스는 부유한 귀족의 이익을 대변했고, 민중 포풀루스는 대부분 가난한 평민이었습니다. 갈등을 빚을 때마다 로마공화정의 정치는 흔들렸고 때로는 피비린내 나는 내전으로 번졌습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1564842098114-6768bb67ffc2?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8N3x8cm9tYW4lMjByb2FkfGVufDF8MHx8fDE3ODgzMzI2MTJ8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Olga Subach",
+        "profile": "https://unsplash.com/@create4eyes?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_4_deus_caritas_est",
@@ -204,7 +219,12 @@
           "answer": 2,
           "explanation": "로마교황청의 공식 언어는 21세기에도 여전히 라틴어입니다. Deus caritas est는 교황 베네딕토 16세가 2005년 반포한 교황청 공식 문서의 제목이기도 합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1706790608211-4c03fd4f4d33?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mnx8cGFyY2htZW50fGVufDF8MHx8fDE3ODgzMzI2MTR8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Pixelbuddha Studio",
+        "profile": "https://unsplash.com/@pixelbuddhastudio?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_5_homo_sapiens",
@@ -255,7 +275,12 @@
           "answer": 4,
           "explanation": "sapiens는 현재분사입니다. 동사 sapio는 '분별하다', '알아보다'라는 뜻이니 sapiens는 '분별력 있는', 곧 '현명한'이라는 의미가 됩니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1641289984055-aa25e9f8b709?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjV8fG1hcmJsZSUyMHN0YXR1ZXxlbnwxfDB8fHwxNzg4MzMyNjE2fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Dim 7",
+        "profile": "https://unsplash.com/@dim7?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_6_scientia_potentia_est",
@@ -306,7 +331,12 @@
           "answer": 1,
           "explanation": "신이 모든 것을 안다면 세상의 악을 제거할 능력이 없는 것인가, 모든 것을 할 수 있다면 세상의 악을 모르는 것인가 하는 물음이 있었습니다. 베이컨은 이 문장으로 신의 지식(전지)이 곧 능력(전능)이라고 반박했습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1519972064555-542444e71b54?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Nnx8cGFyY2htZW50fGVufDF8MHx8fDE3ODgzMzI2MTR8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Ivan Gromov",
+        "profile": "https://unsplash.com/@creativesuppliesco?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_7_hoc_est_corpus",
@@ -358,7 +388,12 @@
           "answer": 2,
           "explanation": "최후의 만찬 때 예수가 누룩 없는 빵을 제자들에게 나누어 주며 했던 말을 기리는 것입니다. 가톨릭에서는 이 순간 밀떡이 예수의 몸으로 바뀌는 기적이 일어난다고 믿습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1564506761290-6df83a0ee2b6?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8NXx8YW5jaWVudCUyMGNvbHVtbnxlbnwxfDB8fHwxNzg4MzMyNjE5fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Yusuf Dündar",
+        "profile": "https://unsplash.com/@yusufdundar?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_8_nomen_est_omen",
@@ -410,7 +445,12 @@
           "answer": 3,
           "explanation": "성명학을 좋아하는 사람이 반길 표현 같지만 맥락을 살펴보면 오히려 반대입니다. 이름이라는 징조를 믿었다가 경을 친 이야기에서 나온 말이기 때문입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1711279745530-657f0a01ed1c?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTZ8fGFtcGhpdGhlYXRlcnxlbnwxfDB8fHwxNzg4MzMyNjIxfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Anton Etmanov",
+        "profile": "https://unsplash.com/@anton_etmanov?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_9_ioannes_est_nomen_eius",
@@ -462,7 +502,12 @@
           "answer": 4,
           "explanation": "『신약성서』는 헤롯 안티파스 왕의 도덕적 타락을 비판하다 잡혀가 사형당했다고 전합니다. 요세푸스의 설명은 조금 달라서, 요한이 많은 추종자를 얻자 왕이 반란을 두려워해 죽였다고 합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1783508910658-1ffe905c4a50?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjV8fHN0b25lJTIwY2FydmluZ3xlbnwxfDB8fHwxNzg4MzMyNjIzfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Yura Timoshenko",
+        "profile": "https://unsplash.com/@yuradesign?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_10_quid_est_veritas",
@@ -514,7 +559,12 @@
           "answer": 3,
           "explanation": "유대인에게 인기가 없는 무능한 총독이었다고 보는 사람이 있는가 하면, 10년이나 총독을 지냈으니 제법 유능했으리라고 보는 사람도 있습니다. 예수에게 호의적이었다는 해석도 있어 일부 정교회에서는 빌라도와 그 아내를 성인으로 기리기도 합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1603361233308-b3ec0f7c0a16?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTR8fHBhcmNobWVudHxlbnwxfDB8fHwxNzg4MzMyNjE0fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Boudewijn Huysmans",
+        "profile": "https://unsplash.com/@boudewijn_huysmans?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_11_ira_furor_brevis_est",
@@ -566,7 +616,12 @@
           "answer": 4,
           "explanation": "라틴어 furia는 '광기', -osus는 '무엇이 많은'이라는 뜻이니 퓨리오사는 곧 '매드 맥스'의 라틴어 번역인 셈입니다. furor에서 영어 fury와 furious가 왔습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1758413351634-b9a918481d01?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mjl8fG1hcmJsZSUyMHN0YXR1ZXxlbnwxfDB8fHwxNzg4MzMyNjE2fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Nhan Hoang",
+        "profile": "https://unsplash.com/@httnhan?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "latin_12_errare_humanum_est",
@@ -617,7 +672,12 @@
           "answer": 3,
           "explanation": "errare는 '실수하는 것'이라는 뜻으로 영어 낱말 err(실수하다)와 error(실수)가 여기서 왔습니다. humanum은 '인간의'라는 형용사로 영어 human의 어원입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1762086092259-329c64c3cb17?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjV8fHJvbWFuJTIwZm9ydW18ZW58MXwwfHx8MTc4ODMzMjYyOHww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "JP Sheard",
+        "profile": "https://unsplash.com/@jpsheard?utm_source=1dayClassic&utm_medium=referral"
+      }
     }
   ]
 }

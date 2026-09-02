@@ -55,7 +55,12 @@
           "answer": 4,
           "explanation": "'새롭다'는 뜻이 널리 쓰이면서 '장작'이라는 본뜻이 도리어 희미해지자, 풀-초(艹)를 붙여 장작-신(薪)으로 복원했습니다. 와신상담(臥薪嘗膽)의 신이 이 글자입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1486303954368-398fea0e72cd?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mnx8Y2hpbmVzZSUyMGNhbGxpZ3JhcGh5fGVufDF8MHx8fDE3ODgzMzI2MzB8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Niketh Vellanki",
+        "profile": "https://unsplash.com/@thenikyv?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "hanja_2_si",
@@ -110,7 +115,12 @@
           "answer": 4,
           "explanation": "진나라 초대 황제는 왕조를 자신부터 시작하여 자손만대까지 잇겠다고 기염을 토했습니다. 본인이 그 시초이자 시작이니 시황제(始皇帝), 곧 진시황제(秦始皇帝)입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1570562855402-cec3ca287f25?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjR8fHNlYWwlMjBzdGFtcHxlbnwxfDB8fHwxNzg4MzMyNjMyfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Siamak",
+        "profile": "https://unsplash.com/@onlysiamak?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "hanja_3_tae",
@@ -166,7 +176,12 @@
           "answer": 1,
           "explanation": "위쪽이 다리, 아래쪽이 머리인 태아의 모습이었습니다. 현재 글꼴 台로 보면 사(厶)가 곧 태아를 가리키고, 그 아래 구(口)는 여(女)가 변형된 것입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1649751750659-7f9390197584?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTZ8fHdvb2RlbiUyMHNpZ25ib2FyZHxlbnwxfDB8fHwxNzg4MzMyNjM0fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Kin Shing Lai",
+        "profile": "https://unsplash.com/@photo_blob?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "hanja_4_jak",
@@ -221,7 +236,12 @@
           "answer": 2,
           "explanation": "점칠 도구를 마련하는 데서 '시작하다'가, 구멍을 뚫고 불을 피우는 데서 '만들다'가 나왔습니다. 인위적(人爲的)인 작업이라 훗날 사람-인(人)을 추가해 지을-작(作)으로 썼습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1769613704997-13a44ed4c244?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTl8fGJsYWNrJTIwaW5rJTIwdGV4dHVyZXxlbnwxfDB8fHwxNzg4MzMyNjM2fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Fons Heijnsbroek",
+        "profile": "https://unsplash.com/@heijnsbroek_abstract_art?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "hanja_5_cho",
@@ -276,7 +296,12 @@
           "answer": 3,
           "explanation": "처음 품은 뜻을 끝까지 밀고 나갔다면 초지일관(初志一貫)입니다. '처음-초'(初)와 '처음-시'(始)는 같은 뜻이라, 처음부터 끝까지 관철하는 것을 시종일관(始終一貫)이라고도 합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1757029224918-5318188df531?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8NXx8d29vZGVuJTIwc2lnbmJvYXJkfGVufDF8MHx8fDE3ODgzMzI2MzR8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Zoshua Colah",
+        "profile": "https://unsplash.com/@zoshuacolah?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "hanja_6_so_so",
@@ -338,7 +363,12 @@
           "answer": 4,
           "explanation": "小가 작다, 少가 적다로 널리 쓰이면서 당초의 모래라는 개념이 사라졌습니다. 물가나 해변의 모래알은 물-수(水)를 더해 모래-사(沙)로, 건조한 곳의 모래알은 돌-석(石)을 더해 모래-사(砂)로 복원했습니다. 사막(沙漠)과 황사(黃砂)가 그것입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1762703478199-5cedab96cf55?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTh8fGNhcnZlZCUyMHN0b25lfGVufDF8MHx8fDE3ODgzMzI2Mzl8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Diego Romeo",
+        "profile": "https://unsplash.com/@gopitri_prem?utm_source=1dayClassic&utm_medium=referral"
+      }
     }
   ]
 }

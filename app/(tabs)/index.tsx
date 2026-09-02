@@ -7,12 +7,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AlarmDetailScreen from '@/app/(tabs)/alarm-detail';
 import LessonCoverImage from '@/components/LessonCoverImage';
 import ScaleButton from '@/components/ScaleButton';
-import { Corner, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { Corner, Ink, Space, Spark, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 import { useAlarm } from '@/context/AlarmContext';
 import { useBookSelection } from '@/context/BookSelectionContext';
 import { useQuiz } from '@/context/QuizContext';
 import { getBookCalendar, getBookLesson, getLessonHeading } from '@/lib/books';
-import { getReadingProgress, timeLeftToday } from '@/lib/progress';
+import { getReadingProgress, timeLeftToday, type ReadingProgress } from '@/lib/progress';
 import type { CalendarDay } from '@/lib/calendar';
 
 /** 남은 시간을 다시 세는 주기 — 분 단위로 보여 주므로 1분이면 충분하다. */
@@ -81,9 +81,16 @@ export default function HomeScreen() {
     <View style={styles.screen}>
       <ScrollView
         contentContainerStyle={[styles.body, { paddingTop: insets.top + Space[12] }]}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        /**
+         * 정렬 줄(네 번째 아이)이 목록을 따라 내려가도 위에 붙는다.
+         *
+         * 그래서 위쪽 것들은 저마다 좌우 여백을 갖고, 정렬 줄과 목록은 화면 가로를 다 쓴다
+         * — 바깥에 한 번에 여백을 주면 붙박이 줄에도 그 여백이 따라붙어 화면 폭을 못 쓴다.
+         */
+        stickyHeaderIndices={[3]}>
         {/* 위 줄 — 왼쪽은 알람, 오른쪽은 이 앱의 다른 화면으로 가는 문 셋. */}
-        <View style={styles.topRow}>
+        <View style={[styles.topRow, styles.gutter]}>
           <ScaleButton
             accessibilityLabel={`알람 ${formatAlarmTime(alarm.hour, alarm.minute)} 설정`}
             style={styles.alarmChip}
@@ -115,17 +122,10 @@ export default function HomeScreen() {
         </View>
 
         {/* 완독까지 얼마나 남았는지 — 쪽수는 실제 책의 쪽수다(lib/progress 주석 참고). */}
-        <View style={styles.progressBar}>
-          <View style={styles.progressLeft}>
-            <Text style={styles.progressLabel}>완독까지</Text>
-            <Text style={styles.progressNumber}>{progress.remainingPages}P</Text>
-            <Text style={styles.progressLabel}>남음</Text>
-          </View>
-          <Text style={styles.progressTotal}>{`총 ${progress.totalPages}p`}</Text>
-        </View>
+        <ProgressBar progress={progress} />
 
         {/* 오늘 한 장. */}
-        <View style={styles.hero}>
+        <View style={[styles.hero, styles.gutter]}>
           <LessonCoverImage
             lesson={todayLesson.lesson}
             bookId={selectedBookId}
@@ -152,7 +152,7 @@ export default function HomeScreen() {
                 style={styles.readButton}
                 onPress={openToday}>
                 <Ionicons name="play" color={Ink.primary} size={14} />
-                <Text style={styles.readText}>읽기</Text>
+                <Text style={styles.readText}>한쪽만 읽기</Text>
               </ScaleButton>
 
               {/* 다 읽은 날에만 나오는 표시 — 누르는 것이 아니라 알리는 것이다. */}
@@ -166,14 +166,16 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* 목차 정렬. */}
-        <ScaleButton
-          accessibilityLabel={`정렬 ${newestFirst ? '최신순' : '오래된순'}, 바꾸기`}
-          style={styles.sortButton}
-          onPress={() => setNewestFirst((v) => !v)}>
-          <Ionicons name="swap-vertical" color={Ink.primary} size={14} />
-          <Text style={styles.sortText}>{newestFirst ? '최신순' : '오래된순'}</Text>
-        </ScaleButton>
+        {/* 목차 정렬 — 목록을 따라 내려가도 위에 붙어 있다(stickyHeaderIndices). */}
+        <View style={styles.sortRow}>
+          <ScaleButton
+            accessibilityLabel={`정렬 ${newestFirst ? '최신순' : '오래된순'}, 바꾸기`}
+            style={styles.sortButton}
+            onPress={() => setNewestFirst((v) => !v)}>
+            <Ionicons name="swap-vertical" color={Ink.primary} size={14} />
+            <Text style={styles.sortText}>{newestFirst ? '최신순' : '오래된순'}</Text>
+          </ScaleButton>
+        </View>
 
         {/* 목차 — 오늘 줄만 남은 시간을 달고, 아직 오지 않은 날은 잠겨 있다. */}
         <View style={styles.list}>
@@ -198,6 +200,49 @@ export default function HomeScreen() {
         onRequestClose={() => setAlarmOpen(false)}>
         <AlarmDetailScreen onClose={() => setAlarmOpen(false)} />
       </Modal>
+    </View>
+  );
+}
+
+/**
+ * 완독까지 얼마나 남았는지.
+ *
+ * 읽은 만큼 왼쪽부터 주황으로 찬다. 그 위에 얹힌 글자는 밝은 색이어야 읽히므로, 같은
+ * 글줄을 두 벌 겹쳐 놓고 위엣것을 찬 만큼만 잘라 보여 준다 — 글자 하나가 반쯤 걸쳐도
+ * 걸친 만큼만 색이 바뀐다. 글줄을 두 벌 두는 대신 글자마다 색을 계산하려면 어느 글자가
+ * 경계에 걸리는지 재야 하는데, 그건 글꼴에 따라 달라져 맞출 수가 없다.
+ */
+function ProgressBar({ progress }: { progress: ReadingProgress }) {
+  /** 잘라 보여 줄 쪽의 글줄도 같은 자리에 놓이려면 칸의 폭을 알아야 한다. */
+  const [width, setWidth] = useState(0);
+  const ratio = progress.totalPages > 0 ? progress.readPages / progress.totalPages : 0;
+  const filled = Math.round(width * Math.min(1, Math.max(0, ratio)));
+
+  const line = (onFill: boolean) => (
+    <View style={[styles.progressLine, { width: width || undefined }]}>
+      <View style={styles.progressLeft}>
+        <Text style={[styles.progressLabel, onFill && styles.progressOnFill]}>완독까지</Text>
+        <Text style={[styles.progressNumber, onFill && styles.progressOnFill]}>
+          {`${progress.remainingPages}P`}
+        </Text>
+        <Text style={[styles.progressLabel, onFill && styles.progressOnFill]}>남음</Text>
+      </View>
+      <Text style={[styles.progressTotal, onFill && styles.progressOnFill]}>
+        {`총 ${progress.totalPages}p`}
+      </Text>
+    </View>
+  );
+
+  return (
+    <View
+      style={[styles.progressBar, styles.gutter]}
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
+      <View style={[styles.progressFill, { width: filled }]} pointerEvents="none" />
+      {line(false)}
+      {/* 찬 만큼만 남기고 잘라 낸 같은 글줄 — 주황 위에서는 이쪽이 보인다. */}
+      <View style={[styles.progressClip, { width: filled }]} pointerEvents="none">
+        {line(true)}
+      </View>
     </View>
   );
 }
@@ -261,9 +306,12 @@ const styles = StyleSheet.create({
     backgroundColor: Surface.canvas,
   },
   body: {
-    paddingHorizontal: Space[20],
     paddingBottom: Space[40],
     gap: Space[12],
+  },
+  /** 위쪽 것들이 저마다 갖는 좌우 여백. 정렬 줄과 목록은 이걸 쓰지 않는다. */
+  gutter: {
+    marginHorizontal: Space[20],
   },
 
   // 위 줄
@@ -280,6 +328,8 @@ const styles = StyleSheet.create({
     height: 36,
     paddingHorizontal: Space[16],
     borderRadius: Corner.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Surface.plate,
     backgroundColor: Surface.card,
   },
   alarmText: {
@@ -300,13 +350,46 @@ const styles = StyleSheet.create({
 
   // 진행 줄
   progressBar: {
+    borderRadius: Corner.small,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Surface.plate,
+    backgroundColor: Surface.card,
+    // 찬 만큼을 잘라 보여 주므로, 넘치는 부분이 모서리 밖으로 나가지 않게 한다.
+    overflow: 'hidden',
+  },
+  /**
+   * 읽은 만큼 차오르는 자리.
+   *
+   * 이 주황(Spark.ember)은 원래 그림 안에서만 쓰기로 한 색이다. 여기서만 예외로 쓴다 —
+   * 완독까지 얼마나 왔는지가 이 화면에서 가장 먼저 눈에 들어와야 하는 것이고, 무채색으로는
+   * '얼마나 찼는지'가 읽히지 않는다. UI에 이 색을 쓰는 곳은 여기 하나뿐이다.
+   */
+  progressFill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: Spark.ember,
+  },
+  /** 글줄 한 벌 — 아래층과 잘라 낸 위층이 같은 모양이라야 겹쳤을 때 어긋나지 않는다. */
+  progressLine: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Space[16],
     paddingVertical: Space[12],
-    borderRadius: Corner.small,
-    backgroundColor: Surface.card,
+  },
+  /** 위층을 찬 만큼만 남기고 자른다. */
+  progressClip: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  /** 주황 위에 얹히는 글자. */
+  progressOnFill: {
+    color: Surface.canvas,
   },
   progressLeft: {
     flexDirection: 'row',
@@ -410,36 +493,41 @@ const styles = StyleSheet.create({
   },
 
   // 목차
+  /**
+   * 정렬 줄 — 목록을 따라 내려가도 위에 붙는다.
+   *
+   * 바탕색을 주는 건 붙박이라서다. 없으면 아래로 지나가는 목록이 글자 뒤로 비쳐 보인다.
+   */
+  sortRow: {
+    alignItems: 'flex-end',
+    paddingHorizontal: Space[20],
+    paddingVertical: Space[8],
+    backgroundColor: Surface.canvas,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Ink.primary,
+  },
   sortButton: {
     flexDirection: 'row',
-    alignSelf: 'flex-end',
     gap: Space[4],
     height: 32,
-    paddingHorizontal: Space[12],
-    borderRadius: Corner.pill,
-    backgroundColor: Surface.card,
   },
   sortText: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
     color: Ink.primary,
   },
-  list: {
-    borderRadius: Corner.small,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Surface.plate,
-    overflow: 'hidden',
-  },
+  /** 목록은 상자가 아니라 화면 가로를 다 쓰는 줄들이다 — 테두리도 모서리도 없다. */
+  list: {},
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Space[12],
-    paddingHorizontal: Space[16],
+    paddingHorizontal: Space[20],
     paddingVertical: Space[16],
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Surface.plate,
   },
-  /** 마지막 줄 — 목록의 테두리와 겹치지 않게 제 선을 지운다. */
+  /** 마지막 줄 — 목록이 끝나는 자리라 선을 긋지 않는다. */
   rowLast: {
     borderBottomWidth: 0,
   },
