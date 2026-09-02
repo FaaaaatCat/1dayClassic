@@ -82,9 +82,16 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    /*
+     * 안전 영역을 스크롤 안쪽이 아니라 바깥 틀에 준다.
+     *
+     * 붙박이 줄(최신순)은 '스크롤이 보이는 자리'의 맨 위에 붙는데, 그 자리가 화면 꼭대기에서
+     * 시작하면 상태바 뒤로 올라가 가려진다. 틀이 상태바만큼 내려앉으면 스크롤이 보이는 자리도
+     * 그만큼 내려와, 붙박이 줄이 상태바 바로 아래에 선다.
+     */
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView
-        contentContainerStyle={[styles.body, { paddingTop: insets.top + Space[12] }]}
+        contentContainerStyle={[styles.body, { paddingTop: Space[12] }]}
         showsVerticalScrollIndicator={false}
         /**
          * 정렬 줄(네 번째 아이)이 목록을 따라 내려가도 위에 붙는다.
