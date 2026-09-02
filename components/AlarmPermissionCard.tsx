@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState, StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
-import { Corner, Feedback, Ink, Surface, Type, trackBody } from '@/constants/theme';
+import { MY_PAGE } from '@/components/mypage/MyPageShell';
+import { Corner, Feedback, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
 import {
   getPermissionStatus,
   hasAllAlarmPermissions,
@@ -49,7 +50,7 @@ const ROWS: PermissionRow[] = [
  * 알람 권한 상태 박스.
  *
  * 앱 시작 시의 권한 요청은 처음 한 번뿐이므로(app/_layout.tsx), 그 뒤에 권한을 확인하고
- * 켜는 곳은 여기가 유일하다.
+ * 켜는 곳은 여기가 유일하다 — 마이페이지의 권한 관리 화면이 이것을 띄운다.
  *
  * 토글은 켜는 방향으로만 동작한다 — 앱이 권한을 회수할 수는 없어서, 이미 켜진 항목을
  * 누르면 시스템 설정 화면이 열려 사용자가 직접 끄게 된다.
@@ -63,7 +64,7 @@ export default function AlarmPermissionCard() {
   const refresh = useCallback(() => {
     getPermissionStatus()
       .then(setStatus)
-      .catch((error) => console.warn('[settings] 권한 상태 확인 실패:', error));
+      .catch((error) => console.warn('[permissions] 권한 상태 확인 실패:', error));
   }, []);
 
   useEffect(() => {
@@ -79,8 +80,11 @@ export default function AlarmPermissionCard() {
   const allGranted = hasAllAlarmPermissions(status);
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>알람 권한</Text>
+    <View>
+      <Text style={styles.hint}>
+        알람이 제때 울리려면 아래 네 가지가 모두 허용되어야 합니다. 줄을 누르면 시스템 설정이
+        열립니다.
+      </Text>
 
       {!allGranted && (
         <View style={styles.notice}>
@@ -101,7 +105,7 @@ export default function AlarmPermissionCard() {
               style={[styles.row, last && styles.rowLast]}
               onPress={() => {
                 requestAlarmPermission(row.kind).catch((error) =>
-                  console.warn('[settings] 권한 요청 실패:', error),
+                  console.warn('[permissions] 권한 요청 실패:', error),
                 );
               }}
             >
@@ -125,31 +129,32 @@ export default function AlarmPermissionCard() {
 
 const styles = StyleSheet.create({
   /**
-   * 카드 얼굴(바탕·모서리·선·여백)은 설정 화면이 씌운다. 여기서는 안쪽만 그린다 —
-   * 같은 카드가 두 군데에서 정의되면 한쪽만 고쳐져 서로 어긋난다.
+   * 좌우 여백은 마이페이지의 것을 그대로 쓴다.
+   *
+   * 예전에는 설정 화면의 카드 안에 들어가 그 카드의 여백을 얻어 썼는데, 마이페이지로
+   * 옮기면서 카드가 없어져 줄들이 화면 끝에 붙어 버렸다. 이제 제 여백을 스스로 갖는다.
    */
-  card: {},
-  title: {
-    fontFamily: Type.uiMedium,
-    fontSize: 16,
-    letterSpacing: trackBody(16),
-    color: Ink.primary,
+  hint: {
+    fontFamily: Type.ui,
+    ...TypeScale.bodySm,
+    color: Ink.body,
+    paddingHorizontal: MY_PAGE.gutter,
+    paddingBottom: Space[16],
   },
   notice: {
-    marginTop: 12,
+    marginHorizontal: MY_PAGE.gutter,
+    marginBottom: Space[8],
     borderRadius: Corner.small,
-    padding: 12,
+    padding: Space[12],
     backgroundColor: Feedback.wrongSurface,
   },
   noticeText: {
     fontFamily: Type.uiMedium,
-    fontSize: 13,
-    lineHeight: 20,
-    letterSpacing: trackBody(13),
+    ...TypeScale.bodySm,
     color: Feedback.wrong,
   },
   rows: {
-    marginTop: 16,
+    marginTop: Space[8],
   },
   /**
    * 항목 하나 — 상자가 아니라 목록의 한 줄이다.
@@ -159,37 +164,36 @@ const styles = StyleSheet.create({
    */
   row: {
     alignItems: 'stretch',
+    justifyContent: 'center',
     borderRadius: 0,
+    minHeight: MY_PAGE.rowHeight,
+    paddingHorizontal: MY_PAGE.gutter,
+    paddingVertical: Space[12],
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Surface.plate,
-    paddingVertical: 16,
   },
-  /** 마지막 줄 — 카드의 아래 선과 겹치지 않게 제 선을 지운다. */
+  /** 마지막 줄 — 목록이 끝나는 자리라 선을 긋지 않는다. */
   rowLast: {
     borderBottomWidth: 0,
-    paddingBottom: 0,
   },
   rowInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space[12],
   },
   rowText: {
     flex: 1,
-    gap: 2,
+    gap: Space[4],
   },
   rowLabel: {
-    fontFamily: Type.uiMedium,
-    fontSize: 15,
-    letterSpacing: trackBody(15),
+    fontFamily: Type.ui,
+    ...TypeScale.body,
     color: Ink.primary,
   },
   rowHint: {
     fontFamily: Type.ui,
-    fontSize: 12,
-    lineHeight: 18,
-    letterSpacing: trackBody(12),
-    color: Ink.body,
+    ...TypeScale.bodySm,
+    color: Ink.muted,
   },
   toggle: {
     width: 44,

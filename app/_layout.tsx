@@ -66,7 +66,7 @@ export default function RootLayout() {
    * 권한 안내는 설치 후 처음 앱을 켰을 때 딱 한 번만 한다.
    *
    * 켤 때마다 띄우면 권한을 미룬 사용자에게 매번 같은 팝업을 던지게 된다. 그 뒤로 권한을
-   * 확인하고 켜는 곳은 설정 탭의 권한 카드다(components/AlarmPermissionCard.tsx).
+   * 확인하고 켜는 곳은 마이페이지의 권한 관리다(components/AlarmPermissionCard.tsx).
    *
    * 물어봤다는 사실은 사용자의 선택과 무관하게 기록한다 — '나중에'를 누른 것도 대답이다.
    */
@@ -85,7 +85,7 @@ export default function RootLayout() {
 
         Alert.alert(
           '알람 권한 필요',
-          '알람이 잘 울리려면 몇 가지 권한이 필요합니다.\n설정 > 알람 권한에서 언제든 확인할 수 있습니다.',
+          '알람이 잘 울리려면 몇 가지 권한이 필요합니다.\n마이페이지 > 권한 관리에서 언제든 확인할 수 있습니다.',
           [
             { text: '나중에', style: 'cancel' },
             { text: '설정 열기', onPress: () => void openAlarmPermissionSettings() },
