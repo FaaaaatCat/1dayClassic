@@ -40,8 +40,12 @@ export default function HomeScreen() {
 
   /** 알람 설정 — 화면을 갈아 끼우지 않고 이 위에 띄운다. */
   const [alarmOpen, setAlarmOpen] = useState(false);
-  /** 목차 정렬 — 최신순(오늘이 위)과 오래된순을 오간다. */
-  const [newestFirst, setNewestFirst] = useState(true);
+  /**
+   * 목차 정렬 — 첫장부터(1월 1일이 위)와 최신순(오늘이 위)을 오간다.
+   *
+   * 기본이 첫장부터인 건 이 책이 1월 1일부터 차례로 읽어 나가는 물건이라서다.
+   */
+  const [newestFirst, setNewestFirst] = useState(false);
 
   /** 남은 시간은 스스로 줄어들어야 한다 — 화면을 열어 둔 채로도 분이 넘어간다. */
   const [now, setNow] = useState(() => new Date());
@@ -169,11 +173,11 @@ export default function HomeScreen() {
         {/* 목차 정렬 — 목록을 따라 내려가도 위에 붙어 있다(stickyHeaderIndices). */}
         <View style={styles.sortRow}>
           <ScaleButton
-            accessibilityLabel={`정렬 ${newestFirst ? '최신순' : '오래된순'}, 바꾸기`}
+            accessibilityLabel={`정렬 ${newestFirst ? '최신순' : '첫장부터'}, 바꾸기`}
             style={styles.sortButton}
             onPress={() => setNewestFirst((v) => !v)}>
             <Ionicons name="swap-vertical" color={Ink.primary} size={14} />
-            <Text style={styles.sortText}>{newestFirst ? '최신순' : '오래된순'}</Text>
+            <Text style={styles.sortText}>{newestFirst ? '최신순' : '첫장부터'}</Text>
           </ScaleButton>
         </View>
 
@@ -282,7 +286,7 @@ function TocRow({
 
       {timeLeft ? (
         <View style={styles.rowRight}>
-          <Ionicons name="time-outline" color={Ink.primary} size={14} />
+          <Ionicons name="time-outline" color={Spark.ember} size={14} />
           <Text style={styles.rowTime}>{timeLeft}</Text>
           {read && <Ionicons name="checkmark-circle" color={Ink.primary} size={16} />}
         </View>
@@ -396,15 +400,27 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     gap: Space[4],
   },
+  /**
+   * '완독까지'와 '남음'.
+   *
+   * 줄 높이를 주지 않는다. 크기가 다른 셋(13·22·13)을 한 줄에 세울 때 저마다 다른 줄
+   * 높이를 갖고 있으면, 글자 위아래로 붙는 여백이 달라 가운데가 어긋나 보인다. 줄 높이를
+   * 빼면 글자 상자가 글자에 딱 붙어 baseline이 그대로 맞는다.
+   *
+   * 0을 넣지 않는 건 안드로이드가 한 줄짜리 Text의 높이를 줄 높이로 잡기 때문이다 —
+   * 0이면 상자가 없어져 글자가 통째로 잘린다.
+   */
   progressLabel: {
     fontFamily: Type.ui,
-    ...TypeScale.bodySm,
+    fontSize: TypeScale.bodySm.fontSize,
+    letterSpacing: TypeScale.bodySm.letterSpacing,
     color: Ink.body,
   },
-  /** 남은 쪽수 — 이 줄에서 유일하게 큰 글자다. */
+  /** 남은 쪽수 — 이 줄에서 유일하게 큰 글자다. 줄 높이를 빼는 이유는 위와 같다. */
   progressNumber: {
     fontFamily: Type.uiMedium,
-    ...TypeScale.headingSm,
+    fontSize: TypeScale.headingSm.fontSize,
+    letterSpacing: TypeScale.headingSm.letterSpacing,
     color: Ink.primary,
   },
   progressTotal: {
@@ -550,9 +566,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Space[4],
   },
+  /** 오늘 줄에만 붙는 남은 시간 — 완독바와 같은 주황으로 오늘이라는 것을 알린다. */
   rowTime: {
     fontFamily: Type.uiMedium,
     ...TypeScale.bodySm,
-    color: Ink.primary,
+    color: Spark.ember,
   },
 });
