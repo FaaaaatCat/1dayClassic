@@ -23,7 +23,15 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: '오늘의 공부', headerShown: false }} />
       <Tabs.Screen name="today" options={{ headerShown: false, href: null }} />
       <Tabs.Screen name="alarm-detail" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="library" options={{ title: '내 서재' }} />
+      {/* 마이페이지와 그 안의 화면들 — 홈의 사람 버튼으로 들어온다. 저마다 제 헤더를
+          그리므로 공용 헤더를 끈다. */}
+      <Tabs.Screen name="library" options={{ headerShown: false }} />
+      <Tabs.Screen name="library/planned" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen name="library/finished" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen name="library/bgm" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen name="library/book-theme" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen name="library/permissions" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen name="library/account" options={{ headerShown: false, href: null }} />
       {/* 서점은 타이틀이 스크롤을 따라 올라가야 해서 공용 헤더를 쓰지 않고 화면이 직접 그린다. */}
       <Tabs.Screen name="bookstore" options={{ title: '하루 서점', headerShown: false }} />
       <Tabs.Screen name="book/[id]" options={{ headerShown: false, href: null }} />

@@ -74,7 +74,7 @@ export default function LibraryBookDetailScreen() {
     setMoreMenuOpen(false);
     removeFromShelf(catalogBook.id);
     showToast("내 서재에서 삭제했습니다");
-    router.replace("/library");
+    router.back();
   };
 
   return (
@@ -82,7 +82,7 @@ export default function LibraryBookDetailScreen() {
       <View style={styles.screen}>
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <Text style={styles.headerTitle}>내 서재</Text>
-          <ScaleButton accessibilityLabel="내 서재로 돌아가기" style={styles.closeButton} onPress={() => router.replace("/library")}>
+          <ScaleButton accessibilityLabel="뒤로" style={styles.closeButton} onPress={() => router.back()}>
             <Ionicons name="close" color={Ink.primary} size={24} />
           </ScaleButton>
         </View>

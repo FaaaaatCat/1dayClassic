@@ -1,120 +1,225 @@
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import BookCard from '@/components/BookCard';
-import { Ink, Surface, Type, trackBody } from '@/constants/theme';
+import MyPageRow, { MyPageGroup } from '@/components/mypage/MyPageRow';
+import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
+import { useShelfBooks } from '@/components/mypage/useShelfBooks';
+import ScaleButton from '@/components/ScaleButton';
+import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
+import { useBgm } from '@/context/BgmContext';
 import { useBookSelection } from '@/context/BookSelectionContext';
-import { useShelf } from '@/context/ShelfContext';
-import { BOOKSTORE_BOOKS, isMvpBook } from '@/lib/bookstore';
-import { getCatalogBooks, type CatalogBook } from '@/lib/catalog';
-import { fieldsOf, seriesOf } from '@/lib/tags';
-
-interface Entry {
-  book: CatalogBook;
-  series: string[];
-  fields: string[];
-  mvp: boolean;
-}
-
-/** 격자 한 줄에 두 권. 마지막 줄은 한 권만 올 수 있다. */
-function toRows(entries: Entry[]): Entry[][] {
-  const rows: Entry[][] = [];
-  for (let i = 0; i < entries.length; i += 2) rows.push(entries.slice(i, i + 2));
-  return rows;
-}
+import { useQuiz } from '@/context/QuizContext';
+import { findBgm } from '@/lib/bgm';
+import { getBookName } from '@/lib/books';
+import { getCatalogBookByBookId } from '@/lib/catalog';
+import { getReadingProgress } from '@/lib/progress';
 
 /**
- * 내 서재 — 하루 서점에서 "내 서재에 담기"를 누른 책만 모아 보여준다.
+ * 마이페이지.
  *
- * 목록이 작아 bookstore.tsx의 필터·검색·sticky 오버레이는 가져오지 않는다. 대신
- * 탭 네비게이터가 그려주는 공용 헤더를 그대로 쓴다(_layout.tsx의 TITLES 참고).
+ * 예전의 '내 서재'를 대신한다 — 담아 둔 책과 설정이 한곳에 모인다. 서재를 따로 두지 않는 건,
+ * 이 앱에서 책을 고르는 일과 앱을 손보는 일이 모두 '내 것'을 다루는 일이라서다.
+ *
+ * 경로는 /library 그대로다. 홈의 사람 버튼을 비롯해 여러 곳에 박혀 있어 이름만 바꾼다.
  */
-export default function LibraryScreen() {
+export default function MyPageScreen() {
   const router = useRouter();
-  const { shelfIds } = useShelf();
   const { selectedBookId } = useBookSelection();
+  const { attemptOf } = useQuiz();
+  const { bgmId } = useBgm();
+  const { planned, finished } = useShelfBooks();
 
-  const rows = useMemo(() => {
-    const catalogById = new Map(getCatalogBooks().map((book) => [book.id, book]));
-    // 최신 담은 순 — shelfIds는 오래된 것 먼저라 뒤집는다.
-    const entries: Entry[] = [...shelfIds]
-      .reverse()
-      .map((id) => catalogById.get(id))
-      .filter((book): book is CatalogBook => book !== undefined)
-      .map((book) => ({
-        book,
-        series: seriesOf(book.tags, book.title),
-        fields: fieldsOf(book.tags),
-        mvp: book.bookId !== null && isMvpBook(book.bookId),
-      }));
-    return toRows(entries);
-  }, [shelfIds]);
+  const reading = getCatalogBookByBookId(selectedBookId);
+  const progress = getReadingProgress(selectedBookId, (id) => attemptOf(id) !== undefined);
+  const percent =
+    progress.totalPages > 0 ? Math.round((progress.readPages / progress.totalPages) * 100) : 0;
 
-  const openBook = (book: CatalogBook) => {
-    router.push({
-      pathname: '/library/book/[id]',
-      params: { id: book.bookId ?? book.id },
-    });
+  const openReadingBook = () => {
+    if (!reading) return;
+    router.push({ pathname: '/library/book/[id]', params: { id: selectedBookId } });
   };
 
   return (
-    <View style={styles.screen}>
-      <FlatList
-        contentContainerStyle={styles.content}
-        data={rows}
-        keyExtractor={(row) => row[0].book.id}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <Text style={styles.empty}>아직 담은 책이 없습니다. 하루 서점에서 책을 담아보세요.</Text>
-        }
-        renderItem={({ item: row }) => (
-          <View style={styles.row}>
-            {row.map((entry) => (
-              <View key={entry.book.id} style={styles.cellWrap}>
-                <BookCard
-                  title={entry.book.title}
-                  author={entry.book.author}
-                  cover={
-{ uri: entry.book.coverImage }
-                  }
-                  series={entry.series}
-                  fields={entry.fields}
-                  mvp={entry.mvp}
-                  selected={entry.book.bookId !== null && entry.book.bookId === selectedBookId}
-                  onPress={() => openBook(entry.book)}
-                />
-              </View>
-            ))}
+    <MyPageShell title="마이페이지">
+      <MyPageRow icon="book-outline" label="지금 읽고있는 책" onPress={openReadingBook} last />
+
+      {/* 지금 읽는 책 한 권 — 눌러 들어가면 그 책의 상세가 열린다. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`지금 읽고있는 책 ${getBookName(selectedBookId)}, ${percent}퍼센트`}
+        style={styles.card}
+        onPress={openReadingBook}>
+        <View style={styles.cardTop}>
+          {reading ? (
+            <Image
+              source={{ uri: reading.coverImage }}
+              style={styles.cover}
+              resizeMode="cover"
+              accessibilityIgnoresInvertColors
+            />
+          ) : (
+            <View style={styles.cover} />
+          )}
+          <View style={styles.cardText}>
+            <Text style={styles.cardTitle} numberOfLines={2}>
+              {reading?.title ?? getBookName(selectedBookId)}
+            </Text>
+            {reading?.author ? (
+              <Text style={styles.cardAuthor} numberOfLines={1}>
+                {reading.author}
+              </Text>
+            ) : null}
           </View>
-        )}
-      />
-    </View>
+          <Text style={styles.percent}>{`${percent}%`}</Text>
+        </View>
+
+        {/* 읽은 만큼 차오르는 가는 줄과, 그 아래 숫자 둘. */}
+        <View style={styles.bar}>
+          <View style={[styles.barFill, { width: `${Math.min(100, percent)}%` }]} />
+        </View>
+        <View style={styles.barText}>
+          <Text style={styles.barRead}>{`${progress.readPages}p 읽음`}</Text>
+          <Text style={styles.barTotal}>{`총 ${progress.totalPages}p`}</Text>
+        </View>
+      </Pressable>
+
+      <MyPageGroup>
+        <MyPageRow
+          icon="layers-outline"
+          label="읽을 예정인 책"
+          value={`${planned.length}권`}
+          onPress={() => router.push('/library/planned')}
+        />
+        <MyPageRow
+          icon="sparkles-outline"
+          label="완독한 책"
+          value={`${finished.length}권`}
+          onPress={() => router.push('/library/finished')}
+        />
+        <MyPageRow
+          icon="musical-note-outline"
+          label="배경음악 설정"
+          value={findBgm(bgmId).label}
+          onPress={() => router.push('/library/bgm')}
+        />
+        <MyPageRow
+          icon="color-palette-outline"
+          label="책 배경 설정"
+          value="기본"
+          onPress={() => router.push('/library/book-theme')}
+          last
+        />
+      </MyPageGroup>
+
+      {/* 프리미엄 안내 — 지금은 배너뿐이고 누를 곳이 없다. */}
+      <View style={styles.banner}>
+        <Text style={styles.bannerText}>{'평생 광고 없이\n쾌적하게 독서하세요'}</Text>
+        <ScaleButton accessibilityLabel="프리미엄 멤버십 보기" style={styles.bannerButton}>
+          <Text style={styles.bannerButtonText}>프리미엄 멤버십 보기</Text>
+        </ScaleButton>
+      </View>
+
+      <MyPageGroup>
+        <MyPageRow label="권한 관리" onPress={() => router.push('/library/permissions')} />
+        <MyPageRow label="계정 관리" onPress={() => router.push('/library/account')} last />
+      </MyPageGroup>
+    </MyPageShell>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  /** 지금 읽는 책 — 이 화면에서 유일하게 면으로 올라온 자리다. */
+  card: {
+    marginHorizontal: MY_PAGE.gutter,
+    marginBottom: Space[8],
+    borderRadius: Corner.small,
+    backgroundColor: Surface.card,
+    overflow: 'hidden',
+  },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space[12],
+    padding: Space[16],
+  },
+  cover: {
+    width: 44,
+    height: 62,
+    borderRadius: 2,
+    backgroundColor: Surface.plate,
+  },
+  cardText: {
     flex: 1,
+    gap: Space[4],
+  },
+  cardTitle: {
+    fontFamily: Type.readingBold,
+    ...TypeScale.subheading,
+    color: Ink.primary,
+  },
+  cardAuthor: {
+    fontFamily: Type.ui,
+    ...TypeScale.bodySm,
+    color: Ink.body,
+  },
+  percent: {
+    fontFamily: Type.uiMedium,
+    fontSize: TypeScale.headingSm.fontSize,
+    letterSpacing: TypeScale.headingSm.letterSpacing,
+    color: Ink.primary,
+  },
+  /** 진행 줄 — 카드 가로를 꽉 채우는 가는 선이다. */
+  bar: {
+    height: 4,
+    backgroundColor: Surface.plate,
+  },
+  barFill: {
+    height: 4,
+    backgroundColor: Spark.ember,
+  },
+  barText: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Space[12],
+    paddingVertical: Space[8],
+  },
+  barRead: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.caption,
+    color: Spark.ember,
+  },
+  barTotal: {
+    fontFamily: Type.ui,
+    ...TypeScale.caption,
+    color: Ink.muted,
+  },
+
+  /** 프리미엄 배너 — 이 화면에서 유일하게 색을 쓰는 자리다. */
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space[12],
+    marginTop: Space[16],
+    paddingHorizontal: MY_PAGE.gutter,
+    paddingVertical: Space[20],
+    backgroundColor: Spark.ember,
+  },
+  bannerText: {
+    flex: 1,
+    fontFamily: Type.uiMedium,
+    ...TypeScale.bodySm,
+    color: Ink.onDark,
+  },
+  bannerButton: {
+    height: 40,
+    paddingHorizontal: Space[16],
+    borderRadius: Corner.pill,
     backgroundColor: Surface.canvas,
   },
-  content: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  row: {
-    flexDirection: 'row',
-  },
-  cellWrap: {
-    width: '50%',
-  },
-  empty: {
-    fontFamily: Type.ui,
-    fontSize: 14,
-    letterSpacing: trackBody(14),
-    color: Ink.body,
-    textAlign: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
+  bannerButtonText: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.bodySm,
+    color: Ink.primary,
   },
 });
