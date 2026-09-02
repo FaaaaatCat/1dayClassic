@@ -128,8 +128,8 @@ export default function HomeScreen() {
         <View style={styles.hero}>
           <LessonCoverImage
             lesson={todayLesson.lesson}
+            bookId={selectedBookId}
             style={styles.heroImage}
-            placeholderLabelSize={16}
           />
           {/* 사진 위에 글을 얹으므로 어둠을 한 겹 깐다 — 밝은 사진에서도 글이 읽혀야 한다. */}
           <View style={styles.heroScrim} pointerEvents="none" />
