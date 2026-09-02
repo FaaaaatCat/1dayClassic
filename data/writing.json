@@ -50,7 +50,12 @@
           "answer": 3,
           "explanation": "당신이 문학적 삶의 밖에서 하는 모든 것이 글쓰기의 성공에 기여합니다. 미완성으로 놔둔 것을 마무리하든 습관을 바꾸든 좀 더 적극적인 태도를 취하든 그 무엇이든 간에 말입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1642543492530-872bdd96321e?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8N3x8aGFuZHdyaXR0ZW4lMjBub3RlfGVufDF8MHx8fDE3ODgzMzY2ODl8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Kelly Sikkema",
+        "profile": "https://unsplash.com/@kellysikkema?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_2_personalize_space",
@@ -101,7 +106,12 @@
           "answer": 4,
           "explanation": "할런 코벤이나 존 하트 같은 작가는 정신 집중을 위해 집에서 멀리 떨어져 글을 쓰는 것을 선호합니다. 신인 작가 브라이언 파노위치는 소방관으로 근무했던 소방서의 벽장 안에서 글을 썼다고 합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1598620617377-3bfb505b4384?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjF8fG9wZW4lMjBub3RlYm9va3xlbnwxfDB8fHwxNzg4MzM2NjkxfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Kelly Sikkema",
+        "profile": "https://unsplash.com/@kellysikkema?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_3_persistence",
@@ -152,7 +162,12 @@
           "answer": 1,
           "explanation": "\"나는 어느 날 갑자기 성공한 게 아니다. 내가 처음 다섯 권의 책을 내는 동안 나의 출판 역사는 여러 면에서 성공적이지 못했다.\"라고 했습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1781966995939-3748dc1f1742?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjN8fGRlc2slMjBsYW1wJTIwYXQlMjBuaWdodHxlbnwxfDB8fHwxNzg4MzM2NjkzfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Sixteen Miles Out",
+        "profile": "https://unsplash.com/@sixteenmilesout?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_4_publishing_fuss",
@@ -203,7 +218,12 @@
           "answer": 2,
           "explanation": "자신의 문학적 성취를 마음껏 축하하고 성취감을 맛보는 것은 중요합니다. 그러나 낭떠러지 주위에 울타리를 둘러, 떨어지지 않고 계속 오를 수 있게 하는 것 역시 중요합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1711945844277-9f9efeb5e138?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8OXx8YmxhbmslMjBwYWdlfGVufDF8MHx8fDE3ODgzMzY2OTV8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Plufow Le Studio",
+        "profile": "https://unsplash.com/@plufow?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_5_negativity_bias",
@@ -257,7 +277,12 @@
           "answer": 4,
           "explanation": "편집자의 의견, 서평가의 리뷰 또는 문학상 후보 등을 예측하고자 하면 우리의 부정편향은 불필요한 스트레스를 만들어 냅니다. 흥분 대신 두려움이 우리를 지배할 공산이 커지는 것입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1566314748684-1e536fe1a148?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjV8fGxpYnJhcnklMjBzaGVsZnxlbnwxfDB8fHwxNzg4MzM2Njk3fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Trust \"Tru\" Katsande",
+        "profile": "https://unsplash.com/@iamtru?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_6_stack_positive_cards",
@@ -308,7 +333,12 @@
           "answer": 1,
           "explanation": "긍정 카드 쌓기는 우리 앞에 다양한 선택을 펼쳐 보이면서 창의성을 자극합니다. 초고를 쓰거나 퇴고를 하는 동안 부정 카드를 재편하면 창조적 영감이 새롭게 떠오르면서 자동적으로 스트레스 요인을 축소해서 보게 합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1510851896000-498520af2236?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8NHx8ZGVzayUyMGxhbXAlMjBhdCUyMG5pZ2h0fGVufDF8MHx8fDE3ODgzMzY2OTN8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "JC Gellidon",
+        "profile": "https://unsplash.com/@jcgellidon?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_7_wandering_mind",
@@ -359,7 +389,12 @@
           "answer": 2,
           "explanation": "\"고양이는 작가에게 위험한 동반자다. 고양이를 지켜보는 것은 글쓰기를 피하는 거의 완벽한 방법이기 때문이다.\"라는 말입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1573848953384-3be02021eb0b?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTF8fGJsYW5rJTIwcGFnZXxlbnwxfDB8fHwxNzg4MzM2Njk1fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Brando Makes Branding",
+        "profile": "https://unsplash.com/@brandomakesbranding?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_8_light_in_dark_times",
@@ -410,7 +445,12 @@
           "answer": 3,
           "explanation": "\"때로는 관점을 바꾸기만 해도 빛이 보인다\"입니다. 삶의 외적 상황이 어떻든 간에 우리는 빛을 보기를 선택할 수 있고, 세상에는 여전히 우리를 기다리는 선물이 많이 있습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1779436667163-c954c7d6938a?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTd8fGRlc2slMjBsYW1wJTIwYXQlMjBuaWdodHxlbnwxfDB8fHwxNzg4MzM2NjkzfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Avtar Singh",
+        "profile": "https://unsplash.com/@avtar9w?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_9_ignore_others_opinions",
@@ -461,7 +501,12 @@
           "answer": 4,
           "explanation": "더 나은 작가가 되기 위해서는 평론가, 편집자, 서평가 또는 팬의 건설적인 비판에 귀 기울일 필요가 있습니다. 그럼에도 때로는 가치 없는 피드백이 숨 막히게 하므로, 스스로 자신의 글쓰기 능력을 인정하는 일도 중요합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1598620617148-c9e8ddee6711?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MXx8YmxhbmslMjBwYWdlfGVufDF8MHx8fDE3ODgzMzY2OTV8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Kelly Sikkema",
+        "profile": "https://unsplash.com/@kellysikkema?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_10_curb_perfectionism",
@@ -515,7 +560,12 @@
           "answer": 3,
           "explanation": "글의 줄거리를 만들어 놓고 글을 쓰는 '플로터'이거나 직감적으로 글을 쓰는 '팬서'이든, 성공적인 글쓰기는 완벽주의에서 벗어남으로써 결정된다고 말합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1642262860616-86636cf0ee76?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjN8fGZvdW50YWluJTIwcGVufGVufDF8MHx8fDE3ODgzMzY3MDR8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Sunrise King",
+        "profile": "https://unsplash.com/@sunriseking?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_11_sweetness_of_doing_nothing",
@@ -566,7 +616,12 @@
           "answer": 4,
           "explanation": "아무것도 하지 않기는 아름다운 음악 작품의 필수적 부분인 휴지와 비교할 수 있습니다. 소리의 부재가 없는 음악은 단지 소음에 불과합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1556968262-9014ddf533c4?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTl8fHR5cGV3cml0ZXJ8ZW58MXwwfHx8MTc4ODMzNjcwNnww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "camilo jimenez",
+        "profile": "https://unsplash.com/@camstejim?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "writing_12_weed_the_garden",
@@ -617,7 +672,12 @@
           "answer": 3,
           "explanation": "글쓰기 세계의 잡초가 따라잡을 수 없을 만큼 빠르게 무릎 높이까지 자라날 때도 있고, 혹은 다른 사람의 정원에 신경 쓰느라 당신 자신의 정원이 잡초로 뒤덮이게 놔두기도 합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1731765521666-06827e0b68d8?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTZ8fGNydW1wbGVkJTIwcGFwZXJ8ZW58MXwwfHx8MTc4ODMzNjcwOHww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Rahul Himkar",
+        "profile": "https://unsplash.com/@rahulhimkar?utm_source=1dayClassic&utm_medium=referral"
+      }
     }
   ]
 }

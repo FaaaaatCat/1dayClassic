@@ -24,6 +24,11 @@
         ],
         "answer": 3,
         "explanation": "1913년 1월 1일 0시 1초, 열두 살이던 암스트롱은 훔친 리볼버 권총으로 허공에 실탄을 발사하며 새해 인사를 하다가 경찰에 체포되어 흑인 부랑자 소년원에 수용되었습니다. 그곳에서 보호관찰관 피터 데이비스가 그의 손에 트럼펫을 쥐여 주면서 소년의 인생과 음악의 역사가 바뀌었습니다."
+      },
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1771797628619-926785541b8d?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTh8fGFudGlxdWUlMjBnbG9iZXxlbnwxfDB8fHwxNzg4MzM2NzE4fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Dorian Labbe",
+        "profile": "https://unsplash.com/@my_j0urney?utm_source=1dayClassic&utm_medium=referral"
       }
     }
   ]

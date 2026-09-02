@@ -378,7 +378,12 @@
           "answer": 4,
           "explanation": "신경성이 높은 사람은 최악의 상황을 마주하지 않으려고 최선을 다해 노력하고, 문제를 미리 발견하며, 일이 터지기 전에 해결합니다. 그래서 그들의 선택은 결코 틀리는 법이 없다고 말합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1747927339258-3a3fcfe253f2?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8NHx8dGFuZ2xlZCUyMHRocmVhZHxlbnwxfDB8fHwxNzg4MzM2NjgxfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Debby Hudson",
+        "profile": "https://unsplash.com/@hudsoncrafted?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_8_big5_conscientiousness",
@@ -428,7 +433,12 @@
           "answer": 1,
           "explanation": "인간의 성격은 다섯 개의 꼭지가 달린 별과 같고 이 별 모양은 천차만별이라, 나와 같은 사람을 만난다는 건 기적에 가깝습니다. 나와 다른 사람을 만났을 때 그 사실을 당연하게 받아들여야 세상이 빛나는 별이 가득한 예쁜 하늘이 됩니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1708590210730-0797baad363c?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTZ8fGxvbmclMjBoYWxsd2F5fGVufDF8MHx8fDE3ODgzMzY2ODN8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Dark Light2021",
+        "profile": "https://unsplash.com/@darklight2021?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_9_self_serving_bias",
@@ -478,7 +488,12 @@
           "answer": 4,
           "explanation": "자기중심적 편향은 자존감을 높이지만, 지나치고 비현실적인 자존감은 자신의 기대와 다른 현실을 마주하게 하므로 공격성을 증가시키기도 합니다. '네까짓 게 감히 나에게!' 하고 말입니다. 좋게 생각하는 것보다 중요한 것은 정확히 보고 가능성을 믿는 것입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1565896643288-8b1f8ac7f1a2?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTF8fHdpbmRvdyUyMGxpZ2h0fGVufDF8MHx8fDE3ODgzMzY2ODV8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Kevin Ortiz",
+        "profile": "https://unsplash.com/@kevinortizdesign?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_10_person_vs_situation",
@@ -528,7 +543,12 @@
           "answer": 3,
           "explanation": "많은 사람이 상황에 따라 다르게 행동하는 일관성 없는 모습을 보입니다. 당장 나 자신만 보아도 친구와 부모와 애인을 대하는 태도가 다릅니다. 상황이 사람을 바꾸는 것입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1745805478792-af336a63250a?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTN8fHRhbmdsZWQlMjB0aHJlYWR8ZW58MXwwfHx8MTc4ODMzNjY4MXww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "VD Photography",
+        "profile": "https://unsplash.com/@vdphotography?utm_source=1dayClassic&utm_medium=referral"
+      }
     }
   ]
 }

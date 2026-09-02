@@ -51,7 +51,12 @@
           "answer": 4,
           "explanation": "청년이 믿기지 않으면 로도스 사람들에게 물어보라고 하자, 한 사람이 나서서 그 말이 정말이라면 증인 따위는 필요 없으니 여기가 로도스라 생각하고 직접 뛰어 보라고 했습니다. 큰소리치던 청년은 아무 말도 못 하고 입을 다물었습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1673086636045-9aa873babc91?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjZ8fG9sZCUyMHdvcmxkJTIwbWFwfGVufDF8MHx8fDE3ODgzMzY3MTB8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Arie Oldman",
+        "profile": "https://unsplash.com/@arizard?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_2_good_wine_needs_no_bush",
@@ -103,7 +108,12 @@
           "answer": 1,
           "explanation": "영국의 선술집들은 담쟁이덩굴이나 나뭇가지를 간판처럼 걸어 술을 판다는 것을 알렸습니다. 지금도 글로스터와 워릭 등지에서는 축제 때 간판 대신 담쟁이나 꽃, 나뭇가지 다발을 거는 풍습이 남아 있습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1699662585139-140a988be1a8?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjJ8fGxldHRlcnByZXNzJTIwdHlwZXxlbnwxfDB8fHwxNzg4MzM2NzEyfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Bret Lama",
+        "profile": "https://unsplash.com/@sepiatone?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_3_swap_horses_in_midstream",
@@ -154,7 +164,12 @@
           "answer": 2,
           "explanation": "지친 망아지 대신 암말의 꼬리를 붙잡으라는 충고에 남자는 지금은 말을 바꿀 때가 아니라고 대답했습니다. 여기서 강을 건너는 도중에 말을 바꾼다는 표현이 나왔습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1746440603928-6a1979f2a111?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjN8fHJvYWQlMjBzaWdufGVufDF8MHx8fDE3ODgzMzY3MTR8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Haberdoedas",
+        "profile": "https://unsplash.com/@haberdoedas?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_4_buridans_ass",
@@ -205,7 +220,12 @@
           "answer": 3,
           "explanation": "아리스토텔레스는 『천체에 관하여』에서 지구가 둥글고 사방에서 가해지는 힘이 같아 움직이지 않는다는 소피스트의 견해를 조롱하며, 음식과 술 사이에 끼어 똑같이 갈증과 허기에 시달리는 사람은 그 자리에서 굶어 죽을 것이라고 했습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1581867225533-c25da1bf99a9?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjJ8fHRyYWluJTIwc3RhdGlvbnxlbnwxfDB8fHwxNzg4MzM2NzE2fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Sinitta Leunen",
+        "profile": "https://unsplash.com/@sinileunen?utm_source=1dayClassic&utm_medium=referral"
+      }
     }
   ]
 }
