@@ -21,7 +21,7 @@ export default function PlannedBooksScreen() {
         onPress={(book) =>
           router.push({
             pathname: '/library/book/[id]',
-            params: { id: book.bookId ?? book.id },
+            params: { id: book.bookId ?? book.id, from: 'planned' },
           })
         }
       />

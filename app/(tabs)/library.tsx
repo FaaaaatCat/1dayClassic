@@ -40,7 +40,7 @@ export default function MyPageScreen() {
   };
 
   return (
-    <MyPageShell title="마이페이지">
+    <MyPageShell title="마이페이지" back="/">
       <MyPageRow icon="book-outline" label="지금 읽고있는 책" onPress={openReadingBook} last />
 
       {/* 지금 읽는 책 한 권 — 눌러 들어가면 그 책의 상세가 열린다. */}

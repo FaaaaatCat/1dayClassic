@@ -32,7 +32,7 @@ function totalPagesOf(pages: string): number {
 }
 
 export default function LibraryBookDetailScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, from } = useLocalSearchParams<{ id?: string; from?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { selectBook } = useBookSelection();
@@ -70,11 +70,19 @@ export default function LibraryBookDetailScreen() {
     showToast(`선택 완료 · ${studyBook.title}`);
   };
 
+  /**
+   * 돌아갈 곳 — 들어온 자리로 되돌린다.
+   *
+   * router.back()을 쓰지 않는 건 이 화면이 Tabs의 형제라서다. 형제로 옮기는 것은 스택에
+   * 쌓이지 않아, back()은 그 앞에 쌓여 있던 홈으로 튀어 버린다.
+   */
+  const goBack = () => router.replace((from ? `/library/${from}` : '/library') as never);
+
   const removeBook = () => {
     setMoreMenuOpen(false);
     removeFromShelf(catalogBook.id);
     showToast("내 서재에서 삭제했습니다");
-    router.back();
+    goBack();
   };
 
   return (
@@ -82,7 +90,7 @@ export default function LibraryBookDetailScreen() {
       <View style={styles.screen}>
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <Text style={styles.headerTitle}>내 서재</Text>
-          <ScaleButton accessibilityLabel="뒤로" style={styles.closeButton} onPress={() => router.back()}>
+          <ScaleButton accessibilityLabel="뒤로" style={styles.closeButton} onPress={goBack}>
             <Ionicons name="close" color={Ink.primary} size={24} />
           </ScaleButton>
         </View>

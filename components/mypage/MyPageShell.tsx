@@ -16,11 +16,20 @@ import { Corner, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme'
 export default function MyPageShell({
   title,
   children,
+  back = '/library',
   /** 아래에 붙박이로 둘 것(계정 관리의 버튼처럼). 스크롤을 따라오지 않는다. */
   footer,
 }: {
   title: string;
   children: React.ReactNode;
+  /**
+   * 뒤로 갈 곳. 기본은 마이페이지다.
+   *
+   * router.back()을 쓰지 않는 건 이 화면들이 Tabs의 형제라서다 — 형제로 옮기는 것은
+   * 스택에 쌓이지 않아, back()은 그 앞에 쌓여 있던 홈으로 튀어 버린다. 갈 곳을 이름으로
+   * 적어 두면 어디서 왔든 같은 자리로 돌아간다.
+   */
+  back?: string;
   footer?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -29,7 +38,10 @@ export default function MyPageShell({
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <ScaleButton accessibilityLabel="뒤로" style={styles.back} onPress={() => router.back()}>
+        <ScaleButton
+          accessibilityLabel="뒤로"
+          style={styles.back}
+          onPress={() => router.replace(back as never)}>
           <Ionicons name="chevron-back" color={Ink.primary} size={22} />
         </ScaleButton>
         <Text style={styles.title} numberOfLines={1}>

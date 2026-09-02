@@ -143,7 +143,7 @@ export default function BookstoreScreen() {
           accessibilityRole="button"
           accessibilityLabel="뒤로"
           hitSlop={12}
-          onPress={() => router.back()}
+          onPress={() => router.replace('/')}
         >
           <Ionicons name="chevron-back" color={Ink.primary} size={22} />
         </Pressable>
