@@ -3,7 +3,9 @@ import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import { useFonts } from 'expo-font';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useEffect } from 'react';
-import { Alert } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { Alert, StyleSheet, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
 import { AlarmProvider } from '@/context/AlarmContext';
@@ -13,7 +15,7 @@ import { NotesProvider } from '@/context/NotesContext';
 import { QuizProvider } from '@/context/QuizContext';
 import { ShelfProvider } from '@/context/ShelfContext';
 import { ToastProvider } from '@/context/ToastContext';
-import { Palette } from '@/constants/theme';
+import { Ink, Palette } from '@/constants/theme';
 import {
   getPermissionStatus,
   hasAllAlarmPermissions,
@@ -101,7 +103,8 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={AppTheme}>
+    <SafeAreaProvider>
+      <ThemeProvider value={AppTheme}>
       <AlarmProvider>
         <BookSelectionProvider>
           <ShelfProvider>
@@ -140,7 +143,43 @@ export default function RootLayout() {
           </NotesProvider>
           </ShelfProvider>
         </BookSelectionProvider>
-      </AlarmProvider>
-    </ThemeProvider>
+        </AlarmProvider>
+
+        {/* 상태바 — 어느 화면 위에 있든 같은 띠와 같은 글자색을 쓴다. */}
+        <StatusBarBand />
+        <StatusBar style="light" />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
+
+/**
+ * 상태바 자리에 까는 띠.
+ *
+ * 이 앱은 흰 화면(홈·서재·설정)과 검은 화면(오늘의 공부 뷰어·리포트)이 섞여 있어서,
+ * 시계와 배터리 글자색을 화면마다 바꾸면 넘나들 때마다 깜빡인다. 그래서 색을 바꾸는 대신
+ * 그 자리를 짙은 회색으로 덮고 글자는 늘 흰색으로 둔다 — 어느 화면에서든 같게 보인다.
+ *
+ * 배경색을 StatusBar 컴포넌트로 주지 않고 직접 뷰를 까는 건, 안드로이드가 edge-to-edge로
+ * 바뀌면서 상태바 배경색을 앱이 정할 수 없게 됐기 때문이다. 화면은 상태바 아래까지 그려지고,
+ * 그 위에 우리가 띠를 덮는 것이 지금 남은 방법이다.
+ *
+ * 화면들이 각자 insets.top만큼 여백을 두고 있으므로, 이 띠는 자리를 차지하지 않는
+ * absolute로 얹는다 — 흐름에 넣으면 여백이 두 번 들어가 내용이 그만큼 내려간다.
+ */
+function StatusBarBand() {
+  const insets = useSafeAreaInsets();
+  return <View style={[styles.band, { height: insets.top }]} pointerEvents="none" />;
+}
+
+const styles = StyleSheet.create({
+  band: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Ink.body,
+    // 화면들 위에 얹혀야 한다. 뷰어의 카드나 팝업이 여기까지 올라오지 않도록.
+    zIndex: 1000,
+  },
+});
