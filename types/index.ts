@@ -84,6 +84,11 @@ export interface DailyLesson {
    * 하기 때문이다 — 주소만 남으면 쓸 수 없는 사진이 된다.
    */
   unsplash?: UnsplashPhoto;
+  /**
+   * 이 항목의 사진을 찾을 때 쓸 검색어(영어). 적어 두면 책의 낱말 묶음보다 앞선다 —
+   * 사람이 정한 것이 자동으로 고른 것을 이긴다(lib/unsplash-query 참고).
+   */
+  imageKeyword?: string;
   /** 오늘의 퀴즈. 없는 날은 생략하며, 그러면 화면에 퀴즈 영역이 나오지 않는다. */
   quiz?: Quiz;
   /**

@@ -45,7 +45,8 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "check:queries": "node scripts/check-image-queries.mjs"
   },
   "private": true
 }
