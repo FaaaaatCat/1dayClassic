@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import BookPreviewModal from '@/components/BookPreviewModal';
+import { StatusBarTint } from '@/components/StatusBarTint';
 import { formatReadDate, useBookStats } from '@/components/mypage/useBookStats';
 import ScaleButton from '@/components/ScaleButton';
 import { Corner, Feedback, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
@@ -77,6 +78,9 @@ export default function LibraryBookDetailScreen() {
   return (
     <>
       <View style={styles.screen}>
+        {/* 위가 검은 띠라 상태바도 검게 둔다 — 띠가 화면 속으로 이어져 보인다. */}
+        <StatusBarTint />
+
         <View style={[styles.header, { paddingTop: insets.top }]}>
           <ScaleButton accessibilityLabel="뒤로" style={styles.iconButton} onPress={goBack}>
             <Ionicons name="chevron-back" color={Ink.onDark} size={22} />
@@ -126,31 +130,6 @@ export default function LibraryBookDetailScreen() {
             )}
           </View>
 
-          {menuOpen && (
-            <View style={styles.menu}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="미리보기"
-                style={styles.menuItem}
-                onPress={() => {
-                  setMenuOpen(false);
-                  setPreviewOpen(true);
-                }}>
-                <Ionicons name="eye-outline" color={Ink.primary} size={18} />
-                <Text style={styles.menuText}>미리보기</Text>
-              </Pressable>
-              <View style={styles.menuDivider} />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="내 서재에서 삭제하기"
-                style={styles.menuItem}
-                onPress={removeBook}>
-                <Ionicons name="trash-outline" color={Feedback.wrong} size={18} />
-                <Text style={[styles.menuText, styles.menuDelete]}>내 서재에서 삭제하기</Text>
-              </Pressable>
-            </View>
-          )}
-
           <Section
             title="독서 진도"
             right={
@@ -197,6 +176,45 @@ export default function LibraryBookDetailScreen() {
           </Section>
         </ScrollView>
       </View>
+
+      {/*
+        더보기 — 뒤가 어두워지고 목록이 화면 한가운데 뜬다. 안드로이드가 기본으로 쓰는
+        모양이고, 하루 서점의 고르기 칸(SelectField)과 같은 몸짓이다.
+      */}
+      <Modal
+        visible={menuOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuOpen(false)}
+        statusBarTranslucent>
+        <Pressable style={styles.dim} onPress={() => setMenuOpen(false)}>
+          {/* 목록 위를 눌렀을 때 닫히지 않도록 눌림을 여기서 멈춘다. */}
+          <Pressable style={styles.dialog} onPress={() => {}}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="미리보기"
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuOpen(false);
+                setPreviewOpen(true);
+              }}>
+              <Ionicons name="eye-outline" color={Ink.primary} size={20} />
+              <Text style={styles.menuText}>미리보기</Text>
+            </Pressable>
+
+            <View style={styles.menuDivider} />
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="내 서재에서 삭제하기"
+              style={styles.menuItem}
+              onPress={removeBook}>
+              <Ionicons name="trash-outline" color={Feedback.wrong} size={20} />
+              <Text style={[styles.menuText, styles.menuDelete]}>내 서재에서 삭제하기</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <BookPreviewModal visible={previewOpen} onClose={() => setPreviewOpen(false)} />
     </>
@@ -250,7 +268,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 56,
+    minHeight: 60,
     paddingHorizontal: Space[8],
     backgroundColor: Ink.primary,
   },
@@ -323,20 +341,26 @@ const styles = StyleSheet.create({
     color: Ink.onDark,
   },
 
-  menu: {
-    marginHorizontal: GUTTER,
-    marginTop: Space[8],
-    borderRadius: Corner.small,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Surface.plate,
+  /** 뒤에 깔리는 어둠 — 목록은 그 위 한가운데에 뜬다. */
+  dim: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Space[32],
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  dialog: {
+    alignSelf: 'stretch',
+    paddingVertical: Space[8],
+    borderRadius: Corner.card,
     backgroundColor: Surface.canvas,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Space[8],
-    paddingHorizontal: Space[16],
-    paddingVertical: Space[12],
+    gap: Space[12],
+    minHeight: 52,
+    paddingHorizontal: Space[20],
   },
   menuText: {
     fontFamily: Type.ui,
@@ -348,7 +372,7 @@ const styles = StyleSheet.create({
   },
   menuDivider: {
     height: StyleSheet.hairlineWidth,
-    marginHorizontal: Space[12],
+    marginHorizontal: Space[20],
     backgroundColor: Surface.plate,
   },
 
