@@ -49,6 +49,22 @@ export interface Quiz {
  * 표제부(곡 제목, 라틴어 원문, 한문 구절, 한자 …)는 책마다 다르므로 여기 두지 않는다.
  * 책별 타입이 이 인터페이스를 확장해서 자기 표제 필드를 더한다 — 클래식(Track)도 마찬가지다.
  */
+/**
+ * Unsplash에서 가져온 사진과, 그 사진을 쓰기 위해 함께 보여 줘야 하는 것들.
+ *
+ * Unsplash API 가이드라인은 사진을 보여줄 때 사진가 이름과 프로필 링크, 그리고 Unsplash
+ * 링크를 함께 보이라고 정한다. 그래서 주소만 저장하면 안 되고 이 셋을 한 덩이로 들고 다닌다
+ * — 주소만 남고 이름이 사라지면 그 사진은 쓸 수 없는 사진이 된다.
+ */
+export interface UnsplashPhoto {
+  /** images.unsplash.com 주소. 가이드라인이 다시 올리는 것을 금하므로 이 주소를 그대로 쓴다. */
+  url: string;
+  /** 사진가 이름 — 화면에 적는다. */
+  photographer: string;
+  /** 사진가의 Unsplash 프로필 — 이름을 누르면 여기로 간다. utm은 붙여서 저장한다. */
+  profile: string;
+}
+
 export interface DailyLesson {
   id: string;
   /** 목차에서 이 항목이 꽂히는 날짜 — "1월 1일" 형태 */
@@ -62,6 +78,12 @@ export interface DailyLesson {
   story: string[];
   /** 커버 이미지 — Storage 경로("latin/foo.jpg") 또는 완성된 http(s) URL */
   coverImage: string;
+  /**
+   * Unsplash에서 가져온 사진. coverImage도 책의 표식도 없을 때만 쓴다(lib/cover의
+   * 우선순위 참고). 사진가 이름과 프로필을 함께 들고 다니는 건 화면에 크레딧을 적어야
+   * 하기 때문이다 — 주소만 남으면 쓸 수 없는 사진이 된다.
+   */
+  unsplash?: UnsplashPhoto;
   /** 오늘의 퀴즈. 없는 날은 생략하며, 그러면 화면에 퀴즈 영역이 나오지 않는다. */
   quiz?: Quiz;
   /**
