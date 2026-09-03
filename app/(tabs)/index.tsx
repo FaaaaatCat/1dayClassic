@@ -42,7 +42,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { alarm } = useAlarm();
   const { selectedBookId } = useBookSelection();
-  const { attemptOf } = useQuiz();
+  const { isDone } = useQuiz();
 
   /** 알람 설정 — 화면을 갈아 끼우지 않고 이 위에 띄운다. */
   const [alarmOpen, setAlarmOpen] = useState(false);
@@ -70,8 +70,8 @@ export default function HomeScreen() {
 
   const todayLesson = getBookLesson(selectedBookId);
   const progress = useMemo(
-    () => getReadingProgress(selectedBookId, (id) => attemptOf(id) !== undefined),
-    [selectedBookId, attemptOf],
+    () => getReadingProgress(selectedBookId, isDone),
+    [selectedBookId, isDone],
   );
 
   /**
@@ -97,7 +97,7 @@ export default function HomeScreen() {
   if (!todayLesson) return null;
 
   const heading = getLessonHeading(todayLesson);
-  const todayRead = attemptOf(todayLesson.lesson.id) !== undefined;
+  const todayRead = isDone(todayLesson.lesson.id);
 
   const openLesson = (lessonId: string) => {
     router.push({
@@ -226,7 +226,7 @@ export default function HomeScreen() {
                 day={day}
                 last={index === days.length - 1}
                 free={free}
-                read={day.lessonId !== undefined && attemptOf(day.lessonId) !== undefined}
+                read={day.lessonId !== undefined && isDone(day.lessonId)}
                 onPress={free ? () => openLesson(day.lessonId!) : undefined}
               />
             );

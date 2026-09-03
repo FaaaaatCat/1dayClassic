@@ -25,12 +25,12 @@ import { getReadingProgress } from '@/lib/progress';
 export default function MyPageScreen() {
   const router = useRouter();
   const { selectedBookId } = useBookSelection();
-  const { attemptOf } = useQuiz();
+  const { isDone } = useQuiz();
   const { bgmId } = useBgm();
   const { planned, finished } = useShelfBooks();
 
   const reading = getCatalogBookByBookId(selectedBookId);
-  const progress = getReadingProgress(selectedBookId, (id) => attemptOf(id) !== undefined);
+  const progress = getReadingProgress(selectedBookId, isDone);
   const percent =
     progress.totalPages > 0 ? Math.round((progress.readPages / progress.totalPages) * 100) : 0;
 

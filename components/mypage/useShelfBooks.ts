@@ -25,11 +25,11 @@ export interface ShelfBook {
  */
 export function useShelfBooks(): { planned: ShelfBook[]; finished: ShelfBook[] } {
   const { shelfIds } = useShelf();
-  const { attemptOf } = useQuiz();
+  const { isDone } = useQuiz();
 
   return useMemo(() => {
     const catalogById = new Map(getCatalogBooks().map((book) => [book.id, book]));
-    const isRead = (lessonId: string) => attemptOf(lessonId) !== undefined;
+    const isRead = (lessonId: string) => isDone(lessonId);
 
     const entries: ShelfBook[] = [...shelfIds]
       // 최근에 담은 것이 위로 — shelfIds는 오래된 것 먼저다.
@@ -55,5 +55,5 @@ export function useShelfBooks(): { planned: ShelfBook[]; finished: ShelfBook[] }
       planned: entries.filter((entry) => entry.percent < 100),
       finished: entries.filter((entry) => entry.percent >= 100),
     };
-  }, [shelfIds, attemptOf]);
+  }, [shelfIds, isDone]);
 }

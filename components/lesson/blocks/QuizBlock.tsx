@@ -32,24 +32,32 @@ type ChoiceState = 'neutral' | 'correct' | 'incorrect';
  *
  * 상세 화면에는 '오늘의 복습 Quiz' 버튼만 놓고, 문제는 전체화면 팝업에서 푼다.
  * 한 번 풀면 버튼 옆에 완료 표시가 남는다.
+ *
+ * 이 칸은 항목의 '첫' 문제만 보여 준다(lib/quiz.ts의 getLessonQuiz). 그래서 여기서 푼
+ * 것은 0번 문제 하나로만 적히고, 문제가 여럿인 항목은 이것만으로 '다 읽음'이 되지
+ * 않는다 — 그게 맞다. 다 푸는 자리는 카드 덱의 QuizSolver다.
  */
 export default function QuizBlock({ quiz }: Props) {
   const { bookLesson } = useLessonDetail();
   const lessonId = bookLesson.lesson.id;
-  const bookId = bookLesson.book; // QuizAttempt.bookId에 그대로 넣는다
-  const { attemptOf, record } = useQuiz();
+  const bookId = bookLesson.book;
+  /** 이 항목의 전체 문제 수 — 기록의 분모다. 이 칸이 보여 주는 한 문제와는 별개다. */
+  const total = bookLesson.lesson.quizzes?.length ?? 1;
+  const { quizOf, answer } = useQuiz();
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  const attempt = attemptOf(lessonId);
+  // 이 칸이 다루는 것은 첫 문제 하나뿐이라 0번 답만 본다.
+  const attempt = quizOf(lessonId)?.answers[0];
   const locked = attempt !== undefined;
 
   const choose = (choice: 1 | 2 | 3 | 4) => {
     if (locked) return;
-    record(lessonId, {
+    answer(lessonId, {
       bookId,
+      total,
+      index: 0,
       choice,
       correct: choice === quiz.answer,
-      at: new Date().toISOString(),
     });
   };
 

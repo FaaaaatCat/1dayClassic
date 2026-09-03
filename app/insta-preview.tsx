@@ -237,6 +237,8 @@ export default function InstaPreviewScreen() {
           ]}>
           <QuizSolver
             quizzes={PREVIEW_QUIZZES}
+            // 가짜 문제라 기록하지 않는다 — 여기서 적으면 없는 항목의 진도가 쌓인다.
+            target="preview"
             onClose={() => setQuizOpen(false)}
             onFinish={() => {
               setQuizOpen(false);

@@ -731,7 +731,12 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             quizModalStyles.screen,
             { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
           ]}>
-          <QuizSolver quizzes={quizzes} onClose={closeQuiz} onFinish={finishStudy} />
+          <QuizSolver
+            quizzes={quizzes}
+            target={{ lessonId: lesson.id, bookId: bookLesson.book }}
+            onClose={closeQuiz}
+            onFinish={finishStudy}
+          />
         </View>
       </Modal>
 
