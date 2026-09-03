@@ -105,8 +105,8 @@ function BookmarkCard({
         bookId={bookId}
         style={StyleSheet.absoluteFill}
         blurRadius={BACKGROUND_BLUR}
-        // 위쪽 구석은 글이 시작하는 자리라, 사진가 크레딧은 왼쪽 아래로 내린다.
-        creditPlacement="bottomLeft"
+        // 위쪽 구석은 글이 시작하는 자리라, 사진가 크레딧은 아래 가운데로 내린다.
+        creditPlacement="bottomCenter"
       />
       {/* 사진이 밝아도 글이 읽히도록 어둠을 한 겹 깐다. */}
       <View style={styles.dim} pointerEvents="none" />

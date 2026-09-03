@@ -1098,7 +1098,7 @@ function DeckCard({
                 lesson={lesson}
                 bookId={bookId}
                 style={StyleSheet.absoluteFill}
-                creditPlacement="bottomLeft"
+                creditPlacement="bottomCenter"
               />
               <View style={styles.coverScrim} pointerEvents="none" />
             </>

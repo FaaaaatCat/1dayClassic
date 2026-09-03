@@ -32,10 +32,10 @@ interface LessonCoverImageProps {
   blurRadius?: number;
   /**
    * Unsplash 크레딧을 어디에 둘지. 기본은 오른쪽 위 — 표지 위 왼쪽에는 쪽 번호가,
-   * 아래에는 제목과 버튼이 앉는 자리들이 그렇게 짜여 있다. 책갈피 카드처럼 글이
-   * 가운데를 다 쓰는 자리는 왼쪽 아래로 내린다.
+   * 아래에는 제목과 버튼이 앉는 자리들이 그렇게 짜여 있다. 글이 가운데를 다 쓰는
+   * 자리(책갈피 카드, 카드 덱의 표지 장)는 아래 가운데로 내린다.
    */
-  creditPlacement?: 'topRight' | 'bottomLeft';
+  creditPlacement?: 'topRight' | 'bottomCenter';
 }
 
 /** 표식이 그림인지(주소) 글자인지 가른다. */
@@ -162,20 +162,20 @@ function SymbolCover({ style, symbol }: { style?: StyleProp<ImageStyle>; symbol?
  * 지울 수 없다.
  *
  * 기본은 사진 위 오른쪽 위다 — 왼쪽 위에는 쪽 번호가, 아래에는 제목과 버튼이 있다.
- * 그 자리가 이미 차 있는 화면은 placement로 왼쪽 아래를 고른다.
+ * 그 자리가 이미 차 있는 화면은 placement로 아래 가운데를 고른다.
  */
 function UnsplashCredit({
   photo,
   placement,
 }: {
   photo: UnsplashPhoto;
-  placement: 'topRight' | 'bottomLeft';
+  placement: 'topRight' | 'bottomCenter';
 }) {
   return (
     <Pressable
       accessibilityRole="link"
       accessibilityLabel={`사진 ${photo.photographer}, Unsplash. 사진가 페이지 열기`}
-      style={placement === 'bottomLeft' ? styles.creditBottomLeft : styles.credit}
+      style={placement === 'bottomCenter' ? styles.creditBottomCenter : styles.credit}
       hitSlop={8}
       onPress={() => Linking.openURL(photo.profile).catch(() => {})}>
       <Text style={styles.creditText} numberOfLines={1}>
@@ -205,11 +205,13 @@ const styles = StyleSheet.create({
     right: 16,
     maxWidth: '60%',
   },
-  creditBottomLeft: {
+  /** 아래 가운데 — 좌우로 벌려 두고 그 안에서 가운데로 모은다. */
+  creditBottomCenter: {
     position: 'absolute',
     bottom: 16,
     left: 16,
-    maxWidth: '60%',
+    right: 16,
+    alignItems: 'center',
   },
   creditText: {
     fontFamily: Type.ui,
@@ -218,13 +220,14 @@ const styles = StyleSheet.create({
      * eggshell을 반쯤 지워 둔다.
      *
      * 이 줄은 사진을 쓸 자격이지 읽히자고 놓은 글이 아니다 — 표제와 같은 밝기로 서 있으면
-     * 표지에서 눈이 먼저 여기로 간다. 지우되 없애지는 않는다. 50%면 사진 위에서 알아볼 수
-     * 있고 손가락도 그대로 받는다(사진가 페이지로 가는 길이 살아 있어야 한다).
+     * 표지에서 눈이 먼저 여기로 간다. 지우되 없애지는 않는다. 70%면 사진 위에서 또렷이
+     * 읽히고 손가락도 그대로 받는다(사진가 페이지로 가는 길이 살아 있어야 한다).
      *
      * 표지 위에 어둠을 한 겹 더 까는 화면(책갈피 카드, 표지 장)에서는 그 어둠까지 얹혀
      * 한 단 더 어두워진다.
      */
-    opacity: 0.5,
+    opacity: 0.7,
+    textAlign: 'center',
     color: Ink.onDark,
   },
 });
