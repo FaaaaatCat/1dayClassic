@@ -855,10 +855,8 @@ const styles = StyleSheet.create({
     color: Ink.onDark,
   },
   /**
-   * 읽을 책에 추가하기 — 이 화면이 하러 온 일 하나.
-   *
-   * ember를 버튼에 쓰는 것은 이 시스템에서 드문 일이다(theme.ts의 Spark 주석 참고).
-   * 하루 서점에서 책을 고르는 행동 하나에만 열어 둔 자리고, 다른 버튼으로 번지지 않는다.
+   * 읽을 책에 추가하기 — 이 화면이 하러 온 일 하나라, 포인트 컬러가 여기 붙는다.
+   * 이 화면에서 주황은 이 버튼 하나뿐이다.
    */
   ctaAdd: {
     backgroundColor: Spark.ember,
