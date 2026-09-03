@@ -69,18 +69,3 @@ export function getReadingProgress(
     readLessons,
   };
 }
-
-/**
- * 오늘이 끝나기까지 남은 시간.
- *
- * 하루에 한 쪽이라는 약속 때문에 필요한 값이다 — 자정이 지나면 오늘 몫은 지나간다.
- * 한 시간이 안 남으면 분만, 그 위로는 '시간 분'으로 적는다.
- */
-export function timeLeftToday(now: Date = new Date()): string {
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0);
-  const minutes = Math.max(0, Math.floor((midnight.getTime() - now.getTime()) / 60000));
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return hours > 0 ? `${hours}시간 ${rest}분` : `${rest}분`;
-}

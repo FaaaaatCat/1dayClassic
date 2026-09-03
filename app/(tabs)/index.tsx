@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,11 +12,17 @@ import { useAlarm } from '@/context/AlarmContext';
 import { useBookSelection } from '@/context/BookSelectionContext';
 import { useQuiz } from '@/context/QuizContext';
 import { getBookCalendar, getBookLesson, getLessonHeading } from '@/lib/books';
-import { getReadingProgress, timeLeftToday, type ReadingProgress } from '@/lib/progress';
+import { getReadingProgress, type ReadingProgress } from '@/lib/progress';
 import type { CalendarDay } from '@/lib/calendar';
 
-/** 남은 시간을 다시 세는 주기 — 분 단위로 보여 주므로 1분이면 충분하다. */
-const TICK_MS = 60_000;
+/**
+ * 무료로 열어 두는 항목 수 — 책 앞에서부터 다섯 개다.
+ *
+ * 예전에는 오늘 한 줄만 열려 있었고 그 줄에 자정까지 남은 시간이 붙었다. 하루를 놓치면
+ * 그날 몫이 지나가는 규칙이었는데, 지금은 시간과 무관하게 앞 다섯 개를 열어 둔다 —
+ * 처음 들어온 사람이 한 쪽만 보고 판단하지 않아도 되게 하려는 것이다.
+ */
+const FREE_LESSON_COUNT = 5;
 
 /** hour(0~23) → "오후 11:00" */
 function formatAlarmTime(hour: number, minute: number): string {
@@ -46,13 +52,6 @@ export default function HomeScreen() {
    * 기본이 첫장부터인 건 이 책이 1월 1일부터 차례로 읽어 나가는 물건이라서다.
    */
   const [newestFirst, setNewestFirst] = useState(false);
-
-  /** 남은 시간은 스스로 줄어들어야 한다 — 화면을 열어 둔 채로도 분이 넘어간다. */
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), TICK_MS);
-    return () => clearInterval(timer);
-  }, []);
 
   /**
    * 다시 들어올 때는 처음 상태로.
@@ -84,17 +83,30 @@ export default function HomeScreen() {
     return newestFirst ? [...real].reverse() : real;
   }, [selectedBookId, newestFirst]);
 
+  /**
+   * 무료로 열려 있는 항목들 — 책 앞에서부터 FREE_LESSON_COUNT개.
+   *
+   * 목록을 최신순으로 뒤집어도 열려 있는 다섯은 그대로여야 하므로, 뒤집기 전 차례(days가
+   * 아니라 달력 원본)에서 고른다.
+   */
+  const freeLessonIds = useMemo(() => {
+    const real = getBookCalendar(selectedBookId).filter((day) => day.lessonId !== undefined);
+    return new Set(real.slice(0, FREE_LESSON_COUNT).map((day) => day.lessonId!));
+  }, [selectedBookId]);
+
   if (!todayLesson) return null;
 
   const heading = getLessonHeading(todayLesson);
   const todayRead = attemptOf(todayLesson.lesson.id) !== undefined;
 
-  const openToday = () => {
+  const openLesson = (lessonId: string) => {
     router.push({
       pathname: '/today',
-      params: { bookId: selectedBookId, lessonId: todayLesson.lesson.id },
+      params: { bookId: selectedBookId, lessonId },
     });
   };
+
+  const openToday = () => openLesson(todayLesson.lesson.id);
 
   return (
     /*
@@ -204,18 +216,21 @@ export default function HomeScreen() {
           </ScaleButton>
         </View>
 
-        {/* 목차 — 오늘 줄만 남은 시간을 달고, 아직 오지 않은 날은 잠겨 있다. */}
+        {/* 목차 — 앞의 다섯 줄은 열려 있고, 그 뒤는 잠겨 있다. */}
         <View style={styles.list}>
-          {days.map((day, index) => (
-            <TocRow
-              key={day.lessonId}
-              day={day}
-              last={index === days.length - 1}
-              timeLeft={day.isToday ? timeLeftToday(now) : undefined}
-              read={day.lessonId !== undefined && attemptOf(day.lessonId) !== undefined}
-              onPress={day.isToday ? openToday : undefined}
-            />
-          ))}
+          {days.map((day, index) => {
+            const free = day.lessonId !== undefined && freeLessonIds.has(day.lessonId);
+            return (
+              <TocRow
+                key={day.lessonId}
+                day={day}
+                last={index === days.length - 1}
+                free={free}
+                read={day.lessonId !== undefined && attemptOf(day.lessonId) !== undefined}
+                onPress={free ? () => openLesson(day.lessonId!) : undefined}
+              />
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -277,20 +292,21 @@ function ProgressBar({ progress }: { progress: ReadingProgress }) {
 /**
  * 목차 한 줄.
  *
- * 오늘 줄만 누를 수 있다 — 지나간 날과 앞으로 올 날은 잠겨 있고, 그 사실을 자물쇠로
- * 말한다. 하루에 한 쪽이라는 약속이 이 목록의 규칙이다.
+ * 앞의 다섯 줄만 누를 수 있다 — 그 뒤는 잠겨 있고, 그 사실을 자물쇠로 말한다.
+ * 열린 줄의 오른쪽 끝은 화살표다. 퀴즈까지 끝낸 줄이면 그 왼쪽에 체크가 하나 더 붙어,
+ * '읽었다'와 '들어갈 수 있다'를 한 자리에서 같이 말한다.
  */
 function TocRow({
   day,
   last,
-  timeLeft,
+  free,
   read,
   onPress,
 }: {
   day: CalendarDay;
   last: boolean;
-  /** 오늘 줄에만 있는 값 — 자정까지 남은 시간. */
-  timeLeft?: string;
+  /** 무료로 열려 있는 줄인지 — 잠긴 줄은 자물쇠만 단다. */
+  free: boolean;
   read: boolean;
   onPress?: () => void;
 }) {
@@ -307,11 +323,10 @@ function TocRow({
         ) : null}
       </View>
 
-      {timeLeft ? (
+      {free ? (
         <View style={styles.rowRight}>
-          <Ionicons name="time-outline" color={Spark.ember} size={14} />
-          <Text style={styles.rowTime}>{timeLeft}</Text>
           {read && <Ionicons name="checkmark-circle" color={Ink.primary} size={16} />}
+          <Ionicons name="chevron-forward" color={Ink.muted} size={16} />
         </View>
       ) : (
         <Ionicons name="lock-closed" color={Ink.muted} size={16} />
@@ -389,7 +404,7 @@ const styles = StyleSheet.create({
    *
    * 주황(Spark.ember)을 여기 얹는 것은 완독까지 얼마나 왔는지가 이 화면에서 가장 먼저
    * 눈에 들어와야 하는 것이고, 무채색으로는 '얼마나 찼는지'가 읽히지 않아서다.
-   * 이 화면의 나머지 주황은 오늘 줄에 붙는 남은 시간(rowTime) 하나뿐이다.
+   * 이 화면에서 주황이 붙는 곳은 여기 하나다.
    */
   progressFill: {
     position: 'absolute',
@@ -596,11 +611,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Space[4],
-  },
-  /** 오늘 줄에만 붙는 남은 시간 — 완독바와 같은 주황으로 오늘이라는 것을 알린다. */
-  rowTime: {
-    fontFamily: Type.uiMedium,
-    ...TypeScale.bodySm,
-    color: Spark.ember,
   },
 });
