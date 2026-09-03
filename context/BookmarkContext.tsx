@@ -13,6 +13,11 @@ export interface Bookmark {
   at: string;
 }
 
+/** 목록에 내줄 때의 책갈피 — 어느 항목의 것인지까지 붙여 준다. */
+export interface SavedBookmark extends Bookmark {
+  lessonId: string;
+}
+
 /** "항목id:장번호" → 책갈피. 장마다 따로 꽂으므로 키에 장 번호가 들어간다. */
 type BookmarksByKey = Record<string, Bookmark>;
 
@@ -23,6 +28,8 @@ interface BookmarkContextValue {
   toggle: (lessonId: string, page: number, bookId: BookId) => boolean;
   /** 그 책에 꽂아 둔 책갈피 수. */
   countOf: (bookId: BookId) => number;
+  /** 그 책에 꽂아 둔 책갈피 — 최근에 꽂은 것이 앞에 온다. */
+  listOf: (bookId: BookId) => SavedBookmark[];
 }
 
 const BookmarkContext = createContext<BookmarkContextValue | null>(null);
@@ -30,6 +37,15 @@ const BookmarkContext = createContext<BookmarkContextValue | null>(null);
 const STORAGE_KEY = 'bookmarks-v1';
 
 const keyOf = (lessonId: string, page: number) => `${lessonId}:${page}`;
+
+/**
+ * 키에서 항목 id를 다시 꺼낸다.
+ *
+ * 저장된 값에는 항목 id가 없고 키에만 들어 있다. 값에 넣으려면 이미 꽂아 둔 책갈피를
+ * 옮겨야 해서, 꺼내 쓰는 쪽에서 되돌린다. 항목 id에는 콜론이 없고(latin_1_… 꼴) 뒤에
+ * 붙는 것은 장 번호라, 마지막 콜론에서 자르면 정확하다.
+ */
+const lessonIdOf = (key: string) => key.slice(0, key.lastIndexOf(':'));
 
 /**
  * 책갈피 보관소. NotesContext·QuizContext와 같은 구조다 — 전체를 담은 맵 하나로 저장해서
@@ -91,6 +107,12 @@ export function BookmarkProvider({ children }: { children: React.ReactNode }) {
       toggle,
       countOf: (bookId) =>
         Object.values(marks).filter((mark) => mark.bookId === bookId).length,
+      listOf: (bookId) =>
+        Object.entries(marks)
+          .filter(([, mark]) => mark.bookId === bookId)
+          .map(([key, mark]) => ({ ...mark, lessonId: lessonIdOf(key) }))
+          // 최근에 꽂은 것이 앞에 온다 — 접어 둔 자리는 방금 접은 것부터 찾게 된다.
+          .sort((a, b) => b.at.localeCompare(a.at)),
     }),
     [marks, toggle],
   );

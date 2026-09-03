@@ -89,6 +89,15 @@ export default function LibraryBookDetailScreen() {
     });
   };
 
+  /** 책갈피 — 틀린 문제와 같은 이유로 학습 콘텐츠가 있는 책에만 있다. */
+  const openBookmarks = () => {
+    if (!studyBook) return;
+    router.push({
+      pathname: '/library/bookmarks',
+      params: { id: studyBook.id, ...(from ? { from } : {}) },
+    });
+  };
+
   return (
     <>
       <View style={styles.screen}>
@@ -178,7 +187,10 @@ export default function LibraryBookDetailScreen() {
             )}
           </Section>
 
-          <Section title="책갈피" action="책갈피 보기" onAction={notReady}>
+          <Section
+            title="책갈피"
+            action="책갈피 보기"
+            onAction={studyBook ? openBookmarks : notReady}>
             <Text style={styles.value}>{`${stats.bookmarks}개`}</Text>
           </Section>
 
