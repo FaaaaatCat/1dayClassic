@@ -11,9 +11,22 @@ import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants
 import { useAlarm } from '@/context/AlarmContext';
 import { useBookSelection } from '@/context/BookSelectionContext';
 import { useQuiz } from '@/context/QuizContext';
+import { useReadingCursor } from '@/context/ReadingCursorContext';
 import { getBookName } from '@/lib/books';
 import { getCatalogBookByBookId } from '@/lib/catalog';
-import { getReadingProgress, getResumeLessonId } from '@/lib/progress';
+import { getReadingProgress, getReadPlan, type ReadPlan } from '@/lib/progress';
+
+/** 읽기 버튼 말풍선의 문구 — 지금 누르면 무엇을 읽게 되는지. */
+function planLabel(plan: ReadPlan): string {
+  switch (plan.kind) {
+    case 'first':
+      return '무료로 첫화보기';
+    case 'restart':
+      return '1화부터 다시 읽기';
+    case 'resume':
+      return `이어 읽기 : 제${plan.no}화`;
+  }
+}
 
 /** hour(0~23) → "오후 11:00" */
 function formatAlarmTime(hour: number, minute: number): string {
@@ -40,6 +53,7 @@ export default function HomeScreen() {
   const { alarm } = useAlarm();
   const { selectedBookId } = useBookSelection();
   const { isDone } = useQuiz();
+  const { cursorOf } = useReadingCursor();
 
   /** 알람 설정 — 화면을 갈아 끼우지 않고 이 위에 띄운다. */
   const [alarmOpen, setAlarmOpen] = useState(false);
@@ -53,16 +67,16 @@ export default function HomeScreen() {
 
   const book = getCatalogBookByBookId(selectedBookId);
   const progress = getReadingProgress(selectedBookId, isDone);
-  /** 읽기 버튼이 열 항목 — 아직 퀴즈를 다 풀지 않은 첫 항목이다(lib/progress 주석 참고). */
-  const resumeLessonId = getResumeLessonId(selectedBookId, isDone);
+  /** 읽기 버튼이 열 항목과, 말풍선이 뭐라고 부를지(네 갈래는 lib/progress의 getReadPlan). */
+  const plan = getReadPlan(selectedBookId, isDone, cursorOf(selectedBookId));
   const percent =
     progress.totalPages > 0 ? Math.round((progress.readPages / progress.totalPages) * 100) : 0;
 
   const openResume = () => {
-    if (!resumeLessonId) return;
+    if (!plan) return;
     router.push({
       pathname: '/today',
-      params: { bookId: selectedBookId, lessonId: resumeLessonId },
+      params: { bookId: selectedBookId, lessonId: plan.lessonId },
     });
   };
 
@@ -144,26 +158,38 @@ export default function HomeScreen() {
         </View>
 
         {/* 문 셋 — 가운데 읽기가 이 화면이 하러 온 일이라 혼자 크고 주황이다. */}
-        <View style={styles.actions}>
-          <ScaleButton
-            accessibilityLabel="목차"
-            style={styles.sideButton}
-            onPress={() => router.push('/toc')}>
-            <Ionicons name="list" color={Ink.muted} size={24} />
-            <Text style={styles.sideLabel}>목차</Text>
-          </ScaleButton>
+        <View style={styles.actionsArea}>
+          {/* 읽기 버튼이 무엇을 열지 미리 말해 주는 말풍선. 손가락은 밑의 버튼이 받는다. */}
+          {plan ? (
+            <View style={styles.bubbleWrap} pointerEvents="none">
+              <View style={styles.bubble}>
+                <Text style={styles.bubbleText}>{planLabel(plan)}</Text>
+              </View>
+              <View style={styles.bubbleTail} />
+            </View>
+          ) : null}
 
-          <ScaleButton
-            accessibilityLabel="이어서 읽기"
-            style={styles.readButton}
-            onPress={openResume}>
-            <Ionicons name="book" color={Ink.onDark} size={32} />
-          </ScaleButton>
+          <View style={styles.actions}>
+            <ScaleButton
+              accessibilityLabel="목차"
+              style={styles.sideButton}
+              onPress={() => router.push('/toc')}>
+              <Ionicons name="list" color={Ink.muted} size={24} />
+              <Text style={styles.sideLabel}>목차</Text>
+            </ScaleButton>
 
-          <ScaleButton accessibilityLabel="리포트" style={styles.sideButton} onPress={openReport}>
-            <Ionicons name="stats-chart" color={Ink.muted} size={24} />
-            <Text style={styles.sideLabel}>리포트</Text>
-          </ScaleButton>
+            <ScaleButton
+              accessibilityLabel={plan ? planLabel(plan) : '읽기'}
+              style={styles.readButton}
+              onPress={openResume}>
+              <Ionicons name="book" color={Ink.onDark} size={32} />
+            </ScaleButton>
+
+            <ScaleButton accessibilityLabel="리포트" style={styles.sideButton} onPress={openReport}>
+              <Ionicons name="stats-chart" color={Ink.muted} size={24} />
+              <Text style={styles.sideLabel}>리포트</Text>
+            </ScaleButton>
+          </View>
         </View>
       </View>
 
@@ -297,6 +323,43 @@ const styles = StyleSheet.create({
   },
 
   // 문 셋
+  /** 말풍선을 버튼 줄 위에 띄우기 위한 자리 — 높이는 버튼 줄 그대로다. */
+  actionsArea: {
+    alignItems: 'center',
+  },
+  /**
+   * 말풍선 — 가운데 버튼(72) 바로 위에 뜬다.
+   *
+   * 흐름에서 빼내 얹는 건, 문구가 길어지거나 짧아져도 아래 버튼 셋의 자리가 흔들리지
+   * 않게 하기 위해서다.
+   */
+  bubbleWrap: {
+    position: 'absolute',
+    bottom: 72 + Space[8],
+    alignItems: 'center',
+  },
+  bubble: {
+    paddingHorizontal: Space[16],
+    paddingVertical: Space[8],
+    borderRadius: Corner.pill,
+    backgroundColor: Surface.canvas,
+  },
+  bubbleText: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.bodySm,
+    color: Ink.primary,
+  },
+  /** 말풍선 꼬리 — 아래를 가리키는 삼각형. 테두리만으로 그린다. */
+  bubbleTail: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: Surface.canvas,
+  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',

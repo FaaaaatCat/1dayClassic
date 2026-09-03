@@ -14,6 +14,7 @@ import { BookmarkProvider } from '@/context/BookmarkContext';
 import { BookSelectionProvider } from '@/context/BookSelectionContext';
 import { NotesProvider } from '@/context/NotesContext';
 import { QuizProvider } from '@/context/QuizContext';
+import { ReadingCursorProvider } from '@/context/ReadingCursorContext';
 import { ShelfProvider } from '@/context/ShelfContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { StatusTintProvider, useStatusTint } from '@/components/StatusBarTint';
@@ -113,6 +114,7 @@ export default function RootLayout() {
           <ShelfProvider>
           <NotesProvider>
             <QuizProvider>
+              <ReadingCursorProvider>
               <BookmarkProvider>
               <BgmProvider>
               <ToastProvider>
@@ -144,6 +146,7 @@ export default function RootLayout() {
               </ToastProvider>
               </BgmProvider>
               </BookmarkProvider>
+              </ReadingCursorProvider>
             </QuizProvider>
           </NotesProvider>
           </ShelfProvider>
