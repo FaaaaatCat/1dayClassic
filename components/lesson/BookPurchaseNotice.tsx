@@ -60,12 +60,23 @@ export default function BookPurchaseNotice({
 }
 
 const styles = StyleSheet.create({
+  /**
+   * 화면을 덮는 층.
+   *
+   * z를 크게 박아 두는 건 카드 덱 위에 얹힐 때를 위해서다. 덱은 장마다 zIndex를 갖고
+   * 있고(카드 쌓임 순서와 위 크롬까지 100번대를 쓴다), 리액트 네이티브는 형제 사이에서
+   * 그리는 순서보다 zIndex를 먼저 본다 — 나중에 그렸다고 위에 오지 않는다. 그래서 안내를
+   * 덱 뒤에 깔아 두고 딤도 문구도 보이지 않은 적이 있다. 안드로이드는 elevation도 함께
+   * 봐서 둘 다 준다.
+   */
   overlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    zIndex: 200,
+    elevation: 24,
     alignItems: 'center',
     justifyContent: 'center',
     padding: Space[24],
