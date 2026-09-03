@@ -30,6 +30,12 @@ interface LessonCoverImageProps {
    * 표식·검은 바탕은 흐릴 그림이 없어 그대로다.
    */
   blurRadius?: number;
+  /**
+   * Unsplash 크레딧을 어디에 둘지. 기본은 오른쪽 위 — 표지 위 왼쪽에는 쪽 번호가,
+   * 아래에는 제목과 버튼이 앉는 자리들이 그렇게 짜여 있다. 책갈피 카드처럼 글이
+   * 가운데를 다 쓰는 자리는 왼쪽 아래로 내린다.
+   */
+  creditPlacement?: 'topRight' | 'bottomLeft';
 }
 
 /** 표식이 그림인지(주소) 글자인지 가른다. */
@@ -53,6 +59,7 @@ export default function LessonCoverImage({
   resizeMode = 'cover',
   bookId,
   blurRadius,
+  creditPlacement = 'topRight',
 }: LessonCoverImageProps) {
   const plan = useMemo(() => getCoverPlan(lesson, bookId), [lesson, bookId]);
 
@@ -98,7 +105,7 @@ export default function LessonCoverImage({
           onError={() => setFailed(true)}
           accessibilityIgnoresInvertColors
         />
-        <UnsplashCredit photo={plan.photo} />
+        <UnsplashCredit photo={plan.photo} placement={creditPlacement} />
       </View>
     );
   }
@@ -154,14 +161,21 @@ function SymbolCover({ style, symbol }: { style?: StyleProp<ImageStyle>; symbol?
  * 사진가 프로필로 가는 길을 둬야 한다. 그래서 이 줄은 꾸밈이 아니라 사진을 쓸 자격이고,
  * 지울 수 없다.
  *
- * 사진 위 오른쪽 위에 둔다 — 왼쪽 위에는 쪽 번호가, 아래에는 제목과 버튼이 있다.
+ * 기본은 사진 위 오른쪽 위다 — 왼쪽 위에는 쪽 번호가, 아래에는 제목과 버튼이 있다.
+ * 그 자리가 이미 차 있는 화면은 placement로 왼쪽 아래를 고른다.
  */
-function UnsplashCredit({ photo }: { photo: UnsplashPhoto }) {
+function UnsplashCredit({
+  photo,
+  placement,
+}: {
+  photo: UnsplashPhoto;
+  placement: 'topRight' | 'bottomLeft';
+}) {
   return (
     <Pressable
       accessibilityRole="link"
       accessibilityLabel={`사진 ${photo.photographer}, Unsplash. 사진가 페이지 열기`}
-      style={styles.credit}
+      style={placement === 'bottomLeft' ? styles.creditBottomLeft : styles.credit}
       hitSlop={8}
       onPress={() => Linking.openURL(photo.profile).catch(() => {})}>
       <Text style={styles.creditText} numberOfLines={1}>
@@ -189,6 +203,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     right: 16,
+    maxWidth: '60%',
+  },
+  creditBottomLeft: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
     maxWidth: '60%',
   },
   creditText: {

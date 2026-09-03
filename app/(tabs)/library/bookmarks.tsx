@@ -105,11 +105,17 @@ function BookmarkCard({
         bookId={bookId}
         style={StyleSheet.absoluteFill}
         blurRadius={BACKGROUND_BLUR}
+        // 위쪽 구석은 글이 시작하는 자리라, 사진가 크레딧은 왼쪽 아래로 내린다.
+        creditPlacement="bottomLeft"
       />
       {/* 사진이 밝아도 글이 읽히도록 어둠을 한 겹 깐다. */}
       <View style={styles.dim} pointerEvents="none" />
 
-      <View style={styles.body}>
+      {/*
+        손가락을 받지 않는다(box-none). 이 층이 카드를 덮고 있어 그냥 두면 밑에 깔린
+        Unsplash 크레딧 링크가 눌리지 않는다 — 그 링크는 사진을 쓸 자격이라 지울 수 없다.
+      */}
+      <View style={styles.body} pointerEvents="box-none">
         {item.text ? (
           <Text style={styles.text}>{item.text}</Text>
         ) : (
@@ -229,6 +235,7 @@ const styles = StyleSheet.create({
     ...TypeScale.bodySm,
     textAlign: 'center',
     color: Surface.plate,
+    marginBottom: Space[20],
   },
   /** 빼기 — 카드 오른쪽 아래 구석. 작게 두되 손가락이 받을 자리는 넓힌다. */
   removeButton: {
