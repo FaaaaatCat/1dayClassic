@@ -257,7 +257,7 @@ export default function InstaPreviewScreen() {
         <StudyReport
           date={PREVIEW_DATE}
           bookTitle={PREVIEW_BOOK_TITLE}
-          onOpenReport={() => {
+          onNext={() => {
             setReportOpen(false);
             openBookDetail(router, PREVIEW_BOOK);
           }}

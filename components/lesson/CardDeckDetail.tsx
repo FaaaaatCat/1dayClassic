@@ -43,6 +43,7 @@ import {
   type NarrationStep,
   type SpokenRange,
 } from '@/hooks/useCardNarration';
+import BookPurchaseNotice from '@/components/lesson/BookPurchaseNotice';
 import MusicPlayer from '@/components/lesson/MusicPlayer';
 import { StatusBarTint } from '@/components/StatusBarTint';
 import StudyReport from '@/components/StudyReport';
@@ -70,6 +71,7 @@ import {
 import { getBookName, type BookLesson } from '@/lib/books';
 import { getCatalogBookByBookId, type CatalogBook } from '@/lib/catalog';
 import { openBookDetail } from '@/lib/preview-nav';
+import { getNextLesson } from '@/lib/progress';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
 /**
@@ -307,8 +309,10 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
   /** 퀴즈 팝업이 열려 있는지. */
   const [quizOpen, setQuizOpen] = useState(false);
   const closeQuiz = () => setQuizOpen(false);
-  /** 오늘의 공부 리포트가 떠 있는지. */
+  /** 오늘의 공부 리포트(퀴즈 엔딩 화면)가 떠 있는지. */
   const [reportOpen, setReportOpen] = useState(false);
+  /** 그 위에 얹히는 구매 안내 — 다음 화가 잠겨 있을 때만 뜬다. */
+  const [purchaseOpen, setPurchaseOpen] = useState(false);
 
   /**
    * 해설까지 읽고 마치기 — 바로 상세로 보내지 않고 리포트를 한 장 거친다.
@@ -320,8 +324,38 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
     setReportOpen(true);
   };
 
-  /** 리포트에서 이어 가기 — 스택을 거치는 순서는 lib/preview-nav 주석 참고. */
-  const goToLibraryDetail = () => {
+  /**
+   * 퀴즈 엔딩 화면의 '다음 화 읽기'.
+   *
+   * 세 갈래다 — 다음 화가 열려 있으면 그리로 가고, 잠겨 있으면 구매 안내를 대신 띄우고,
+   * 다음 화 자체가 없으면(이 책의 마지막) 홈으로 돌아간다. 잠긴 화를 열어 주지 않는 것이
+   * 이 분기의 요점이다 — 목차의 자물쇠와 같은 선을 여기서도 지킨다.
+   *
+   * 열린 다음 화로 갈 때 화면을 갈아 끼우지 않고 lessonId만 바꾸는 건, 읽기 흐름이
+   * 끊기지 않게 하기 위해서다. 카드 덱이 새 항목으로 다시 서는 일은 today.tsx가 key로
+   * 맡는다(그쪽 주석 참고).
+   */
+  const openNext = () => {
+    const next = getNextLesson(bookLesson.book, lesson.id);
+    if (!next) {
+      setReportOpen(false);
+      router.replace('/');
+      return;
+    }
+    if (next.locked) {
+      setPurchaseOpen(true);
+      return;
+    }
+    setReportOpen(false);
+    router.replace({
+      pathname: '/today',
+      params: { bookId: bookLesson.book, lessonId: next.lessonId },
+    });
+  };
+
+  /** 구매 안내의 값 버튼 — 스택을 거치는 순서는 lib/preview-nav 주석 참고. */
+  const goToBookDetail = () => {
+    setPurchaseOpen(false);
     setReportOpen(false);
     openBookDetail(router, catalogBook);
   };
@@ -743,8 +777,9 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
       {/**
         * 오늘의 공부 리포트 — 마치기를 누르면 뜨는 검은 화면.
         *
-        * 서재 상세는 여기 '리포트 보러가기'로 간다. 뒤로가기(onRequestClose)는 일부러
-        * 비워 두지 않았다 — 리포트에서 물러나면 방금까지 보던 미리보기로 돌아간다.
+        * 아래 버튼은 '다음 화 읽기'다(openNext). 다음 화가 잠겨 있으면 그 위에 구매
+        * 안내가 한 겹 얹힌다 — 이 화면이 이미 Modal 안이라 Modal을 또 쓰지 않는다.
+        * 뒤로가기(onRequestClose)는 일부러 비워 두지 않았다 — 물러나면 읽던 자리로 돌아간다.
         */}
       {/* statusBarTranslucent — 이것이 없으면 상태바 자리에 앱의 밝은 바탕이 남아
           검은 화면 위쪽에 띠로 보인다. 안쪽 여백은 insets.top으로 이미 잡아 뒀다. */}
@@ -752,12 +787,26 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
         visible={reportOpen}
         animationType="fade"
         statusBarTranslucent
-        onRequestClose={() => setReportOpen(false)}>
+        onRequestClose={() => {
+          // 구매 안내가 떠 있으면 그것부터 닫는다 — 뒤로가기가 두 겹을 한 번에 걷지 않게.
+          if (purchaseOpen) {
+            setPurchaseOpen(false);
+            return;
+          }
+          setReportOpen(false);
+        }}>
         <StudyReport
           date={lesson.date ?? todayLabel()}
           bookTitle={bookName}
-          onOpenReport={goToLibraryDetail}
+          onNext={openNext}
         />
+        {purchaseOpen && (
+          <BookPurchaseNotice
+            book={catalogBook}
+            onBuy={goToBookDetail}
+            onClose={() => setPurchaseOpen(false)}
+          />
+        )}
       </Modal>
     </View>
   );

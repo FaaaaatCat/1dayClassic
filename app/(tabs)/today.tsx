@@ -25,5 +25,18 @@ export default function TodayScreen() {
 
   if (!bookLesson) return null;
 
-  return <CardDeckDetail bookLesson={bookLesson} onClose={() => router.replace('/')} />;
+  /*
+   * key로 항목 id를 준다.
+   *
+   * 퀴즈 엔딩 화면의 '다음 화 읽기'는 이 화면을 떠나지 않고 lessonId 파라미터만 바꾼다.
+   * key가 없으면 컴포넌트가 그대로 살아 있어 새 항목의 글이 이전 장 번호 위에 얹힌다 —
+   * 카드 덱의 초기화는 화면에 '들어올 때'만 돌기 때문이다(CardDeckDetail의 useFocusEffect).
+   */
+  return (
+    <CardDeckDetail
+      key={bookLesson.lesson.id}
+      bookLesson={bookLesson}
+      onClose={() => router.replace('/')}
+    />
+  );
 }

@@ -44,12 +44,13 @@ const BUTTON_RISE = 32;
 export default function StudyReport({
   date,
   bookTitle,
-  onOpenReport,
+  onNext,
 }: {
   /** 책을 읽은 날짜 — '2026년 8월 28일' 꼴로 넘긴다. */
   date: string;
   bookTitle: string;
-  onOpenReport: () => void;
+  /** 아래 버튼 — 다음 화로 간다. 다음이 잠겨 있으면 부르는 쪽이 구매 안내를 대신 띄운다. */
+  onNext: () => void;
 }) {
   const insets = useSafeAreaInsets();
   const [count, setCount] = useState(0);
@@ -115,11 +116,8 @@ export default function StudyReport({
       </View>
 
       <Animated.View style={liftStyle}>
-        <ScaleButton
-          accessibilityLabel="리포트 보러가기"
-          style={styles.button}
-          onPress={onOpenReport}>
-          <Text style={styles.buttonText}>리포트 보러가기</Text>
+        <ScaleButton accessibilityLabel="다음 화 읽기" style={styles.button} onPress={onNext}>
+          <Text style={styles.buttonText}>다음 화 읽기</Text>
         </ScaleButton>
       </Animated.View>
     </View>

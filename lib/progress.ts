@@ -49,6 +49,30 @@ export function getResumeLessonId(
 }
 
 /**
+ * 그 항목의 '다음 화' — 목차 차례로 바로 뒤엣것.
+ *
+ * locked는 무료 범위를 벗어났다는 뜻이다(잠긴 화를 열어 주는 대신 구매를 권하는 자리가
+ * 쓴다). 마지막 항목이면 undefined — 더 읽을 것이 없다.
+ *
+ * 이어읽기(getResumeLessonId)와 다르다. 저쪽은 '아직 안 푼 첫 자리'로 되돌아가고,
+ * 이쪽은 방금 읽은 것의 바로 다음이다 — 퀴즈를 막 끝낸 사람에게 앞으로 되돌아가라고
+ * 하면 방금 한 일이 무위가 된다.
+ */
+export function getNextLesson(
+  bookId: BookId,
+  lessonId: string,
+): { lessonId: string; locked: boolean } | undefined {
+  const lessons = lessonsOf(bookId);
+  const index = lessons.findIndex((day) => day.lessonId === lessonId);
+  if (index < 0) return undefined;
+
+  const next = lessons[index + 1];
+  if (!next?.lessonId) return undefined;
+
+  return { lessonId: next.lessonId, locked: index + 1 >= FREE_LESSON_COUNT };
+}
+
+/**
  * 그 책을 얼마나 읽었는지.
  *
  * 쪽수는 카탈로그에 적힌 실제 책의 쪽수를 쓴다. 그런데 우리가 가진 것은 '항목'이지
