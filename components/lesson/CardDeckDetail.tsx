@@ -162,12 +162,16 @@ const LEFT_EDGE_IN_TO = 0.75;
  */
 const TURN_DURATION = 600;
 /**
- * 화면에 처음 들어왔을 때 첫 장 본문이 떠오르는 방식 — 곧장 보이는 대신 잠깐 비어
- * 있다가(ENTER_DELAY) 천천히 떠오른다(ENTER_DURATION). 넘김과는 무관한, 입장할 때
- * 한 번뿐인 연출이다.
+ * 화면에 처음 들어왔을 때 첫 장 글이 떠오르는 방식 — 들어오자마자 아래에서 살짝
+ * 올라오며 켜진다. 넘김과는 무관한, 입장할 때 한 번뿐인 연출이다.
+ *
+ * 예전에는 0.8초를 비워 뒀다가 켰다. 열자마자 빈 카드를 마주하게 되어 무엇을 기다리는지
+ * 알 수 없었고, 그 사이에 손가락이 먼저 움직였다. 이제 기다림 없이 시작하고, 대신
+ * 올라오는 몸짓으로 '지금 놓인다'를 말한다.
  */
-const ENTER_DELAY = 800;
-const ENTER_DURATION = 500;
+const ENTER_DURATION = 420;
+/** 글이 올라오기 시작하는 높이(dp). 눈에 걸리지 않을 만큼만 든다. */
+const ENTER_RISE = 14;
 /**
  * 감상 노트 줄 간격(dp). 줄노트 바탕의 줄 간격이자 글자 줄높이다 — 두 값이 여기 하나
  * 에서 나와야 글이 줄 위에 앉는다(NoteBlock 주석 참고).
@@ -379,7 +383,11 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
   };
 
   useEffect(() => {
-    enter.value = withDelay(ENTER_DELAY, withTiming(1, { duration: ENTER_DURATION }));
+    // 끝에서 느려지며 멎는다 — 올라오다 멈추는 것이 아니라 제자리에 놓이는 느낌이 난다.
+    enter.value = withTiming(1, {
+      duration: ENTER_DURATION,
+      easing: Easing.out(Easing.cubic),
+    });
   }, [enter]);
 
   /**
@@ -1032,12 +1040,17 @@ function DeckCard({
   /**
    * 본문 — 밑장일 때는 종이가 책등을 넘어간 뒤에야 떠오른다(CONTENT_IN_* 주석 참고).
    * 젖혀지는 종이(p ≤ 0)는 읽고 있던 장이니 그대로 떠 있다. 입장 연출(enter)은 첫
-   * 장에만 걸리고, 한 번 1이 되면 그 뒤로는 이 식에 영향을 주지 않는다.
+   * 장에만 걸리고, 한 번 1이 되면 그 뒤로는 이 식에 영향을 주지 않는다 — 다른 장은
+   * entering이 늘 1이라 올라오는 몸짓도 걸리지 않는다.
    */
   const bodyStyle = useAnimatedStyle(() => {
     const p = index - flipX.value / PAGE_W;
     const shown = interpolate(p, [CONTENT_IN_TO, CONTENT_IN_FROM], [1, 0], Extrapolation.CLAMP);
-    return { opacity: shown * (index === 0 ? enter.value : 1) };
+    const entering = index === 0 ? enter.value : 1;
+    return {
+      opacity: shown * entering,
+      transform: [{ translateY: (1 - entering) * ENTER_RISE }],
+    };
   });
 
   // 앞면 — 90도를 넘기면 숨는다(뒷면이 대신 보인다). backfaceVisibility만으로는
