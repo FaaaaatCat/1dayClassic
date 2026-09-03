@@ -26,6 +26,14 @@ interface BookmarkContextValue {
   isMarked: (lessonId: string, page: number) => boolean;
   /** 꽂거나 뺀다. 꽂았으면 true를 돌려준다 — 부르는 쪽이 토스트 문구를 고르는 데 쓴다. */
   toggle: (lessonId: string, page: number, bookId: BookId) => boolean;
+  /**
+   * 뺀다. 없으면 아무 일도 하지 않는다.
+   *
+   * toggle과 따로 두는 건 목록에서 지우는 자리(마이페이지의 책갈피 화면) 때문이다.
+   * 거기서 toggle을 쓰면 이미 빠진 것을 눌렀을 때 도로 꽂혀 버린다 — 지우는 버튼이
+   * 만드는 버튼이 되는 셈이라, 지우는 뜻만 가진 것을 따로 둔다.
+   */
+  remove: (lessonId: string, page: number) => void;
   /** 그 책에 꽂아 둔 책갈피 수. */
   countOf: (bookId: BookId) => number;
   /** 그 책에 꽂아 둔 책갈피 — 최근에 꽂은 것이 앞에 온다. */
@@ -101,10 +109,21 @@ export function BookmarkProvider({ children }: { children: React.ReactNode }) {
     return saved;
   }, []);
 
+  const remove = useCallback((lessonId: string, page: number) => {
+    const key = keyOf(lessonId, page);
+    setMarks((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
+
   const value = useMemo<BookmarkContextValue>(
     () => ({
       isMarked: (lessonId, page) => marks[keyOf(lessonId, page)] !== undefined,
       toggle,
+      remove,
       countOf: (bookId) =>
         Object.values(marks).filter((mark) => mark.bookId === bookId).length,
       listOf: (bookId) =>
@@ -114,7 +133,7 @@ export function BookmarkProvider({ children }: { children: React.ReactNode }) {
           // 최근에 꽂은 것이 앞에 온다 — 접어 둔 자리는 방금 접은 것부터 찾게 된다.
           .sort((a, b) => b.at.localeCompare(a.at)),
     }),
-    [marks, toggle],
+    [marks, toggle, remove],
   );
 
   return <BookmarkContext.Provider value={value}>{children}</BookmarkContext.Provider>;
