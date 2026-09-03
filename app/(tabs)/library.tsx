@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import MyPageRow, { MyPageGroup } from '@/components/mypage/MyPageRow';
 import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
@@ -7,12 +7,7 @@ import { useShelfBooks } from '@/components/mypage/useShelfBooks';
 import ScaleButton from '@/components/ScaleButton';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
 import { useBgm } from '@/context/BgmContext';
-import { useBookSelection } from '@/context/BookSelectionContext';
-import { useQuiz } from '@/context/QuizContext';
 import { findBgm } from '@/lib/bgm';
-import { getBookName } from '@/lib/books';
-import { getCatalogBookByBookId } from '@/lib/catalog';
-import { getReadingProgress } from '@/lib/progress';
 
 /**
  * 마이페이지.
@@ -21,68 +16,18 @@ import { getReadingProgress } from '@/lib/progress';
  * 이 앱에서 책을 고르는 일과 앱을 손보는 일이 모두 '내 것'을 다루는 일이라서다.
  *
  * 경로는 /library 그대로다. 홈의 사람 버튼을 비롯해 여러 곳에 박혀 있어 이름만 바꾼다.
+ *
+ * '지금 읽고있는 책' 칸은 여기 없다. 지금 읽는 책으로 가는 길은 홈에서 바로 내기로 해서
+ * 뗐다 — 홈이 이미 그 책 한 권을 화면 한가운데에 펼쳐 두고 있어, 마이페이지가 같은 것을
+ * 한 번 더 말하면 어느 쪽이 그 책의 자리인지 흐려진다. 홈 쪽 길은 아직 만들지 않았다.
  */
 export default function MyPageScreen() {
   const router = useRouter();
-  const { selectedBookId } = useBookSelection();
-  const { isDone } = useQuiz();
   const { bgmId } = useBgm();
   const { planned, finished } = useShelfBooks();
 
-  const reading = getCatalogBookByBookId(selectedBookId);
-  const progress = getReadingProgress(selectedBookId, isDone);
-  const percent =
-    progress.totalPages > 0 ? Math.round((progress.readPages / progress.totalPages) * 100) : 0;
-
-  const openReadingBook = () => {
-    if (!reading) return;
-    router.push({ pathname: '/library/book/[id]', params: { id: selectedBookId } });
-  };
-
   return (
     <MyPageShell title="마이페이지" back="/">
-      <MyPageRow icon="book-outline" label="지금 읽고있는 책" onPress={openReadingBook} last />
-
-      {/* 지금 읽는 책 한 권 — 눌러 들어가면 그 책의 상세가 열린다. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`지금 읽고있는 책 ${getBookName(selectedBookId)}, ${percent}퍼센트`}
-        style={styles.card}
-        onPress={openReadingBook}>
-        <View style={styles.cardTop}>
-          {reading ? (
-            <Image
-              source={{ uri: reading.coverImage }}
-              style={styles.cover}
-              resizeMode="cover"
-              accessibilityIgnoresInvertColors
-            />
-          ) : (
-            <View style={styles.cover} />
-          )}
-          <View style={styles.cardText}>
-            <Text style={styles.cardTitle} numberOfLines={2}>
-              {reading?.title ?? getBookName(selectedBookId)}
-            </Text>
-            {reading?.author ? (
-              <Text style={styles.cardAuthor} numberOfLines={1}>
-                {reading.author}
-              </Text>
-            ) : null}
-          </View>
-          <Text style={styles.percent}>{`${percent}%`}</Text>
-        </View>
-
-        {/* 읽은 만큼 차오르는 가는 줄과, 그 아래 숫자 둘. */}
-        <View style={styles.bar}>
-          <View style={[styles.barFill, { width: `${Math.min(100, percent)}%` }]} />
-        </View>
-        <View style={styles.barText}>
-          <Text style={styles.barRead}>{`${progress.readPages}p 읽음`}</Text>
-          <Text style={styles.barTotal}>{`총 ${progress.totalPages}p`}</Text>
-        </View>
-      </Pressable>
-
       <MyPageGroup>
         <MyPageRow
           icon="layers-outline"
@@ -128,73 +73,6 @@ export default function MyPageScreen() {
 }
 
 const styles = StyleSheet.create({
-  /** 지금 읽는 책 — 이 화면에서 유일하게 면으로 올라온 자리다. */
-  card: {
-    marginHorizontal: MY_PAGE.gutter,
-    marginBottom: Space[8],
-    borderRadius: Corner.small,
-    backgroundColor: Surface.card,
-    overflow: 'hidden',
-  },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space[12],
-    padding: Space[16],
-  },
-  cover: {
-    width: 44,
-    height: 62,
-    borderRadius: 2,
-    backgroundColor: Surface.plate,
-  },
-  cardText: {
-    flex: 1,
-    gap: Space[4],
-  },
-  cardTitle: {
-    fontFamily: Type.readingBold,
-    ...TypeScale.subheading,
-    color: Ink.primary,
-  },
-  cardAuthor: {
-    fontFamily: Type.ui,
-    ...TypeScale.bodySm,
-    color: Ink.body,
-  },
-  percent: {
-    fontFamily: Type.uiMedium,
-    fontSize: TypeScale.headingSm.fontSize,
-    letterSpacing: TypeScale.headingSm.letterSpacing,
-    color: Ink.primary,
-  },
-  /** 진행 줄 — 카드 가로를 꽉 채우는 가는 선이다. */
-  bar: {
-    height: 4,
-    backgroundColor: Surface.plate,
-  },
-  barFill: {
-    height: 4,
-    backgroundColor: Spark.ember,
-  },
-  barText: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Space[12],
-    paddingVertical: Space[8],
-  },
-  barRead: {
-    fontFamily: Type.uiMedium,
-    ...TypeScale.caption,
-    color: Spark.ember,
-  },
-  barTotal: {
-    fontFamily: Type.ui,
-    ...TypeScale.caption,
-    color: Ink.muted,
-  },
-
   /** 프리미엄 배너 — 이 화면에서 유일하게 색을 쓰는 자리다. */
   banner: {
     flexDirection: 'row',
