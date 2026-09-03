@@ -75,6 +75,20 @@ export default function LibraryBookDetailScreen() {
   /** 아직 갈 곳이 없는 버튼들 — 눌리기는 하되 무엇이 없는지 말해 준다. */
   const notReady = () => showToast('아직 준비 중입니다.');
 
+  /**
+   * 틀린 문제 — 학습 콘텐츠가 있는 책에만 있다(퀴즈가 그 책들에만 있다).
+   *
+   * 돌아올 자리를 알 수 있게 from을 그대로 실어 보낸다 — 그 화면의 뒤로가기가 여기로
+   * 오고, 여기 뒤로가기는 다시 from으로 간다.
+   */
+  const openWrongQuizzes = () => {
+    if (!studyBook) return;
+    router.push({
+      pathname: '/library/wrong-quizzes',
+      params: { id: studyBook.id, ...(from ? { from } : {}) },
+    });
+  };
+
   return (
     <>
       <View style={styles.screen}>
@@ -152,7 +166,10 @@ export default function LibraryBookDetailScreen() {
             <Text style={styles.note}>{`(총 ${stats.totalPages}p)`}</Text>
           </Section>
 
-          <Section title="퀴즈 정답률" action="틀린 문제 보러가기" onAction={notReady}>
+          <Section
+            title="퀴즈 정답률"
+            action="틀린 문제 보러가기"
+            onAction={studyBook ? openWrongQuizzes : notReady}>
             <Text style={styles.value}>{`${stats.correctRate}%`}</Text>
             {stats.quizTotal === 0 ? (
               <Text style={styles.note}>(아직 푼 퀴즈가 없어요)</Text>
