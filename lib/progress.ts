@@ -22,6 +22,11 @@ function lessonsOf(bookId: BookId): CalendarDay[] {
  */
 export const FREE_LESSON_COUNT = 5;
 
+/** 그 책에서 잠긴 항목 수 — 무료 범위 밖에 남아 있는 것들. 구매 안내가 이 수를 말한다. */
+export function getLockedLessonCount(bookId: BookId): number {
+  return Math.max(0, lessonsOf(bookId).length - FREE_LESSON_COUNT);
+}
+
 /** 무료로 열려 있는 항목의 id들. */
 export function getFreeLessonIds(bookId: BookId): Set<string> {
   return new Set(lessonsOf(bookId).slice(0, FREE_LESSON_COUNT).map((day) => day.lessonId!));

@@ -71,7 +71,7 @@ import {
 import { getBookName, type BookLesson } from '@/lib/books';
 import { getCatalogBookByBookId, type CatalogBook } from '@/lib/catalog';
 import { openBookDetail } from '@/lib/preview-nav';
-import { getNextLesson } from '@/lib/progress';
+import { FREE_LESSON_COUNT, getLockedLessonCount, getNextLesson } from '@/lib/progress';
 import { Colors, Corner, Fonts, Ink, Spark, Type, TypeScale, tracking } from '@/constants/theme';
 
 /**
@@ -329,6 +329,9 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
    * 끊기지 않게 하기 위해서다. 카드 덱이 새 항목으로 다시 서는 일은 today.tsx가 key로
    * 맡는다(그쪽 주석 참고).
    */
+  /** 잠긴 화 수 — 구매 안내가 '아직 잠긴 n편이 남아 있어요'로 말한다. */
+  const lockedCount = useMemo(() => getLockedLessonCount(bookLesson.book), [bookLesson.book]);
+
   /** 이 항목의 다음 화 — 없으면 undefined(이 책의 마지막 화다). */
   const nextLesson = useMemo(
     () => getNextLesson(bookLesson.book, lesson.id),
@@ -785,6 +788,8 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
       {purchaseOpen && !reportOpen && (
         <BookPurchaseNotice
           book={catalogBook}
+          freeCount={FREE_LESSON_COUNT}
+          lockedCount={lockedCount}
           onBuy={goToBookDetail}
           onClose={() => setPurchaseOpen(false)}
         />
@@ -819,6 +824,8 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
         {purchaseOpen && (
           <BookPurchaseNotice
             book={catalogBook}
+            freeCount={FREE_LESSON_COUNT}
+            lockedCount={lockedCount}
             onBuy={goToBookDetail}
             onClose={() => setPurchaseOpen(false)}
           />
