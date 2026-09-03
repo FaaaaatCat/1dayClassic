@@ -20,14 +20,15 @@ const STORAGE_KEY = 'reading-cursor-v1';
 /**
  * 마지막으로 연 항목 보관소.
  *
- * 퀴즈 기록(QuizContext)만으로는 알 수 없는 것이 하나 있어서 둔다 — 무료로 열린 것을
- * 전부 푼 뒤에 다시 읽기 시작했을 때 '지금 어디까지 다시 봤는가'다. 그때는 isDone이
- * 전부 true라 진도로는 앞뒤를 가릴 수 없고, 다시 읽는다고 해서 퀴즈 기록이 새로 쌓이지도
- * 않는다(보기는 한 번 고르면 잠긴다).
+ * 홈의 읽기 버튼이 어디를 열지 정하는 값이다 — 마지막으로 연 것의 다음 화를 연다
+ * (lib/progress의 getReadPlan).
  *
- * 그래서 이 값은 '읽었다'가 아니라 '열었다'를 적는다. 쓰는 곳은 홈의 읽기 버튼이 무엇을
- * 가리킬지 정하는 한 자리뿐이고(lib/progress의 getReadPlan), 진도·완독률 같은 숫자는
- * 여전히 퀴즈 기록만 본다.
+ * 퀴즈 기록으로는 이 물음에 답할 수 없다. 다 푼 뒤 다시 읽을 때는 isDone이 전부 true라
+ * 앞뒤를 가릴 수 없고, 다시 읽는다고 해서 퀴즈 기록이 새로 쌓이지도 않는다(보기는 한 번
+ * 고르면 잠긴다).
+ *
+ * 그래서 이 값은 '읽었다'가 아니라 '열었다'를 적는다. 읽는 곳은 읽기 버튼 한 자리뿐이고,
+ * 진도·완독률·정답률은 여전히 퀴즈 기록만 본다 — 둘은 서로 다른 물음이다.
  */
 export function ReadingCursorProvider({ children }: { children: React.ReactNode }) {
   const [cursors, setCursors] = useState<CursorByBook>({});

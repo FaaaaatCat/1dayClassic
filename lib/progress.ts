@@ -30,9 +30,9 @@ export function getFreeLessonIds(bookId: BookId): Set<string> {
 /**
  * 홈의 읽기 버튼이 무엇을 할지.
  *
- * - first   아직 아무것도 안 푼 책 — '무료로 첫화보기'
- * - resume  읽던 중 — '이어 읽기 : 제n화'
- * - restart 무료로 열린 것을 다 풀었고 다시 볼 자리도 끝났다 — '1화부터 다시 읽기'
+ * - first   한 번도 연 적 없는 책 — '무료로 첫화보기'
+ * - resume  마지막으로 연 것의 다음 화 — '이어 읽기 : 제n화'
+ * - restart 무료로 열린 마지막 화까지 봤다 — '1화부터 다시 읽기'
  */
 export type ReadPlan = {
   kind: 'first' | 'resume' | 'restart';
@@ -44,51 +44,38 @@ export type ReadPlan = {
 /**
  * 읽기 버튼이 열 항목과, 그것을 뭐라고 부를지.
  *
- * 네 가지를 가른다:
- * 1. 한 편도 안 풀었으면 첫 화 — '무료로 첫화보기'.
- * 2. 안 푼 것이 남았으면 그중 첫 화 — 앞을 건너뛰고 뒤엣것을 먼저 푼 경우에도 앞으로
- *    돌아온다. 차례로 읽는 책이라 빈 자리를 남겨 둔 채 나아가지 않는다.
- * 3. 무료로 열린 것을 다 풀었고 그 뒤로 아직 다시 열어 본 자리가 없으면 — '1화부터 다시
- *    읽기'. 마지막 화까지 다시 봤을 때도 여기로 돌아온다.
- * 4. 다 푼 뒤에 다시 읽는 중이면 마지막으로 연 것의 다음 화 — 그때는 isDone이 전부 true라
- *    진도로는 앞뒤를 가릴 수 없어, '마지막으로 연 항목'(ReadingCursorContext)이 그 자리를
- *    말해 준다.
+ * 기준은 '마지막으로 연 화' 하나다 — 그 바로 다음을 연다.
  *
- * 잠긴 항목은 어느 갈래에서도 고르지 않는다. 그러지 않으면 무료 다섯을 다 푼 순간 이
- * 버튼이 잠긴 여섯 번째를 열어 목차의 자물쇠를 우회한다.
+ * 1. 한 번도 연 적이 없으면 첫 화 — '무료로 첫화보기'.
+ * 2. 연 적이 있으면 그 다음 화 — '이어 읽기 : 제n화'.
+ * 3. 마지막으로 연 것이 무료로 열린 마지막 화면 더 갈 곳이 없다 — '1화부터 다시 읽기'.
+ *    거기서 1화를 열면 커서가 1화로 옮겨 가고, 다시 2번 규칙에 따라 '제2화'가 된다.
  *
- * @param isDone 그 항목의 퀴즈를 전부 풀었는지(QuizContext.isDone).
+ * 퀴즈를 풀었는지는 보지 않는다. 다 푼 뒤 다시 읽을 때는 진도가 전부 '풀었음'이라 앞뒤를
+ * 가릴 수 없고, 무엇보다 여기가 답해야 하는 물음은 '어디를 안 풀었나'가 아니라 '어디까지
+ * 봤나'이기 때문이다. 퀴즈 기록은 진도·정답률이 계속 맡는다.
+ *
+ * 잠긴 항목은 고르지 않는다. 그러지 않으면 무료로 열린 마지막 화를 연 순간 이 버튼이
+ * 잠긴 다음 화를 열어 목차의 자물쇠를 우회한다.
+ *
  * @param cursorLessonId 그 책에서 마지막으로 연 항목(ReadingCursorContext).
  */
-export function getReadPlan(
-  bookId: BookId,
-  isDone: (lessonId: string) => boolean,
-  cursorLessonId?: string,
-): ReadPlan | undefined {
+export function getReadPlan(bookId: BookId, cursorLessonId?: string): ReadPlan | undefined {
   const free = lessonsOf(bookId).slice(0, FREE_LESSON_COUNT);
   if (free.length === 0) return undefined;
 
-  const nextIndex = free.findIndex((day) => !isDone(day.lessonId!));
-
-  if (nextIndex >= 0) {
-    // 한 편도 안 풀었으면 '처음 편 책'이다. 뒤엣것만 풀어 둔 채 앞으로 돌아온 경우는
-    // 처음이 아니므로 '이어 읽기'로 부른다.
-    const untouched = nextIndex === 0 && !free.some((day) => isDone(day.lessonId!));
-    return {
-      kind: untouched ? 'first' : 'resume',
-      lessonId: free[nextIndex].lessonId!,
-      no: nextIndex + 1,
-    };
-  }
-
-  // 여기부터는 무료로 열린 것을 전부 푼 상태다.
+  // 콘텐츠가 바뀌어 커서가 가리키던 항목이 사라졌으면 못 연 것으로 친다.
   const cursorIndex = cursorLessonId
     ? free.findIndex((day) => day.lessonId === cursorLessonId)
     : -1;
-  const afterCursor = cursorIndex >= 0 ? cursorIndex + 1 : -1;
 
-  if (afterCursor > 0 && afterCursor < free.length) {
-    return { kind: 'resume', lessonId: free[afterCursor].lessonId!, no: afterCursor + 1 };
+  if (cursorIndex < 0) {
+    return { kind: 'first', lessonId: free[0].lessonId!, no: 1 };
+  }
+
+  const nextIndex = cursorIndex + 1;
+  if (nextIndex < free.length) {
+    return { kind: 'resume', lessonId: free[nextIndex].lessonId!, no: nextIndex + 1 };
   }
   return { kind: 'restart', lessonId: free[0].lessonId!, no: 1 };
 }
@@ -99,9 +86,9 @@ export function getReadPlan(
  * locked는 무료 범위를 벗어났다는 뜻이다(잠긴 화를 열어 주는 대신 구매를 권하는 자리가
  * 쓴다). 마지막 항목이면 undefined — 더 읽을 것이 없다.
  *
- * 홈의 읽기 버튼(getReadPlan)과 다르다. 저쪽은 '아직 안 푼 첫 자리'로 되돌아가고,
- * 이쪽은 방금 읽은 것의 바로 다음이다 — 퀴즈를 막 끝낸 사람에게 앞으로 되돌아가라고
- * 하면 방금 한 일이 무위가 된다.
+ * 홈의 읽기 버튼(getReadPlan)과 가리키는 곳은 대개 같다 — 방금 연 항목이 곧 커서라서다.
+ * 다른 것은 끝에 닿았을 때다. 저쪽은 무료 범위 안에서만 보고 1화로 돌아가지만, 이쪽은
+ * 잠긴 다음 화까지 보고 그것이 잠겼다는 사실을 알려 준다 — 구매를 권할지 여기서 갈린다.
  */
 export function getNextLesson(
   bookId: BookId,

@@ -67,8 +67,13 @@ export default function HomeScreen() {
 
   const book = getCatalogBookByBookId(selectedBookId);
   const progress = getReadingProgress(selectedBookId, isDone);
-  /** 읽기 버튼이 열 항목과, 말풍선이 뭐라고 부를지(네 갈래는 lib/progress의 getReadPlan). */
-  const plan = getReadPlan(selectedBookId, isDone, cursorOf(selectedBookId));
+  /**
+   * 읽기 버튼이 열 항목과, 말풍선이 뭐라고 부를지.
+   *
+   * 기준은 '마지막으로 연 화'다 — 그 다음을 연다(갈래는 lib/progress의 getReadPlan).
+   * 퀴즈를 풀었는지는 보지 않는다. 진행 줄이 보는 것과 서로 다른 물음이라 값도 따로 온다.
+   */
+  const plan = getReadPlan(selectedBookId, cursorOf(selectedBookId));
   const percent =
     progress.totalPages > 0 ? Math.round((progress.readPages / progress.totalPages) * 100) : 0;
 
