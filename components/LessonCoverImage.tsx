@@ -215,9 +215,9 @@ const styles = StyleSheet.create({
     fontFamily: Type.ui,
     ...TypeScale.caption,
     /*
-     * eggshell로 둔다. 이 줄에는 opacity가 걸려 있지 않은데도 흐려 보이는 건, 홈의
-     * 히어로가 표지 위에 35% 어둠을 한 겹 더 깔기 때문이다(index의 heroScrim). 그 어둠이
-     * 이 글자 위에도 얹혀 한 단 어두워진다.
+     * eggshell로 둔다. 이 줄에는 opacity가 걸려 있지 않은데도 흐려 보이는 자리가 있는데,
+     * 표지 위에 어둠을 한 겹 더 까는 화면(마이페이지의 책갈피 카드)에서는 그 어둠이 이
+     * 글자 위에도 얹혀 한 단 어두워지기 때문이다.
      */
     color: Ink.onDark,
   },

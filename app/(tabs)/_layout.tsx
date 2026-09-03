@@ -22,6 +22,8 @@ export default function TabLayout() {
       })}>
       <Tabs.Screen name="index" options={{ title: '오늘의 공부', headerShown: false }} />
       <Tabs.Screen name="today" options={{ headerShown: false, href: null }} />
+      {/* 목차 — 홈에서 떼어낸 화면이라 홈과 마찬가지로 제 헤더를 그린다. */}
+      <Tabs.Screen name="toc" options={{ headerShown: false, href: null }} />
       <Tabs.Screen name="alarm-detail" options={{ headerShown: false, href: null }} />
       {/* 마이페이지와 그 안의 화면들 — 홈의 사람 버튼으로 들어온다. 저마다 제 헤더를
           그리므로 공용 헤더를 끈다. */}

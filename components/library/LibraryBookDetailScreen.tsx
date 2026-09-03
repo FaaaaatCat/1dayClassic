@@ -48,7 +48,9 @@ export default function LibraryBookDetailScreen() {
    * router.back()을 쓰지 않는 건 이 화면이 Tabs의 형제라서다. 형제로 옮기는 것은 스택에
    * 쌓이지 않아, back()은 그 앞에 쌓여 있던 홈으로 튀어 버린다.
    */
-  const goBack = () => router.replace((from ? `/library/${from}` : '/library') as never);
+  const goBack = () =>
+    // 홈에서 리포트로 들어온 경우만 마이페이지가 아니라 홈으로 돌아간다.
+    router.replace((from === 'home' ? '/' : from ? `/library/${from}` : '/library') as never);
 
   if (!catalogBook) return null;
 

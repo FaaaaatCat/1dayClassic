@@ -65,6 +65,7 @@ export default function MyPageScreen() {
       </View>
 
       <MyPageGroup>
+        <MyPageRow label="설정" onPress={() => router.push('/settings')} />
         <MyPageRow label="권한 관리" onPress={() => router.push('/library/permissions')} />
         <MyPageRow label="계정 관리" onPress={() => router.push('/library/account')} last />
       </MyPageGroup>
