@@ -329,8 +329,14 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
    * 끊기지 않게 하기 위해서다. 카드 덱이 새 항목으로 다시 서는 일은 today.tsx가 key로
    * 맡는다(그쪽 주석 참고).
    */
+  /** 이 항목의 다음 화 — 없으면 undefined(이 책의 마지막 화다). */
+  const nextLesson = useMemo(
+    () => getNextLesson(bookLesson.book, lesson.id),
+    [bookLesson.book, lesson.id],
+  );
+
   const openNext = () => {
-    const next = getNextLesson(bookLesson.book, lesson.id);
+    const next = nextLesson;
     if (!next) {
       setReportOpen(false);
       router.replace('/');
@@ -634,6 +640,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             catalogBook={catalogBook}
             onOpenQuiz={() => setQuizOpen(true)}
             onNext={openNext}
+            isLastLesson={!nextLesson}
             hasMusic={hasMusic}
           />
         ))}
@@ -931,6 +938,7 @@ function DeckCard({
   catalogBook,
   onOpenQuiz,
   onNext,
+  isLastLesson,
   hasMusic,
 }: {
   index: number;
@@ -952,6 +960,7 @@ function DeckCard({
   spoken: SpokenRange | null;
   onOpenQuiz: () => void;
   onNext: () => void;
+  isLastLesson: boolean;
   /** 유튜브가 딸린 항목인가 — 표지의 표식 크기가 달라진다. */
   hasMusic: boolean;
 }) {
@@ -1045,6 +1054,7 @@ function DeckCard({
               catalogBook={catalogBook}
               onOpenQuiz={onOpenQuiz}
               onNext={onNext}
+              isLastLesson={isLastLesson}
               hasMusic={hasMusic}
             />
           </Animated.View>
@@ -1149,6 +1159,7 @@ function CardContent({
   catalogBook,
   onOpenQuiz,
   onNext,
+  isLastLesson,
   hasMusic,
 }: {
   kind: CardPageKind;
@@ -1162,6 +1173,8 @@ function CardContent({
   onOpenQuiz: () => void;
   /** 맺음 장의 '다음 화 읽기' — 다음 화가 잠겼으면 부르는 쪽이 구매 안내를 띄운다. */
   onNext: () => void;
+  /** 이 항목이 그 책의 마지막 화인가 — 맺음 장의 버튼 문구가 갈린다. */
+  isLastLesson: boolean;
   /** 유튜브가 딸린 항목인가 — 카드가 짧아 표식을 작게 앉힌다. */
   hasMusic: boolean;
 }) {
@@ -1219,7 +1232,7 @@ function CardContent({
   }
 
   if (kind === 'outro') {
-    return <OutroBlock onOpenQuiz={onOpenQuiz} onNext={onNext} />;
+    return <OutroBlock onOpenQuiz={onOpenQuiz} onNext={onNext} isLastLesson={isLastLesson} />;
   }
 
   return null;
@@ -1244,7 +1257,15 @@ function CardContent({
  * 오늘의 공부를 맺는 흐름(퀴즈 → 마치기 → 리포트)이 전부 이 버튼에서 시작한다. 조건에
  * 따라 이 장이 사라지면 흐름이 통째로 끊기므로, 퀴즈가 있는 한 늘 놓인다.
  */
-function OutroBlock({ onOpenQuiz, onNext }: { onOpenQuiz: () => void; onNext: () => void }) {
+function OutroBlock({
+  onOpenQuiz,
+  onNext,
+  isLastLesson,
+}: {
+  onOpenQuiz: () => void;
+  onNext: () => void;
+  isLastLesson: boolean;
+}) {
   return (
     <View style={styles.buyBlock} pointerEvents="box-none">
       {/* 눌러야 할 것은 아래 버튼뿐이다. 나머지는 터치를 흘려보내야 카드 위를 탭했을 때
@@ -1262,14 +1283,25 @@ function OutroBlock({ onOpenQuiz, onNext }: { onOpenQuiz: () => void; onNext: ()
           <Text style={styles.outroQuizText}>퀴즈 풀기</Text>
         </Pressable>
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="다음 화 읽기"
-          style={styles.outroNextButton}
-          onPress={onNext}>
-          <Text style={styles.outroNextText}>다음 화 읽기</Text>
-          <Ionicons name="chevron-forward" color={Ink.onDark} size={16} />
-        </Pressable>
+        {/* 마지막 화에는 갈 다음이 없다 — 주황으로 이어 가라고 하는 대신 끝났다고 말한다. */}
+        {isLastLesson ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="마지막 페이지입니다. 홈으로 가기"
+            style={styles.outroEndButton}
+            onPress={onNext}>
+            <Text style={styles.outroEndText}>마지막 페이지입니다</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="다음 화 읽기"
+            style={styles.outroNextButton}
+            onPress={onNext}>
+            <Text style={styles.outroNextText}>다음 화 읽기</Text>
+            <Ionicons name="chevron-forward" color={Ink.onDark} size={16} />
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -1931,6 +1963,20 @@ const styles = StyleSheet.create({
     backgroundColor: Spark.ember,
   },
   outroNextText: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.bodySm,
+    color: Ink.onDark,
+  },
+  /** 마지막 화 — 이어 갈 곳이 없으니 주황이 아니라 검정이다. 눌리면 홈으로 간다. */
+  outroEndButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: Corner.small,
+    backgroundColor: Ink.primary,
+  },
+  outroEndText: {
     fontFamily: Type.uiMedium,
     ...TypeScale.bodySm,
     color: Ink.onDark,
