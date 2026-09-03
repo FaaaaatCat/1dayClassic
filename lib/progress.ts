@@ -1,6 +1,52 @@
 import { getBookCalendar } from '@/lib/books';
 import { getCatalogBookByBookId } from '@/lib/catalog';
+import type { CalendarDay } from '@/lib/calendar';
 import type { BookId } from '@/types';
+
+/**
+ * 실제 원고가 있는 날들 — 목차 차례대로.
+ *
+ * 잠긴 자리표시(아직 원고가 없는 날)는 어디서도 세지 않는다. 읽을 수 없는 것을 총량에
+ * 넣으면 완독이 영영 오지 않고, 이어읽기가 빈 날을 가리킨다.
+ */
+function lessonsOf(bookId: BookId): CalendarDay[] {
+  return getBookCalendar(bookId).filter((day) => day.lessonId !== undefined);
+}
+
+/**
+ * 무료로 열어 두는 항목 수 — 책 앞에서부터 다섯 개다.
+ *
+ * 시간과 무관하게 앞 다섯 개를 열어 둔다 — 처음 들어온 사람이 한 쪽만 보고 판단하지
+ * 않아도 되게 하려는 것이다. 목차의 자물쇠와 홈의 이어읽기가 같은 값을 봐야 하므로
+ * 여기 한 곳에만 둔다.
+ */
+export const FREE_LESSON_COUNT = 5;
+
+/** 무료로 열려 있는 항목의 id들. */
+export function getFreeLessonIds(bookId: BookId): Set<string> {
+  return new Set(lessonsOf(bookId).slice(0, FREE_LESSON_COUNT).map((day) => day.lessonId!));
+}
+
+/**
+ * 이어서 읽을 항목 — 홈의 읽기 버튼이 여는 곳.
+ *
+ * 무료로 열린 것 중 아직 다 풀지 않은 '첫' 항목이다. 앞을 건너뛰고 뒤엣것을 먼저 푼
+ * 경우에도 앞의 안 푼 것으로 돌아온다 — 이 책은 차례로 읽는 물건이라 빈 자리를 남겨 둔
+ * 채 나아가지 않는다.
+ *
+ * 잠긴 항목은 고르지 않는다. 무료 다섯을 다 풀었으면 그중 마지막을 다시 준다 — 버튼이
+ * 아무 데도 가지 않는 것보다는 방금 읽은 자리를 다시 펴는 편이 낫다.
+ *
+ * @param isDone 그 항목의 퀴즈를 전부 풀었는지(QuizContext.isDone).
+ */
+export function getResumeLessonId(
+  bookId: BookId,
+  isDone: (lessonId: string) => boolean,
+): string | undefined {
+  const free = lessonsOf(bookId).slice(0, FREE_LESSON_COUNT);
+  const next = free.find((day) => !isDone(day.lessonId!));
+  return (next ?? free[free.length - 1])?.lessonId;
+}
 
 /**
  * 그 책을 얼마나 읽었는지.
@@ -43,10 +89,7 @@ export function getReadingProgress(
   bookId: BookId,
   isRead: (lessonId: string) => boolean,
 ): ReadingProgress {
-  const days = getBookCalendar(bookId);
-  // 잠긴 자리표시(아직 원고가 없는 날)는 세지 않는다 — 읽을 수 없는 것을 총량에 넣으면
-  // 완독이 영영 오지 않는다.
-  const lessons = days.filter((day) => day.lessonId !== undefined);
+  const lessons = lessonsOf(bookId);
   const totalLessons = lessons.length;
 
   const totalPages = parsePages(getCatalogBookByBookId(bookId)?.pages) ?? totalLessons;

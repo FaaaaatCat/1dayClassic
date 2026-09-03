@@ -11,9 +11,9 @@ import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants
 import { useAlarm } from '@/context/AlarmContext';
 import { useBookSelection } from '@/context/BookSelectionContext';
 import { useQuiz } from '@/context/QuizContext';
-import { getBookLesson, getBookName } from '@/lib/books';
+import { getBookName } from '@/lib/books';
 import { getCatalogBookByBookId } from '@/lib/catalog';
-import { getReadingProgress } from '@/lib/progress';
+import { getReadingProgress, getResumeLessonId } from '@/lib/progress';
 
 /** hour(0~23) → "오후 11:00" */
 function formatAlarmTime(hour: number, minute: number): string {
@@ -32,6 +32,7 @@ function formatAlarmTime(hour: number, minute: number): string {
  * 예전에는 오늘 한 장(표지 사진 + 제목 + 읽기 버튼)과 목차 목록이 이 화면에 함께 있었다.
  * 목차는 제 화면(app/(tabs)/toc.tsx)으로 떼어냈고, 오늘 한 장은 가운데 읽기 버튼 하나가
  * 대신한다 — 홈이 말하는 것은 '오늘 무엇을 읽는가'가 아니라 '지금 어떤 책을 읽고 있는가'다.
+ * 그래서 읽기 버튼도 '오늘'이 아니라 '아직 안 읽은 첫 자리'를 연다.
  */
 export default function HomeScreen() {
   const router = useRouter();
@@ -51,16 +52,17 @@ export default function HomeScreen() {
   );
 
   const book = getCatalogBookByBookId(selectedBookId);
-  const todayLesson = getBookLesson(selectedBookId);
   const progress = getReadingProgress(selectedBookId, isDone);
+  /** 읽기 버튼이 열 항목 — 아직 퀴즈를 다 풀지 않은 첫 항목이다(lib/progress 주석 참고). */
+  const resumeLessonId = getResumeLessonId(selectedBookId, isDone);
   const percent =
     progress.totalPages > 0 ? Math.round((progress.readPages / progress.totalPages) * 100) : 0;
 
-  const openToday = () => {
-    if (!todayLesson) return;
+  const openResume = () => {
+    if (!resumeLessonId) return;
     router.push({
       pathname: '/today',
-      params: { bookId: selectedBookId, lessonId: todayLesson.lesson.id },
+      params: { bookId: selectedBookId, lessonId: resumeLessonId },
     });
   };
 
@@ -152,9 +154,9 @@ export default function HomeScreen() {
           </ScaleButton>
 
           <ScaleButton
-            accessibilityLabel="오늘의 공부 읽기"
+            accessibilityLabel="이어서 읽기"
             style={styles.readButton}
-            onPress={openToday}>
+            onPress={openResume}>
             <Ionicons name="book" color={Ink.onDark} size={32} />
           </ScaleButton>
 

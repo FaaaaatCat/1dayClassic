@@ -10,14 +10,7 @@ import { useBookSelection } from '@/context/BookSelectionContext';
 import { useQuiz } from '@/context/QuizContext';
 import { getBookCalendar } from '@/lib/books';
 import type { CalendarDay } from '@/lib/calendar';
-
-/**
- * 무료로 열어 두는 항목 수 — 책 앞에서부터 다섯 개다.
- *
- * 시간과 무관하게 앞 다섯 개를 열어 둔다 — 처음 들어온 사람이 한 쪽만 보고 판단하지
- * 않아도 되게 하려는 것이다.
- */
-const FREE_LESSON_COUNT = 5;
+import { getFreeLessonIds } from '@/lib/progress';
 
 /**
  * 목차.
@@ -58,15 +51,11 @@ export default function TocScreen() {
   }, [selectedBookId, newestFirst]);
 
   /**
-   * 무료로 열려 있는 항목들 — 책 앞에서부터 FREE_LESSON_COUNT개.
-   *
-   * 목록을 최신순으로 뒤집어도 열려 있는 다섯은 그대로여야 하므로, 뒤집기 전 차례(days가
-   * 아니라 달력 원본)에서 고른다.
+   * 무료로 열려 있는 항목들. 목록을 최신순으로 뒤집어도 열려 있는 다섯은 그대로여야
+   * 하므로, 뒤집기 전 차례(달력 원본)에서 고른다 — 그 일은 lib/progress가 한다.
+   * 홈의 이어읽기가 고르는 범위와 같은 값을 봐야 해서 그 한 곳에 뒀다.
    */
-  const freeLessonIds = useMemo(() => {
-    const real = getBookCalendar(selectedBookId).filter((day) => day.lessonId !== undefined);
-    return new Set(real.slice(0, FREE_LESSON_COUNT).map((day) => day.lessonId!));
-  }, [selectedBookId]);
+  const freeLessonIds = useMemo(() => getFreeLessonIds(selectedBookId), [selectedBookId]);
 
   const openLesson = (lessonId: string) => {
     router.push({ pathname: '/today', params: { bookId: selectedBookId, lessonId } });
