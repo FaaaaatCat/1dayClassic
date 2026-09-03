@@ -2,30 +2,22 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Alert,
   BackHandler,
   Image,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  ViewStyle,
   type ImageSourcePropType,
 } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BookPreviewModal from "@/components/BookPreviewModal";
 import ScaleButton from "@/components/ScaleButton";
+import { StatusBarTint } from "@/components/StatusBarTint";
 import TagChip from "@/components/TagChip";
-import { Corner, Elevation, Feedback, Ink, Surface, Type, TypeScale, trackBody, trackDisplay } from '@/constants/theme';
+import { Colors, Corner, Elevation, Feedback, Ink, Spark, Surface, Type, TypeScale, trackBody, trackDisplay } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { useShelf } from "@/context/ShelfContext";
 import { useToast } from "@/context/ToastContext";
@@ -37,46 +29,47 @@ import {
 } from "@/lib/catalog";
 import { fieldsOf, seriesOf } from "@/lib/tags";
 
-/** 헤더 미니 표지가 나타날 때 위에서 살짝 내려오는 느낌을 주는 시작 오프셋(px) */
-const MINI_SLIDE_OFFSET = 10;
-
 /**
  * 하루 서점의 책 상세 페이지 — 두 종류가 이 화면 하나를 함께 쓴다.
  *
  * 1) 학습 가능한 '하루 시리즈': 표지가 로컬 에셋이다(듣기의 말들만 아직 URL이다).
  * 2) 유유출판사 카탈로그의 나머지 책: 표지가 원격 URL이다.
  *
- * 하단 CTA 바는 catalogBook이 있으면 늘 뜨고, 진입 경로(from)로 버튼 역할이 완전히
- * 갈린다 — 하루 서점 쪽에는 '내 서재에 담기'류만, 내 서재 쪽에는 '이 책으로 변경하기'류만
- * 나오고 서로 섞이지 않는다(4갈래 분기는 renderCta 참고):
+ * 화면 전체가 warm taupe(Surface.card) 한 색이다 — 헤더·본문·하단 바가 모두 같은 종이라,
+ * 나뉘는 자리는 색이 아니라 얇은 선 하나가 맡는다.
+ *
+ * 헤더는 60px 한 줄이다: 왼쪽 뒤로가기, 가운데 '책 정보', 오른쪽 미리보기. 미리보기는
+ * 예전에 하단 CTA 옆에 있었는데, 아래 자리를 '읽을 책에 추가하기' 하나에 통째로 내주고
+ * 위로 올라왔다. 다만 MVP에서는 아직 팝업을 열지 않고 안내 토스트만 띄운다(openPreview).
+ *
+ * 하단 CTA 바는 catalogBook이 있으면 늘 뜨고, 화면 폭을 꽉 채운 버튼 하나다. 진입
+ * 경로(from)로 버튼 역할이 완전히 갈린다 — 하루 서점 쪽에는 '읽을 책에 추가하기'류만,
+ * 내 서재 쪽에는 '이 책으로 변경하기'류만 나오고 서로 섞이지 않는다(4갈래 분기는
+ * renderCta 참고):
  * - 하루 서점(from !== 'library')에서는 서재(ShelfContext) 여부로 갈린다. 서재에 없으면
- *   '내 서재에 담기'(누르면 담길 뿐 오늘의 책은 안 바뀐다), 이미 담겼으면 눌러도 아무 일도
- *   안 하는 안내용 비활성 버튼('서재에 담긴 책입니다.')이다.
+ *   '읽을 책에 추가하기'(누르면 담길 뿐 오늘의 책은 안 바뀐다), 이미 담겼으면 눌러도 아무
+ *   일도 안 하는 안내용 비활성 버튼('내 서재에 추가된 책입니다.')이다.
  * - 내 서재(from === 'library')에서는 오늘의 책 선택 여부로 갈린다. 아직 선택 전이면
  *   '이 책으로 변경하기'. 다만 실제 선택(selectBook)은 학습 콘텐츠가 있는 책에서만
  *   일어나고, 나머지 268권은 버튼을 눌러도 선택되지 않고 '준비중' 토스트만 뜬다 — 이유는
  *   chooseBook 주석 참고. 이미 선택된 책이면 눌러도 아무 일도 안 하는 비활성 버튼('현재
- *   선택중', 히어로 배지와 같은 파란 그라데이션)이다.
+ *   선택중')이다.
  *
- * 이 화면은 하루 서점과 내 서재 두 탭이 함께 쓴다(라우트 파라미터 from으로 온 곳을 기억해
- * 뒀다가 X·뒤로가기 때 그리로 돌아간다).
+ * 서재에서 빼는 일은 이 화면이 하지 않는다 — 내 서재 → 책 정보(LibraryBookDetailScreen)의
+ * 더보기에만 둔다. 여기는 담는 화면이라 담기 하나만 있는 편이 읽기 쉽다.
  *
  * 표지·저자·정가·상세 절은 두 종류가 같은 모양이라, 아래에서 view라는 한 덩어리로 합쳐 둔다.
  *
- * 헤더 줄은 늘 X 버튼이 오른쪽 끝에 있고, 히어로 영역(표지·제목 등)을 스크롤로 지나치면
- * 그 왼쪽 자리에 작은 표지+제목이 위에서 살짝 내려오듯 나타난다. 별도의 오버레이가 아니라
- * 헤더 줄 안의 형제 요소라 레이아웃이 늘 한 줄로 붙어 있다.
- *
- * 상세 내용은 노션 절(sections) 순서 그대로 반복 렌더하고, ScrollView의
- * stickyHeaderIndices로 절 제목을 화면 상단에 고정한다. 절 제목을 누르면 그 절로
- * 스크롤 이동한다.
+ * 상세 내용은 노션 절(sections) 순서 그대로 반복 렌더한다. 절 제목은 고정하지 않고
+ * 본문과 같이 흘러가며, 앞 절과 나뉘는 자리는 제목 위에 그은 선 하나가 맡는다. 절 제목을
+ * 누르면 그 절로 스크롤 이동한다.
  */
 export default function BookDetailScreen() {
   const { id, from } = useLocalSearchParams<{ id?: string; from?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { selectedBookId, selectBook } = useBookSelection();
-  const { isInShelf, addToShelf, removeFromShelf } = useShelf();
+  const { isInShelf, addToShelf } = useShelf();
   const { showToast } = useToast();
 
   // 하루 서점과 내 서재 두 탭에서 들어올 수 있어, 온 곳을 기억해 뒀다가 그리로 돌아간다.
@@ -163,53 +156,18 @@ export default function BookDetailScreen() {
     showToast("선택하신 책이 내 서재에 담겼습니다");
   };
 
-  /** 서재에 담긴 책에만 뜨는 삭제 — catalogBook 없으면(극단적 예외) 아무 일도 안 한다. */
-  const removeBookFromShelf = () => {
-    if (!catalogBook) return;
-    removeFromShelf(catalogBook.id);
-    showToast("내 서재에서 삭제했습니다");
-  };
-
-  // more 메뉴의 두 옵션 — 기존 동작(previewOpen/removeBookFromShelf)을 그대로 부르고
-  // 메뉴만 닫는다.
-  const openPreviewFromMenu = () => {
-    setMoreMenuOpen(false);
-    setPreviewOpen(true);
-  };
-  const removeBookFromShelfFromMenu = () => {
-    setMoreMenuOpen(false);
-    removeBookFromShelf();
-  };
-
   const scrollViewRef = useRef<ScrollView>(null);
-  const infoHeightRef = useRef(0);
   // 절 제목 View의 onLayout에서 채워진다 — ScrollView 콘텐츠 기준 y좌표라 scrollTo에 그대로 쓴다.
   const sectionOffsetsRef = useRef<Record<number, number>>({});
-  const [showMiniHeader, setShowMiniHeader] = useState(false);
-  // 미리보기 팝업 — 구매/선택 상태와 무관하게 모든 책 상세페이지에서 열 수 있다.
+  /**
+   * 미리보기 팝업 — 지금은 열리지 않는다.
+   *
+   * MVP에서 이 기능을 아직 내보내지 않기로 해서, 헤더의 미리보기 버튼은 팝업 대신 안내
+   * 토스트만 띄운다. 팝업(BookPreviewModal)과 이 상태는 그대로 둔다 — 기능을 되살릴 때
+   * openPreview를 setPreviewOpen(true)로 되돌리면 그만이다.
+   */
   const [previewOpen, setPreviewOpen] = useState(false);
-  // 서재에 담긴 책만 뜨는 more 버튼의 옵션 박스(미리보기/삭제).
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const miniHeaderProgress = useSharedValue(0);
-
-  useEffect(() => {
-    miniHeaderProgress.value = withTiming(showMiniHeader ? 1 : 0, {
-      duration: 240,
-    });
-  }, [showMiniHeader, miniHeaderProgress]);
-
-  const miniHeaderAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: miniHeaderProgress.value,
-    transform: [
-      { translateY: (1 - miniHeaderProgress.value) * -MINI_SLIDE_OFFSET },
-    ],
-  }));
-
-  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const infoHeight = infoHeightRef.current;
-    if (infoHeight <= 0) return;
-    setShowMiniHeader(e.nativeEvent.contentOffset.y >= infoHeight);
-  };
+  const openPreview = () => showToast("MVP에선 제공되지 않는 기능입니다");
 
   const scrollToSection = (sectionIndex: number) => {
     const y = sectionOffsetsRef.current[sectionIndex];
@@ -220,13 +178,11 @@ export default function BookDetailScreen() {
   /**
    * 이 화면은 탭 네비게이터의 화면이라 다른 책을 열어도 스택 push가 아니라
    * 같은 컴포넌트 인스턴스가 재사용되고 id 파라미터만 바뀐다. 언마운트가 안 되니
-   * ScrollView도 그대로 살아 있어 스크롤 위치·미니헤더·절 오프셋이 이전 책 것으로
-   * 남아 있다 — id가 바뀔 때마다 이 셋을 직접 처음 상태로 되돌린다.
+   * ScrollView도 그대로 살아 있어 스크롤 위치·절 오프셋이 이전 책 것으로 남아 있다 —
+   * id가 바뀔 때마다 둘 다 직접 처음 상태로 되돌린다.
    */
   useEffect(() => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-    setShowMiniHeader(false);
-    setMoreMenuOpen(false);
     sectionOffsetsRef.current = {};
   }, [id]);
 
@@ -245,9 +201,9 @@ export default function BookDetailScreen() {
       if (isSelected) {
         return (
           // 채워진 버튼은 검정 하나뿐이다 — 예전의 파랑 그라데이션은 이 시스템에 없다.
-          <View style={[styles.ctaBase, styles.ctaFilled]}>
+          <View style={[styles.ctaButton, styles.ctaFilled]}>
             <Ionicons name="checkmark" color={Ink.onDark} size={18} />
-            <Text style={styles.selectButtonText}>현재 선택중</Text>
+            <Text style={styles.ctaButtonText}>현재 선택중</Text>
           </View>
         );
       }
@@ -258,7 +214,7 @@ export default function BookDetailScreen() {
               ? `${view.title}을(를) 오늘의 공부로 선택`
               : `${view.title}은(는) MVP에서 제공하지 않는 콘텐츠`
           }
-          style={styles.selectButton}
+          style={[styles.ctaButton, styles.ctaFilled]}
           onPress={chooseBook}
         >
           <Ionicons
@@ -266,134 +222,59 @@ export default function BookDetailScreen() {
             color={Ink.onDark}
             size={18}
           />
-          <Text style={styles.selectButtonText}>이 책으로 변경하기</Text>
+          <Text style={styles.ctaButtonText}>이 책으로 변경하기</Text>
         </ScaleButton>
       );
     }
 
     if (inShelf) {
       return (
-        <View style={styles.ctaDisabled}>
-          <Text style={styles.ctaDisabledText}>서재에 담긴 책입니다.</Text>
+        <View style={[styles.ctaButton, styles.ctaDone]}>
+          <Text style={styles.ctaButtonText}>내 서재에 추가된 책입니다.</Text>
         </View>
       );
     }
     return (
       <ScaleButton
-        accessibilityLabel={`${view.title}을(를) 내 서재에 담기`}
-        style={styles.selectButton}
+        accessibilityLabel={`${view.title}을(를) 읽을 책에 추가`}
+        style={[styles.ctaButton, styles.ctaAdd]}
         onPress={addBookToShelf}
       >
-        <Text style={styles.selectButtonText}>내 서재에 담기</Text>
+        <Ionicons name="add" color={Ink.onDark} size={18} />
+        <Text style={styles.ctaButtonText}>읽을 책에 추가하기</Text>
       </ScaleButton>
     );
   };
 
-  const goToLibraryBook = () => {
-    if (!catalogBook) return;
-    router.push({
-      pathname: "/book/[id]",
-      params: { id: catalogBook.bookId ?? catalogBook.id, from: "library" },
-    });
-  };
-
-  const renderHeroButtons = () => {
-    if (isFromLibrary) return null;
-    if (inShelf) {
-      return (
-        <>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ disabled: true }}
-            disabled
-            style={[styles.heroButton, styles.shelfStatusButton]}
-          >
-            <Text style={styles.heroButtonText}>서재에 담은 책입니다</Text>
-          </Pressable>
-          <ScaleButton
-            accessibilityLabel={`${view.title} 내 서재 상세페이지로 이동`}
-            style={[styles.heroButton, styles.goToLibraryButton]}
-            onPress={goToLibraryBook}
-          >
-            <Text style={[styles.heroButtonText, styles.goToLibraryButtonText]}>보러가기</Text>
-            <Ionicons
-              name="chevron-forward"
-              color={Ink.primary}
-              size={18}
-            />
-          </ScaleButton>
-        </>
-      );
-    }
-    return (
-      <>
-        <ScaleButton
-          accessibilityLabel={`${view.title}을(를) 내 서재에 담기`}
-          style={[styles.heroButton, styles.addShelfButton]}
-          onPress={addBookToShelf}
-        >
-          <Ionicons
-            name="bookmark-outline"
-            color={Surface.canvas}
-            size={18}
-          />
-          <Text style={styles.heroButtonText}>내 서재에 담기</Text>
-        </ScaleButton>
-        <ScaleButton
-          accessibilityLabel="미리보기"
-          style={[styles.heroButton, styles.previewButton]}
-          onPress={() => setPreviewOpen(true)}
-        >
-          <Ionicons
-            name="eye-outline"
-            color={Ink.body}
-            size={18}
-          />
-          <Text style={[styles.heroButtonText, styles.previewButtonText]}>미리보기</Text>
-        </ScaleButton>
-      </>
-    );
-  };
-
-  // ScrollView의 직속 자식을 평평한 배열로 짜면서, 절 제목 자식의 인덱스를 같이 모은다
-  // (stickyHeaderIndices에 그대로 넘기기 위해).
+  // ScrollView의 직속 자식을 평평한 배열로 짠다 — 절 제목과 본문이 번갈아 들어간다.
   const scrollChildren: React.ReactNode[] = [];
-  const stickyHeaderIndices: number[] = [];
 
   scrollChildren.push(
-    <View
-      key="hero"
-      onLayout={(e) => {
-        infoHeightRef.current = e.nativeEvent.layout.height;
-      }}
-    >
-      <View style={styles.hero}>
-        {/* '현재 선택중' 배지는 하단 CTA(renderCta)가 같은 문구·같은 그라데이션으로
-            대신한다 — 히어로 상단에 또 띄우면 같은 상태를 두 번 말하게 된다. */}
-        <Image source={view.cover} style={styles.cover} resizeMode="cover" />
-        <Text style={styles.title}>{view.title}</Text>
-        <Text style={styles.author}>{view.author}</Text>
-        {chips.length > 0 && (
-          <View style={styles.chips}>
-            {chips.map((chip) => (
-              <TagChip key={`${chip.variant}-${chip.label}`} detail {...chip} />
-            ))}
-          </View>
-        )}
-        <View style={styles.buttonRow}>{renderHeroButtons()}</View>
-      </View>
+    <View key="hero" style={styles.hero}>
+      {/* '현재 선택중' 배지는 하단 CTA(renderCta)가 같은 문구로 대신한다 — 히어로 상단에
+          또 띄우면 같은 상태를 두 번 말하게 된다. 버튼도 여기 두지 않는다: 담기는 하단
+          고정 바로, 미리보기는 헤더로 갔다. */}
+      <Image source={view.cover} style={styles.cover} resizeMode="cover" />
+      <Text style={styles.title}>{view.title}</Text>
+      <Text style={styles.author}>{view.author}</Text>
+      {chips.length > 0 && (
+        <View style={styles.chips}>
+          {chips.map((chip) => (
+            <TagChip key={`${chip.variant}-${chip.label}`} detail {...chip} />
+          ))}
+        </View>
+      )}
     </View>,
   );
 
   // 문단이 하나도 없거나 전부 공백뿐인 절(노션에 소제목만 있고 본문이 없는 경우, 예:
-  // Review)은 제목까지 통째로 걸러낸다. sticky 헤더 인덱스와 스크롤 이동용
-  // sectionOffsetsRef는 이 필터링된 배열의 인덱스를 그대로 기준으로 삼아야 어긋나지 않는다.
+  // Review)은 제목까지 통째로 걸러낸다. 스크롤 이동용 sectionOffsetsRef는 이 필터링된
+  // 배열의 인덱스를 그대로 기준으로 삼아야 어긋나지 않는다.
   const visibleSections = view.sections.filter((section) =>
     section.paragraphs.some((paragraph) => paragraph.trim() !== ""),
   );
 
   visibleSections.forEach((section, sectionIndex) => {
-    stickyHeaderIndices.push(scrollChildren.length);
     scrollChildren.push(
       <Pressable
         key={`section-title-${sectionIndex}`}
@@ -420,138 +301,58 @@ export default function BookDetailScreen() {
   return (
     <>
       <View style={styles.screen}>
-        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-          <Animated.View
-            pointerEvents={showMiniHeader ? "auto" : "none"}
-            style={[styles.headerMini, miniHeaderAnimatedStyle]}
-          >
-            <Image
-              source={view.cover}
-              style={styles.headerMiniCover}
-              resizeMode="cover"
-            />
-            <Text style={styles.headerMiniTitle} numberOfLines={1}>
-              {view.title}
-            </Text>
-          </Animated.View>
+        {/* 상태바도 종이와 같은 warm taupe로 — 다르게 두면 화면 맨 위에 띠 한 줄이 남는다. */}
+        <StatusBarTint tint={{ color: Surface.card, icons: "dark" }} />
+
+        {/* 헤더 60px 한 줄 — 뒤로가기·제목·미리보기. 제목은 좌우 버튼 폭에 밀리지 않게
+            절대 위치로 가운데에 못 박는다. */}
+        <View
+          style={[
+            styles.header,
+            { paddingTop: insets.top, height: 60 + insets.top },
+          ]}
+        >
           <ScaleButton
-            accessibilityLabel="닫기"
+            accessibilityLabel="뒤로"
             style={styles.headerIconButton}
             onPress={() => router.replace(closeDestination)}
           >
-            <Ionicons
-              name="close"
-              color={Ink.primary}
-              size={24}
-            />
+            <Ionicons name="chevron-back" color={Ink.primary} size={24} />
+          </ScaleButton>
+          <View style={styles.headerTitleSlot} pointerEvents="none">
+            <Text style={styles.headerTitle}>책 정보</Text>
+          </View>
+          <ScaleButton
+            accessibilityLabel="미리보기"
+            style={styles.headerPreviewButton}
+            onPress={openPreview}
+          >
+            <Text style={styles.headerPreviewText}>미리보기</Text>
           </ScaleButton>
         </View>
 
         <ScrollView
           ref={scrollViewRef}
           style={styles.scrollView}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
-          stickyHeaderIndices={stickyHeaderIndices}
           contentContainerStyle={[
             styles.bodyContent,
-            { paddingBottom: 40 + insets.bottom },
+            { paddingBottom: 40 },
           ]}
         >
           {scrollChildren}
         </ScrollView>
 
         {/* 스크롤과 무관하게 화면 하단에 고정되는 CTA 영역 — header와 마찬가지로 ScrollView의
-            형제라 absolute 없이도 flexbox가 알아서 하단에 붙여 준다. catalogBook이 없으면
-            담을 곳도 선택할 곳도 없으니(renderCta가 그릴 게 없다) 그때만 빈 띠가 남지 않게
-            렌더하지 않는다 — 내 서재에서 isSelected여도 '현재 선택중' 비활성 버튼을
-            보여줘야 하므로 더 이상 isSelected로 영역 자체를 숨기지 않는다.
-            세이프에어리어 하단 패딩은 바깥 래퍼가 갖는다 — inShelf일 때 그 아래 삭제 링크가
-            추가돼도 총 여백은 그대로고, ctaBar(CTA+미리보기 한 줄)의 모양은 전혀 안 바뀐다. */}
+            형제라 absolute 없이도 flexbox가 알아서 하단에 붙여 준다(본문이 이 띠 뒤로
+            숨지 않는 것도 그래서다). catalogBook이 없으면 담을 곳도 선택할 곳도 없으니
+            (renderCta가 그릴 게 없다) 그때만 빈 띠가 남지 않게 렌더하지 않는다 — 내
+            서재에서 isSelected여도 '현재 선택중' 비활성 버튼을 보여줘야 하므로 더 이상
+            isSelected로 영역 자체를 숨기지 않는다. */}
         {catalogBook && (
-          <View
-            style={[styles.ctaFooter, { paddingBottom: 12 + insets.bottom }]}
-          >
-            <View style={styles.ctaBar}>
-              {renderCta()}
-
-              {/* 서재에 담긴 책은 미리보기 버튼이 more 버튼으로 바뀐다 — 미리보기와
-                  삭제를 그 위 옵션 박스(moreMenuOpen)로 모아 보여준다. 서재에 없으면
-                  기존 미리보기 버튼 그대로. */}
-              {inShelf ? (
-                <ScaleButton
-                  accessibilityLabel={moreMenuOpen ? "더보기 닫기" : "더보기"}
-                  style={styles.moreButton}
-                  onPress={() => setMoreMenuOpen((open) => !open)}
-                >
-                  <Ionicons
-                    name="ellipsis-vertical"
-                    color={Ink.primary}
-                    size={20}
-                  />
-                </ScaleButton>
-              ) : (
-                <ScaleButton
-                  accessibilityLabel="미리보기"
-                  style={styles.previewButton}
-                  onPress={() => setPreviewOpen(true)}
-                >
-                  <Text style={styles.previewButtonText}>미리보기</Text>
-                </ScaleButton>
-              )}
-            </View>
+          <View style={[styles.ctaFooter, { paddingBottom: 8 + insets.bottom }]}>
+            {renderCta()}
           </View>
-        )}
-
-        {/* more 버튼 위 옵션 박스. 화면 전체를 덮는 투명한 Pressable로 바깥을 눌러도
-            닫히게 하고, 흰 박스는 그 위에서 more 버튼 바로 위쪽에 자리 잡는다.
-            ctaFooter/ctaBar의 padding·height 상수(12+insets.bottom, 12, 52)로
-            more 버튼 위치를 그대로 계산한다 — onLayout 측정 없이도 정확히 겹친다. */}
-        {inShelf && moreMenuOpen && (
-          <>
-            <Pressable
-              accessibilityLabel="옵션 닫기"
-              style={styles.moreMenuBackdrop}
-              onPress={() => setMoreMenuOpen(false)}
-            />
-            <View
-              style={[
-                styles.moreMenuBox,
-                { bottom: insets.bottom + 12 + 52 + 8 },
-              ]}
-            >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="미리보기"
-                style={styles.moreMenuItem}
-                onPress={openPreviewFromMenu}
-              >
-                <Ionicons
-                  name="eye-outline"
-                  color={Ink.primary}
-                  size={18}
-                />
-                <Text style={styles.moreMenuItemText}>미리보기</Text>
-              </Pressable>
-              <View style={styles.moreMenuDivider} />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${view.title}을(를) 내 서재에서 삭제`}
-                style={styles.moreMenuItem}
-                onPress={removeBookFromShelfFromMenu}
-              >
-                <Ionicons
-                  name="trash-outline"
-                  color={Feedback.wrong}
-                  size={18}
-                />
-                <Text style={[styles.moreMenuItemText, styles.moreMenuDeleteText]}>
-                  내 서재에서 삭제하기
-                </Text>
-              </Pressable>
-            </View>
-          </>
         )}
       </View>
       <BookPreviewModal
@@ -562,9 +363,6 @@ export default function BookDetailScreen() {
   );
 }
 
-// CTA 바의 버튼 4종(활성 2 + 비활성 2)이 상태에 따라 자리를 서로 바꿔 끼우므로, 크기·모양을
-// 여기 하나로 묶어 상태가 바뀌어도 레이아웃이 흔들리지 않게 한다. StyleSheet.create 안에서는
-// 같은 객체 리터럴의 다른 키를 참조할 수 없어 바깥에 따로 뺐다.
 interface LegacyLibraryDetailProps {
   catalogId: string;
   title: string;
@@ -865,52 +663,57 @@ const libraryStyles = StyleSheet.create({
   emptyBookmark: { fontFamily: Type.ui, fontSize: 14, letterSpacing: trackBody(14), color: Ink.body },
 });
 
-const ctaSize: ViewStyle = {
-  flex: 1,
-  flexDirection: "row",
-  gap: 6,
-  height: 52,
-  paddingHorizontal: 20,
-  borderRadius: Corner.pill,
-  alignItems: "center" as const,
-  justifyContent: "center" as const,
-};
-
 const styles = StyleSheet.create({
+  // 화면 전체가 한 색(warm taupe) — 헤더·본문·하단 바가 저마다 배경을 다시 칠하지 않는다.
   screen: {
     flex: 1,
-    backgroundColor: Surface.canvas,
+    backgroundColor: Surface.card,
   },
+  // 60px 한 줄. 상태바 높이는 JSX에서 paddingTop·height에 함께 얹는다.
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingBottom: 12,
-    backgroundColor: Surface.canvas,
   },
-  headerMini: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginRight: 12,
-  },
-  headerMiniCover: {
-    width: 32,
-    height: 48,
-    borderRadius: 2,
-  },
-  headerMiniTitle: {
-    flex: 1,
-    fontFamily: Type.uiMedium,
-    fontSize: 15,
-    letterSpacing: trackBody(15),
-    color: Ink.primary,
-  },
+  // 글리프는 24px이지만 손가락이 받을 자리는 40px이다 — 음수 마진으로 넓힌 만큼 되밀어,
+  // 화살표 자체는 좌우 여백 20px 자리에 그대로 선다(마이페이지 책 정보와 같은 크기).
   headerIconButton: {
-    width: 41,
-    height: 41,
+    width: 40,
+    height: 40,
+    marginLeft: -8,
     borderRadius: Corner.pill,
+  },
+  // 좌우 버튼 폭이 달라도(24 vs 71) 제목은 화면 정가운데여야 한다 — 흐름에서 빼내
+  // 60px 줄 전체에 겹쳐 두고 가운데 정렬한다. 상태바 높이에 흔들리지 않게 아래를
+  // 기준으로 잡고, 손가락은 밑의 두 버튼이 받도록 pointerEvents를 끈다.
+  headerTitleSlot: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.subheading,
+    color: Ink.body,
+  },
+  // 헤더 오른쪽 미리보기 — 채우지 않고 테두리만 두른 작은 버튼이다.
+  headerPreviewButton: {
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: Corner.input,
+    borderWidth: 1,
+    borderColor: Ink.muted,
+  },
+  headerPreviewText: {
+    fontFamily: Type.ui,
+    fontSize: 14,
+    letterSpacing: trackBody(14),
+    color: Ink.strong,
   },
   scrollView: {
     flex: 1,
@@ -918,14 +721,13 @@ const styles = StyleSheet.create({
   bodyContent: {
     flexGrow: 1,
   },
+  // 표지·제목·저자·태그칩 — 아래에 선을 두지 않는다. 첫 절 제목이 제 위에 선을 갖고
+  // 있어서, 여기에도 그으면 같은 자리에 두 줄이 겹친다.
   hero: {
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 40,
-    borderBottomWidth: 1,
-    borderBottomColor: Surface.canvas,
+    paddingBottom: 20,
   },
   subhero: {
     paddingHorizontal: 20,
@@ -938,42 +740,6 @@ const styles = StyleSheet.create({
     backgroundColor: Surface.plate,
     borderRadius: Corner.pill,
     alignItems: "flex-start",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    gap: 8,
-  },
-  heroButton: {
-    flex: 1,
-    minHeight: 52,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    borderRadius: Corner.pill,
-  },
-  heroButtonText: {
-    fontFamily: Type.uiMedium,
-    fontSize: 14,
-    letterSpacing: trackBody(14),
-    color: Surface.canvas,
-  },
-  addShelfButton: {
-    backgroundColor: Ink.primary,
-  },
-  shelfStatusButton: {
-    backgroundColor: Ink.body,
-  },
-  goToLibraryButton: {
-    borderWidth: 1,
-    borderColor: Ink.primary,
-    backgroundColor: Surface.canvas,
-  },
-  goToLibraryButtonText: {
-    color: Ink.primary,
   },
   price: {
     fontFamily: Type.uiMedium,
@@ -1038,14 +804,14 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
-  // sticky로 상단에 고정되는 절 제목 — 아래 본문이 비쳐 보이지 않게 불투명 배경을 깔고,
-  // 얇은 구분선으로 헤더와 경계를 준다.
+  // 절 제목 — 본문과 함께 흘러간다(고정하지 않는다). 선은 제목 위에 그어, 앞 절이
+  // 끝나는 자리를 표시한다.
   sectionTitleRow: {
-    backgroundColor: Surface.canvas,
+    backgroundColor: Surface.card,
     paddingHorizontal: 20,
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: Surface.plate,
+    borderTopWidth: 1,
+    borderTopColor: Colors.brown10,
   },
   sectionTitleText: {
     fontFamily: Type.uiMedium,
@@ -1066,117 +832,43 @@ const styles = StyleSheet.create({
     letterSpacing: trackBody(15),
     color: Ink.primary,
   },
-  // 화면 하단에 고정되는 CTA 영역 전체를 감싸는 래퍼 — 세이프에어리어 하단 패딩은
-  // 여기서 한 번만 준다(ctaBar 아래에 삭제 링크가 붙어도 총 여백이 흔들리지 않게).
+  // 화면 하단에 고정되는 CTA 영역 — 종이와 같은 taupe 위에 버튼 하나가 8px 여백을
+  // 두르고 앉는다. 세이프에어리어 하단 패딩은 여기서 한 번만 얹는다.
   ctaFooter: {
-    display: "none",
-    backgroundColor: Surface.canvas,
+    padding: 8,
   },
-  // CTA 바 — sticky 절 제목 구분선과 같은 톤의 얇은 위쪽 경계선으로 스크롤 영역과 구분한다.
-  ctaBar: {
+  // 버튼 4종(활성 3 + 비활성 1)이 상태에 따라 자리를 서로 바꿔 끼우므로, 크기·모양은
+  // 여기 하나로 묶고 색만 아래에서 갈아 끼운다.
+  ctaButton: {
     flexDirection: "row",
-    backgroundColor: Surface.canvas,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Surface.canvas,
+    gap: 6,
+    height: 48,
     paddingHorizontal: 20,
-    paddingTop: 12,
-    gap: 8,
-  },
-  // more 버튼 위 옵션 박스를 열었을 때 화면 전체를 덮는 투명 배경 — 탭하면 닫힌다.
-  // 화면 루트(screen)의 기본 position:relative를 기준으로 꽉 채운다.
-  moreMenuBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  moreMenuBox: {
-    position: "absolute",
-    right: 20,
-    minWidth: 208,
-    backgroundColor: Surface.canvas,
-    borderRadius: Corner.small,
-    paddingVertical: 4,
-    shadowColor: Ink.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  moreMenuItem: {
-    flexDirection: "row",
+    borderRadius: Corner.input,
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    justifyContent: "center",
   },
-  moreMenuItemText: {
-    fontFamily: Type.ui,
+  ctaButtonText: {
+    fontFamily: Type.uiMedium,
     fontSize: 14,
     letterSpacing: trackBody(14),
-    color: Ink.primary,
-  },
-  moreMenuDeleteText: {
-    color: Feedback.wrong,
-  },
-  moreMenuDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Surface.plate,
-    marginHorizontal: 12,
-  },
-  ctaBase: ctaSize,
-  /** 이미 고른 책 — 누를 것은 없지만 채워진 얼굴로 지금 상태를 말한다. */
-  ctaFilled: {
-    backgroundColor: Ink.primary,
-  },
-  selectButton: {
-    ...ctaSize,
-    backgroundColor: Ink.primary,
-  },
-  selectButtonText: {
-    fontFamily: Type.uiMedium,
-    ...TypeScale.subheading,
     color: Ink.onDark,
   },
-  // 눌러도 아무 일도 하지 않는 안내용 버튼(하루 서점에서 이미 서재에 담긴 책) — 옅은 회색으로
-  // 활성 버튼과 시각적으로 구분한다.
-  ctaDisabled: {
-    ...ctaSize,
-    backgroundColor: Surface.plate,
+  /**
+   * 읽을 책에 추가하기 — 이 화면이 하러 온 일 하나.
+   *
+   * ember를 버튼에 쓰는 것은 이 시스템에서 드문 일이다(theme.ts의 Spark 주석 참고).
+   * 하루 서점에서 책을 고르는 행동 하나에만 열어 둔 자리고, 다른 버튼으로 번지지 않는다.
+   */
+  ctaAdd: {
+    backgroundColor: Spark.ember,
   },
-  ctaDisabledText: {
-    fontFamily: Type.uiMedium,
-    fontSize: 14,
-    letterSpacing: trackBody(14),
-    color: Ink.body,
+  /** 이미 담긴 책 — 누를 것은 없지만 채워진 얼굴로 지금 상태를 말한다. */
+  ctaDone: {
+    backgroundColor: Ink.muted,
   },
-  previewButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    height: 52,
-    paddingHorizontal: 12,
-    borderRadius: Corner.pill,
-    borderWidth: 1,
-    borderColor: Ink.body,
-    backgroundColor: Surface.canvas,
-  },
-  previewButtonText: {
-    fontFamily: Type.uiMedium,
-    fontSize: 15,
-    letterSpacing: trackBody(13),
-    color: Ink.body,
-  },
-  moreButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    height: 52,
-    paddingHorizontal: 16,
-    borderRadius: Corner.pill,
-    borderWidth: 1,
-    borderColor: Surface.plate,
-    backgroundColor: Surface.canvas,
+  /** 내 서재에서 들어왔을 때의 선택 버튼 — 채워진 버튼은 검정 하나뿐이다. */
+  ctaFilled: {
+    backgroundColor: Ink.primary,
   },
 });
