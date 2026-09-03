@@ -2,14 +2,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import LessonCoverImage from '@/components/LessonCoverImage';
 import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
 import { useBookmarkList, type BookmarkEntry } from '@/components/mypage/useBookmarkList';
 import ScaleButton from '@/components/ScaleButton';
-import { formatReadDate } from '@/components/mypage/useBookStats';
 import { Corner, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
 import { useBookmarks } from '@/context/BookmarkContext';
 import { useToast } from '@/context/ToastContext';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
+import type { BookId } from '@/types';
+
+/**
+ * 배경 사진을 흐리게 하는 정도.
+ *
+ * 사진을 알아볼 만큼은 남기고 글이 이길 만큼만 흐린다 — 완전히 뭉개면 어느 항목의
+ * 책갈피인지 배경이 말해 주지 못한다.
+ */
+const BACKGROUND_BLUR = 6;
 
 /**
  * 책갈피.
@@ -47,7 +56,7 @@ export default function BookmarksScreen() {
 
   return (
     <MyPageShell title="책갈피" back={back}>
-      {bookmarks.length === 0 ? (
+      {!studyBook || bookmarks.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyText}>아직 꽂아 둔 책갈피가 없어요</Text>
           <Text style={styles.emptyNote}>읽다가 접어 두고 싶은 장에서 책갈피를 눌러 보세요</Text>
@@ -59,6 +68,7 @@ export default function BookmarksScreen() {
             <BookmarkCard
               key={item.key}
               item={item}
+              bookId={studyBook.id}
               onRemove={() => removeBookmark(item.lessonId, item.page)}
             />
           ))}
@@ -69,36 +79,56 @@ export default function BookmarksScreen() {
 }
 
 /**
- * 책갈피 한 장 — 어느 날 몇 번째 장이었는지, 접어 둔 글, 접은 날 순으로 읽힌다.
+ * 책갈피 한 장.
  *
- * 카드는 누르는 물건이 아니다. 접어 둔 글을 그대로 읽는 자리고, 누를 것은 오른쪽 아래
- * X(빼기) 하나뿐이다. 글은 줄이지 않는다 — 접어 둔 것을 다시 읽으러 온 자리에서 '더
- * 보기'가 필요하면 접어 둔 의미가 없다.
+ * 그 항목의 표지를 배경으로 깔고(사진이 없는 책은 표식이 깔린다 — 무엇을 깔지는
+ * LessonCoverImage가 lib/cover의 우선순위대로 고른다), 그 위에 어둠을 한 겹 얹은 뒤
+ * 접어 둔 글을 놓는다. 사진을 흐리게 하는 건 사진을 보여 주려는 자리가 아니라 글을
+ * 읽히려는 자리이기 때문이다 — 초점이 맞은 사진 위에서는 글이 사진과 다툰다.
+ *
+ * 카드는 누르는 물건이 아니다. 누를 것은 오른쪽 아래 X(빼기) 하나뿐이다. 글도 줄이지
+ * 않는다 — 접어 둔 것을 다시 읽으러 온 자리에서 '더 보기'가 필요하면 접어 둔 의미가 없다.
  */
-function BookmarkCard({ item, onRemove }: { item: BookmarkEntry; onRemove: () => void }) {
+function BookmarkCard({
+  item,
+  bookId,
+  onRemove,
+}: {
+  item: BookmarkEntry;
+  bookId: BookId;
+  onRemove: () => void;
+}) {
   return (
     <View style={styles.card}>
-      <Text style={styles.where}>{`${item.month}월 ${item.day}일 · ${item.lessonTitle}`}</Text>
-      <Text style={styles.page}>
-        {`${item.page + 1} / ${item.pageCount}장${item.label ? ` · ${item.label}` : ''}`}
-      </Text>
+      <LessonCoverImage
+        lesson={item.lesson}
+        bookId={bookId}
+        style={StyleSheet.absoluteFill}
+        blurRadius={BACKGROUND_BLUR}
+      />
+      {/* 사진이 밝아도 글이 읽히도록 어둠을 한 겹 깐다. */}
+      <View style={styles.dim} pointerEvents="none" />
 
-      {item.text ? (
-        <Text style={styles.text}>{item.text}</Text>
-      ) : (
-        <Text style={styles.noText}>글이 없는 장이에요</Text>
-      )}
+      <View style={styles.body}>
+        {item.text ? (
+          <Text style={styles.text}>{item.text}</Text>
+        ) : (
+          <Text style={styles.noText}>글이 없는 장이에요</Text>
+        )}
 
-      {/* 접은 날과 빼기가 한 줄에 — 날짜는 왼쪽 끝, X는 오른쪽 끝이다. */}
-      <View style={styles.footRow}>
-        <Text style={styles.at}>{formatReadDate(item.at)}</Text>
-        <ScaleButton
-          accessibilityLabel={`${item.lessonTitle} ${item.page + 1}장 책갈피 빼기`}
-          style={styles.removeButton}
-          onPress={onRemove}>
-          <Ionicons name="close" color={Ink.muted} size={18} />
-        </ScaleButton>
+        <View style={styles.credit}>
+          <Text style={styles.title}>{item.lessonTitle}</Text>
+          {item.author ? <Text style={styles.author}>{item.author}</Text> : null}
+        </View>
       </View>
+
+      {/* 빼기 — 카드 오른쪽 아래 구석. 글과 겹치지 않게 body가 그만큼 아래를 비워 둔다. */}
+      <ScaleButton
+        accessibilityLabel={`${item.lessonTitle} ${item.page + 1}장 책갈피 빼기`}
+        style={styles.removeButton}
+        onPress={onRemove}>
+        <Ionicons name="close" color={Surface.plate} size={18} />
+      </ScaleButton>
     </View>
   );
 }
@@ -132,62 +162,81 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /** 책갈피 한 장 — 테두리 없이 한 단 올라온 종이다(Surface.card). */
+  /**
+   * 책갈피 한 장 — 표지 사진을 배경으로 깐 어두운 카드다.
+   *
+   * overflow를 감추는 건 배경이 모서리 밖으로 나가지 않게 하기 위해서고, 최소 높이를
+   * 두는 건 글이 한 줄뿐인 장(인용·표지)에서도 카드가 사진처럼 보여야 하기 때문이다.
+   */
   card: {
-    gap: Space[4],
-    padding: Space[20],
+    minHeight: 300,
     borderRadius: Corner.card,
-    backgroundColor: Surface.card,
+    backgroundColor: Ink.primary,
+    overflow: 'hidden',
   },
-  where: {
-    fontFamily: Type.uiMedium,
-    ...TypeScale.bodySm,
-    color: Ink.strong,
-  },
-  page: {
-    fontFamily: Type.ui,
-    ...TypeScale.caption,
-    color: Ink.muted,
+  /** 사진 위에 까는 어둠 — 밝은 사진에서도 eggshell 글자가 읽혀야 한다. */
+  dim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(3,3,3,0.55)',
   },
   /**
-   * 접어 둔 글 — 읽는 글이라 본문 서체(을유1945)를 쓴다.
+   * 글이 놓이는 자리 — 카드 높이를 다 쓰고 아래쪽으로 몰아 놓는다(RIDI 카드와 같은
+   * 앉음새다). 아래 여백이 큰 건 오른쪽 아래 X가 앉을 자리를 비워 두기 위해서다.
+   */
+  body: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    gap: Space[20],
+    paddingHorizontal: Space[24],
+    paddingTop: Space[32],
+    paddingBottom: Space[48],
+  },
+  /**
+   * 접어 둔 글 — 읽는 글이라 본문 서체(을유1945)를, 어두운 바탕이라 eggshell을 쓴다.
    *
    * 줄 수를 제한하지 않는다. 카드가 길어지더라도 접어 둔 글은 통째로 보여야 한다.
    */
   text: {
     fontFamily: Type.readingRegular,
-    fontSize: 15,
-    lineHeight: 26,
-    color: Ink.primary,
-    paddingTop: Space[4],
+    fontSize: 16,
+    lineHeight: 30,
+    textAlign: 'center',
+    color: Ink.onDark,
   },
   noText: {
+    fontFamily: Type.readingRegular,
+    fontSize: 16,
+    lineHeight: 30,
+    textAlign: 'center',
+    color: Surface.plate,
+  },
+  /** 글 아래의 출처 두 줄 — 에피소드 제목과 그 아래 저자. */
+  credit: {
+    gap: Space[4],
+  },
+  title: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.bodySm,
+    textAlign: 'center',
+    color: Ink.onDark,
+  },
+  author: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.muted,
-    paddingTop: Space[4],
+    textAlign: 'center',
+    color: Surface.plate,
   },
-  /** 접은 날과 빼기 버튼이 마주 보는 줄. */
-  footRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Space[4],
-  },
-  at: {
-    fontFamily: Type.ui,
-    ...TypeScale.caption,
-    color: Ink.muted,
-  },
-  /**
-   * 빼기 — 작게 두되 손가락이 받을 자리는 넓힌다. 음수 마진으로 넓힌 만큼 되밀어,
-   * 아이콘 자체는 카드 오른쪽 여백에 맞춰 선다.
-   */
+  /** 빼기 — 카드 오른쪽 아래 구석. 작게 두되 손가락이 받을 자리는 넓힌다. */
   removeButton: {
+    position: 'absolute',
+    right: Space[12],
+    bottom: Space[12],
     width: 32,
     height: 32,
-    marginRight: -Space[8],
-    marginVertical: -Space[8],
     borderRadius: Corner.pill,
   },
 });

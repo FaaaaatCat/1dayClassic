@@ -25,6 +25,11 @@ interface LessonCoverImageProps {
    * 안 넘기면 항목 id로 찾는다 — 아는 쪽에서 넘겨 주면 그 조회를 건너뛴다.
    */
   bookId?: BookId;
+  /**
+   * 사진을 흐리게 — 글을 위에 얹는 자리(마이페이지의 책갈피 카드)가 쓴다.
+   * 표식·검은 바탕은 흐릴 그림이 없어 그대로다.
+   */
+  blurRadius?: number;
 }
 
 /** 표식이 그림인지(주소) 글자인지 가른다. */
@@ -47,6 +52,7 @@ export default function LessonCoverImage({
   style,
   resizeMode = 'cover',
   bookId,
+  blurRadius,
 }: LessonCoverImageProps) {
   const plan = useMemo(() => getCoverPlan(lesson, bookId), [lesson, bookId]);
 
@@ -74,6 +80,7 @@ export default function LessonCoverImage({
         source={{ uri: resolved, headers: MEDIA_HEADERS }}
         style={style}
         resizeMode={resizeMode}
+        blurRadius={blurRadius}
         onError={() => setFailed(true)}
         accessibilityIgnoresInvertColors
       />
@@ -87,6 +94,7 @@ export default function LessonCoverImage({
           source={{ uri: plan.photo.url }}
           style={StyleSheet.absoluteFill}
           resizeMode={resizeMode}
+          blurRadius={blurRadius}
           onError={() => setFailed(true)}
           accessibilityIgnoresInvertColors
         />
