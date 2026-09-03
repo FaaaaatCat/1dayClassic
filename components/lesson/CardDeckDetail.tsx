@@ -45,6 +45,7 @@ import {
 } from '@/hooks/useCardNarration';
 import BookPurchaseNotice from '@/components/lesson/BookPurchaseNotice';
 import MusicPlayer from '@/components/lesson/MusicPlayer';
+import LessonCoverImage from '@/components/LessonCoverImage';
 import { StatusBarTint } from '@/components/StatusBarTint';
 import StudyReport from '@/components/StudyReport';
 import { useBookmarks } from '@/context/BookmarkContext';
@@ -69,7 +70,9 @@ import {
   type CardPageKind,
 } from '@/lib/card-pages';
 import { getBookName, type BookLesson } from '@/lib/books';
+import { getCoverPlan } from '@/lib/cover';
 import { getCatalogBookByBookId, type CatalogBook } from '@/lib/catalog';
+import type { BookId, DailyLesson } from '@/types';
 import { openBookDetail } from '@/lib/preview-nav';
 import { FREE_LESSON_COUNT, getLockedLessonCount, getNextLesson } from '@/lib/progress';
 import { Colors, Corner, Fonts, Ink, Spark, Type, TypeScale, tracking } from '@/constants/theme';
@@ -329,6 +332,18 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
    * 끊기지 않게 하기 위해서다. 카드 덱이 새 항목으로 다시 서는 일은 today.tsx가 key로
    * 맡는다(그쪽 주석 참고).
    */
+  /**
+   * 표지 장에 깔 사진이 있는가.
+   *
+   * 사진이 없는 책(하루 클래식·듣기의 말들)은 예전 그대로 종이색 표지에 검은 글씨다 —
+   * 없는 사진 자리에 검은 바탕을 깔면 표식이 두 번 그려지고 글도 읽기 어려워진다.
+   * 무엇이 깔릴지는 lib/cover가 정한다(coverImage → 표식 → Unsplash 순).
+   */
+  const coverPhoto = useMemo(() => {
+    const plan = getCoverPlan(lesson, bookLesson.book);
+    return plan.kind === 'image' || plan.kind === 'unsplash';
+  }, [lesson, bookLesson.book]);
+
   /** 잠긴 화 수 — 구매 안내가 '아직 잠긴 n편이 남아 있어요'로 말한다. */
   const lockedCount = useMemo(() => getLockedLessonCount(bookLesson.book), [bookLesson.book]);
 
@@ -644,6 +659,9 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             onOpenQuiz={() => setQuizOpen(true)}
             onNext={openNext}
             isLastLesson={!nextLesson}
+            lesson={lesson}
+            bookId={bookLesson.book}
+            coverPhoto={coverPhoto}
             hasMusic={hasMusic}
           />
         ))}
@@ -946,6 +964,9 @@ function DeckCard({
   onOpenQuiz,
   onNext,
   isLastLesson,
+  lesson,
+  bookId,
+  coverPhoto,
   hasMusic,
 }: {
   index: number;
@@ -968,6 +989,11 @@ function DeckCard({
   onOpenQuiz: () => void;
   onNext: () => void;
   isLastLesson: boolean;
+  /** 표지 장 배경으로 깔 사진을 고르는 데 쓴다. */
+  lesson: DailyLesson;
+  bookId: BookId;
+  /** 표지 장에 사진이 깔리는가 — 깔리면 그 위 글자가 흰색이 된다. */
+  coverPhoto: boolean;
   /** 유튜브가 딸린 항목인가 — 표지의 표식 크기가 달라진다. */
   hasMusic: boolean;
 }) {
@@ -1051,6 +1077,19 @@ function DeckCard({
           // 겹을 더 쌓지 않고 팔레트 색을 그대로 쓴다.
           style={[styles.cardFace, frontStyle]}
           pointerEvents="box-none">
+          {/* 표지 장의 배경 사진 — 카드가 overflow를 감추므로 모서리에 맞춰 잘린다.
+              그 위에 검정 30%를 깔아 흰 글자가 설 자리를 만든다. */}
+          {kind === 'cover' && coverPhoto ? (
+            <>
+              <LessonCoverImage
+                lesson={lesson}
+                bookId={bookId}
+                style={StyleSheet.absoluteFill}
+                creditPlacement="bottomLeft"
+              />
+              <View style={styles.coverScrim} pointerEvents="none" />
+            </>
+          ) : null}
           <Animated.View style={[styles.cardBody, bodyStyle]} pointerEvents="box-none">
             <CardContent
               kind={kind}
@@ -1062,6 +1101,7 @@ function DeckCard({
               onOpenQuiz={onOpenQuiz}
               onNext={onNext}
               isLastLesson={isLastLesson}
+              onPhoto={coverPhoto}
               hasMusic={hasMusic}
             />
           </Animated.View>
@@ -1167,6 +1207,7 @@ function CardContent({
   onOpenQuiz,
   onNext,
   isLastLesson,
+  onPhoto,
   hasMusic,
 }: {
   kind: CardPageKind;
@@ -1182,6 +1223,8 @@ function CardContent({
   onNext: () => void;
   /** 이 항목이 그 책의 마지막 화인가 — 맺음 장의 버튼 문구가 갈린다. */
   isLastLesson: boolean;
+  /** 표지 장에 사진이 깔렸는가 — 그러면 그 위 글자를 흰색으로 바꾼다. */
+  onPhoto: boolean;
   /** 유튜브가 딸린 항목인가 — 카드가 짧아 표식을 작게 앉힌다. */
   hasMusic: boolean;
 }) {
@@ -1196,25 +1239,35 @@ function CardContent({
               {isSymbolImage(cover.symbol) ? (
                 <Image
                   source={{ uri: cover.symbol }}
-                  style={styles.coverSymbolImage}
+                  style={[styles.coverSymbolImage, onPhoto && styles.coverSymbolImageOnPhoto]}
                   // 책마다 그림 크기가 달라도 잘리지 않고 상자 안에 들어오게 한다.
                   resizeMode="contain"
                   accessibilityIgnoresInvertColors
                 />
               ) : (
-                <Text style={isAsciiSymbol(cover.symbol) ? styles.coverSymbol : styles.coverGlyph}>
+                <Text
+                  style={[
+                    isAsciiSymbol(cover.symbol) ? styles.coverSymbol : styles.coverGlyph,
+                    onPhoto && styles.coverTextOnPhoto,
+                  ]}>
                   {cover.symbol}
                 </Text>
               )}
             </View>
           ) : null}
-          <View style={styles.labelChip}>
-            <Text style={styles.labelText}>{cover.bookName}</Text>
+          <View style={[styles.labelChip, onPhoto && styles.labelChipOnPhoto]}>
+            <Text style={[styles.labelText, onPhoto && styles.coverTextOnPhoto]}>
+              {cover.bookName}
+            </Text>
           </View>
           {/* 표제는 책마다 뽑는 곳이 달라 getLessonHeading이 정해 준다 — 곡명·한자·라틴어
               원문이 모두 여기로 들어온다(lib/card-pages). */}
-          <Text style={styles.title}>{cover.title}</Text>
-          {cover.subtitle ? <Text style={styles.coverSubtitle}>{cover.subtitle}</Text> : null}
+          <Text style={[styles.title, onPhoto && styles.coverTextOnPhoto]}>{cover.title}</Text>
+          {cover.subtitle ? (
+            <Text style={[styles.coverSubtitle, onPhoto && styles.coverTextOnPhoto]}>
+              {cover.subtitle}
+            </Text>
+          ) : null}
         </View>
 
       </View>
@@ -1809,6 +1862,35 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(24),
     textAlign: "center",
     color: Colors.brown100,
+  },
+  /**
+   * 표지 사진 위에 까는 어둠 — 30%.
+   *
+   * 사진이 밝든 어둡든 흰 글자가 읽혀야 하는데, 사진 자체를 어둡게 만들 수는 없다.
+   */
+  coverScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  /**
+   * 사진 위의 글자 — 순백이다.
+   *
+   * 이 시스템은 보통 순백을 쓰지 않지만(따뜻한 흰색 eggshell을 쓴다), 사진 위에서는
+   * 무엇이 깔릴지 알 수 없어 가장 밝은 흰색이라야 어느 사진에서도 읽힌다.
+   */
+  coverTextOnPhoto: {
+    color: Colors.white,
+  },
+  coverSymbolImageOnPhoto: {
+    tintColor: Colors.white,
+  },
+  /** 사진 위의 책 이름 칩 — 베이지 바탕 대신 흰빛을 옅게 깐다. */
+  labelChipOnPhoto: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   /** 표제 아래 한 줄 — 작곡가·훈음·뜻처럼 책마다 다른 것이 들어온다. */
   coverSubtitle: {
