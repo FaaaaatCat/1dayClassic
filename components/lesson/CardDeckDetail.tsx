@@ -169,7 +169,7 @@ const TURN_DURATION = 600;
  * 알 수 없었고, 그 사이에 손가락이 먼저 움직였다. 이제 기다림 없이 시작하고, 대신
  * 올라오는 몸짓으로 '지금 놓인다'를 말한다.
  */
-const ENTER_DURATION = 420;
+const ENTER_DURATION = 840;
 /** 글이 올라오기 시작하는 높이(dp). 눈에 걸리지 않을 만큼만 든다. */
 const ENTER_RISE = 14;
 /**
