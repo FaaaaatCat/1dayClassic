@@ -72,7 +72,7 @@ import { getBookName, type BookLesson } from '@/lib/books';
 import { getCatalogBookByBookId, type CatalogBook } from '@/lib/catalog';
 import { openBookDetail } from '@/lib/preview-nav';
 import { getNextLesson } from '@/lib/progress';
-import { Colors, Fonts, tracking } from '@/constants/theme';
+import { Colors, Corner, Fonts, Ink, Spark, Type, TypeScale, tracking } from '@/constants/theme';
 
 /**
  * 오늘의 공부 상세 — 좌우로 넘겨 읽는 카드 형식.
@@ -211,12 +211,6 @@ const HEADER_H = 48;
 const FOOTER_H = 56;
 
 // ── 화면 구성 ─────────────────────────────────────────────────────────────
-
-/**
- * 구매 안내 장 표지의 높이(dp). 카드 높이를 다 쓰지 않고 문구·버튼과 한 덩어리로
- * 묶여 가운데에 모이도록, 늘어나는 값이 아니라 정해진 높이를 쓴다.
- */
-const BUY_COVER_H = 152;
 
 /**
  * 무엇을 보여 줄지는 lib/preview-content 한 곳에서 온다 — 인스타 스토리 미리보기와
@@ -639,6 +633,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             epigraph={epigraph}
             catalogBook={catalogBook}
             onOpenQuiz={() => setQuizOpen(true)}
+            onNext={openNext}
             hasMusic={hasMusic}
           />
         ))}
@@ -773,6 +768,20 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
           />
         </View>
       </Modal>
+
+      {/*
+        구매 안내가 리포트 없이 뜨는 경우 — 맺음 장의 '다음 화 읽기'로 들어왔을 때다.
+        리포트가 떠 있을 때는 그 Modal 안에 얹는다(아래) — 네이티브 Modal은 무엇 위에나
+        떠서, 여기 그린 층은 리포트에 가려 보이지 않기 때문이다. 그래서 자리만 둘이고
+        그리는 것은 하나다.
+      */}
+      {purchaseOpen && !reportOpen && (
+        <BookPurchaseNotice
+          book={catalogBook}
+          onBuy={goToBookDetail}
+          onClose={() => setPurchaseOpen(false)}
+        />
+      )}
 
       {/**
         * 오늘의 공부 리포트 — 마치기를 누르면 뜨는 검은 화면.
@@ -921,6 +930,7 @@ function DeckCard({
   epigraph,
   catalogBook,
   onOpenQuiz,
+  onNext,
   hasMusic,
 }: {
   index: number;
@@ -941,6 +951,7 @@ function DeckCard({
   /** 낭독이 지금 이 장에서 읽고 있는 글자 범위. 다른 장이면 null이다. */
   spoken: SpokenRange | null;
   onOpenQuiz: () => void;
+  onNext: () => void;
   /** 유튜브가 딸린 항목인가 — 표지의 표식 크기가 달라진다. */
   hasMusic: boolean;
 }) {
@@ -1022,7 +1033,7 @@ function DeckCard({
           // 구매 안내 장만 종이를 한 단계 어둡게 — 넘김 흐름 안에서 성격이 다른 장이라
           // 바탕으로 구분한다. brown100을 10%로 덮은 것과 같은 색이라(계산: #E1DED6)
           // 겹을 더 쌓지 않고 팔레트 색을 그대로 쓴다.
-          style={[styles.cardFace, kind === 'outro' && styles.cardFaceBuy, frontStyle]}
+          style={[styles.cardFace, frontStyle]}
           pointerEvents="box-none">
           <Animated.View style={[styles.cardBody, bodyStyle]} pointerEvents="box-none">
             <CardContent
@@ -1033,6 +1044,7 @@ function DeckCard({
               epigraph={epigraph}
               catalogBook={catalogBook}
               onOpenQuiz={onOpenQuiz}
+              onNext={onNext}
               hasMusic={hasMusic}
             />
           </Animated.View>
@@ -1136,6 +1148,7 @@ function CardContent({
   epigraph,
   catalogBook,
   onOpenQuiz,
+  onNext,
   hasMusic,
 }: {
   kind: CardPageKind;
@@ -1145,8 +1158,10 @@ function CardContent({
   cover: CardCover;
   epigraph?: CardEpigraph;
   catalogBook?: CatalogBook;
-  /** 구매 안내 장의 '퀴즈 풀러 가기' — 퀴즈를 전체 화면으로 연다. */
+  /** 맺음 장의 '퀴즈 풀기' — 퀴즈를 전체 화면으로 연다. */
   onOpenQuiz: () => void;
+  /** 맺음 장의 '다음 화 읽기' — 다음 화가 잠겼으면 부르는 쪽이 구매 안내를 띄운다. */
+  onNext: () => void;
   /** 유튜브가 딸린 항목인가 — 카드가 짧아 표식을 작게 앉힌다. */
   hasMusic: boolean;
 }) {
@@ -1204,7 +1219,7 @@ function CardContent({
   }
 
   if (kind === 'outro') {
-    return <OutroBlock onOpenQuiz={onOpenQuiz} />;
+    return <OutroBlock onOpenQuiz={onOpenQuiz} onNext={onNext} />;
   }
 
   return null;
@@ -1229,7 +1244,7 @@ function CardContent({
  * 오늘의 공부를 맺는 흐름(퀴즈 → 마치기 → 리포트)이 전부 이 버튼에서 시작한다. 조건에
  * 따라 이 장이 사라지면 흐름이 통째로 끊기므로, 퀴즈가 있는 한 늘 놓인다.
  */
-function OutroBlock({ onOpenQuiz }: { onOpenQuiz: () => void }) {
+function OutroBlock({ onOpenQuiz, onNext }: { onOpenQuiz: () => void; onNext: () => void }) {
   return (
     <View style={styles.buyBlock} pointerEvents="box-none">
       {/* 눌러야 할 것은 아래 버튼뿐이다. 나머지는 터치를 흘려보내야 카드 위를 탭했을 때
@@ -1238,9 +1253,24 @@ function OutroBlock({ onOpenQuiz }: { onOpenQuiz: () => void }) {
         {'오늘의 이야기는 여기까지입니다.\n읽은 것을 퀴즈로 확인해 보세요.'}
       </Text>
 
-      <Pressable style={[styles.cardButton, styles.buyButton, styles.quizButton]} onPress={onOpenQuiz}>
-        <Text style={[styles.cardButtonText, styles.quizButtonText]}>퀴즈 풀러 가기</Text>
-      </Pressable>
+      <View style={styles.outroButtons}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="퀴즈 풀기"
+          style={styles.outroQuizButton}
+          onPress={onOpenQuiz}>
+          <Text style={styles.outroQuizText}>퀴즈 풀기</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="다음 화 읽기"
+          style={styles.outroNextButton}
+          onPress={onNext}>
+          <Text style={styles.outroNextText}>다음 화 읽기</Text>
+          <Ionicons name="chevron-forward" color={Ink.onDark} size={16} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -1624,10 +1654,6 @@ const styles = StyleSheet.create({
     backfaceVisibility: 'hidden',
     backgroundColor: Colors.bg,
   },
-  /** 구매 안내 장의 종이색. */
-  cardFaceBuy: {
-    backgroundColor: Colors.brown50,
-  },
   cardBack: {
     // 부모가 -180도까지 돌아가므로, 그 안에서 180도를 다시 돌려 두면 다 넘어갔을
     // 때 뒷면 내용이 거울상이 아니라 똑바로 보인다.
@@ -1857,17 +1883,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: Colors.brown100,
   },
-  /** 표지가 놓이는 자리 — 높이를 정해 두고 그 안에서 비율을 지킨다(resizeMode contain). */
-  buyCoverArea: {
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: BUY_COVER_H,
-  },
-  buyCover: {
-    width: '100%',
-    height: '100%',
-  },
   /** 카드 안 버튼 공용 — 감상 노트의 기록하기와 구매 안내의 구매하러 가기가 같이 쓴다. */
   cardButton: {
     alignSelf: 'stretch',
@@ -1883,11 +1898,42 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(14),
     color: Colors.brown100,
   },
-  /** 구매 버튼만 가로를 글자에 맞춘다(감상 노트의 기록하기는 그대로 꽉 찬 폭). */
-  buyButton: {
-    alignSelf: 'center',
-    paddingHorizontal: 28,
-    backgroundColor: Colors.blue50,
+  /** 맺음 장의 버튼 둘 — 퀴즈로 가는 길과 다음 화로 가는 길이 나란히 선다. */
+  outroButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  /** 퀴즈 풀기 — 마이페이지의 '틀린 문제 보러가기'와 같은 얼굴이다. */
+  outroQuizButton: {
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: Corner.small,
+    borderWidth: 1,
+    borderColor: Ink.muted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outroQuizText: {
+    fontFamily: Type.ui,
+    ...TypeScale.bodySm,
+    color: Ink.body,
+  },
+  /** 다음 화 읽기 — 이 장에서 이어 갈 일이라 포인트 컬러가 여기 붙는다. */
+  outroNextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: Corner.small,
+    backgroundColor: Spark.ember,
+  },
+  outroNextText: {
+    fontFamily: Type.uiMedium,
+    ...TypeScale.bodySm,
+    color: Ink.onDark,
   },
   /** 화면 아래 토스트. 카드·버튼보다 위에 뜬다. */
   toast: {
@@ -1970,12 +2016,6 @@ const styles = StyleSheet.create({
     color: Colors.red100,
   },
   /** 구매 안내 장의 두 번째 버튼 — 가격 버튼 아래에 같은 폭으로 선다. */
-  quizButton: {
-    backgroundColor: Colors.brown100,
-  },
-  quizButtonText: {
-    color: Colors.bg,
-  },
   /** 번호와 보기를 한 줄에 — 보기가 두 줄로 넘어가도 번호는 첫 줄에 붙어 있게 한다. */
   quizChoice: {
     flexDirection: 'row',
