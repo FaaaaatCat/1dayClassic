@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import SplashQuestion, { SplashChip } from '@/components/splash/SplashQuestion';
+import SplashQuestion, { BODY_GUTTER, SplashChip } from '@/components/splash/SplashQuestion';
 import { Space } from '@/constants/theme';
 import { FIELD_NAMES } from '@/lib/tags';
 
 /** 다음으로 가려면 이만큼은 골라야 한다. */
 const MIN_PICKS = 3;
+/** 한 줄에 놓는 수. */
+const PER_ROW = 2;
+/** 알약 사이의 틈 — 가로세로 같다. */
+const GAP = Space[12];
 
 /**
  * 질문 1 — 어떤 분야를 읽고 싶은지.
@@ -25,7 +29,16 @@ export default function SplashFields({
   onNext: (fields: string[]) => void;
   onBack: () => void;
 }) {
+  const { width } = useWindowDimensions();
   const [picked, setPicked] = useState<string[]>([]);
+
+  /**
+   * 알약 하나의 폭.
+   *
+   * 글자만큼만 넓어지게 두면 '고전'과 '문학·에세이'가 한 줄에 셋씩 붙었다 둘씩 붙었다 해서
+   * 줄마다 격자가 어긋난다. 남는 폭을 둘로 나눠 못 박아 두면 어느 줄이든 둘씩 선다.
+   */
+  const chipWidth = (width - BODY_GUTTER * 2 - GAP * (PER_ROW - 1)) / PER_ROW;
 
   const toggle = (name: string) =>
     setPicked((prev) =>
@@ -40,12 +53,12 @@ export default function SplashFields({
       canGoNext={picked.length >= MIN_PICKS}
       onNext={() => onNext(picked)}
       onBack={onBack}>
-      {/* 알약들은 폭이 제각각이라 줄을 미리 나누지 않고 흐르게 둔다. */}
-      <View style={styles.wrap}>
+      <View style={styles.grid}>
         {FIELD_NAMES.map((name) => (
           <SplashChip
             key={name}
             label={name}
+            width={chipWidth}
             selected={picked.includes(name)}
             onPress={() => toggle(name)}
           />
@@ -56,10 +69,11 @@ export default function SplashFields({
 }
 
 const styles = StyleSheet.create({
-  wrap: {
+  /** 둘씩 흐르는 격자. 폭을 못 박았으므로 줄바꿈은 알아서 둘에서 일어난다. */
+  grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: Space[12],
+    justifyContent: 'flex-start',
+    gap: GAP,
   },
 });

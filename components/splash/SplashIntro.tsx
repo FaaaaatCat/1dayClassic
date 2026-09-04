@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import SplashLogin from '@/components/splash/SplashLogin';
@@ -20,6 +21,7 @@ import { Corner, Ink, Space, Spark, Type, TypeScale } from '@/constants/theme';
  */
 export default function SplashIntro({ onDone }: { onDone: () => void }) {
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [page, setPage] = useState(0);
   const [login, setLogin] = useState(false);
   const slide = SLIDES[page];
@@ -47,7 +49,7 @@ export default function SplashIntro({ onDone }: { onDone: () => void }) {
         ))}
       </View>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Space[20] + insets.bottom }]}>
         <ScaleButton
           accessibilityLabel={last ? '시작하기' : '다음'}
           style={styles.cta}
@@ -142,9 +144,9 @@ const styles = StyleSheet.create({
     backgroundColor: Ink.onDark,
   },
 
+  /** 아래 여백은 기기의 제스처 바만큼 더 준다 — 안 그러면 버튼이 그 아래로 깔린다. */
   footer: {
     paddingHorizontal: Space[20],
-    paddingBottom: Space[20],
   },
   cta: {
     height: 56,

@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     height: 48,
     marginTop: Space[16],
-    borderRadius: Corner.input,
+    borderRadius: Corner.pill,
     backgroundColor: Surface.plate,
   },
   closeText: {

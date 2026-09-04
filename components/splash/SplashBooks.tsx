@@ -22,6 +22,14 @@ const PICK_COUNT = 5;
 const GAP = Space[12];
 /** 카드가 화면 폭에서 차지하는 몫 — 나머지가 양옆으로 비쳐 더 있다는 걸 알린다. */
 const CARD_RATIO = 0.57;
+/**
+ * 카드 높이 = 폭 × 이 값.
+ *
+ * 다섯 장의 키가 같아야 넘길 때 아래가 들썩이지 않는다. 내용에 맡기면 제목이 두 줄이 되거나
+ * 칩이 하나 더 붙는 책에서 카드가 혼자 길어진다 — 그래서 키를 못 박고, 남고 모자라는 몫은
+ * 표지 자리가 늘고 줄며 받아 낸다.
+ */
+const CARD_ASPECT = 1.7;
 /** 카드에 붙는 분야 칩은 셋까지만. 그 아래로 줄이 늘면 카드 키가 들쭉날쭉해진다. */
 const MAX_CHIPS = 3;
 
@@ -51,6 +59,7 @@ export default function SplashBooks({
   const listRef = useRef<ScrollView>(null);
 
   const cardWidth = Math.round(width * CARD_RATIO);
+  const cardHeight = Math.round(cardWidth * CARD_ASPECT);
   const stride = cardWidth + GAP;
   /** 첫 장과 끝 장도 가운데에 설 수 있게, 남는 폭의 절반씩을 양끝에 둔다. */
   const sidePad = Math.max(Space[20], (width - cardWidth) / 2);
@@ -86,6 +95,7 @@ export default function SplashBooks({
           <BookChoice
             key={book.id}
             width={cardWidth}
+            height={cardHeight}
             title={book.title}
             author={book.author}
             cover={book.coverImage}
@@ -102,6 +112,7 @@ export default function SplashBooks({
 /** 카드 한 장 — 표지, 제목, 지은이, 분야 칩. 고르면 주황 테두리가 선다. */
 function BookChoice({
   width,
+  height,
   title,
   author,
   cover,
@@ -110,6 +121,8 @@ function BookChoice({
   onPress,
 }: {
   width: number;
+  /** 다섯 장이 모두 같은 값을 받는다 — 카드 키는 내용이 아니라 여기서 정해진다. */
+  height: number;
   title: string;
   author: string;
   cover: string;
@@ -122,7 +135,7 @@ function BookChoice({
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={`${title}, ${author}`}
-      style={[styles.card, { width }, selected && styles.cardOn]}
+      style={[styles.card, { width, height }, selected && styles.cardOn]}
       onPress={onPress}>
       <View style={styles.coverBox}>
         <Image source={{ uri: cover }} style={styles.cover} resizeMode="contain" />
@@ -169,10 +182,15 @@ const styles = StyleSheet.create({
   cardOn: {
     borderColor: Spark.ember,
   },
-  /** 표지 자리 — 책마다 비율이 달라 자리를 고정하고 그 안에 맞춰 넣는다. */
+  /**
+   * 표지 자리 — 카드에서 글자가 쓰고 남은 높이를 다 갖는다.
+   *
+   * 비율을 못 박지 않는 것은, 카드 키가 고정이라 남는 몫을 여기가 받아야 하기 때문이다.
+   * 책마다 표지 비율이 다르지만 contain으로 넣으므로 잘리지 않고 이 안에 들어앉는다.
+   */
   coverBox: {
+    flex: 1,
     width: '100%',
-    aspectRatio: 0.78,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Space[8],

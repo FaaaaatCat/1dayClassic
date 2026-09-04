@@ -15,6 +15,15 @@ export const QUESTION_COUNT = 4;
  */
 const EXIT_SLOT = 60;
 
+/** 상태바 아래로 머리띠가 갖는 높이. 공용 헤더(ScreenHeader)와 같은 값이다. */
+const HEADER_H = 60;
+
+/**
+ * 본문의 좌우 여백. 안에 놓을 것의 폭을 직접 재야 하는 화면(줄에 몇 개씩 놓을지 정하는
+ * 질문 1)이 같은 값을 쓰도록 내보낸다.
+ */
+export const BODY_GUTTER = Space[20];
+
 /**
  * 질문 화면 넷이 함께 쓰는 껍데기.
  *
@@ -37,6 +46,7 @@ export default function SplashQuestion({
   padded = true,
   /** 물음을 놓는 자리. 고를 것이 줄로 늘어서는 화면은 왼쪽에 붙여 줄머리와 맞춘다. */
   titleAlign = 'center',
+  overlay,
 }: {
   /** 1부터 QUESTION_COUNT까지. */
   step: number;
@@ -53,13 +63,23 @@ export default function SplashQuestion({
   scroll?: boolean;
   padded?: boolean;
   titleAlign?: 'center' | 'left';
+  /**
+   * 화면 전체를 덮는 층 — 축하 포탄처럼 머리띠부터 버튼까지 가리지 않고 지나가야 하는 것.
+   * children은 본문 안에 갇히므로 그런 것은 이쪽으로 넘긴다.
+   */
+  overlay?: React.ReactNode;
 }) {
   const left = titleAlign === 'left';
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+      {/*
+        상태바 높이는 머리띠가 직접 인다. height를 60으로 못 박고 paddingTop만 더하면
+        상태바가 그 60 안을 파먹어 실제로 쓸 수 있는 띠가 20 남짓으로 줄고, 진행 줄이
+        화면 꼭대기에 붙는다 — 공용 헤더(ScreenHeader)와 같은 셈법으로 맞춘다.
+      */}
+      <View style={[styles.header, { paddingTop: insets.top, height: HEADER_H + insets.top }]}>
         <ScaleButton accessibilityLabel="뒤로" style={styles.back} onPress={onBack}>
           <Chevron size={22} color={Ink.primary} />
         </ScaleButton>
@@ -103,6 +123,8 @@ export default function SplashQuestion({
           <Ionicons name="chevron-forward" color={Ink.onDark} size={14} />
         </ScaleButton>
       </View>
+
+      {overlay}
     </View>
   );
 }
@@ -117,15 +139,18 @@ export function SplashChip({
   label,
   selected,
   onPress,
+  width,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
+  /** 줄에 몇 개씩 놓을지 부르는 쪽이 정할 때 쓴다. 없으면 글자만큼만 넓어진다. */
+  width?: number;
 }) {
   return (
     <ScaleButton
       accessibilityLabel={`${label}${selected ? ', 선택됨' : ''}`}
-      style={[styles.chip, selected && styles.chipOn]}
+      style={[styles.chip, width !== undefined && { width }, selected && styles.chipOn]}
       onPress={onPress}>
       <Text style={[styles.chipText, selected && styles.chipTextOn]} numberOfLines={1}>
         {label}
@@ -144,7 +169,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Space[8],
-    height: 60,
     paddingLeft: Space[28],
     // 오른쪽만 더 비운다 — 미리보기의 닫기 ✕가 이 자리에 떠 있어서, 여기까지 진행 줄을
     // 늘이면 그 아래로 깔린다. 미리보기를 걷어낼 때 Space[28]로 되돌리면 된다.
@@ -205,7 +229,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bodyPad: {
-    paddingHorizontal: Space[20],
+    paddingHorizontal: BODY_GUTTER,
   },
 
   footer: {
@@ -216,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
     height: 48,
-    borderRadius: Corner.input,
+    borderRadius: Corner.pill,
     backgroundColor: Spark.ember,
   },
   /** 아직 못 고른 상태 — 눌리지 않는다는 게 색으로 보여야 한다. */
@@ -231,7 +255,9 @@ const styles = StyleSheet.create({
 
   chip: {
     height: 52,
-    paddingHorizontal: Space[28],
+    // 폭을 받아 쓸 때는 이 여백이 알약 크기가 아니라 글자가 쓸 수 있는 폭만 정한다.
+    // 넉넉히 두면 좁은 기기에서 '문학·에세이'가 말줄임으로 잘리므로 적게 잡는다.
+    paddingHorizontal: Space[12],
     borderRadius: Corner.pill,
     borderWidth: 1,
     borderColor: Surface.plate,
