@@ -20,20 +20,35 @@ const DEFAULT_MINUTE = 0;
 /** 미리듣기는 여기까지만 들려준다. */
 const PREVIEW_SECONDS = 30;
 
+/** 오전/오후와 12시제 시각 → 0~23. 알람 편집 화면의 것과 같은 셈이다. */
+function to24Hour(meridiemIndex: number, hour12: number): number {
+  const base = hour12 % 12;
+  return meridiemIndex === 1 ? base + 12 : base;
+}
+
+/** 이 화면이 고른 시각. 저장은 부르는 쪽이 한다. */
+export interface SplashAlarmChoice {
+  /** 0~23 */
+  hour: number;
+  /** 0~59 */
+  minute: number;
+  enabled: boolean;
+}
+
 /**
  * 질문 3 — 매일 알림을 받을지, 받는다면 몇 시에.
  *
  * 알람은 켜진 채로 시작한다. 이 물음의 답이 '네'인 편이 자연스럽고, 그래서 다음 버튼도
  * 처음부터 눌린다 — 그냥 넘겨도 하루 한 알람이 걸리는 것이 이 앱의 기본값이다.
  *
- * 고른 시각은 저장하지 않는다. 실제 알람을 거는 자리는 알람 편집 화면이고
- * (app/(tabs)/alarm-detail.tsx), 여기서는 어떻게 보이는지만 확인한다.
+ * 고른 시각을 이 화면이 저장하지는 않는다. 위로 올려 주기만 하고, 알람을 실제로 거는 일은
+ * 부르는 쪽이 맡는다 — 미리보기에서 고른 시각으로 아침에 알람이 울리면 안 되기 때문이다.
  */
 export default function SplashAlarm({
   onNext,
   onBack,
 }: {
-  onNext: () => void;
+  onNext: (choice: SplashAlarmChoice) => void;
   onBack: () => void;
 }) {
   const [meridiemIndex, setMeridiemIndex] = useState(DEFAULT_MERIDIEM);
@@ -48,7 +63,9 @@ export default function SplashAlarm({
       title="매일 알림을 드릴까요?"
       hint="매일 책 한쪽의 내용으로 아침을 시작해보세요"
       canGoNext
-      onNext={onNext}
+      onNext={() =>
+        onNext({ hour: to24Hour(meridiemIndex, hour12), minute, enabled })
+      }
       onBack={onBack}
       scroll={false}>
       <View style={styles.body}>

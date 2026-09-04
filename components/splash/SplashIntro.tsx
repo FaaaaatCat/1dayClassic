@@ -18,8 +18,18 @@ import { Corner, Ink, Space, Spark, Type, TypeScale } from '@/constants/theme';
  *
  * 마지막 장에서 시작하기를 누르면 화면을 갈아 끼우지 않고 로그인 시트가 이 위로 올라온다.
  * 그래서 로그인은 걸음이 아니라 이 화면이 품는 상태다 — 무르면 셋째 장이 그대로 남는다.
+ *
+ * 다만 로그인은 아직 붙일 것이 없다(MVP에는 결제도 서버도 없어 계정으로 지킬 것이 없다).
+ * 그래서 실제 온보딩에서는 시트를 띄우지 않고 바로 다음으로 가고, 설정의 미리보기에서만
+ * withLogin으로 켜 둔다 — 만들어 둔 화면을 지우지 않고 눈으로 확인할 수 있게.
  */
-export default function SplashIntro({ onDone }: { onDone: () => void }) {
+export default function SplashIntro({
+  onDone,
+  withLogin = false,
+}: {
+  onDone: () => void;
+  withLogin?: boolean;
+}) {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(0);
@@ -53,7 +63,10 @@ export default function SplashIntro({ onDone }: { onDone: () => void }) {
         <ScaleButton
           accessibilityLabel={last ? '시작하기' : '다음'}
           style={styles.cta}
-          onPress={() => (last ? setLogin(true) : setPage((p) => p + 1))}>
+          onPress={() => {
+            if (!last) return setPage((p) => p + 1);
+            return withLogin ? setLogin(true) : onDone();
+          }}>
           <Text style={styles.ctaText}>{last ? '시작하기' : '다음'}</Text>
         </ScaleButton>
       </View>

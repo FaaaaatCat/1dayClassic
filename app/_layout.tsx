@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import { useFonts } from 'expo-font';
-import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { useEffect } from 'react';
+import { DefaultTheme, Stack, ThemeProvider, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Alert, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +19,7 @@ import { ShelfProvider } from '@/context/ShelfContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { StatusTintProvider, useStatusTint } from '@/components/StatusBarTint';
 import { Palette } from '@/constants/theme';
+import { hasOnboarded, PERMISSION_PROMPT_KEY } from '@/lib/onboarding';
 import {
   getPermissionStatus,
   hasAllAlarmPermissions,
@@ -34,8 +35,21 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
-/** 권한 안내를 이미 한 번 했는지. 설치 후 처음 켰을 때만 묻기 위해 남긴다. */
-const PERMISSION_PROMPT_KEY = 'alarm-permission-prompted-v1';
+/**
+ * 첫 실행을 아직 안 지났으면 그리로 보낸다.
+ *
+ * Stack 밖에서 화면을 갈아 끼우지 않고 길만 바꾼다 — 온보딩도 이 앱의 한 화면이라,
+ * 다른 화면들과 같은 자리(라우트)에 두는 편이 나중에 손대기 쉽다.
+ */
+function FirstRunGate({ onboarded }: { onboarded: boolean }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!onboarded) router.replace('/onboarding');
+  }, [onboarded, router]);
+
+  return null;
+}
 
 const AppTheme = {
   ...DefaultTheme,
@@ -75,6 +89,9 @@ export default function RootLayout() {
     let cancelled = false;
     (async () => {
       try {
+        // 첫 실행을 아직 안 지났으면 잠자코 있는다 — 온보딩이 곧 제대로 물어본다.
+        if (!(await hasOnboarded())) return;
+
         const asked = await AsyncStorage.getItem(PERMISSION_PROMPT_KEY);
         if (cancelled || asked) return;
 
@@ -101,7 +118,25 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!fontsLoaded) {
+  /**
+   * 첫 실행을 지났는지 — 알기 전에는 아무것도 그리지 않는다.
+   *
+   * 모르는 채로 홈을 먼저 그리면, 온보딩으로 넘어가기 전에 홈이 한 번 번쩍인다.
+   * 글꼴을 기다리는 것과 같은 이유로 여기서도 기다린다.
+   */
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    hasOnboarded().then((value) => {
+      if (!cancelled) setOnboarded(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!fontsLoaded || onboarded === null) {
     return null;
   }
 
@@ -148,7 +183,15 @@ export default function RootLayout() {
                     name="splash-preview"
                     options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
                   />
+                  {/* 첫 실행 — 앱을 깔고 처음 켰을 때 한 번 지난다. 뒤로 물러날 곳이
+                      없는 길이라 제스처를 막는다. */}
+                  <Stack.Screen
+                    name="onboarding"
+                    options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+                  />
                 </Stack>
+
+                <FirstRunGate onboarded={onboarded} />
               </ToastProvider>
               </BgmProvider>
               </BookmarkProvider>

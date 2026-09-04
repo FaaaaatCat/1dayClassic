@@ -4,100 +4,39 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
-import SplashAlarm from '@/components/splash/SplashAlarm';
-import SplashBooks from '@/components/splash/SplashBooks';
-import SplashFields from '@/components/splash/SplashFields';
+import SplashFlow from '@/components/splash/SplashFlow';
 import SplashHome from '@/components/splash/SplashHome';
-import SplashIntro from '@/components/splash/SplashIntro';
-import SplashLoading from '@/components/splash/SplashLoading';
-import SplashPermissions from '@/components/splash/SplashPermissions';
-import { DARK_TINT, StatusBarTint, type StatusTint } from '@/components/StatusBarTint';
-import { Corner, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
+import { Corner, Ink, Space, Type, TypeScale } from '@/constants/theme';
 
 /**
  * 첫 실행 흐름 미리보기 — 설정에서 연다.
  *
- * 실제 앱에는 아직 붙이지 않았다. 스플래시부터 홈까지 이어지는 길을 눈으로 먼저 확인하려고
- * 만든 자리고, 여기서 정해진 뒤에 붙인다.
+ * 흐름 자체는 진짜 온보딩과 같은 것을 쓴다(SplashFlow). 다른 점은 둘뿐이다.
  *
- * 그래서 이 안의 화면들은 **아무것도 저장하지 않는다.** 책을 고르든 알람을 켜든 그 선택은
- * 이 화면을 닫는 순간 사라진다 — 흐름을 보는 것이 목적이지 설정을 하는 자리가 아니다.
+ * 하나, **아무것도 저장하지 않는다.** 책을 고르든 알람을 맞추든 그 답은 이 화면을 닫는
+ * 순간 사라지고, 권한도 묻지 않는다 — 미리보기에서 맞춘 시각으로 아침에 알람이 울리면
+ * 안 된다. 저장하는 자리는 app/onboarding.tsx다.
  *
- * 걸음은 아래 STEPS 하나로 정해진다. 질문 화면들은 한 걸음씩 앞뒤로 오가고, 어느 걸음에서든
- * 우측 위 ✕로 미리보기를 닫고 설정으로 돌아간다.
+ * 둘, 로그인 시트를 띄운다. 실제 흐름에서는 지나가지만 화면은 만들어 두었으므로,
+ * 눈으로 확인할 수 있는 자리를 여기 남긴다.
+ *
+ * 마지막 홈은 찍어 둔 그림이다 — 여기서 진짜 홈을 열면 그 홈이 또 자기 일을 시작한다.
  */
-const STEPS = [
-  'intro',
-  'q1',
-  'q1loading',
-  'q2',
-  'q3',
-  'q4',
-  'home',
-] as const;
-
-type Step = (typeof STEPS)[number];
-
 export default function SplashPreviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [step, setStep] = useState<Step>('intro');
-  /**
-   * 질문 1에서 고른 분야. 저장하지 않고 이 화면이 열려 있는 동안만 들고 있다 —
-   * 질문 2의 안내 문구가 "골라주신 ○○, ○○을 토대로"라고 되비쳐야 하기 때문이다.
-   */
-  const [fields, setFields] = useState<string[]>([]);
-
-  /** 다음 걸음으로. 마지막에서는 더 가지 않는다. */
-  const next = () => {
-    const index = STEPS.indexOf(step);
-    if (index < STEPS.length - 1) setStep(STEPS[index + 1]);
-  };
-
-  /**
-   * 한 걸음 되돌아간다 — 질문 화면들의 뒤로가기가 쓴다. 맨 앞에서는 그대로 있는다.
-   *
-   * 스스로 넘어가는 걸음(로딩)은 건너뛴다. 거기 내려놓으면 다시 앞으로 밀려나서
-   * 뒤로가기가 듣지 않는 것처럼 보인다.
-   */
-  const back = () => {
-    let index = STEPS.indexOf(step) - 1;
-    while (index > 0 && PASSING.includes(STEPS[index])) index -= 1;
-    if (index >= 0) setStep(STEPS[index]);
-  };
+  const [done, setDone] = useState(false);
 
   /** 미리보기를 닫고 설정으로 — 우측 위 ✕와 마지막 화면의 버튼이 함께 쓴다. */
   const close = () => router.replace('/settings');
 
   return (
     <View style={styles.screen}>
-      {/*
-        화면마다 바탕이 검기도 하고 밝기도 하다. 상태바 띠는 그 아래 화면과 같은 색이어야
-        화면 속으로 사라진다 — 걸음마다 갈아 준다.
-      */}
-      <StatusBarTint tint={DARK_STEPS.includes(step) ? DARK_TINT : PAPER_TINT} />
-
-      {/* 로그인은 걸음이 아니다 — 첫 화면 마지막 장 위로 시트가 올라온다. */}
-      {step === 'intro' ? <SplashIntro onDone={next} /> : null}
-      {step === 'q1' ? (
-        <SplashFields
-          onNext={(picked) => {
-            setFields(picked);
-            next();
-          }}
-          onBack={back}
-        />
-      ) : null}
-      {step === 'q1loading' ? <SplashLoading onDone={next} /> : null}
-      {step === 'q2' ? <SplashBooks fields={fields} onNext={next} onBack={back} /> : null}
-      {step === 'q3' ? <SplashAlarm onNext={next} onBack={back} /> : null}
-      {step === 'q4' ? <SplashPermissions onNext={next} onBack={back} /> : null}
-      {/* 마지막이라 '다음'이 없다 — 여기서 확인하기를 누르면 미리보기가 끝난다. */}
-      {step === 'home' ? <SplashHome onDone={close} /> : null}
+      {done ? <SplashHome onDone={close} /> : <SplashFlow withLogin onFinish={() => setDone(true)} />}
 
       {/*
-        나가는 문 — 미리보기라 어느 걸음에서든 바로 설정으로 되돌아간다. 걸음이 바뀌어도
-        같은 자리에 못 박혀 있어야 찾지 않고 누를 수 있어 오른쪽 맨 위에 둔다.
+        나가는 문 — 어느 걸음에서든 바로 설정으로 되돌아간다. 걸음이 바뀌어도 같은 자리에
+        못 박혀 있어야 찾지 않고 누를 수 있어 오른쪽 맨 위에 둔다.
       */}
       <ScaleButton
         accessibilityLabel="미리보기 닫기"
@@ -108,15 +47,6 @@ export default function SplashPreviewScreen() {
     </View>
   );
 }
-
-/** 머무르지 않고 스스로 넘어가는 걸음들 — 뒤로 갈 때 그냥 지나친다. */
-const PASSING: Step[] = ['q1loading'];
-
-/** 바탕이 검은 걸음들 — 나머지는 질문 화면의 종이색(taupe)이다. */
-const DARK_STEPS: Step[] = ['intro', 'home'];
-
-/** 질문 화면들이 쓰는 띠 — 그 화면들의 바탕과 같은 색이다. */
-const PAPER_TINT: StatusTint = { color: Surface.card, icons: 'dark' };
 
 const styles = StyleSheet.create({
   screen: {

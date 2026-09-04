@@ -6,6 +6,7 @@ import ScaleButton from '@/components/ScaleButton';
 import SettingRow from '@/components/SettingRow';
 import { Corner, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 import { previewAlarmScreens } from '@/lib/alarmBook';
+import { resetOnboarding } from '@/lib/onboarding';
 import { isNativeAlarmAvailable } from '@/modules/alarm-clock';
 
 export default function SettingsScreen() {
@@ -52,16 +53,34 @@ export default function SettingsScreen() {
         스플래시부터 홈까지 이어지는 길을 눈으로 먼저 보려는 자리다.
       */}
       <Animated.View entering={FadeIn.duration(700).delay(460)} style={styles.card}>
-        <Text style={styles.sectionTitle}>스플래시 미리보기</Text>
+        <Text style={styles.sectionTitle}>첫 실행 흐름</Text>
         <Text style={styles.sectionHint}>
-          설치하고 처음 켰을 때의 흐름을 봅니다 — 스플래시, 로그인, 질문 넷, 로딩, 그리고
-          홈까지. 어느 것도 저장되지 않고, 우측 위 ✕로 닫습니다.
+          설치하고 처음 켰을 때 지나는 길입니다 — 스플래시, 질문 넷, 로딩, 그리고 홈까지.
+          {'\n\n'}
+          <Text style={styles.strong}>미리보기</Text>는 아무것도 저장하지 않습니다. 권한도
+          묻지 않고, 여기서 맞춘 알람으로 아침에 울리지도 않습니다. 실제 흐름에서는 지나가는
+          로그인 시트도 여기서만 뜹니다.
+          {'\n\n'}
+          <Text style={styles.strong}>다시 겪어보기</Text>는 첫 실행 기록을 지우고 진짜 흐름을
+          엽니다. 고른 책과 알람이 실제로 바뀌고 권한 팝업도 뜹니다.
         </Text>
         <ScaleButton
-          accessibilityLabel="스플래시 미리보기 열기"
+          accessibilityLabel="첫 실행 미리보기 열기"
           style={styles.testButton}
           onPress={() => router.push('/splash-preview')}>
-          <Text style={styles.testButtonLabel}>첫 실행 흐름 보기</Text>
+          <Text style={styles.testButtonLabel}>미리보기 (저장 안 함)</Text>
+        </ScaleButton>
+        <ScaleButton
+          accessibilityLabel="첫 실행 다시 겪어보기"
+          style={[styles.testButton, styles.testButtonAlt]}
+          onPress={() => {
+            resetOnboarding()
+              .then(() => router.replace('/onboarding'))
+              .catch((error) => console.warn('[settings] 첫 실행 되돌리기 실패:', error));
+          }}>
+          <Text style={[styles.testButtonLabel, styles.testButtonAltLabel]}>
+            다시 겪어보기 (실제 저장)
+          </Text>
         </ScaleButton>
       </Animated.View>
 
@@ -183,5 +202,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     letterSpacing: trackBody(15),
     color: Surface.canvas,
+  },
+  /** 실제로 값을 바꾸는 버튼 — 선만 두어 채운 버튼과 무게를 달리한다. */
+  testButtonAlt: {
+    marginTop: Space[8],
+    borderWidth: 1,
+    borderColor: Ink.strong,
+    backgroundColor: 'transparent',
+  },
+  testButtonAltLabel: {
+    color: Ink.strong,
+  },
+  strong: {
+    fontFamily: Type.uiMedium,
+    color: Ink.primary,
   },
 });

@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, Modal, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AlarmDetailScreen from '@/app/(tabs)/alarm-detail';
 import ScaleButton from '@/components/ScaleButton';
+import WelcomeSheet from '@/components/splash/WelcomeSheet';
 import { StatusBarTint } from '@/components/StatusBarTint';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
 import { useAlarm } from '@/context/AlarmContext';
@@ -77,6 +78,15 @@ export default function HomeScreen() {
 
   /** 알람 설정 — 화면을 갈아 끼우지 않고 이 위에 띄운다. */
   const [alarmOpen, setAlarmOpen] = useState(false);
+
+  /**
+   * 첫 실행을 막 마치고 왔나 — 그때만 환영 창을 띄운다.
+   *
+   * 첫 그림을 그릴 때 한 번만 읽는다. 뒤에 파라미터가 남아 있어도 다시 뜨지 않아야 한다 —
+   * 닫은 창이 홈에 돌아올 때마다 다시 올라오면 그건 환영이 아니라 방해다.
+   */
+  const { welcome } = useLocalSearchParams<{ welcome?: string }>();
+  const [welcoming, setWelcoming] = useState(welcome === '1');
 
   /** 떠났다 돌아오면 알람 창은 닫혀 있어야 한다 — 홈은 Tabs의 형제라 떠나도 사라지지 않는다. */
   useFocusEffect(
@@ -239,6 +249,13 @@ export default function HomeScreen() {
         onRequestClose={() => setAlarmOpen(false)}>
         <AlarmDetailScreen onClose={() => setAlarmOpen(false)} />
       </Modal>
+
+      {/*
+        첫 실행을 막 마치고 왔을 때만 뜨는 환영 창. 홈 위로 올라오고, 다 올라온 뒤에
+        축하 포탄이 터진다. 한 번 닫으면 다시 뜨지 않는다 — 파라미터는 그 한 번을
+        알리는 신호일 뿐이라 어디에도 저장하지 않는다(app/onboarding.tsx가 붙여 보낸다).
+      */}
+      {welcoming ? <WelcomeSheet onDone={() => setWelcoming(false)} /> : null}
     </View>
   );
 }

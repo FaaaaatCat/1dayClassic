@@ -15,6 +15,7 @@ import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants
 import { BOOKSTORE_BOOKS, isMvpBook } from '@/lib/bookstore';
 import { getCatalogBookByBookId } from '@/lib/catalog';
 import { fieldsOf } from '@/lib/tags';
+import type { BookId } from '@/types';
 
 /** 골라 보여 줄 책의 수. 넘겨 볼 만하면서 고르기 부담 없는 정도다. */
 const PICK_COUNT = 5;
@@ -39,8 +40,9 @@ const BOOKS = BOOKSTORE_BOOKS.filter((book) => isMvpBook(book.id)).slice(0, PICK
 /**
  * 질문 2 — 처음 읽을 책 한 권.
  *
- * 시안의 책들은 자리표시라 앱에 실제로 있는 책을 쓴다. 고른 분야로 정말 걸러 내지는 않는다 —
- * 여기서 하는 일은 흐름을 보는 것뿐이고, 추천을 만드는 자리는 나중에 서버가 맡는다.
+ * 원래는 앞에서 고른 분야로 걸러 다섯 권을 추천하는 자리다. 지금은 학습 콘텐츠가 있는 책이
+ * MVP 아홉 권뿐이라 걸러 낼 것이 없어, 분야와 상관없이 그중 앞의 다섯 권을 보여 준다 —
+ * 거르는 일은 책이 늘고 추천을 만드는 서버가 생긴 뒤에 붙인다.
  *
  * 가로로 넘겨 고르고, 고른 카드에만 주황 테두리가 선다. 옆 카드를 누르면 가운데로 데려온다.
  */
@@ -49,13 +51,14 @@ export default function SplashBooks({
   onNext,
   onBack,
 }: {
-  /** 앞 질문에서 고른 분야들 — 안내 문구에 그대로 되비친다. */
+  /** 앞 질문에서 고른 분야들 — 거르는 데는 쓰지 않고 안내 문구에만 되비친다. */
   fields: string[];
-  onNext: () => void;
+  /** 고른 책을 함께 올린다. 이 화면은 어디에도 저장하지 않는다. */
+  onNext: (bookId: BookId) => void;
   onBack: () => void;
 }) {
   const { width } = useWindowDimensions();
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<BookId | null>(null);
   const listRef = useRef<ScrollView>(null);
 
   const cardWidth = Math.round(width * CARD_RATIO);
@@ -64,7 +67,7 @@ export default function SplashBooks({
   /** 첫 장과 끝 장도 가운데에 설 수 있게, 남는 폭의 절반씩을 양끝에 둔다. */
   const sidePad = Math.max(Space[20], (width - cardWidth) / 2);
 
-  const choose = (index: number, id: string) => {
+  const choose = (index: number, id: BookId) => {
     setPicked(id);
     listRef.current?.scrollTo({ x: index * stride, animated: true });
   };
@@ -80,7 +83,7 @@ export default function SplashBooks({
         </>
       }
       canGoNext={picked !== null}
-      onNext={onNext}
+      onNext={() => picked && onNext(picked)}
       onBack={onBack}
       scroll={false}
       padded={false}>
