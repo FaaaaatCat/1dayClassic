@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import ScaleButton from '@/components/ScaleButton';
+import SplashLogin from '@/components/splash/SplashLogin';
 import { Corner, Ink, Space, Spark, Type, TypeScale } from '@/constants/theme';
 
 /**
@@ -13,10 +14,14 @@ import { Corner, Ink, Space, Spark, Type, TypeScale } from '@/constants/theme';
  * 이라는 권위로 말한다면, 이쪽이 내밀 것은 매일 한 쪽씩 읽히는 책이다.
  *
  * 그림 자리는 아직 에셋이 없어 활자로 채웠다 — 책을 파는 앱이니 활자가 곧 그림이다.
+ *
+ * 마지막 장에서 시작하기를 누르면 화면을 갈아 끼우지 않고 로그인 시트가 이 위로 올라온다.
+ * 그래서 로그인은 걸음이 아니라 이 화면이 품는 상태다 — 무르면 셋째 장이 그대로 남는다.
  */
-export default function SplashIntro({ onStart }: { onStart: () => void }) {
+export default function SplashIntro({ onDone }: { onDone: () => void }) {
   const { height } = useWindowDimensions();
   const [page, setPage] = useState(0);
+  const [login, setLogin] = useState(false);
   const slide = SLIDES[page];
   const last = page === SLIDES.length - 1;
 
@@ -46,10 +51,12 @@ export default function SplashIntro({ onStart }: { onStart: () => void }) {
         <ScaleButton
           accessibilityLabel={last ? '시작하기' : '다음'}
           style={styles.cta}
-          onPress={() => (last ? onStart() : setPage((p) => p + 1))}>
+          onPress={() => (last ? setLogin(true) : setPage((p) => p + 1))}>
           <Text style={styles.ctaText}>{last ? '시작하기' : '다음'}</Text>
         </ScaleButton>
       </View>
+
+      {login ? <SplashLogin onDone={onDone} onDismiss={() => setLogin(false)} /> : null}
     </View>
   );
 }

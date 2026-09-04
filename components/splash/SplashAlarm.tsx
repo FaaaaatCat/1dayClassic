@@ -117,9 +117,16 @@ function PreviewSheet({ onClose }: { onClose: () => void }) {
   const elapsed = Math.min(status.currentTime ?? 0, PREVIEW_SECONDS);
   const playing = status.playing;
 
+  /**
+   * 열리면 바로 흐른다.
+   *
+   * 닫힐 때 멈추는 코드는 두지 않는다. useAudioPlayer가 화면이 사라질 때 재생기를 스스로
+   * 반납하는데(expo-modules-core의 useReleasingSharedObject), 그 정리는 이 컴포넌트의
+   * 정리보다 먼저 돈다 — 그 뒤에 pause를 부르면 이미 없는 네이티브 객체를 부르는 셈이라
+   * 오류가 난다. 반납되면 소리도 함께 그치므로 따로 멈출 일이 없다.
+   */
   useEffect(() => {
     player.play();
-    return () => player.pause();
   }, [player]);
 
   // 미리듣기는 30초까지다. 음원이 그보다 길어도 여기서 끊는다.
@@ -132,8 +139,11 @@ function PreviewSheet({ onClose }: { onClose: () => void }) {
       player.pause();
       return;
     }
-    // 끝까지 들은 뒤 다시 누르면 처음부터.
-    if (elapsed >= PREVIEW_SECONDS) player.seekTo(0);
+    // 끝까지 들은 뒤 다시 누르면 처음부터. seekTo는 약속을 돌려주므로 받아 둔다 —
+    // 놓아두면 실패했을 때 갈 곳 없는 오류가 되어 나중에 터진다.
+    if (elapsed >= PREVIEW_SECONDS) {
+      player.seekTo(0).catch((error) => console.warn('[splash] 미리듣기 되감기 실패:', error));
+    }
     player.play();
   };
 

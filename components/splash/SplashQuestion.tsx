@@ -10,6 +10,12 @@ import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants
 export const QUESTION_COUNT = 4;
 
 /**
+ * 머리띠 오른쪽에 비워 두는 폭 — 미리보기의 닫기 ✕(36)와 그 바깥 여백(16), 그리고 진행
+ * 줄이 닿지 않을 만큼의 틈.
+ */
+const EXIT_SLOT = 60;
+
+/**
  * 질문 화면 넷이 함께 쓰는 껍데기.
  *
  * 위는 뒤로가기와 진행 줄, 가운데는 물음과 그 아래 고를 것들, 아래는 다음 버튼이다.
@@ -139,7 +145,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Space[8],
     height: 60,
-    paddingHorizontal: Space[28],
+    paddingLeft: Space[28],
+    // 오른쪽만 더 비운다 — 미리보기의 닫기 ✕가 이 자리에 떠 있어서, 여기까지 진행 줄을
+    // 늘이면 그 아래로 깔린다. 미리보기를 걷어낼 때 Space[28]로 되돌리면 된다.
+    paddingRight: EXIT_SLOT,
   },
   back: {
     width: 32,
@@ -221,8 +230,8 @@ const styles = StyleSheet.create({
   },
 
   chip: {
-    height: 42,
-    paddingHorizontal: Space[24],
+    height: 52,
+    paddingHorizontal: Space[28],
     borderRadius: Corner.pill,
     borderWidth: 1,
     borderColor: Surface.plate,

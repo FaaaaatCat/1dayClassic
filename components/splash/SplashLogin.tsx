@@ -1,30 +1,48 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Corner, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
 
+/** 시트가 올라오는 데 걸리는 시간. */
+const RISE_MS = 320;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 /**
- * 로그인 — 위는 어두운 화면, 아래는 종이색 시트 한 장.
+ * 로그인 — 마지막 장 위로 올라오는 시트.
  *
- * 레퍼런스에서 가져온 짜임 그대로다. 위쪽 절반이 이 앱이 무엇인지 보여 주고, 아래 시트가
- * 들어오는 문 두 개를 내민다. 아래를 밝게 두는 건 누를 것이 거기 있다는 뜻이다.
+ * 화면을 갈아 끼우지 않는다. 첫 화면의 셋째 장이 뒤에 그대로 남고 그 위로 시트만 올라온다 —
+ * 로그인은 '다음 장'이 아니라 '지금 이 자리에서 들어가는 문'이기 때문이다.
+ *
+ * 딤을 누르면 도로 내려간다. 시트에는 닫는 버튼이 따로 없어서, 그것이 유일한 무르는 길이다.
  *
  * 지금은 어느 버튼을 눌러도 그냥 다음으로 간다 — 미리보기라 실제 로그인은 붙이지 않았다.
  */
-export default function SplashLogin({ onDone }: { onDone: () => void }) {
+export default function SplashLogin({
+  onDone,
+  onDismiss,
+}: {
+  onDone: () => void;
+  onDismiss: () => void;
+}) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.screen}>
-      {/* 위 — 아직 사진이 없어 활자로 채운다. 표지 사진이 정해지면 이 자리에 깔면 된다. */}
-      <View style={styles.stage}>
-        <Text style={styles.stageMark}>유유</Text>
-        <Text style={styles.stageNote}>오늘 읽을 한 쪽이 기다리고 있습니다</Text>
-      </View>
+    <View style={styles.layer} pointerEvents="box-none">
+      <AnimatedPressable
+        entering={FadeIn.duration(RISE_MS)}
+        accessibilityRole="button"
+        accessibilityLabel="로그인 닫기"
+        style={styles.dim}
+        onPress={onDismiss}
+      />
 
-      <View style={[styles.sheet, { paddingBottom: Space[20] + insets.bottom }]}>
+      <Animated.View
+        entering={SlideInDown.duration(RISE_MS)}
+        style={[styles.sheet, { paddingBottom: Space[20] + insets.bottom }]}>
         <Text style={styles.headline}>{'하루를 여는 알람이\n한 쪽의 책이 되도록'}</Text>
 
         <ScaleButton accessibilityLabel="카카오로 계속하기" style={styles.kakao} onPress={onDone}>
@@ -38,7 +56,7 @@ export default function SplashLogin({ onDone }: { onDone: () => void }) {
         </ScaleButton>
 
         <Text style={styles.terms}>회원가입 시 이용약관 및 개인정보처리방침에 동의합니다.</Text>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -48,30 +66,26 @@ const KAKAO = '#FEE500';
 const KAKAO_LABEL = '#191600';
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: Ink.primary,
+  /** 뒤 화면 위에 통째로 얹히는 층. 빈 데는 뒤가 그대로 보인다. */
+  layer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'flex-end',
   },
-  /** 위 절반 — 아래 시트가 밝은 만큼 여기는 물러나 있는다. */
-  stage: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Space[16],
-  },
-  stageMark: {
-    fontFamily: Type.readingBold,
-    fontSize: 64,
-    lineHeight: 76,
-    color: Ink.onDark,
-  },
-  stageNote: {
-    fontFamily: Type.ui,
-    ...TypeScale.body,
-    color: Ink.muted,
+  /** 뒤를 가라앉힌다. 누르면 시트가 내려간다. */
+  dim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
 
-  /** 아래 시트 — 위 두 귀만 둥글다. 여기부터가 누르는 자리다. */
+  /** 시트 — 위 두 귀만 둥글다. 여기부터가 누르는 자리다. */
   sheet: {
     gap: Space[12],
     paddingHorizontal: Space[20],

@@ -10,7 +10,6 @@ import SplashFields from '@/components/splash/SplashFields';
 import SplashHome from '@/components/splash/SplashHome';
 import SplashIntro from '@/components/splash/SplashIntro';
 import SplashLoading from '@/components/splash/SplashLoading';
-import SplashLogin from '@/components/splash/SplashLogin';
 import SplashPermissions from '@/components/splash/SplashPermissions';
 import { DARK_TINT, StatusBarTint, type StatusTint } from '@/components/StatusBarTint';
 import { Corner, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
@@ -29,7 +28,6 @@ import { Corner, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme'
  */
 const STEPS = [
   'intro',
-  'login',
   'q1',
   'q1loading',
   'q2',
@@ -39,9 +37,6 @@ const STEPS = [
 ] as const;
 
 type Step = (typeof STEPS)[number];
-
-/** 질문 화면의 머리띠 높이(SplashQuestion) — 닫기 버튼을 그 아래로 내리는 데 쓴다. */
-const HEADER_BAND = 60;
 
 export default function SplashPreviewScreen() {
   const router = useRouter();
@@ -82,8 +77,8 @@ export default function SplashPreviewScreen() {
       */}
       <StatusBarTint tint={DARK_STEPS.includes(step) ? DARK_TINT : PAPER_TINT} />
 
-      {step === 'intro' ? <SplashIntro onStart={next} /> : null}
-      {step === 'login' ? <SplashLogin onDone={next} /> : null}
+      {/* 로그인은 걸음이 아니다 — 첫 화면 마지막 장 위로 시트가 올라온다. */}
+      {step === 'intro' ? <SplashIntro onDone={next} /> : null}
       {step === 'q1' ? (
         <SplashFields
           onNext={(picked) => {
@@ -101,14 +96,12 @@ export default function SplashPreviewScreen() {
       {step === 'home' ? <SplashHome onDone={close} /> : null}
 
       {/*
-        나가는 문 — 미리보기라 어느 걸음에서든 바로 설정으로 되돌아간다.
-
-        머리띠 아래 오른쪽에 둔다. 질문 화면의 뒤로가기가 왼쪽 위를 이미 쓰고 있고,
-        머리띠 안에 두면 진행 줄 끝을 덮는다.
+        나가는 문 — 미리보기라 어느 걸음에서든 바로 설정으로 되돌아간다. 걸음이 바뀌어도
+        같은 자리에 못 박혀 있어야 찾지 않고 누를 수 있어 오른쪽 맨 위에 둔다.
       */}
       <ScaleButton
         accessibilityLabel="미리보기 닫기"
-        style={[styles.close, { top: insets.top + HEADER_BAND + Space[8] }]}
+        style={[styles.close, { top: insets.top + Space[8] }]}
         onPress={close}>
         <Text style={styles.closeText}>✕</Text>
       </ScaleButton>
@@ -120,7 +113,7 @@ export default function SplashPreviewScreen() {
 const PASSING: Step[] = ['q1loading'];
 
 /** 바탕이 검은 걸음들 — 나머지는 질문 화면의 종이색(taupe)이다. */
-const DARK_STEPS: Step[] = ['intro', 'login', 'home'];
+const DARK_STEPS: Step[] = ['intro', 'home'];
 
 /** 질문 화면들이 쓰는 띠 — 그 화면들의 바탕과 같은 색이다. */
 const PAPER_TINT: StatusTint = { color: Surface.card, icons: 'dark' };

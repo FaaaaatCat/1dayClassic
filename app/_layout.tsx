@@ -142,6 +142,12 @@ export default function RootLayout() {
                   {/* 원페이지 미리보기 — 상세와 같은 껍데기라 탭바 없이 전면으로 떠야 한다.
                       여기는 좌우 스와이프를 쓰지 않으므로 뒤로가기 제스처를 막지 않는다. */}
                   <Stack.Screen name="onepage-preview" options={{ headerShown: false }} />
+                  {/* 첫 실행 흐름 미리보기 — 스플래시가 앱 머리띠 아래에서 시작할 수는 없다.
+                      나가는 길은 화면 안의 ✕ 하나이므로 머리띠도 뒤로가기 제스처도 없앤다. */}
+                  <Stack.Screen
+                    name="splash-preview"
+                    options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+                  />
                 </Stack>
               </ToastProvider>
               </BgmProvider>
