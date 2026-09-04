@@ -140,9 +140,9 @@ export function HeaderTextButton({ label, onPress }: { label: string; onPress: (
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: Space[12],
   },
   /**
@@ -155,32 +155,32 @@ const styles = StyleSheet.create({
   slot: {
     minWidth: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: Corner.pill,
   },
   /** 오른쪽 — 비어 있어도 자리는 남는다. 그래야 제목이 가운데에서 흔들리지 않는다. */
   actionSlot: {
     minWidth: 40,
     height: 40,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    alignItems: "flex-end",
+    justifyContent: "center",
   },
   titleSlot: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
     height: HEADER_H,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     // 제목이 길어도 좌우 버튼 밑으로 들어가지 않게 미리 물러서 둔다.
     paddingHorizontal: Space[56],
   },
   title: {
     fontFamily: Type.uiMedium,
-    ...TypeScale.subheading,
-    textAlign: 'center',
+    ...TypeScale.bodyLg,
+    textAlign: "center",
   },
   textAction: {
     height: 40,

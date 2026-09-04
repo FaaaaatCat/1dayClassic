@@ -84,22 +84,21 @@ class AlarmRingingService : Service() {
     }
   }
 
+  /**
+   * 알람음 — 기기에 설정된 기본 알람음을 쓴다.
+   *
+   * 예전에는 사용자가 '기본음'과 '커스텀 사운드' 중에서 골랐는데, 커스텀이라 해 봐야
+   * 번들 음원 하나여서 고를 이유가 없었다. 그 선택을 없애고 번들 음원은 폴백으로만 남겼다 —
+   * 기기에 기본 알람음이 설정돼 있지 않으면 getDefaultUri가 null을 주는데, 그대로 두면
+   * 소리 없이 진동만 울려 "알람이 안 울렸다"가 되기 때문이다.
+   */
   private fun startAlarmSound() {
     if (mediaPlayer != null) return
 
-    val config = AlarmPrefs.load(this)
-
-    // 기기에 기본 알람음이 설정돼 있지 않으면 getDefaultUri가 null을 반환한다. 그대로 두면
-    // 소리 없이 진동/알림만 울려 "알람이 안 울렸다"가 되므로, 번들 음원으로 폴백한다.
-    val primaryUri = if (config.sound == "custom") bundledAlarmUri() else systemAlarmUri()
-    val fallbackUri = bundledAlarmUri()
-
-    mediaPlayer = startPlaying(primaryUri)
-      ?: if (primaryUri != fallbackUri) {
-        Log.w(TAG, "기본 알람음 재생 실패 — 번들 음원으로 폴백합니다")
-        startPlaying(fallbackUri)
-      } else {
-        null
+    mediaPlayer = startPlaying(systemAlarmUri())
+      ?: run {
+        Log.w(TAG, "기기 기본 알람음을 쓸 수 없습니다 — 번들 음원으로 폴백합니다")
+        startPlaying(bundledAlarmUri())
       }
   }
 

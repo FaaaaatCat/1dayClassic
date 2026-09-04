@@ -129,12 +129,24 @@ export default function HomeScreen() {
           </ScaleButton>
 
           <View style={styles.topRight}>
+            {/* 알람이 꺼져 있으면 시각을 적지 않는다 — 울리지 않을 시각을 적어 두면
+                켜져 있는 것으로 읽힌다. 종 모양도 함께 빗금 친 것으로 바꾼다. */}
             <ScaleButton
-              accessibilityLabel={`알람 ${formatAlarmTime(alarm.hour, alarm.minute)} 설정`}
+              accessibilityLabel={
+                alarm.enabled
+                  ? `알람 ${formatAlarmTime(alarm.hour, alarm.minute)} 설정`
+                  : '알람 꺼짐, 설정'
+              }
               style={styles.alarmChip}
               onPress={() => setAlarmOpen(true)}>
-              <Ionicons name="notifications-outline" color={Ink.onDark} size={18} />
-              <Text style={styles.alarmText}>{formatAlarmTime(alarm.hour, alarm.minute)}</Text>
+              <Ionicons
+                name={alarm.enabled ? 'notifications-outline' : 'notifications-off-outline'}
+                color={Ink.onDark}
+                size={18}
+              />
+              <Text style={styles.alarmText}>
+                {alarm.enabled ? formatAlarmTime(alarm.hour, alarm.minute) : '알람 꺼짐'}
+              </Text>
             </ScaleButton>
             <ScaleButton
               accessibilityLabel="마이페이지"

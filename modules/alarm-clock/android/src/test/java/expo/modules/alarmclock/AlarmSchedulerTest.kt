@@ -16,7 +16,7 @@ class AlarmSchedulerTest {
   }
 
   private fun configOf(hour: Int, minute: Int, days: List<Boolean>, enabled: Boolean = true) =
-    AlarmConfig(enabled = enabled, hour = hour, minute = minute, repeatDays = days, sound = "default")
+    AlarmConfig(enabled = enabled, hour = hour, minute = minute, repeatDays = days)
 
   @Test
   fun `오늘 요일이 켜져 있고 시각이 아직 지나지 않았으면 오늘로 예약한다`() {

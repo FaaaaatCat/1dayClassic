@@ -16,9 +16,7 @@ data class AlarmConfig(
   /** 0~59 */
   val minute: Int,
   /** 길이 7, index 0=일요일 */
-  val repeatDays: List<Boolean>,
-  /** "default" | "custom" */
-  val sound: String
+  val repeatDays: List<Boolean>
 )
 
 object AlarmPrefs {
@@ -27,7 +25,6 @@ object AlarmPrefs {
   private const val KEY_HOUR = "hour"
   private const val KEY_MINUTE = "minute"
   private const val KEY_REPEAT_DAYS = "repeat_days"
-  private const val KEY_SOUND = "sound"
 
   private const val DAYS_IN_WEEK = 7
   private val NO_DAYS = List(DAYS_IN_WEEK) { false }
@@ -39,7 +36,6 @@ object AlarmPrefs {
       .putInt(KEY_HOUR, config.hour)
       .putInt(KEY_MINUTE, config.minute)
       .putString(KEY_REPEAT_DAYS, encodeRepeatDays(config.repeatDays))
-      .putString(KEY_SOUND, config.sound)
       .apply()
   }
 
@@ -50,7 +46,6 @@ object AlarmPrefs {
       hour = prefs.getInt(KEY_HOUR, 7),
       minute = prefs.getInt(KEY_MINUTE, 0),
       repeatDays = decodeRepeatDays(prefs.getString(KEY_REPEAT_DAYS, "") ?: ""),
-      sound = prefs.getString(KEY_SOUND, "default") ?: "default"
     )
   }
 

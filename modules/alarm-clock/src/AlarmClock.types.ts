@@ -5,7 +5,6 @@ export interface AlarmInput {
   minute: number;
   /** 길이 7, index 0=일요일 */
   repeatDays: boolean[];
-  sound: 'default' | 'custom';
   enabled: boolean;
 }
 

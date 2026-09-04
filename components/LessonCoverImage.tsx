@@ -83,28 +83,48 @@ export default function LessonCoverImage({
 
   if (plan.kind === 'image' && resolved && !failed) {
     return (
-      <Image
-        source={{ uri: resolved, headers: MEDIA_HEADERS }}
-        style={style}
-        resizeMode={resizeMode}
-        blurRadius={blurRadius}
-        onError={() => setFailed(true)}
-        accessibilityIgnoresInvertColors
-      />
-    );
-  }
-
-  if (plan.kind === 'unsplash' && !failed) {
-    return (
-      <View style={style}>
+      // 그림일 뿐이라 손가락을 받지 않는다 — 받으면 그 위 탭이 아래로 못 내려간다.
+      // Image는 pointerEvents를 프로퍼티로 받지 않아 View로 감싼다.
+      <View style={style} pointerEvents="none">
         <Image
-          source={{ uri: plan.photo.url }}
+          source={{ uri: resolved, headers: MEDIA_HEADERS }}
           style={StyleSheet.absoluteFill}
           resizeMode={resizeMode}
           blurRadius={blurRadius}
           onError={() => setFailed(true)}
           accessibilityIgnoresInvertColors
         />
+      </View>
+    );
+  }
+
+  if (plan.kind === 'unsplash' && !failed) {
+    return (
+      /*
+       * 손가락은 사진가 링크만 받는다(box-none).
+       *
+       * 이 View는 표지를 덮는 크기라, auto로 두면 핸들러가 없는데도 제 영역의 터치를
+       * 통째로 가져간다(RN의 기본 동작). 공부 페이지의 표지 장에서 탭으로 다음 장이
+       * 안 넘어가던 원인이 이것이었다 — 아래 제스처 층까지 터치가 내려가지 못했다.
+       */
+      <View style={style} pointerEvents="box-none">
+        {/*
+          사진도 손가락을 받지 않는다.
+
+          바깥을 box-none으로 두는 것만으로는 모자라다 — box-none은 '자기 자신은 대상이
+          되지 않지만 자식은 된다'는 뜻이라, 표지를 가득 덮은 이 Image가 auto인 채로
+          남아 있으면 결국 여기서 탭이 멈춘다.
+        */}
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Image
+            source={{ uri: plan.photo.url }}
+            style={StyleSheet.absoluteFill}
+            resizeMode={resizeMode}
+            blurRadius={blurRadius}
+            onError={() => setFailed(true)}
+            accessibilityIgnoresInvertColors
+          />
+        </View>
         <UnsplashCredit photo={plan.photo} placement={creditPlacement} />
       </View>
     );
@@ -133,7 +153,8 @@ function SymbolCover({ style, symbol }: { style?: StyleProp<ImageStyle>; symbol?
   const lift = { marginBottom: box * 0.4 };
 
   return (
-    <View style={[style, styles.symbolCover]} onLayout={onLayout}>
+    // 표식 표지에는 누를 것이 없다 — 그 위 탭은 그대로 아래로 내려가야 한다.
+    <View style={[style, styles.symbolCover]} onLayout={onLayout} pointerEvents="none">
       {box > 0 && symbol ? (
         isImageSymbol(symbol) ? (
           <Image
@@ -171,17 +192,27 @@ function UnsplashCredit({
   photo: UnsplashPhoto;
   placement: 'topRight' | 'bottomCenter';
 }) {
+  /*
+   * 자리를 잡는 층과 손가락을 받는 층을 나눈다.
+   *
+   * 예전에는 Pressable 하나가 자리까지 맡았는데, 아래 가운데 배치는 좌우로 벌려 놓는
+   * 모양이라 그 Pressable이 표지 폭을 가로지르는 띠가 됐다. 그 띠가 탭 넘김을 삼켰다.
+   * 이제 바깥은 자리만 잡고 손가락을 안 받으며(box-none), 링크는 글자 크기만큼만 받는다.
+   */
   return (
-    <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={`사진 ${photo.photographer}, Unsplash. 사진가 페이지 열기`}
+    <View
       style={placement === 'bottomCenter' ? styles.creditBottomCenter : styles.credit}
-      hitSlop={8}
-      onPress={() => Linking.openURL(photo.profile).catch(() => {})}>
-      <Text style={styles.creditText} numberOfLines={1}>
-        {`Photo ${photo.photographer} / Unsplash`}
-      </Text>
-    </Pressable>
+      pointerEvents="box-none">
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={`사진 ${photo.photographer}, Unsplash. 사진가 페이지 열기`}
+        hitSlop={8}
+        onPress={() => Linking.openURL(photo.profile).catch(() => {})}>
+        <Text style={styles.creditText} numberOfLines={1}>
+          {`Photo ${photo.photographer} / Unsplash`}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -199,11 +230,13 @@ const styles = StyleSheet.create({
     // 표지 위에 다시 제목이 얹히므로, 표식은 바탕처럼 물러나 있는다.
     opacity: 0.4,
   },
+  /** 오른쪽 위 — 오른쪽 끝에 붙이고 그 안에서 오른쪽으로 모은다. */
   credit: {
     position: 'absolute',
     top: 16,
     right: 16,
     maxWidth: '60%',
+    alignItems: 'flex-end',
   },
   /** 아래 가운데 — 좌우로 벌려 두고 그 안에서 가운데로 모은다. */
   creditBottomCenter: {

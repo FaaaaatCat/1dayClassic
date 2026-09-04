@@ -19,7 +19,6 @@ class AlarmInput : Record {
   @Field val hour: Int = 7
   @Field val minute: Int = 0
   @Field val repeatDays: List<Boolean> = List(7) { false }
-  @Field val sound: String = "default"
   @Field val enabled: Boolean = true
 }
 
@@ -63,7 +62,6 @@ class AlarmClockModule : Module() {
           hour = input.hour,
           minute = input.minute,
           repeatDays = input.repeatDays,
-          sound = input.sound
         )
       )
       // 기존 스누즈 예약이 남아 있으면 새 설정과 충돌하므로 함께 정리한다.

@@ -1350,7 +1350,7 @@ function OutroBlock({
       {/* 눌러야 할 것은 아래 버튼뿐이다. 나머지는 터치를 흘려보내야 카드 위를 탭했을 때
           그대로 페이지가 넘어간다 — 안 그러면 여기서 걸려 아무 일도 일어나지 않는다. */}
       <Text style={styles.buyLead} pointerEvents="none">
-        {'오늘의 이야기는 여기까지입니다.\n읽은 것을 퀴즈로 확인해 보세요.'}
+        {"오늘의 이야기는\n여기까지입니다."}
       </Text>
 
       <View style={styles.outroButtons}>
@@ -1358,7 +1358,8 @@ function OutroBlock({
           accessibilityRole="button"
           accessibilityLabel="퀴즈 풀기"
           style={styles.outroQuizButton}
-          onPress={onOpenQuiz}>
+          onPress={onOpenQuiz}
+        >
           <Text style={styles.outroQuizText}>퀴즈 풀기</Text>
         </Pressable>
 
@@ -1368,7 +1369,8 @@ function OutroBlock({
             accessibilityRole="button"
             accessibilityLabel="마지막 페이지입니다. 홈으로 가기"
             style={styles.outroEndButton}
-            onPress={onNext}>
+            onPress={onNext}
+          >
             <Text style={styles.outroEndText}>마지막 페이지입니다</Text>
           </Pressable>
         ) : (
@@ -1376,7 +1378,8 @@ function OutroBlock({
             accessibilityRole="button"
             accessibilityLabel="다음 화 읽기"
             style={styles.outroNextButton}
-            onPress={onNext}>
+            onPress={onNext}
+          >
             <Text style={styles.outroNextText}>다음 화 읽기</Text>
             <Chevron direction="forward" color={Ink.onDark} size={16} />
           </Pressable>

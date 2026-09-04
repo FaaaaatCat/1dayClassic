@@ -3,9 +3,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import { cancelAlarm, scheduleAlarm } from '@/modules/alarm-clock';
 
-/** 'custom'은 사용자가 지정한 사운드 파일 — 아직 파일이 없어 실제 예약 시에는 'default'로 대체된다. */
-export type AlarmSound = 'default' | 'custom';
-
 export interface AlarmState {
   /** 0~23 */
   hour: number;
@@ -14,7 +11,6 @@ export interface AlarmState {
   enabled: boolean;
   /** index 0=일 ... 6=토 */
   repeatDays: boolean[];
-  sound: AlarmSound;
 }
 
 interface AlarmContextValue {
@@ -31,7 +27,6 @@ const DEFAULT_ALARM: AlarmState = {
   minute: 0,
   enabled: true,
   repeatDays: [false, true, true, true, true, true, false],
-  sound: 'default',
 };
 
 /** 알람 설정을 앱 재시작 후에도 유지하기 위한 AsyncStorage 키. */
@@ -80,7 +75,6 @@ export function AlarmProvider({ children }: { children: React.ReactNode }) {
             hour: alarm.hour,
             minute: alarm.minute,
             repeatDays: alarm.repeatDays,
-            sound: alarm.sound,
             enabled: true,
           });
         } else {
