@@ -48,6 +48,24 @@ export default function SettingsScreen() {
       )}
 
       {/*
+        첫 실행 흐름 확인용. 아직 앱에 붙이지 않았고, 여기서만 열린다 —
+        스플래시부터 홈까지 이어지는 길을 눈으로 먼저 보려는 자리다.
+      */}
+      <Animated.View entering={FadeIn.duration(700).delay(460)} style={styles.card}>
+        <Text style={styles.sectionTitle}>스플래시 미리보기</Text>
+        <Text style={styles.sectionHint}>
+          설치하고 처음 켰을 때의 흐름을 봅니다 — 스플래시, 로그인, 질문 넷, 로딩, 그리고
+          홈까지. 어느 것도 저장되지 않고, 우측 위 ✕로 닫습니다.
+        </Text>
+        <ScaleButton
+          accessibilityLabel="스플래시 미리보기 열기"
+          style={styles.testButton}
+          onPress={() => router.push('/splash-preview')}>
+          <Text style={styles.testButtonLabel}>첫 실행 흐름 보기</Text>
+        </ScaleButton>
+      </Animated.View>
+
+      {/*
         디자인 확인용. 오늘의 공부 상세를 카드뉴스로 바꿀지 판단하려고 넘김 동작만 먼저 만든
         데모라, 실제 학습 데이터와는 연결돼 있지 않다. 방향이 정해지면 이 카드를 지울 것.
       */}
