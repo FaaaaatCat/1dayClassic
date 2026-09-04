@@ -39,11 +39,6 @@ const ROWS: PermissionRow[] = [
     label: '전체 화면 알림',
     hint: '잠금화면 위에 알람 화면을 띄우는 데 필요합니다.',
   },
-  {
-    kind: 'overlay',
-    label: '다른 앱 위에 표시',
-    hint: '휴대폰을 쓰는 중에도 알람 화면으로 깨우는 데 필요합니다.',
-  },
 ];
 
 /**

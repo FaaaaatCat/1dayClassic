@@ -13,7 +13,6 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.IBinder
 import android.os.PowerManager
-import android.provider.Settings
 import android.util.Log
 
 /**
@@ -30,7 +29,6 @@ class AlarmRingingService : Service() {
 
     private const val TAG = "AlarmRingingService"
     private const val CHANNEL_ID = "alarm-ringing"
-    private const val CHANNEL_QUIET_ID = "alarm-ringing-quiet"
     private const val NOTIFICATION_ID = 1001
     private const val WAKELOCK_TAG = "1dayclassic:alarm"
     /** 어떤 이유로든 서비스가 정상 종료되지 못했을 때 배터리를 계속 소모하지 않도록 하는 안전장치. */
@@ -161,20 +159,17 @@ class AlarmRingingService : Service() {
   }
 
   /**
-   * AlarmReceiver가 전체화면을 직접 띄울 수 있는 상황인가.
+   * 알람을 알리는 유일한 창구.
    *
-   * 그때는 알림까지 헤드업으로 겹쳐 뜨면 같은 알람이 두 번 보인다. 조용한 채널을 써서
-   * 알림은 그림자 안에만 남긴다 — 포그라운드 서비스라 알림 자체를 없앨 수는 없다.
+   * 예전에는 채널이 둘이었다 — AlarmReceiver가 오버레이 권한으로 전체화면을 직접 띄우는
+   * 경우에는 헤드업이 겹쳐 같은 알람이 두 번 보여서, 그때만 조용한 채널로 낮췄다.
+   * 그 권한과 직접 실행을 걷어내면서 겹칠 일이 없어졌고, 채널도 하나로 돌아왔다.
    *
-   * 잠금 상태는 제외한다. 그쪽은 setFullScreenIntent가 공식 경로이고 이미 검증된 길이라
-   * 건드리지 않는다. 어차피 전체화면이 덮으므로 헤드업이 겹쳐 보이지도 않는다.
+   * 이제 이 알림 하나가 두 몫을 한다 — 잠금·화면꺼짐이면 setFullScreenIntent가 알람 화면을
+   * 띄우고, 기기를 쓰는 중이면 헤드업으로 떠서 끄기·스누즈를 내민다.
    */
-  private fun willShowFullScreenDirectly(): Boolean =
-    Settings.canDrawOverlays(this) && !AlarmFlow.isDeviceLocked(this)
-
   private fun buildNotification(): Notification {
-    createChannels()
-    val silent = willShowFullScreenDirectly()
+    createChannel()
 
     // 서비스가 아니라 트램펄린 액티비티를 부른다 — 소리를 끄는 것에 더해 오늘의 공부까지 열어야 하고,
     // 서비스에서는 액티비티를 실행할 수 없다. AlarmDismissActivity 주석 참고.
@@ -190,7 +185,7 @@ class AlarmRingingService : Service() {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    val builder = Notification.Builder(this, if (silent) CHANNEL_QUIET_ID else CHANNEL_ID)
+    val builder = Notification.Builder(this, CHANNEL_ID)
       .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
       .setContentTitle(getString(R.string.alarm_notification_title))
       // 전체화면과 같은 재료를 쓴다 — 둘이 서로 다른 책을 말하면 안 된다.
@@ -202,59 +197,35 @@ class AlarmRingingService : Service() {
       .addAction(0, getString(R.string.alarm_action_snooze), snoozePending)
       .addAction(0, getString(R.string.alarm_action_dismiss), dismissPending)
 
-    if (!silent) {
-      // 잠금/화면꺼짐일 때 AlarmActivity를 전체화면으로 띄우는 공식 경로.
-      // 오버레이 권한이 없으면 이것만이 전체화면을 띄울 수 있는 길이다.
-      // PendingIntent도 여기서만 만든다 — 조용한 경로에서는 쓰이지 않는다.
-      builder.setPriority(Notification.PRIORITY_MAX)
-      builder.setFullScreenIntent(
-        PendingIntent.getActivity(
-          this,
-          0,
-          AlarmActivity.fireIntent(this),
-          PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        ),
-        true
-      )
-    }
+    // 잠금·화면꺼짐일 때 AlarmActivity를 전체화면으로 띄우는 공식 경로이자, 이제 전체화면을
+    // 띄울 수 있는 유일한 길이다. 기기를 쓰는 중이면 OS가 헤드업 알림으로 대신 보여 준다.
+    builder.setPriority(Notification.PRIORITY_MAX)
+    builder.setFullScreenIntent(
+      PendingIntent.getActivity(
+        this,
+        0,
+        AlarmActivity.fireIntent(this),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+      ),
+      true
+    )
 
     return builder.build()
   }
 
-  /**
-   * 채널이 두 개인 이유 — 채널 중요도는 만든 뒤에 코드로 못 바꾸고 사용자만 바꿀 수 있다.
-   * 상황에 따라 헤드업을 켜고 끄려면 중요도가 다른 채널을 각각 두는 수밖에 없다.
-   */
-  private fun createChannels() {
+  private fun createChannel() {
     val manager = getSystemService(NotificationManager::class.java)
+    if (manager.getNotificationChannel(CHANNEL_ID) != null) return
 
-    if (manager.getNotificationChannel(CHANNEL_ID) == null) {
-      manager.createNotificationChannel(
-        NotificationChannel(CHANNEL_ID, "알람", NotificationManager.IMPORTANCE_HIGH).apply {
-          description = "알람이 울릴 때 표시됩니다"
-          // 소리는 MediaPlayer(ALARM 스트림)로만 재생한다. 채널 소리를 켜면 이중 재생된다.
-          setSound(null, null)
-          enableVibration(true)
-          vibrationPattern = longArrayOf(0, 500, 500, 500)
-          lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-        }
-      )
-    }
-
-    if (manager.getNotificationChannel(CHANNEL_QUIET_ID) == null) {
-      manager.createNotificationChannel(
-        NotificationChannel(
-          CHANNEL_QUIET_ID,
-          "알람 (전체화면 표시 중)",
-          // LOW라야 헤드업으로 튀어나오지 않는다. 알람 화면이 이미 떠 있으므로
-          // 이 알림은 그림자 안에서 끄기/스누즈 액션만 제공하면 된다.
-          NotificationManager.IMPORTANCE_LOW
-        ).apply {
-          description = "알람 화면이 떠 있는 동안 표시됩니다"
-          setSound(null, null)
-          lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-        }
-      )
-    }
+    manager.createNotificationChannel(
+      NotificationChannel(CHANNEL_ID, "알람", NotificationManager.IMPORTANCE_HIGH).apply {
+        description = "알람이 울릴 때 표시됩니다"
+        // 소리는 MediaPlayer(ALARM 스트림)로만 재생한다. 채널 소리를 켜면 이중 재생된다.
+        setSound(null, null)
+        enableVibration(true)
+        vibrationPattern = longArrayOf(0, 500, 500, 500)
+        lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+      }
+    )
   }
 }

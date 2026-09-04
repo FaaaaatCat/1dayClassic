@@ -119,8 +119,7 @@ class AlarmClockModule : Module() {
       mapOf(
         "notifications" to hasNotificationPermission(),
         "exactAlarm" to hasExactAlarmPermission(),
-        "fullScreenIntent" to hasFullScreenIntentPermission(),
-        "overlay" to hasOverlayPermission()
+        "fullScreenIntent" to hasFullScreenIntentPermission()
       )
     }
 
@@ -143,26 +142,20 @@ class AlarmClockModule : Module() {
     }
   }
 
-  /**
-   * 안내 우선순위. 앞쪽일수록 없을 때 알람이 크게 망가진다.
-   *
-   * 오버레이가 마지막인 이유 — 이게 없어도 알람은 울리고 잠금 상태에서는 전체화면도 뜬다.
-   * 기기를 쓰는 중에 전체화면으로 깨우는 것만 안 된다.
-   */
-  private val MISSING_FIRST = listOf("notifications", "exactAlarm", "fullScreenIntent", "overlay")
+  /** 안내 우선순위. 앞쪽일수록 없을 때 알람이 크게 망가진다. */
+  private val MISSING_FIRST = listOf("notifications", "exactAlarm", "fullScreenIntent")
 
   private fun isGranted(kind: String): Boolean = when (kind) {
     "notifications" -> hasNotificationPermission()
     "exactAlarm" -> hasExactAlarmPermission()
     "fullScreenIntent" -> hasFullScreenIntentPermission()
-    "overlay" -> hasOverlayPermission()
     else -> true
   }
 
   /**
    * 권한 하나를 요청한다.
    *
-   * 알림만 진짜 시스템 팝업을 띄울 수 있다. 나머지 셋은 Android가 요청 API를 제공하지
+   * 알림만 진짜 시스템 팝업을 띄울 수 있다. 나머지 둘은 Android가 요청 API를 제공하지
    * 않아서 해당 권한의 시스템 설정 화면을 여는 것이 앱이 할 수 있는 전부다.
    */
   private fun requestPermission(kind: String) {
@@ -182,7 +175,6 @@ class AlarmClockModule : Module() {
           Settings.ACTION_APPLICATION_DETAILS_SETTINGS
         }
       )
-      "overlay" -> openSettings(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
       else -> Log.w(TAG, "알 수 없는 권한 종류: $kind")
     }
   }
@@ -196,7 +188,7 @@ class AlarmClockModule : Module() {
   }
 
   /**
-   * 알림 권한 — 넷 중 유일하게 시스템 팝업을 띄울 수 있다(Android 13+의 런타임 권한).
+   * 알림 권한 — 셋 중 유일하게 시스템 팝업을 띄울 수 있다(Android 13+의 런타임 권한).
    *
    * 사용자가 이미 두 번 거부했으면 Android가 팝업을 더 이상 띄우지 않는다. 그 경우 아무
    * 일도 일어나지 않으면 토글이 고장 난 것처럼 보이므로, 액티비티가 없거나 팝업을 띄울 수
@@ -223,15 +215,6 @@ class AlarmClockModule : Module() {
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     return AlarmScheduler.canScheduleExact(alarmManager)
   }
-
-  /**
-   * '다른 앱 위에 표시' — 기기를 쓰는 중에도 전체화면 알람을 띄우려면 필요하다.
-   *
-   * Android는 백그라운드에서의 액티비티 실행을 막는데(BAL), 앱이 보이는 오버레이 창을
-   * 가질 수 있으면 예외로 허용한다(BAL_ALLOW_NON_APP_VISIBLE_WINDOW). 이게 없으면
-   * AlarmReceiver의 직접 실행이 BAL_BLOCK 되고 헤드업 알림으로만 남는다 — 실측 확인.
-   */
-  private fun hasOverlayPermission(): Boolean = Settings.canDrawOverlays(context)
 
   /** Android 14부터 사용자가 끄고 켤 수 있다. 그 이전 버전은 항상 허용. */
   private fun hasFullScreenIntentPermission(): Boolean {

@@ -13,23 +13,18 @@ export interface AlarmInput {
 export type AlarmPermissionKind =
   | 'notifications'
   | 'exactAlarm'
-  | 'fullScreenIntent'
-  | 'overlay';
+  | 'fullScreenIntent';
 
 export interface AlarmPermissionStatus {
   notifications: boolean;
   /** Android 12+ 에서만 의미가 있다. 그 이전 버전은 항상 true. */
   exactAlarm: boolean;
-  /** Android 14+ 에서만 의미가 있다. 그 이전 버전은 항상 true. */
-  fullScreenIntent: boolean;
   /**
-   * '다른 앱 위에 표시'(SYSTEM_ALERT_WINDOW).
+   * Android 14+ 에서만 의미가 있다. 그 이전 버전은 항상 true.
    *
-   * 이게 없으면 기기를 쓰는 중에 알람이 울릴 때 전체화면이 뜨지 않고 헤드업 알림으로
-   * 격하된다 — Android가 백그라운드 액티비티 실행을 막기 때문이다(BAL_BLOCK).
-   * 알라미가 이 권한을 요구하는 이유가 이것이다.
-   *
-   * 알람이 아예 안 울리는 것은 아니므로 다른 권한보다는 덜 치명적이다.
+   * 잠금·화면꺼짐일 때 알람 화면을 띄우는 유일한 길이다. 예전에는 '다른 앱 위에 표시'
+   * (SYSTEM_ALERT_WINDOW)로 기기를 쓰는 중에도 전체화면을 덮었지만, 그 권한은 걷어냈다 —
+   * 다른 앱을 쓰는 중이라면 헤드업 알림으로만 알린다.
    */
-  overlay: boolean;
+  fullScreenIntent: boolean;
 }
