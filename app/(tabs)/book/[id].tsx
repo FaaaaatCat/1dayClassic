@@ -14,9 +14,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BookPreviewModal from "@/components/BookPreviewModal";
 import ScaleButton from "@/components/ScaleButton";
+import ScreenHeader, { HeaderTextButton } from '@/components/ScreenHeader';
 import { StatusBarTint } from "@/components/StatusBarTint";
 import TagChip from "@/components/TagChip";
-import { Colors, Corner, Ink, Spark, Surface, Type, TypeScale, trackBody, trackDisplay } from '@/constants/theme';
+import { Colors, Corner, Ink, Spark, Surface, Type, trackBody, trackDisplay } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { useShelf } from "@/context/ShelfContext";
 import { useToast } from "@/context/ToastContext";
@@ -54,7 +55,7 @@ import { fieldsOf, seriesOf } from "@/lib/tags";
  *   chooseBook 주석 참고. 이미 선택된 책이면 눌러도 아무 일도 안 하는 비활성 버튼('현재
  *   선택중')이다.
  *
- * 서재에서 빼는 일은 이 화면이 하지 않는다 — 내 서재 → 책 정보(LibraryBookDetailScreen)의
+ * 서재에서 빼는 일은 이 화면이 하지 않는다 — 내 서재 → 리포트(LibraryBookDetailScreen)의
  * 더보기에만 둔다. 여기는 담는 화면이라 담기 하나만 있는 편이 읽기 쉽다.
  *
  * 표지·저자·정가·상세 절은 두 종류가 같은 모양이라, 아래에서 view라는 한 덩어리로 합쳐 둔다.
@@ -303,32 +304,13 @@ export default function BookDetailScreen() {
         {/* 상태바도 종이와 같은 warm taupe로 — 다르게 두면 화면 맨 위에 띠 한 줄이 남는다. */}
         <StatusBarTint tint={{ color: Surface.card, icons: "dark" }} />
 
-        {/* 헤더 60px 한 줄 — 뒤로가기·제목·미리보기. 제목은 좌우 버튼 폭에 밀리지 않게
-            절대 위치로 가운데에 못 박는다. */}
-        <View
-          style={[
-            styles.header,
-            { paddingTop: insets.top, height: 60 + insets.top },
-          ]}
-        >
-          <ScaleButton
-            accessibilityLabel="뒤로"
-            style={styles.headerIconButton}
-            onPress={() => router.replace(closeDestination)}
-          >
-            <Ionicons name="chevron-back" color={Ink.primary} size={24} />
-          </ScaleButton>
-          <View style={styles.headerTitleSlot} pointerEvents="none">
-            <Text style={styles.headerTitle}>책 정보</Text>
-          </View>
-          <ScaleButton
-            accessibilityLabel="미리보기"
-            style={styles.headerPreviewButton}
-            onPress={openPreview}
-          >
-            <Text style={styles.headerPreviewText}>미리보기</Text>
-          </ScaleButton>
-        </View>
+        {/* 본문이 한 단 올라온 바탕(Surface.card)이라 헤더도 같은 색으로 둔다. */}
+        <ScreenHeader
+          title="책 정보"
+          back={() => router.replace(closeDestination)}
+          tone="paper"
+          action={<HeaderTextButton label="미리보기" onPress={openPreview} />}
+        />
 
         <ScrollView
           ref={scrollViewRef}
@@ -367,52 +349,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Surface.card,
-  },
-  // 60px 한 줄. 상태바 높이는 JSX에서 paddingTop·height에 함께 얹는다.
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-  },
-  // 글리프는 24px이지만 손가락이 받을 자리는 40px이다 — 음수 마진으로 넓힌 만큼 되밀어,
-  // 화살표 자체는 좌우 여백 20px 자리에 그대로 선다(마이페이지 책 정보와 같은 크기).
-  headerIconButton: {
-    width: 40,
-    height: 40,
-    marginLeft: -8,
-    borderRadius: Corner.pill,
-  },
-  // 좌우 버튼 폭이 달라도(24 vs 71) 제목은 화면 정가운데여야 한다 — 흐름에서 빼내
-  // 60px 줄 전체에 겹쳐 두고 가운데 정렬한다. 상태바 높이에 흔들리지 않게 아래를
-  // 기준으로 잡고, 손가락은 밑의 두 버튼이 받도록 pointerEvents를 끈다.
-  headerTitleSlot: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontFamily: Type.uiMedium,
-    ...TypeScale.subheading,
-    color: Ink.body,
-  },
-  // 헤더 오른쪽 미리보기 — 채우지 않고 테두리만 두른 작은 버튼이다.
-  headerPreviewButton: {
-    height: 32,
-    paddingHorizontal: 12,
-    borderRadius: Corner.input,
-    borderWidth: 1,
-    borderColor: Ink.muted,
-  },
-  headerPreviewText: {
-    fontFamily: Type.ui,
-    fontSize: 14,
-    letterSpacing: trackBody(14),
-    color: Ink.strong,
   },
   scrollView: {
     flex: 1,

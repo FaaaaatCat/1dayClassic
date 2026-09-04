@@ -115,6 +115,37 @@ export type BookLesson =
 export const BOOK_IDS = Object.keys(BUILD_CALENDAR) as BookId[];
 
 /**
+ * 날짜를 달고 나온 책인지.
+ *
+ * 데이터의 lesson.date를 지워서 해결할 수 없다. 그 값은 '1월 3일에 실린 글'이라는 뜻이기
+ * 전에 목차의 어느 칸에 놓을지 정하는 자리표이고(buildCalendarYear의 parseLessonDate),
+ * 없으면 그 항목은 365칸 어디에도 못 앉아 책이 통째로 사라진다. 그래서 날짜가 없는 책도
+ * 데이터에는 순서대로 date를 들고 있고, 그것을 화면에 적을지는 이 표가 정한다.
+ *
+ * 원본이 365일 구성인 책만 true다. 듣기의 말들처럼 날짜 없이 엮인 책은 false이고, 그런
+ * 책에서는 '1월 3일' 같은 표기가 어디에도 나오지 않는다 — 원본에 없는 날짜를 앱이
+ * 지어내는 꼴이기 때문이다.
+ */
+const DATED_BOOK: Record<BookId, boolean> = {
+  classic: true,
+  latin: true,
+  quote: true,
+  hanja: true,
+  liberal: true,
+  psychology: true,
+  writing: true,
+  hanmun: true,
+  english: true,
+  // 원본에 날짜가 없는 책.
+  listening: false,
+};
+
+/** 그 책이 날짜를 달고 나왔는지 — 화면이 날짜를 적을지 여기서 묻는다. */
+export function isDatedBook(bookId: BookId): boolean {
+  return DATED_BOOK[bookId];
+}
+
+/**
  * 항목 id로 그 책에서 하나 찾는다 — 없으면 undefined. 오늘 항목으로 되돌리지 않는다.
  *
  * 책별 조회 함수는 각 책 모듈이 갖고 있고, 여기서 하는 일은 book 판별자를 붙이는 것뿐이다.

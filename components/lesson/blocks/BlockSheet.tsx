@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import Chevron from '@/components/Chevron';
 import ScaleButton from '@/components/ScaleButton';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 
@@ -37,11 +37,9 @@ export default function BlockSheet({ visible, title, onClose, done, children }: 
       <View style={styles.screen}>
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <ScaleButton accessibilityLabel="뒤로가기" style={styles.backButton} onPress={onClose}>
-            <Ionicons
-              name="arrow-back"
-              color={Colors.brown100}
-              size={20}
-            />
+            {/* 여기만 화살표(←)였는데 꺾쇠(‹)로 맞춘다. Ionicons의 arrow-back은 세 변형 다
+                획이 9.43%라 얇게 할 방법이 없고, 앱의 다른 뒤로가기는 전부 얇은 꺾쇠다. */}
+            <Chevron color={Colors.brown100} size={20} />
           </ScaleButton>
           <Text style={styles.title}>{title}</Text>
         </View>

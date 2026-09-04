@@ -1,9 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
 
 import CardDeckDetail from '@/components/lesson/CardDeckDetail';
 import { useBookSelection } from '@/context/BookSelectionContext';
-import { useReadingCursor } from '@/context/ReadingCursorContext';
 import { getBookLesson } from '@/lib/books';
 import type { BookId } from '@/types';
 
@@ -24,19 +22,13 @@ export default function TodayScreen() {
   const { selectedBookId } = useBookSelection();
   const bookId = (params.bookId as BookId | undefined) ?? selectedBookId;
   const bookLesson = getBookLesson(bookId, params.lessonId);
-  const { markOpened } = useReadingCursor();
 
   /*
-   * 어디까지 열어 봤는지 적어 둔다.
+   * 여기서 읽기 커서를 적지 않는다 — 여는 것은 끝내는 것이 아니다.
    *
-   * 무료로 열린 것을 다 푼 뒤 다시 읽을 때, 홈의 읽기 버튼이 어디를 가리킬지 정하는 데
-   * 쓴다 — 그때는 퀴즈 기록이 전부 '풀었음'이라 진도로는 앞뒤를 가릴 수 없다
-   * (ReadingCursorContext 주석 참고).
+   * 끝냈다고 적는 자리는 CardDeckDetail 안이다. 화면을 열자마자 적으면, 읽다 나온 화가
+   * 다음 번에 건너뛰어진다(ReadingCursorContext 주석 참고).
    */
-  const openedId = bookLesson?.lesson.id;
-  useEffect(() => {
-    if (openedId) markOpened(bookId, openedId);
-  }, [bookId, openedId, markOpened]);
 
   if (!bookLesson) return null;
 

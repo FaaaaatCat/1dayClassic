@@ -2,9 +2,9 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BookCard from "@/components/BookCard";
+import ScreenHeader, { HeaderIconButton } from '@/components/ScreenHeader';
 import SelectField, { SelectRow, type SelectOption } from "@/components/SelectField";
 import { Ink, Surface, Type, trackBody } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
@@ -51,7 +51,6 @@ function toRows(entries: Entry[]): Entry[][] {
  */
 export default function BookstoreScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { selectedBookId } = useBookSelection();
 
   const [series, setSeries] = useState<string | null>(null);
@@ -60,15 +59,34 @@ export default function BookstoreScreen() {
   const [query, setQuery] = useState("");
 
   /**
-   * 다시 들어올 때는 처음 상태로.
+   * 책 한 권을 들여다보러 나가는 길인지.
+   *
+   * 그 왕복은 서점을 떠난 것으로 치지 않는다 — 아래 초기화가 이 값을 보고 비켜선다.
+   * 라우트 파라미터로 표를 주고받지 않는 건, 파라미터 없이 같은 화면으로 이동하면
+   * 예전 파라미터가 지워지지 않고 남아(React Navigation) 한 번 붙은 표가 영영 따라다니기
+   * 때문이다. 나가는 쪽이 스스로 적어 두는 편이 수명이 분명하다.
+   */
+  const toBookRef = useRef(false);
+
+  /**
+   * 서점을 떠났다 다시 들어오면 처음 상태로.
    *
    * 이 화면은 Tabs의 형제라 떠나도 사라지지 않는다 — 걸어 둔 필터와 검색어, 내려 둔
-   * 스크롤이 그대로 남는다. 저장한 것이 아니라 그때 잠깐 걸어 본 조건이므로, 다시 들어오면
-   * 277권 전체가 처음처럼 보이는 편이 맞다.
+   * 스크롤이 그대로 남는다. 저장한 것이 아니라 그때 잠깐 걸어 본 조건이므로, 서점을
+   * 나갔다 오면 277권 전체가 처음처럼 보이는 편이 맞다.
+   *
+   * 다만 책 하나를 열어 본 것은 서점을 떠난 것이 아니다. 필터로 좁혀 고른 책을 들여다보고
+   * 돌아왔더니 그 필터가 풀려 있으면, 고르던 일을 처음부터 다시 해야 한다.
    */
   const listRef = useRef<FlatList<Entry[]>>(null);
   useFocusEffect(
     useCallback(() => {
+      // 책 상세에 다녀온 길이면 그대로 둔다. 표는 한 번 쓰고 지운다 — 남겨 두면 다음에
+      // 서점을 새로 열어도 필터가 풀리지 않는다.
+      if (toBookRef.current) {
+        toBookRef.current = false;
+        return;
+      }
       setSeries(null);
       setField(null);
       setSearchOpen(false);
@@ -140,6 +158,8 @@ export default function BookstoreScreen() {
 
   /** 학습 가능한 책은 BookId로 열어야 상세 화면이 목차와 '이 책으로 변경하기'를 띄운다. */
   const openBook = (book: CatalogBook) => {
+    // 이 길로 나가면 돌아왔을 때 필터를 그대로 둔다(toBookRef 주석 참고).
+    toBookRef.current = true;
     router.push({
       pathname: "/book/[id]",
       params: { id: book.bookId ?? book.id, from: "bookstore" },
@@ -155,30 +175,12 @@ export default function BookstoreScreen() {
    */
   const titleSection = () => (
     <View>
-      <View style={styles.titleBar}>
-        {/* 탭바를 걷어냈으므로 돌아가는 길이 화면 안에 있어야 한다. */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="뒤로"
-          hitSlop={12}
-          onPress={() => router.replace('/')}
-        >
-          <Ionicons name="chevron-back" color={Ink.primary} size={22} />
-        </Pressable>
-        <Text style={styles.title}>하루 서점</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="책 검색"
-          hitSlop={12}
-          onPress={openSearch}
-        >
-          <Ionicons
-            name="search"
-            color={Ink.primary}
-            size={22}
-          />
-        </Pressable>
-      </View>
+      {/* 탭바를 걷어냈으므로 돌아가는 길이 화면 안에 있어야 한다. */}
+      <ScreenHeader
+        title="하루 서점"
+        back="/"
+        action={<HeaderIconButton name="search" label="책 검색" onPress={openSearch} />}
+      />
 
       {searchOpen && (
         <View style={styles.searchWrap}>
@@ -199,7 +201,7 @@ export default function BookstoreScreen() {
               onPress={closeSearch}
             >
               <Ionicons
-                name="close"
+                name="close-outline"
                 color={Ink.body}
                 size={18}
               />
@@ -247,8 +249,9 @@ export default function BookstoreScreen() {
     </SelectRow>
   );
 
+  // 위 세이프에어리어는 헤더가 맡는다(ScreenHeader).
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <View style={styles.screen}>
       {/* 제목 줄과 필터는 목록 밖에 있다 — 스크롤과 무관하게 늘 같은 자리에 붙어 있다. */}
       {titleSection()}
       {filters}
@@ -305,15 +308,6 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 40,
   },
-  titleBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: Surface.canvas,
-  },
   searchWrap: {
     paddingHorizontal: 20,
     paddingBottom: 12,
@@ -338,13 +332,6 @@ const styles = StyleSheet.create({
     fontFamily: Type.ui,
     fontSize: 14,
     letterSpacing: trackBody(14),
-    color: Ink.primary,
-  },
-  title: {
-    flex: 1,
-    fontFamily: Type.uiMedium,
-    fontSize: 17,
-    letterSpacing: trackBody(17),
     color: Ink.primary,
   },
   row: {

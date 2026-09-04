@@ -16,6 +16,26 @@ import { getBookName } from '@/lib/books';
 import { getCatalogBookByBookId } from '@/lib/catalog';
 import { getReadingProgress, getReadPlan, type ReadPlan } from '@/lib/progress';
 
+// ── 말풍선이 차지하는 높이 ────────────────────────────────────────────────
+// 말풍선은 흐름에서 빠져 나와 버튼 줄 위에 얹힌다(bubbleWrap). 그래서 제 자리를
+// 스스로 만들지 못하고, 아무도 자리를 비워 주지 않으면 위에 있는 진행 줄을 덮는다 —
+// 실제로 그랬다. 아래 값들로 그만큼을 actionsArea의 위 여백으로 비워 둔다.
+
+/** 가운데 읽기 버튼의 지름. 말풍선은 이 위에 뜬다. */
+const READ_BUTTON = 72;
+/** 말풍선과 버튼 사이. */
+const BUBBLE_LIFT = Space[8];
+/** 말풍선 한 덩이 — 알약(위아래 여백 8씩 + 글줄)과 아래를 가리키는 꼬리 6. */
+const BUBBLE_H = Space[8] * 2 + TypeScale.bodySm.lineHeight + 6;
+/**
+ * 말풍선 위에 더 얹을 숨.
+ *
+ * 0이다 — 위 둘만으로 겹침은 이미 풀리고, 진행 줄과 말풍선 사이는 책 카드의 아래 여백과
+ * 본문 gap이 이미 벌려 준다. 여기에 더 얹으면 책이 위로 밀려 올라가 화면이 비어 보인다.
+ * 간격을 다시 만질 일이 생기면 이 값 하나만 올린다.
+ */
+const BUBBLE_CLEARANCE = 0;
+
 /** 읽기 버튼 말풍선의 문구 — 지금 누르면 무엇을 읽게 되는지. */
 function planLabel(plan: ReadPlan): string {
   switch (plan.kind) {
@@ -70,8 +90,9 @@ export default function HomeScreen() {
   /**
    * 읽기 버튼이 열 항목과, 말풍선이 뭐라고 부를지.
    *
-   * 기준은 '마지막으로 연 화'다 — 그 다음을 연다(갈래는 lib/progress의 getReadPlan).
-   * 퀴즈를 풀었는지는 보지 않는다. 진행 줄이 보는 것과 서로 다른 물음이라 값도 따로 온다.
+   * 기준은 '마지막으로 끝낸 화'다 — 그 다음을 연다(갈래는 lib/progress의 getReadPlan).
+   * 읽다 만 화는 끝난 것이 아니라서 그 화가 다시 열린다. 진행 줄이 보는 퀴즈 기록과는
+   * 서로 다른 물음이라 값도 따로 온다.
    */
   const plan = getReadPlan(selectedBookId, cursorOf(selectedBookId));
   const percent =
@@ -98,28 +119,28 @@ export default function HomeScreen() {
       <StatusBarTint />
 
       <View style={[styles.body, { paddingBottom: insets.bottom + Space[20] }]}>
-        {/* 위 줄 — 왼쪽은 알람, 오른쪽은 마이페이지와 하루 서점. */}
+        {/* 위 줄 — 왼쪽 끝에 하루 서점, 오른쪽 끝에 알람과 마이페이지. */}
         <View style={styles.topRow}>
           <ScaleButton
-            accessibilityLabel={`알람 ${formatAlarmTime(alarm.hour, alarm.minute)} 설정`}
-            style={styles.alarmChip}
-            onPress={() => setAlarmOpen(true)}>
-            <Ionicons name="notifications-outline" color={Ink.onDark} size={18} />
-            <Text style={styles.alarmText}>{formatAlarmTime(alarm.hour, alarm.minute)}</Text>
+            accessibilityLabel="하루 서점"
+            style={styles.roundButton}
+            onPress={() => router.push('/bookstore')}>
+            <Ionicons name="book" color={Ink.onDark} size={18} />
           </ScaleButton>
 
-          <View style={styles.topButtons}>
+          <View style={styles.topRight}>
             <ScaleButton
-              accessibilityLabel="마이페이지"
-              style={styles.roundButton}
-              onPress={() => router.push('/library')}>
-              <Ionicons name="person" color={Ink.onDark} size={18} />
+              accessibilityLabel={`알람 ${formatAlarmTime(alarm.hour, alarm.minute)} 설정`}
+              style={styles.alarmChip}
+              onPress={() => setAlarmOpen(true)}>
+              <Ionicons name="notifications-outline" color={Ink.onDark} size={18} />
+              <Text style={styles.alarmText}>{formatAlarmTime(alarm.hour, alarm.minute)}</Text>
             </ScaleButton>
             <ScaleButton
-              accessibilityLabel="하루 서점"
-              style={styles.roundButton}
-              onPress={() => router.push('/bookstore')}>
-              <Ionicons name="book" color={Ink.onDark} size={18} />
+              accessibilityLabel="마이페이지"
+              style={styles.myButton}
+              onPress={() => router.push('/library')}>
+              <Ionicons name="person" color={Ink.muted} size={18} />
             </ScaleButton>
           </View>
         </View>
@@ -233,7 +254,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Space[4],
     height: 34,
-    paddingHorizontal: Space[8],
+    paddingHorizontal: Space[12],
     borderRadius: Corner.pill,
     backgroundColor: Ink.strong,
   },
@@ -242,24 +263,40 @@ const styles = StyleSheet.create({
     ...TypeScale.caption,
     color: Ink.onDark,
   },
-  topButtons: {
+  /** 오른쪽 끝 — 알람과 마이페이지가 나란히 선다. */
+  topRight: {
     flexDirection: 'row',
-    gap: Space[8],
+    alignItems: 'center',
+    gap: Space[12],
   },
+  /** 하루 서점 — 왼쪽 끝. 알람 알약과 키가 같다. */
   roundButton: {
     width: 34,
     height: 34,
     borderRadius: Corner.pill,
     backgroundColor: Ink.strong,
   },
+  /** 마이페이지 — 이 줄에서 가장 작다. 늘 거기 있되 부르지는 않는 자리다. */
+  myButton: {
+    width: 28,
+    height: 28,
+    borderRadius: Corner.pill,
+    backgroundColor: Ink.strong,
+  },
 
-  /** 책 한 권이 놓이는 자리 — 남는 높이를 다 갖고, 안엣것을 아래로 몰아 놓는다. */
+  /**
+   * 책 한 권이 놓이는 자리 — 남는 높이를 다 갖고, 안엣것을 아래로 몰아 놓는다.
+   *
+   * 아래 여백만 반으로 줄여 둔다. 그 밑은 말풍선이 자리를 비워 둔 구역이라(actionsArea),
+   * 여기까지 16을 다 두면 진행 줄과 말풍선 사이가 두 번 벌어진다.
+   */
   card: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: Space[20],
     padding: Space[16],
+    paddingBottom: Space[8],
   },
   /** 표지가 앉는 자리 — 남는 높이를 다 쓰고 그 한가운데에 표지를 놓는다. */
   coverSlot: {
@@ -268,15 +305,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  /**
+   * 표지가 앉는 자리 — 바탕도 그림자도 없다.
+   *
+   * 표지 그림은 정면인 것도 있고 비스듬히 세워 찍은 것도 있는데, 비스듬한 것들은 책
+   * 둘레가 투명하다. 바탕색을 깔아 두면 그 투명한 자리에 색이 비쳐 책 뒤에 어두운 상자가
+   * 생긴다. 그림자도 같은 이유로 뺐다 — 안드로이드의 elevation은 그림 모양이 아니라 이
+   * 네모의 윤곽을 따라 지므로, 바탕을 지워도 네모가 그림자로 남는다. 입체감은 표지 그림이
+   * 이미 제 안에 담고 있다.
+   */
   cover: {
     width: 160,
     height: 238,
-    backgroundColor: Ink.strong,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
   },
   titles: {
     alignItems: 'center',
@@ -301,10 +341,16 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     gap: Space[4],
   },
+  /**
+   * 아직 안 읽은 만큼 — graphite다.
+   *
+   * 검은 화면 위라 종이색(Surface.plate)도 ash(Ink.muted)도 너무 밝았다. 차오른 주황이
+   * 주인공이므로 그 뒤의 빈 줄은 바탕에서 겨우 떠오르는 정도면 된다.
+   */
   bar: {
     height: 4,
     borderRadius: 4,
-    backgroundColor: Surface.plate,
+    backgroundColor: Ink.strong,
     overflow: 'hidden',
   },
   barFill: {
@@ -328,19 +374,26 @@ const styles = StyleSheet.create({
   },
 
   // 문 셋
-  /** 말풍선을 버튼 줄 위에 띄우기 위한 자리 — 높이는 버튼 줄 그대로다. */
+  /**
+   * 말풍선을 버튼 줄 위에 띄우기 위한 자리.
+   *
+   * 위 여백이 말풍선 몫이다 — 그만큼 이 구역이 커지고, 남는 높이를 다 갖던 책 카드가
+   * 그만큼 줄어 제목과 진행 줄이 위로 올라간다. 여백 없이 두면 얹힌 말풍선이 진행 줄을
+   * 덮는다(파일 위쪽 상수 주석 참고).
+   */
   actionsArea: {
     alignItems: 'center',
+    paddingTop: BUBBLE_H + BUBBLE_LIFT + BUBBLE_CLEARANCE,
   },
   /**
-   * 말풍선 — 가운데 버튼(72) 바로 위에 뜬다.
+   * 말풍선 — 가운데 읽기 버튼 바로 위에 뜬다.
    *
    * 흐름에서 빼내 얹는 건, 문구가 길어지거나 짧아져도 아래 버튼 셋의 자리가 흔들리지
    * 않게 하기 위해서다.
    */
   bubbleWrap: {
     position: 'absolute',
-    bottom: 72 + Space[8],
+    bottom: READ_BUTTON + BUBBLE_LIFT,
     alignItems: 'center',
   },
   bubble: {
@@ -387,8 +440,8 @@ const styles = StyleSheet.create({
    * 이 화면에서 주황은 이 버튼과 진행 줄뿐이다.
    */
   readButton: {
-    width: 72,
-    height: 72,
+    width: READ_BUTTON,
+    height: READ_BUTTON,
     borderRadius: Corner.pill,
     backgroundColor: Spark.ember,
   },

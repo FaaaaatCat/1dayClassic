@@ -115,7 +115,7 @@ export default function LessonDetailShell({ bookLesson, children, onClose }: Pro
               onPress={onClose ?? (() => router.replace('/'))}
             >
               <Ionicons
-                name="close"
+                name="close-outline"
                 color={Colors.brown50}
                 size={18}
               />

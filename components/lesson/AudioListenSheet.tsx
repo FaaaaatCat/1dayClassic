@@ -40,7 +40,7 @@ export default function AudioListenSheet({
           <View style={styles.closeButtonWrap}>
             <ScaleButton accessibilityLabel="닫기" style={styles.closeButton} onPress={onClose}>
               <Ionicons
-                name="close"
+                name="close-outline"
                 color={Colors.brown100}
                 size={18}
               />

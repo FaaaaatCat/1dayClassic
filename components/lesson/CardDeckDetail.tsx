@@ -6,13 +6,11 @@ import {
   BackHandler,
   Dimensions,
   Image,
-  KeyboardAvoidingView,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -37,6 +35,8 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import QuizSolver, { quizModalStyles } from '@/components/preview/QuizSolver';
+import Chevron from '@/components/Chevron';
+import NoteSheet from '@/components/lesson/NoteSheet';
 import ScaleButton from '@/components/ScaleButton';
 import {
   useCardNarration,
@@ -50,6 +50,8 @@ import { StatusBarTint } from '@/components/StatusBarTint';
 import StudyReport from '@/components/StudyReport';
 import { useBookmarks } from '@/context/BookmarkContext';
 import { useNotes } from '@/context/NotesContext';
+import { useQuiz } from '@/context/QuizContext';
+import { useReadingCursor } from '@/context/ReadingCursorContext';
 import { useAlarmLockFlow } from '@/modules/alarm-clock';
 import {
   buildCardNarration,
@@ -69,7 +71,7 @@ import {
   type CardPage,
   type CardPageKind,
 } from '@/lib/card-pages';
-import { getBookName, type BookLesson } from '@/lib/books';
+import { getBookName, isDatedBook, type BookLesson } from '@/lib/books';
 import { getCoverPlan } from '@/lib/cover';
 import { getCatalogBookByBookId, type CatalogBook } from '@/lib/catalog';
 import type { BookId, DailyLesson } from '@/types';
@@ -176,7 +178,6 @@ const ENTER_RISE = 14;
  * 감상 노트 줄 간격(dp). 줄노트 바탕의 줄 간격이자 글자 줄높이다 — 두 값이 여기 하나
  * 에서 나와야 글이 줄 위에 앉는다(NoteBlock 주석 참고).
  */
-const NOTE_LINE_H = 26;
 /** 토스트가 떠 있는 시간과 뜨고 지는 시간(ms). */
 const TOAST_HOLD = 1800;
 const TOAST_FADE = 220;
@@ -232,14 +233,21 @@ interface Props {
   bookLesson: BookLesson;
   /** 닫기(X)를 눌렀을 때 갈 곳. */
   onClose: () => void;
+  /**
+   * 다 읽으면 읽기 커서를 옮길지. 설정의 카드 슬라이드 미리보기는 끄고 연다 —
+   * 데모를 끝까지 넘겨 봤다고 해서 『듣기의 말들』의 진도가 움직이면 안 된다.
+   */
+  trackProgress?: boolean;
 }
 
-export default function CardDeckDetail({ bookLesson, onClose }: Props) {
+export default function CardDeckDetail({ bookLesson, onClose, trackProgress = true }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { autoplay } = useLocalSearchParams<{ autoplay?: string }>();
 
   const bookName = getBookName(bookLesson.book);
+  /** 이 책이 날짜를 달고 나왔는지 — 아니면 어디에도 날짜를 적지 않는다(lib/books). */
+  const dated = isDatedBook(bookLesson.book);
   const lesson = bookLesson.lesson;
   const catalogBook = getCatalogBookByBookId(bookLesson.book);
 
@@ -280,22 +288,26 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
   const gliding = useSharedValue(false);
   /** 입장할 때 첫 장 본문이 한 번 떠오르는 값(ENTER_DELAY 주석 참고). */
   const enter = useSharedValue(0);
-  /**
-   * 토스트를 띄운 시각. 값이 바뀔 때마다 새로 뜬다 — 연달아 눌러도 매번 다시 뜨도록
-   * 불리언이 아니라 시각을 쓴다(같은 값이면 리액트가 갱신을 건너뛴다).
-   */
-  const [toastAt, setToastAt] = useState(0);
-  const showToast = () => setToastAt(Date.now());
+  /** 이 항목에 남긴 노트 수 — 하단 노트 버튼의 빨간 배지가 이 수를 적는다. */
+  const { notesOf } = useNotes();
+  const noteCount = notesOf(lesson.id).length;
 
   /**
    * 책갈피 — '이 페이지를' 접어 두는 일이라 화면 하나가 아니라 장마다 따로 기억한다.
    *
    * 예전에는 이 화면 안의 useState 하나였고, 그래서 화면을 나가면 사라졌다. 이제
-   * BookmarkContext가 들고 앱을 껐다 켜도 남는다 — 마이페이지의 책 정보가 그 수를 센다.
+   * BookmarkContext가 들고 앱을 껐다 켜도 남는다 — 마이페이지의 리포트가 그 수를 센다.
    */
   const { isMarked, toggle: toggleBookmark } = useBookmarks();
   /** 책갈피 토스트 — 켰는지 껐는지에 따라 문구가 다르다(Toast의 at 주석 참고). */
   const [markToast, setMarkToast] = useState({ at: 0, text: '' });
+
+  /**
+   * 이 화를 끝냈다고 적을 자리 — 홈의 읽기 버튼이 다음에 어디를 열지 정한다.
+   * 적는 조건은 아래 useEffect에 모아 뒀다(ReadingCursorContext 주석 참고).
+   */
+  const { markCompleted } = useReadingCursor();
+  const { isDone: isQuizDone } = useQuiz();
 
   const toggleMark = (index: number) => {
     const saved = toggleBookmark(lesson.id, index, bookLesson.book);
@@ -358,6 +370,9 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
   );
 
   const openNext = () => {
+    // 다음 화로 넘어가겠다는 것은 이 화를 끝냈다는 뜻이다 — 잠겨서 못 가더라도 마찬가지다.
+    if (trackProgress) markCompleted(bookLesson.book, lesson.id);
+
     const next = nextLesson;
     if (!next) {
       setReportOpen(false);
@@ -554,6 +569,27 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
    */
   const [autoPaused, setAutoPaused] = useState(false);
   const last = barPage === pages.length - 1;
+
+  /**
+   * 이 화를 끝냈다고 적는다 — 다음에 홈에서 읽기를 누르면 그 다음 화가 열린다.
+   *
+   * 끝의 기준은 셋이고, 어느 하나만 닿아도 끝이다.
+   *  1. 퀴즈를 다 풀었다(isQuizDone).
+   *  2. 맺음 장에서 '다음 화 읽기'를 눌렀다(openNext에서 적는다).
+   *  3. 마지막 장까지 닿았다(last).
+   *
+   * 셋을 다 두는 건 퀴즈가 없는 항목도 있고, 퀴즈를 건너뛰고 다음 화로 넘어가는 길도
+   * 있기 때문이다. 반대로 읽다 중간에 나오면 어디에도 안 걸려 그대로 남고, 다음 번에
+   * 그 화가 다시 열린다 — 이 화면이 여닫힌 사실만으로는 아무것도 적지 않는다.
+   *
+   * last는 회전이 끝나기를 기다리지 않는 barPage로 본다 — 마지막 장으로 넘어가기로
+   * 정해진 순간(startTurn)이면 충분하다. 반쯤 끌었다 놓아 되돌아온 경우는 그 자리로
+   * 넘어가기로 정해진 적이 없으니 여기 걸리지 않는다.
+   */
+  const lessonDone = trackProgress && (isQuizDone(lesson.id) || last);
+  useEffect(() => {
+    if (lessonDone) markCompleted(bookLesson.book, lesson.id);
+  }, [lessonDone, markCompleted, bookLesson.book, lesson.id]);
   /**
    * 시간이 흐르지 않는 자리들.
    * - 자동으로 읽기를 켜 둔 동안: 낭독이 장을 끌고 간다. 둘이 함께 넘기면 읽던
@@ -594,11 +630,11 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
           <View style={styles.avatar} />
         )}
         <Text style={styles.account}>{bookName}</Text>
-        {lesson.date ? <Text style={styles.when}>{lesson.date}</Text> : null}
+        {dated && lesson.date ? <Text style={styles.when}>{lesson.date}</Text> : null}
         <View style={styles.headerSpacer} />
         {!lockFlow && (
           <ScaleButton accessibilityLabel="닫기" style={styles.headerClose} onPress={onClose}>
-            <Ionicons name="close" color={Colors.white} size={24} />
+            <Ionicons name="close-outline" color={Colors.white} size={24} />
           </ScaleButton>
         )}
       </View>
@@ -729,7 +765,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
                   setReaderOpen(false);
                   narration.stop();
                 }}>
-                <Ionicons name="close" color={Colors.white} size={24} />
+                <Ionicons name="close-outline" color={Colors.white} size={24} />
               </ScaleButton>
             </>
           ) : (
@@ -744,57 +780,41 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
             </ScaleButton>
           )}
           <ScaleButton
-            accessibilityLabel="감상 노트"
+            accessibilityLabel={noteCount > 0 ? `감상 노트 ${noteCount}개` : '감상 노트'}
             style={styles.footerHit}
             onPress={() => setNoteOpen(true)}>
             <Ionicons name="create" color={Colors.white} size={24} />
+            {/* 남긴 노트 수 — 창을 열지 않고도 몇 개 적었는지 보인다. */}
+            {noteCount > 0 ? (
+              <View style={styles.noteBadge}>
+                <Text style={styles.noteBadgeText}>{noteCount}</Text>
+              </View>
+            ) : null}
           </ScaleButton>
         </View>
       </View>
 
-      {/* 책갈피 토스트 — 하단 줄 위에 뜬다. 감상 노트의 것은 모달 안에 따로 있다. */}
+      {/* 책갈피 토스트 — 하단 줄 위에 뜬다. */}
       <Toast bottom={insets.bottom + 8 + FOOTER_H + 12} at={markToast.at} text={markToast.text} />
 
       {/**
-        * 감상 노트 — 넘김 흐름에서 빠지고 하단 메모 버튼으로 전체 화면에 뜬다.
-        * 토스트도 여기 안에 둔다. 모달은 별도 창이라 뒤 화면의 토스트는 가려서 안 보인다.
+        * 감상 노트 — 읽던 장을 그대로 두고 그 위를 덮으며 아래에서 올라온다.
+        * 창 안의 일은 전부 NoteSheet가 맡는다(그쪽 주석 참고).
         */}
-      <Modal
-        visible={noteOpen}
-        animationType="fade"
-        onRequestClose={closeNote}>
-        {/* 안드로이드에서는 모달 창이 키보드에 맞춰 줄어들지 않아 기록하기 버튼이 키보드
-            뒤로 숨는다. 그래서 높이를 직접 줄인다. */}
-        <KeyboardAvoidingView
-          behavior="height"
-          style={[
-            styles.noteModal,
-            { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
-          ]}>
-          <CloseButton top={insets.top + 24} onPress={closeNote} />
-          <View style={styles.noteModalBody}>
-            <NoteBlock lessonId={lesson.id} onSaved={showToast} />
-          </View>
-          {/* 기록하기/수정하기 버튼 바로 위 — 버튼을 가리지 않게 그 높이만큼 띄운다. */}
-          <Toast
-            bottom={insets.bottom + 24 + 44 + 12}
-            at={toastAt}
-            text="감상노트에 저장되었습니다."
-          />
-        </KeyboardAvoidingView>
-      </Modal>
+      <NoteSheet lessonId={lesson.id} visible={noteOpen} onClose={closeNote} />
 
       {/**
-        * 퀴즈 — 구매 안내 장의 버튼으로 전체 화면에 뜬다. 감상 노트 팝업과 같은 틀이다.
+        * 퀴즈 — 맺음 장의 버튼으로 전체 화면에 뜬다. 감상 노트 팝업과 같은 틀이다.
         *
-        * 닫기 버튼을 여기서 띄우지 않고 QuizSolver에 맡기는 건 제목과 한 줄에 세우기
-        * 위해서다. 노트 팝업의 CloseButton은 절대 위치라 옆에 무엇을 나란히 둘 수 없다.
+        * 위 한 줄(제목과 닫기)은 QuizSolver가 공용 헤더로 그린다. 제목이 문제마다 달라
+        * 여기서는 알 수 없기도 하고, 두 팝업의 위 줄이 같은 물건이어야 하기 때문이다.
+        * 여기가 대는 것은 아래 세이프에어리어뿐이다 — 위쪽은 헤더가 맡는다.
         */}
       <Modal visible={quizOpen} animationType="fade" onRequestClose={closeQuiz}>
         <View
           style={[
             quizModalStyles.screen,
-            { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
+            { paddingBottom: insets.bottom + 24 },
           ]}>
           <QuizSolver
             quizzes={quizzes}
@@ -843,7 +863,7 @@ export default function CardDeckDetail({ bookLesson, onClose }: Props) {
           setReportOpen(false);
         }}>
         <StudyReport
-          date={lesson.date ?? todayLabel()}
+          date={dated ? (lesson.date ?? todayLabel()) : todayLabel()}
           bookTitle={bookName}
           onNext={openNext}
         />
@@ -1314,21 +1334,7 @@ function CardContent({
 
 
 /**
- * 감상 노트 — 카드 위쪽부터 채우고 '기록하기'는 아래에 붙는다.
- *
- * 줄노트 바탕은 이미지가 아니라 여기서 직접 그린다. 줄 간격과 글자 줄높이가 같은 값
- * (NOTE_LINE_H)에서 나와야 글이 줄 위에 앉는데, 이미지로 하면 두 값이 따로 놀아 글이
- * 길어질수록 어긋난다. 카드 크기도 기기마다 달라서(CARD_W) 고정 이미지는 늘어나거나
- * 잘리지만, 그려서 채우면 남는 높이만큼 알아서 늘어나고 해상도와도 무관하다.
- *
- * 저장은 아직 없다(테스트 화면). 기록하면 입력칸이 그 자리에서 기록 보기로 바뀌고
- * 버튼이 '수정하기'가 된다.
- */
-/**
- * 맺음 장 — 본문이 끝나고 오늘의 공부를 맺는 자리.
- *
- * 오늘의 공부를 맺는 흐름(퀴즈 → 마치기 → 리포트)이 전부 이 버튼에서 시작한다. 조건에
- * 따라 이 장이 사라지면 흐름이 통째로 끊기므로, 퀴즈가 있는 한 늘 놓인다.
+ * 맺음 장 — 오늘의 이야기가 끝났다고 알리고, 퀴즈와 다음 화로 가는 길 둘을 내놓는다.
  */
 function OutroBlock({
   onOpenQuiz,
@@ -1372,7 +1378,7 @@ function OutroBlock({
             style={styles.outroNextButton}
             onPress={onNext}>
             <Text style={styles.outroNextText}>다음 화 읽기</Text>
-            <Ionicons name="chevron-forward" color={Ink.onDark} size={16} />
+            <Chevron direction="forward" color={Ink.onDark} size={16} />
           </Pressable>
         )}
       </View>
@@ -1380,83 +1386,6 @@ function OutroBlock({
   );
 }
 
-/** 노트 제목 줄 — 연필과 글자를 한 줄에. */
-function CardHeading({ text }: { text: string }) {
-  return (
-    <View style={styles.cardHeading}>
-      <Ionicons name="pencil" color={Colors.brown100} size={14} />
-      <Text style={styles.cardHeadingText}>{text}</Text>
-    </View>
-  );
-}
-
-function NoteBlock({ lessonId, onSaved }: { lessonId: string; onSaved: () => void }) {
-  const { notesOf, addNote } = useNotes();
-  // 이 항목에 남긴 가장 최근 기록. 있으면 입력칸 대신 그것을 보여 준다.
-  const latest = notesOf(lessonId)[0];
-  const [draft, setDraft] = useState('');
-  /** 기록을 보고 있다가 '수정하기'를 누르면 다시 입력칸으로 돌아온다. */
-  const [editing, setEditing] = useState(false);
-  const saved = editing ? undefined : latest;
-
-  const submit = () => {
-    if (saved) {
-      setEditing(true);
-      return;
-    }
-    const text = draft.trim();
-    if (!text) return; // 빈 노트는 기록하지 않는다
-    addNote(lessonId, text);
-    setDraft('');
-    setEditing(false);
-    onSaved();
-  };
-
-  return (
-    <View style={styles.noteBlock} pointerEvents="box-none">
-      <CardHeading text="감상 노트" />
-
-      <View style={styles.notePaper}>
-        <RuledLines />
-        {saved ? (
-          <View style={styles.noteSavedBody}>
-            <Text style={styles.noteDate}>{saved.date}</Text>
-            <Text style={styles.noteText}>{saved.text}</Text>
-          </View>
-        ) : (
-          <TextInput
-            style={styles.noteText}
-            value={draft}
-            onChangeText={setDraft}
-            placeholder={'이 곡을 들으며 떠오른 생각을\n자유롭게 적어보세요.'}
-            placeholderTextColor={Colors.brown50}
-            multiline
-            textAlignVertical="top"
-            underlineColorAndroid="transparent"
-          />
-        )}
-      </View>
-
-      <Pressable style={styles.cardButton} onPress={submit}>
-        <Text style={styles.cardButtonText}>{saved ? '수정하기' : '기록하기'}</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-/**
- * 줄노트의 줄. 노트 영역을 넘치도록 넉넉히 그려 두고 넘치는 만큼은 잘라 낸다
- * (styles.notePaper의 overflow) — 영역 높이를 재서 개수를 맞출 필요가 없다.
- */
-function RuledLines() {
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {Array.from({ length: Math.ceil(CARD_H / NOTE_LINE_H) }, (_, i) => (
-        <View key={i} style={styles.ruledLine} />
-      ))}
-    </View>
-  );
-}
 
 /** 기록한 날짜 표시 — 실제 저장은 없으니 누른 시각을 그대로 쓴다. */
 function todayLabel() {
@@ -1499,27 +1428,6 @@ function Toast({ bottom, at, text }: { bottom: number; at: number; text: string 
 
 
 // ── 버튼 · 인디케이터 ──────────────────────────────────────────────────────
-
-/** 닫기 버튼 — 모든 카드에서 늘 같은 자리에 뜬다. */
-function CloseButton({
-  top,
-  onPress,
-}: {
-  top: number;
-  onPress: () => void;
-}) {
-  return (
-    <View style={[styles.closeButton, { top }]}>
-      <ScaleButton accessibilityLabel="미리보기 닫기" style={styles.closeHit} onPress={onPress}>
-        <Ionicons
-          name="close"
-          color={Colors.brown50}
-          size={24}
-        />
-      </ScaleButton>
-    </View>
-  );
-}
 
 /**
  * 본문 장의 책갈피 — 카드 오른쪽 아래에 얹는 작은 버튼.
@@ -1674,19 +1582,6 @@ const styles = StyleSheet.create({
   },
 
   // 닫기 버튼
-  closeButton: {
-    position: 'absolute',
-    right: 20,
-    width: 41,
-    height: 41,
-    zIndex: 3,
-  },
-  closeHit: {
-    width: 41,
-    height: 41,
-    borderRadius: 20.5,
-  },
-
   // 카드
   deck: {
     position: 'absolute',
@@ -1938,66 +1833,6 @@ const styles = StyleSheet.create({
     color: Colors.brown50,
   },
 
-  // 노트 · 퀴즈 카드
-  cardHeading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  cardHeadingText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-    letterSpacing: tracking(14),
-    color: Colors.brown100,
-  },
-  /** 감상 노트 팝업 — 전체 화면을 카드와 같은 종이색으로 채운다. */
-  noteModal: {
-    flex: 1,
-    paddingHorizontal: 24,
-    backgroundColor: Colors.bg,
-  },
-  /** 닫기 버튼 아래로 노트가 들어갈 자리. */
-  noteModalBody: {
-    flex: 1,
-    paddingTop: 56,
-  },
-  /** 감상 노트 — 위에서부터 채우고 버튼은 아래에 붙는다(가운데 정렬이 아니다). */
-  noteBlock: {
-    flex: 1,
-    alignSelf: 'stretch',
-    gap: 12,
-  },
-  /** 줄노트 바탕이 깔리는 영역. 남는 높이를 다 차지하고 넘치는 줄은 여기서 잘린다. */
-  notePaper: {
-    flex: 1,
-    overflow: 'hidden',
-  },
-  ruledLine: {
-    height: NOTE_LINE_H,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.brown10,
-  },
-  /** 입력칸과 기록 보기 공용 — 줄 간격과 같은 줄높이여야 글이 줄 위에 앉는다. */
-  noteText: {
-    flex: 1,
-    padding: 0,
-    fontFamily: Fonts.regular,
-    fontSize: 13,
-    lineHeight: NOTE_LINE_H,
-    letterSpacing: tracking(13),
-    color: Colors.brown100,
-  },
-  noteSavedBody: {
-    flex: 1,
-  },
-  /** 기록한 날짜 — 본문과 같은 줄 위에 앉도록 줄높이를 맞춘다. */
-  noteDate: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    lineHeight: NOTE_LINE_H,
-    letterSpacing: tracking(12),
-    color: Colors.beige100,
-  },
   /**
    * 구매 안내 장 — 문구·표지·버튼을 한 덩어리로 묶어 카드 가운데에 모은다.
    * 높이를 늘려 잡지 않으므로(flex 없음) 제 내용만큼만 차지하고, 카드 본문의
@@ -2015,21 +1850,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     letterSpacing: tracking(14),
     textAlign: 'center',
-    color: Colors.brown100,
-  },
-  /** 카드 안 버튼 공용 — 감상 노트의 기록하기와 구매 안내의 구매하러 가기가 같이 쓴다. */
-  cardButton: {
-    alignSelf: 'stretch',
-    height: 44,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.beige50,
-  },
-  cardButtonText: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 15,
-    letterSpacing: tracking(14),
     color: Colors.brown100,
   },
   /** 맺음 장의 버튼 둘 — 퀴즈로 가는 길과 다음 화로 가는 길이 나란히 선다. */
@@ -2295,6 +2115,30 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+  },
+  /**
+   * 노트 수 배지 — 노트 버튼 오른쪽 위에 얹힌다.
+   *
+   * 버튼 바깥으로 조금 걸치게 두는 건 아이콘을 가리지 않기 위해서다. 자릿수가 늘어도
+   * 글자가 잘리지 않게 폭은 최소값만 주고 좌우로 늘어나게 한다.
+   */
+  noteBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    borderRadius: Corner.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.red100,
+  },
+  noteBadgeText: {
+    fontFamily: Type.uiMedium,
+    fontSize: 10,
+    lineHeight: 14,
+    color: Colors.white,
   },
   finishButton: {
     height: 52,

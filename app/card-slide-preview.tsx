@@ -11,7 +11,8 @@ import { PREVIEW_LESSON_ID } from '@/lib/preview-content';
  * 하나로 띄운다. 인스타 스토리·원페이지 미리보기와 같은 글을 보여 주므로 세 형식을
  * 나란히 견줄 수 있다.
  *
- * 상세와 다른 것은 닫기뿐이다 — 설정에서 열었으니 설정으로 돌아간다.
+ * 상세와 다른 것은 둘이다 — 닫으면 설정으로 돌아가고, 끝까지 넘겨도 읽기 진도를 건드리지
+ * 않는다(trackProgress). 데모를 본 것이 『듣기의 말들』을 읽은 것은 아니다.
  */
 export default function CardSlidePreviewScreen() {
   const router = useRouter();
@@ -19,5 +20,11 @@ export default function CardSlidePreviewScreen() {
 
   if (!bookLesson) return null;
 
-  return <CardDeckDetail bookLesson={bookLesson} onClose={() => router.replace('/settings')} />;
+  return (
+    <CardDeckDetail
+      bookLesson={bookLesson}
+      onClose={() => router.replace('/settings')}
+      trackProgress={false}
+    />
+  );
 }

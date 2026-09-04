@@ -69,7 +69,7 @@ export default function BookPurchaseNotice({
         accessibilityLabel="닫기"
         style={[styles.close, { top: insets.top + Space[8] }]}
         onPress={onClose}>
-        <Ionicons name="close" color={Ink.onDark} size={24} />
+        <Ionicons name="close-outline" color={Ink.onDark} size={24} />
       </ScaleButton>
 
       <ScrollView

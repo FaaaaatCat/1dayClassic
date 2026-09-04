@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import MyPageRow, { MyPageGroup } from '@/components/mypage/MyPageRow';
 import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
+import PlannedStrip from '@/components/mypage/PlannedStrip';
 import { useShelfBooks } from '@/components/mypage/useShelfBooks';
 import ScaleButton from '@/components/ScaleButton';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
@@ -29,11 +30,29 @@ export default function MyPageScreen() {
   return (
     <MyPageShell title="마이페이지" back="/">
       <MyPageGroup>
+        {/*
+          읽을 예정인 책 — 줄 하나에 표지 띠가 딸린다.
+          줄의 화살표는 목록(읽을 예정인 책 화면)으로, 띠의 표지는 그 책의 리포트로 간다.
+        */}
         <MyPageRow
           icon="layers-outline"
           label="읽을 예정인 책"
           value={`${planned.length}권`}
           onPress={() => router.push('/library/planned')}
+          // 바로 아래에 이 줄에 딸린 표지 띠가 붙는다 — 선을 그으면 둘이 갈라진다.
+          last
+        />
+        <PlannedStrip
+          books={planned}
+          onAdd={() => router.push('/bookstore')}
+          onPressBook={(book) =>
+            router.push({
+              pathname: '/library/book/[id]',
+              // from을 주지 않는다 — 리포트의 뒤로가기는 이 값을 /library 아래 하위 화면
+              // 이름으로 쓴다. 여기가 그 /library 자신이라 비워 두는 것이 마이페이지다.
+              params: { id: book.bookId ?? book.id },
+            })
+          }
         />
         <MyPageRow
           icon="sparkles-outline"

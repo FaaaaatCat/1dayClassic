@@ -23,7 +23,7 @@ const BACKGROUND_BLUR = 6;
 /**
  * 책갈피.
  *
- * 마이페이지 → 책 정보의 '책갈피' 칸에서 들어온다. 접어 둔 장들을 최근에 접은 순으로
+ * 마이페이지 → 리포트의 '책갈피' 칸에서 들어온다. 접어 둔 장들을 최근에 접은 순으로
  * 늘어놓고, 그 장에 적혀 있던 글을 통째로 보여 준다 — 장 번호만 적어 두면 무엇을
  * 접었는지 알 수 없어 다시 열어 봐야 하고, 글을 줄이면 여기서 또 한 번 열어 봐야 한다.
  *
@@ -50,7 +50,7 @@ export default function BookmarksScreen() {
     showToast('책갈피를 뺐습니다');
   };
 
-  // 들어온 자리(책 정보)로 돌려보낸다. 그 화면도 제가 어디서 왔는지(from)를 들고 있어야
+  // 들어온 자리(리포트)로 돌려보낸다. 그 화면도 제가 어디서 왔는지(from)를 들고 있어야
   // 한 단계 더 뒤로 갈 수 있으므로 그대로 실어 보낸다.
   const back = id ? `/library/book/${id}${from ? `?from=${from}` : ''}` : '/library';
 
@@ -133,7 +133,7 @@ function BookmarkCard({
         accessibilityLabel={`${item.lessonTitle} ${item.page + 1}장 책갈피 빼기`}
         style={styles.removeButton}
         onPress={onRemove}>
-        <Ionicons name="close" color={Surface.plate} size={18} />
+        <Ionicons name="close-outline" color={Surface.plate} size={18} />
       </ScaleButton>
     </View>
   );

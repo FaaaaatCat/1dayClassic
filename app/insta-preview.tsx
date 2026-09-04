@@ -152,7 +152,7 @@ export default function InstaPreviewScreen() {
           accessibilityLabel="미리보기 닫기"
           style={styles.headerClose}
           onPress={() => router.replace('/settings')}>
-          <Ionicons name="close" color={Colors.white} size={24} />
+          <Ionicons name="close-outline" color={Colors.white} size={24} />
         </ScaleButton>
       </View>
 
@@ -233,7 +233,7 @@ export default function InstaPreviewScreen() {
         <View
           style={[
             quizModalStyles.screen,
-            { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
+            { paddingBottom: insets.bottom + 24 },
           ]}>
           <QuizSolver
             quizzes={PREVIEW_QUIZZES}

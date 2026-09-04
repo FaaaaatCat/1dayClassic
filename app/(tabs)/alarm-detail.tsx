@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
+import ScreenHeader, { HeaderTextButton } from '@/components/ScreenHeader';
 import WheelPicker from '@/components/WheelPicker';
 import { Corner, Ink, Surface, Type, trackBody } from '@/constants/theme';
 import { type AlarmSound, useAlarm } from '@/context/AlarmContext';
@@ -70,15 +71,12 @@ export default function AlarmDetailScreen({ onClose }: { onClose?: () => void } 
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <ScaleButton accessibilityLabel="취소" onPress={goHome}>
-          <Text style={styles.headerButtonText}>취소</Text>
-        </ScaleButton>
-        <Text style={styles.headerTitle}>알람 편집</Text>
-        <ScaleButton accessibilityLabel="저장" onPress={handleSave}>
-          <Text style={[styles.headerButtonText, styles.headerSaveText]}>저장</Text>
-        </ScaleButton>
-      </View>
+      {/* 왼쪽은 저장하지 않고 나가는 길이다(예전의 '취소'). */}
+      <ScreenHeader
+        title="알람 편집"
+        back={goHome}
+        action={<HeaderTextButton label="저장" onPress={handleSave} />}
+      />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 24 }]}
@@ -136,30 +134,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Surface.canvas,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    backgroundColor: Surface.canvas,
-  },
-  headerButtonText: {
-    fontFamily: Type.ui,
-    fontSize: 16,
-    letterSpacing: trackBody(16),
-    color: Ink.body,
-  },
-  headerSaveText: {
-    fontFamily: Type.uiMedium,
-    color: Ink.strong,
-  },
-  headerTitle: {
-    fontFamily: Type.uiMedium,
-    fontSize: 16,
-    letterSpacing: trackBody(16),
-    color: Ink.primary,
   },
   body: {
     paddingHorizontal: 20,

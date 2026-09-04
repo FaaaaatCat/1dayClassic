@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import Chevron from '@/components/Chevron';
 import { MY_PAGE } from '@/components/mypage/MyPageShell';
 import { Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
 
@@ -15,7 +16,12 @@ export default function MyPageRow({
   label,
   value,
   onPress,
-  /** 마지막 줄 — 묶음이 끝나는 자리라 선을 긋지 않는다. */
+  /**
+   * 아래에 선을 긋지 않는다.
+   *
+   * 묶음의 마지막 줄이거나, 바로 아래에 그 줄에 딸린 것이 이어질 때다 — '읽을 예정인 책'
+   * 아래에는 표지 띠(PlannedStrip)가 붙어서, 선을 그으면 줄이 제 것과 갈라진다.
+   */
   last = false,
 }: {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -40,7 +46,7 @@ export default function MyPageRow({
           {value}
         </Text>
       ) : null}
-      <Ionicons name="chevron-forward" color={Ink.muted} size={18} />
+      <Chevron direction="forward" color={Ink.muted} size={18} />
     </Pressable>
   );
 }

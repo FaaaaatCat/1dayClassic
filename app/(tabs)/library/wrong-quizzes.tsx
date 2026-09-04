@@ -1,15 +1,18 @@
 import { useLocalSearchParams } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
 import { useWrongQuizzes, type WrongQuiz } from '@/components/mypage/useWrongQuizzes';
+import LessonQuizModal from '@/components/quiz/LessonQuizModal';
 import { Corner, Feedback, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { isDatedBook } from '@/lib/books';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 
 /**
  * 틀린 문제.
  *
- * 마이페이지 → 책 정보의 '퀴즈 정답률' 칸에서 들어온다. 틀린 문제만 모아 다시 보여 주는
+ * 마이페이지 → 리포트의 '퀴즈 정답률' 칸에서 들어온다. 틀린 문제만 모아 다시 보여 주는
  * 자리다 — 다시 풀게 하지는 않는다. 퀴즈는 한 번 고르면 잠기는 것이 이 앱의 규칙이라
  * (QuizSolver 주석 참고), 여기서 다시 풀 수 있게 하면 정답률이 사후에 바뀌어 기록이
  * 기록이 아니게 된다.
@@ -17,6 +20,9 @@ import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
  * 그래서 이 화면이 하는 일은 하나다 — 내가 무엇을 골랐고 정답이 무엇이었는지를 해설과
  * 함께 다시 읽히는 것. 보기의 색은 퀴즈를 풀 때와 같게 둔다(고른 오답은 붉게, 정답은
  * 초록으로). 같은 것을 다른 색으로 말하면 두 번 배워야 한다.
+ *
+ * 한 장을 누르면 그 항목의 퀴즈를 팝업으로 연다 — 틀린 문제 하나만이 아니라 그날 낸
+ * 문제 전부를 이전·다음으로 훑는 자리다(LessonQuizModal). 여기서도 다시 풀 수는 없다.
  */
 export default function WrongQuizzesScreen() {
   const { id, from } = useLocalSearchParams<{ id?: string; from?: string }>();
@@ -25,7 +31,10 @@ export default function WrongQuizzesScreen() {
   const studyBook = BOOKSTORE_BOOKS.find((book) => book.id === id);
   const { wrong, solved } = useWrongQuizzes(studyBook?.id);
 
-  // 들어온 자리(책 정보)로 돌려보낸다. 그 화면도 제가 어디서 왔는지(from)를 들고 있어야
+  /** 열려 있는 퀴즈 팝업 — 어느 항목의 몇 번째 문제부터 볼지. */
+  const [open, setOpen] = useState<{ lessonId: string; index: number } | null>(null);
+
+  // 들어온 자리(리포트)로 돌려보낸다. 그 화면도 제가 어디서 왔는지(from)를 들고 있어야
   // 한 단계 더 뒤로 갈 수 있으므로 그대로 실어 보낸다.
   const back = id
     ? `/library/book/${id}${from ? `?from=${from}` : ''}`
@@ -44,22 +53,50 @@ export default function WrongQuizzesScreen() {
         <View style={styles.list}>
           <Text style={styles.count}>{`${wrong.length}문제`}</Text>
           {wrong.map((item) => (
-            <WrongCard key={item.key} item={item} />
+            <WrongCard
+              key={item.key}
+              item={item}
+              dated={studyBook ? isDatedBook(studyBook.id) : false}
+              onPress={() => setOpen({ lessonId: item.lessonId, index: item.index })}
+            />
           ))}
         </View>
       )}
+
+      {studyBook ? (
+        <LessonQuizModal
+          bookId={studyBook.id}
+          lessonId={open?.lessonId}
+          initialIndex={open?.index ?? 0}
+          visible={open !== null}
+          onClose={() => setOpen(null)}
+        />
+      ) : null}
     </MyPageShell>
   );
 }
 
 /** 틀린 문제 한 장 — 어느 날 몇 번째 문제였는지, 문제, 보기 넷, 해설 순으로 읽힌다. */
-function WrongCard({ item }: { item: WrongQuiz }) {
+function WrongCard({
+  item,
+  dated,
+  onPress,
+}: {
+  item: WrongQuiz;
+  /** 날짜를 달고 나온 책인지 — 아니면 표제만 적는다(lib/books의 isDatedBook). */
+  dated: boolean;
+  onPress: () => void;
+}) {
   const { quiz, picked } = item;
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${item.lessonTitle} 퀴즈 다시 보기`}
+      style={styles.card}
+      onPress={onPress}>
       <Text style={styles.cardWhere}>
-        {`${item.month}월 ${item.day}일 · ${item.lessonTitle}`}
+        {dated ? `${item.month}월 ${item.day}일 · ${item.lessonTitle}` : item.lessonTitle}
       </Text>
       <Text style={styles.cardNo}>{`${item.index + 1}번째 문제 (총 ${item.total}문제)`}</Text>
 
@@ -97,7 +134,7 @@ function WrongCard({ item }: { item: WrongQuiz }) {
         <Text style={styles.explanationLabel}>{`정답은 ${quiz.answer}번 입니다`}</Text>
         <Text style={styles.explanation}>{quiz.explanation}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

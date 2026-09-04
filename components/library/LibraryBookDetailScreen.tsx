@@ -5,6 +5,7 @@ import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import BookPreviewModal from '@/components/BookPreviewModal';
+import ScreenHeader, { HeaderIconButton } from '@/components/ScreenHeader';
 import { StatusBarTint } from '@/components/StatusBarTint';
 import { formatReadDate, useBookStats } from '@/components/mypage/useBookStats';
 import ScaleButton from '@/components/ScaleButton';
@@ -19,10 +20,15 @@ import { getCatalogBook, getCatalogBookByBookId } from '@/lib/catalog';
 const GUTTER = Space[20];
 
 /**
- * 책 정보.
+ * 리포트.
  *
- * 마이페이지에서 들어오는 화면이다. 위의 검은 띠에 책이 있고, 그 아래로 이 책에 쌓인
- * 기록이 줄줄이 놓인다 — 며칠 읽었는지, 어디까지 왔는지, 퀴즈는 얼마나 맞혔는지.
+ * 마이페이지의 내 서재와 홈의 리포트 버튼, 두 곳에서 들어온다. 위의 검은 띠에 책이 있고,
+ * 그 아래로 이 책에 쌓인 기록이 줄줄이 놓인다 — 며칠 읽었는지, 어디까지 왔는지, 퀴즈는
+ * 얼마나 맞혔는지.
+ *
+ * 제목이 '책 정보'가 아니라 '리포트'인 건 이 화면이 보여 주는 것이 책의 소개가 아니라
+ * 내가 그 책에 남긴 기록이기 때문이다. 책의 소개를 읽는 화면은 서점 쪽에 따로 있다
+ * (app/(tabs)/book/[id].tsx — 그쪽이 '책 정보'다).
  *
  * 오른쪽 위 버튼은 이 책이 지금 읽는 책인지에 따라 갈린다. 읽는 중이면 '선택 중'이라고
  * 알리기만 하고, 아니면 '이 책 읽기'로 바꿔 준다 — 하루에 한 권만 읽으므로 고르는 일이
@@ -47,9 +53,16 @@ export default function LibraryBookDetailScreen() {
    *
    * router.back()을 쓰지 않는 건 이 화면이 Tabs의 형제라서다. 형제로 옮기는 것은 스택에
    * 쌓이지 않아, back()은 그 앞에 쌓여 있던 홈으로 튀어 버린다.
+   *
+   * from에 넣을 수 있는 값은 셋뿐이다.
+   *  - 'home'              홈의 리포트 버튼으로 들어왔다 → 홈으로
+   *  - /library 아래 화면 이름('planned'·'finished') → 그 화면으로
+   *  - 없음                마이페이지에서 바로 들어왔다 → 마이페이지로
+   *
+   * 그 밖의 값을 넣으면 /library/<그 값>이라는 없는 경로가 만들어져 '찾을 수 없는 화면'이
+   * 뜬다. 마이페이지에서 들어올 때 'library'를 넣어 실제로 그랬다 — 여기는 비워 둔다.
    */
   const goBack = () =>
-    // 홈에서 리포트로 들어온 경우만 마이페이지가 아니라 홈으로 돌아간다.
     router.replace((from === 'home' ? '/' : from ? `/library/${from}` : '/library') as never);
 
   if (!catalogBook) return null;
@@ -100,24 +113,34 @@ export default function LibraryBookDetailScreen() {
     });
   };
 
+  /** 독서 노트 — 읽으면서 남긴 것들. 위 둘과 같은 이유로 학습 콘텐츠가 있는 책에만 있다. */
+  const openNotes = () => {
+    if (!studyBook) return;
+    router.push({
+      pathname: '/library/notes',
+      params: { id: studyBook.id, ...(from ? { from } : {}) },
+    });
+  };
+
   return (
     <>
       <View style={styles.screen}>
         {/* 위가 검은 띠라 상태바도 검게 둔다 — 띠가 화면 속으로 이어져 보인다. */}
         <StatusBarTint />
 
-        <View style={[styles.header, { paddingTop: insets.top }]}>
-          <ScaleButton accessibilityLabel="뒤로" style={styles.iconButton} onPress={goBack}>
-            <Ionicons name="chevron-back" color={Ink.onDark} size={22} />
-          </ScaleButton>
-          <Text style={styles.headerTitle}>책 정보</Text>
-          <ScaleButton
-            accessibilityLabel={menuOpen ? '더보기 닫기' : '더보기'}
-            style={styles.iconButton}
-            onPress={() => setMenuOpen((open) => !open)}>
-            <Ionicons name="ellipsis-vertical" color={Ink.onDark} size={20} />
-          </ScaleButton>
-        </View>
+        {/* 검은 띠가 상태바 뒤까지 이어져야 하므로 세이프에어리어도 헤더가 맡는다. */}
+        <ScreenHeader
+          title="리포트"
+          back={goBack}
+          tone="dark"
+          action={
+            <HeaderIconButton
+              name="ellipsis-vertical"
+              label={menuOpen ? '더보기 닫기' : '더보기'}
+              onPress={() => setMenuOpen((open) => !open)}
+            />
+          }
+        />
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -196,7 +219,10 @@ export default function LibraryBookDetailScreen() {
             <Text style={styles.value}>{`${stats.bookmarks}개`}</Text>
           </Section>
 
-          <Section title="독서 노트" action="기록한 노트 보기" onAction={notReady}>
+          <Section
+            title="독서 노트"
+            action="기록한 노트 보기"
+            onAction={studyBook ? openNotes : notReady}>
             <Text style={styles.value}>{`${stats.notes}개`}</Text>
           </Section>
 
@@ -295,26 +321,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Surface.canvas,
   },
-  /** 검은 띠 위의 줄 — 글자와 아이콘이 모두 밝아야 보인다. */
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 60,
-    paddingHorizontal: Space[8],
-    backgroundColor: Ink.primary,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: Corner.pill,
-  },
-  headerTitle: {
-    flex: 1,
-    fontFamily: Type.uiMedium,
-    ...TypeScale.subheading,
-    color: Ink.onDark,
-  },
-
   /** 책 한 권이 놓이는 검은 띠 — 헤더와 이어져 한 덩어리로 보인다. */
   band: {
     flexDirection: 'row',
@@ -324,11 +330,11 @@ const styles = StyleSheet.create({
     paddingBottom: Space[24],
     backgroundColor: Ink.primary,
   },
+  /** 표지가 앉는 자리 — 바탕을 깔지 않는다(홈의 cover 주석 참고). */
   cover: {
     width: 56,
     height: 78,
     borderRadius: 2,
-    backgroundColor: Ink.strong,
   },
   bandText: {
     flex: 1,

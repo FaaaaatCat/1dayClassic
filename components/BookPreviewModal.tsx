@@ -78,7 +78,7 @@ export default function BookPreviewModal({ visible, onClose }: BookPreviewModalP
               onPress={onClose}
             >
               <Ionicons
-                name="close"
+                name="close-outline"
                 color={Colors.brown100}
                 size={24}
               />
