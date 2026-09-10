@@ -52,7 +52,7 @@ const EMPTY_PLACEHOLDER: LessonHeading = { title: '준비 중' };
  *
  * 표제를 담는 필드는 책마다 다르므로(곡명/작곡가 vs 라틴어/뜻 vs 한자/훈음) 뽑는 일은
  * getHeading에 맡긴다. placeholders를 주지 않으면 그 책의 실제 표제를 순환해 자리를 채운다.
- * 클래식만은 실제 곡 3개와 겹치지 않도록 자리표시 목록을 따로 넘긴다.
+ * 클래식만은 실제 곡 열한 개와 겹치지 않도록 자리표시 목록을 따로 넘긴다.
  */
 export function buildCalendarYear<T extends DailyLesson>(
   lessons: T[],

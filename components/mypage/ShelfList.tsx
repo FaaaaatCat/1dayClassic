@@ -1,9 +1,13 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import BookCoverArt from '@/components/book/BookCoverArt';
 import { MY_PAGE } from '@/components/mypage/MyPageShell';
 import type { ShelfBook } from '@/components/mypage/useShelfBooks';
 import { Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
 import type { CatalogBook } from '@/lib/catalog';
+
+/** 줄 왼쪽의 작은 표지 — 높이는 표지 비율이 정한다. */
+const COVER_W = 44;
 
 /**
  * 서재의 책 목록.
@@ -34,11 +38,10 @@ export default function ShelfList({
           accessibilityLabel={`${entry.book.title}, ${entry.percent}퍼센트`}
           style={[styles.row, index === books.length - 1 && styles.rowLast]}
           onPress={() => onPress(entry.book)}>
-          <Image
-            source={{ uri: entry.book.coverImage }}
-            style={styles.cover}
-            resizeMode="cover"
-            accessibilityIgnoresInvertColors
+          <BookCoverArt
+            bookId={entry.book.bookId}
+            coverImage={entry.book.coverImage}
+            width={COVER_W}
           />
           <View style={styles.text}>
             <Text style={styles.title} numberOfLines={2}>
@@ -83,12 +86,6 @@ const styles = StyleSheet.create({
   },
   rowLast: {
     borderBottomWidth: 0,
-  },
-  cover: {
-    width: 44,
-    height: 62,
-    borderRadius: 2,
-    backgroundColor: Surface.plate,
   },
   text: {
     flex: 1,

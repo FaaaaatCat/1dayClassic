@@ -5,6 +5,7 @@ import NoteBlock from '@/components/lesson/blocks/NoteBlock';
 import QuizBlock from '@/components/lesson/blocks/QuizBlock';
 import QuoteBlock from '@/components/lesson/blocks/QuoteBlock';
 import TitleBlock from '@/components/lesson/blocks/TitleBlock';
+import { getBookName } from '@/lib/books';
 import { getLessonQuiz } from '@/lib/quiz';
 import type { Track } from '@/types';
 
@@ -42,7 +43,7 @@ export default function ClassicDetail({ lesson }: Props) {
       />
       <ImageBlock source={lesson.coverImage} />
       <TitleBlock
-        label={lesson.tag ?? '하루 클래식 공부'}
+        label={lesson.tag ?? getBookName('classic')}
         title={lesson.title}
         subtitle={lesson.composer}
         meta={lesson.titleEn && lesson.composerEn ? [lesson.titleEn, lesson.composerEn] : undefined}

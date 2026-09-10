@@ -127,15 +127,23 @@ export const BOOK_IDS = Object.keys(BUILD_CALENDAR) as BookId[];
  * 지어내는 꼴이기 때문이다.
  */
 const DATED_BOOK: Record<BookId, boolean> = {
-  classic: true,
-  latin: true,
-  quote: true,
-  hanja: true,
+  // 곡을 시대순으로 엮은 책이라 원본에 날짜가 없다.
+  classic: false,
+  // 격언을 주제별로 엮은 책이라 원본에 날짜가 없다.
+  latin: false,
+  // 명심보감은 편과 장으로 엮인 책이라 원본에 날짜가 없다.
+  quote: false,
+  // 천자문은 네 자씩 이백오십 구로 엮인 책이라 원본에 날짜가 없다.
+  hanja: false,
   liberal: true,
-  psychology: true,
-  writing: true,
-  hanmun: true,
-  english: true,
+  // 명상록은 권과 절로 엮인 책이라 원본에 날짜가 없다.
+  psychology: false,
+  // 규칙을 번호로 엮은 책이라 원본에 날짜가 없다.
+  writing: false,
+  // 논어는 편과 장으로 엮인 책이라 원본에 날짜가 없다.
+  hanmun: false,
+  // 속담을 주제별로 엮은 책이라 원본에 날짜가 없다.
+  english: false,
   // 원본에 날짜가 없는 책.
   listening: false,
 };

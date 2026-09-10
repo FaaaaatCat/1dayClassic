@@ -45,6 +45,8 @@ import {
 } from '@/hooks/useCardNarration';
 import BookPurchaseNotice from '@/components/lesson/BookPurchaseNotice';
 import MusicPlayer from '@/components/lesson/MusicPlayer';
+import BookCoverArt from '@/components/book/BookCoverArt';
+import CoverMark from '@/components/book/CoverMark';
 import LessonCoverImage from '@/components/LessonCoverImage';
 import { StatusBarTint } from '@/components/StatusBarTint';
 import StudyReport from '@/components/StudyReport';
@@ -76,7 +78,7 @@ import { getCoverPlan } from '@/lib/cover';
 import { getCatalogBookByBookId, type CatalogBook } from '@/lib/catalog';
 import type { BookId, DailyLesson } from '@/types';
 import { openBookDetail } from '@/lib/preview-nav';
-import { FREE_LESSON_COUNT, getLockedLessonCount, getNextLesson } from '@/lib/progress';
+import { getFreeLessonCount, getLockedLessonCount, getNextLesson } from '@/lib/progress';
 import { Colors, Corner, Fonts, Ink, Spark, Type, TypeScale, tracking } from '@/constants/theme';
 
 /**
@@ -183,6 +185,9 @@ const TOAST_HOLD = 1800;
 const TOAST_FADE = 220;
 
 /** 카드 표지의 표식이 놓이는 자리의 높이. 표식이 무엇이든 이 높이는 변하지 않는다. */
+/** 계정 줄의 동그란 표지 썸네일 지름. */
+const AVATAR = 34;
+
 const SYMBOL_BOX_H = 100;
 /** 재생기가 있는 항목의 표식 자리 — 카드가 짧아 그만큼 덜 쓴다. */
 const SYMBOL_BOX_H_SMALL = 72;
@@ -349,19 +354,30 @@ export default function CardDeckDetail({ bookLesson, onClose, trackProgress = tr
    * 맡는다(그쪽 주석 참고).
    */
   /**
-   * 표지 장에 깔 사진이 있는가.
+   * 표지 장을 무엇으로 깔지 — lib/cover가 정한 것을 세 값으로 풀어 둔다.
    *
-   * 사진이 없는 책(하루 클래식·듣기의 말들)은 예전 그대로 종이색 표지에 검은 글씨다 —
-   * 없는 사진 자리에 검은 바탕을 깔면 표식이 두 번 그려지고 글도 읽기 어려워진다.
-   * 무엇이 깔릴지는 lib/cover가 정한다(coverImage → 표식 → Unsplash 순).
+   * - photo  사진을 깔고 그 위에 검정 30%를 얹는다.
+   * - paper  그 책의 종이색으로 카드 면을 물들인다(사진이 없을 때).
+   * - dark   글자를 밝은 쪽으로 뒤집는다. 사진 위이거나 종이가 어두운 책(듣기의 말들)이다.
+   *
+   * 종이색이 사진보다 앞선 것이 이 화면의 성격을 정한다 — 사진을 깔면 그 장이 책이 아니라
+   * 콘텐츠 카드로 읽힌다.
    */
-  const coverPhoto = useMemo(() => {
+  const { coverPhoto, coverPaper, coverDark } = useMemo(() => {
     const plan = getCoverPlan(lesson, bookLesson.book);
-    return plan.kind === 'image' || plan.kind === 'unsplash';
+    const photo = plan.kind === 'image' || plan.kind === 'unsplash';
+    return {
+      coverPhoto: photo,
+      coverPaper: plan.kind === 'design' ? plan.design.paper : undefined,
+      coverDark: photo || (plan.kind === 'design' && plan.design.dark === true),
+    };
   }, [lesson, bookLesson.book]);
 
   /** 잠긴 화 수 — 구매 안내가 '아직 잠긴 n편이 남아 있어요'로 말한다. */
   const lockedCount = useMemo(() => getLockedLessonCount(bookLesson.book), [bookLesson.book]);
+
+  /** 무료로 열린 화 수 — 책 분량의 10분의 1이라 권마다 다르다(lib/progress). */
+  const freeCount = useMemo(() => getFreeLessonCount(bookLesson.book), [bookLesson.book]);
 
   /** 이 항목의 다음 화 — 없으면 undefined(이 책의 마지막 화다). */
   const nextLesson = useMemo(
@@ -620,15 +636,15 @@ export default function CardDeckDetail({ bookLesson, onClose, trackProgress = tr
       {/* 계정 줄 — 표지·책 이름·날짜, 그리고 닫기.
           잠금 위 알람에서는 닫기를 그리지 않는다 — 유일한 출구를 막아야 한다. */}
       <View style={styles.header}>
-        {catalogBook ? (
-          <Image
-            source={{ uri: catalogBook.coverImage }}
-            style={styles.avatar}
-            accessibilityIgnoresInvertColors
-          />
-        ) : (
-          <View style={styles.avatar} />
-        )}
+        <View style={styles.avatar}>
+          {catalogBook ? (
+            <BookCoverArt
+              bookId={catalogBook.bookId}
+              coverImage={catalogBook.coverImage}
+              width={AVATAR}
+            />
+          ) : null}
+        </View>
         <Text style={styles.account}>{bookName}</Text>
         {dated && lesson.date ? <Text style={styles.when}>{lesson.date}</Text> : null}
         <View style={styles.headerSpacer} />
@@ -706,6 +722,8 @@ export default function CardDeckDetail({ bookLesson, onClose, trackProgress = tr
             lesson={lesson}
             bookId={bookLesson.book}
             coverPhoto={coverPhoto}
+            coverPaper={coverPaper}
+            coverDark={coverDark}
             hasMusic={hasMusic}
           />
         ))}
@@ -834,7 +852,7 @@ export default function CardDeckDetail({ bookLesson, onClose, trackProgress = tr
       {purchaseOpen && !reportOpen && (
         <BookPurchaseNotice
           book={catalogBook}
-          freeCount={FREE_LESSON_COUNT}
+          freeCount={freeCount}
           lockedCount={lockedCount}
           onBuy={goToBookDetail}
           onClose={() => setPurchaseOpen(false)}
@@ -870,7 +888,7 @@ export default function CardDeckDetail({ bookLesson, onClose, trackProgress = tr
         {purchaseOpen && (
           <BookPurchaseNotice
             book={catalogBook}
-            freeCount={FREE_LESSON_COUNT}
+            freeCount={freeCount}
             lockedCount={lockedCount}
             onBuy={goToBookDetail}
             onClose={() => setPurchaseOpen(false)}
@@ -995,6 +1013,8 @@ function DeckCard({
   lesson,
   bookId,
   coverPhoto,
+  coverPaper,
+  coverDark,
   hasMusic,
 }: {
   index: number;
@@ -1020,9 +1040,13 @@ function DeckCard({
   /** 표지 장 배경으로 깔 사진을 고르는 데 쓴다. */
   lesson: DailyLesson;
   bookId: BookId;
-  /** 표지 장에 사진이 깔리는가 — 깔리면 그 위 글자가 흰색이 된다. */
+  /** 표지 장에 사진이 깔리는가. */
   coverPhoto: boolean;
-  /** 유튜브가 딸린 항목인가 — 표지의 표식 크기가 달라진다. */
+  /** 사진이 없을 때 표지 장 카드 면에 물들일 그 책의 종이색. */
+  coverPaper?: string;
+  /** 표지 장의 글자를 밝은 쪽으로 뒤집을지 — 사진 위이거나 종이가 어두운 책이다. */
+  coverDark: boolean;
+  /** 유튜브가 딸린 항목인가 — 표지의 마크 크기가 달라진다. */
   hasMusic: boolean;
 }) {
   /**
@@ -1108,7 +1132,12 @@ function DeckCard({
           // 구매 안내 장만 종이를 한 단계 어둡게 — 넘김 흐름 안에서 성격이 다른 장이라
           // 바탕으로 구분한다. brown100을 10%로 덮은 것과 같은 색이라(계산: #E1DED6)
           // 겹을 더 쌓지 않고 팔레트 색을 그대로 쓴다.
-          style={[styles.cardFace, frontStyle]}
+          style={[
+            styles.cardFace,
+            // 표지 장은 그 책의 종이색 위에 앉는다 — 어느 책을 폈는지 첫 장에서 알아본다.
+            kind === 'cover' && coverPaper ? { backgroundColor: coverPaper } : null,
+            frontStyle,
+          ]}
           pointerEvents="box-none">
           {/* 표지 장의 배경 사진 — 카드가 overflow를 감추므로 모서리에 맞춰 잘린다.
               그 위에 검정 30%를 깔아 흰 글자가 설 자리를 만든다. */}
@@ -1134,7 +1163,7 @@ function DeckCard({
               onOpenQuiz={onOpenQuiz}
               onNext={onNext}
               isLastLesson={isLastLesson}
-              onPhoto={coverPhoto}
+              onDark={coverDark}
               hasMusic={hasMusic}
             />
           </Animated.View>
@@ -1212,24 +1241,10 @@ function SpokenText({
 }
 
 /**
- * 표식을 어떤 글꼴로 그릴지 가른다.
- *
- * 듣기의 말들의 ') ) )'처럼 로마자 범위 안에 있는 표식은 본문 서체(DM Serif Display)로
- * 그린다. 클래식의 높은음자리표(𝄞, U+1D11E)처럼 그 밖의 글자는 그 서체에 자모가 없어
- * 두부(□)로 나오므로, 글꼴을 지정하지 않고 기기 기본 글꼴이 대신 그리게 둔다.
+ * 표식을 글자와 그림 두 갈래로 그리던 코드가 여기 있었다. 표식이 표지 값의 마크로
+ * 흡수되면서 갈래가 사라졌다 — 마크는 언제나 View로 그리는 도형이라 글꼴을 타지 않는다.
+ * (높은음자리표가 서체에 없어 두부로 나오던 문제도 함께 없어졌다.)
  */
-/** 표식이 그림 주소인지. 아니면 글자로 본다. */
-function isSymbolImage(symbol: string): boolean {
-  return symbol.startsWith('http://') || symbol.startsWith('https://');
-}
-
-function isAsciiSymbol(symbol: string): boolean {
-  for (const ch of symbol) {
-    if (ch.codePointAt(0)! > 0x7f) return false;
-  }
-  return true;
-}
-
 function CardContent({
   kind,
   paragraph,
@@ -1240,7 +1255,7 @@ function CardContent({
   onOpenQuiz,
   onNext,
   isLastLesson,
-  onPhoto,
+  onDark,
   hasMusic,
 }: {
   kind: CardPageKind;
@@ -1256,48 +1271,34 @@ function CardContent({
   onNext: () => void;
   /** 이 항목이 그 책의 마지막 화인가 — 맺음 장의 버튼 문구가 갈린다. */
   isLastLesson: boolean;
-  /** 표지 장에 사진이 깔렸는가 — 그러면 그 위 글자를 흰색으로 바꾼다. */
-  onPhoto: boolean;
-  /** 유튜브가 딸린 항목인가 — 카드가 짧아 표식을 작게 앉힌다. */
+  /** 표지 장의 바탕이 어두운가 — 그러면 그 위 글자를 밝은 쪽으로 바꾼다. */
+  onDark: boolean;
+  /** 유튜브가 딸린 항목인가 — 카드가 짧아 마크를 작게 앉힌다. */
   hasMusic: boolean;
 }) {
   if (kind === 'cover') {
     return (
       <View style={styles.coverBlock} pointerEvents="box-none">
         <View style={styles.coverMain} pointerEvents="none">
-          {/* 책의 표식 — 없는 책은 이 자리가 빈다(lib/bookstore의 symbol).
-              유튜브가 딸린 항목은 카드가 짧아 표식도 작게 앉힌다. */}
-          {cover.symbol ? (
-            <View style={[styles.coverSymbolBox, hasMusic && styles.coverSymbolBoxSmall]}>
-              {isSymbolImage(cover.symbol) ? (
-                <Image
-                  source={{ uri: cover.symbol }}
-                  style={[styles.coverSymbolImage, onPhoto && styles.coverSymbolImageOnPhoto]}
-                  // 책마다 그림 크기가 달라도 잘리지 않고 상자 안에 들어오게 한다.
-                  resizeMode="contain"
-                  accessibilityIgnoresInvertColors
-                />
-              ) : (
-                <Text
-                  style={[
-                    isAsciiSymbol(cover.symbol) ? styles.coverSymbol : styles.coverGlyph,
-                    onPhoto && styles.coverTextOnPhoto,
-                  ]}>
-                  {cover.symbol}
-                </Text>
-              )}
-            </View>
-          ) : null}
-          <View style={[styles.labelChip, onPhoto && styles.labelChipOnPhoto]}>
-            <Text style={[styles.labelText, onPhoto && styles.coverTextOnPhoto]}>
+          {/* 그 책의 출판사 마크 — 표지와 같은 잉크로 그린다. 사진 위에서는 흰색이라야
+              어느 사진에서도 보인다. 유튜브가 딸린 항목은 카드가 짧아 작게 앉힌다. */}
+          <View style={[styles.coverSymbolBox, hasMusic && styles.coverSymbolBoxSmall]}>
+            <CoverMark
+              kind={cover.design.mark}
+              size={hasMusic ? SYMBOL_BOX_H_SMALL * 0.5 : SYMBOL_BOX_H * 0.5}
+              color={onDark ? Colors.white : cover.design.ink}
+            />
+          </View>
+          <View style={[styles.labelChip, onDark && styles.labelChipOnDark]}>
+            <Text style={[styles.labelText, onDark && styles.coverTextOnDark]}>
               {cover.bookName}
             </Text>
           </View>
           {/* 표제는 책마다 뽑는 곳이 달라 getLessonHeading이 정해 준다 — 곡명·한자·라틴어
               원문이 모두 여기로 들어온다(lib/card-pages). */}
-          <Text style={[styles.title, onPhoto && styles.coverTextOnPhoto]}>{cover.title}</Text>
+          <Text style={[styles.title, onDark && styles.coverTextOnDark]}>{cover.title}</Text>
           {cover.subtitle ? (
-            <Text style={[styles.coverSubtitle, onPhoto && styles.coverTextOnPhoto]}>
+            <Text style={[styles.coverSubtitle, onDark && styles.coverTextOnDark]}>
               {cover.subtitle}
             </Text>
           ) : null}
@@ -1702,46 +1703,6 @@ const styles = StyleSheet.create({
   coverSymbolBoxSmall: {
     height: SYMBOL_BOX_H_SMALL,
   },
-  /**
-   * 그림 표식 — 검게 그려진 그림을 표식 색(brown50)으로 물들인다.
-   *
-   * 리액트 네이티브에는 CSS filter가 없다. tintColor가 그 자리를 대신해서, 불투명한 자리를
-   * 통째로 이 색으로 칠하고 투명도는 그대로 둔다 — 한 가지 색으로 그린 표식에 딱 맞는다.
-   * 여러 색으로 그린 표식이 들어오면 그때 책마다 물들일지 말지를 고르게 하면 된다.
-   */
-  coverSymbolImage: {
-    width: '100%',
-    height: '100%',
-    tintColor: Colors.brown50,
-  },
-  /** 로마자 범위 안의 표식(') ) )') — 본문 서체 그대로. */
-  coverSymbol: {
-    fontFamily: Fonts.serifDisplay,
-    fontSize: 44,
-    letterSpacing: 6,
-    color: Colors.brown50,
-  },
-  /**
-   * 서체에 없는 글자(음악 기호 등) — 기기 기본 글꼴이 그린다.
-   *
-   * 높은음자리표는 글자 하나가 위아래로 아주 길어서 두 번 잘렸다. 원인이 둘이라 둘 다 푼다.
-   *
-   * 하나, 안드로이드는 글자를 Text 뷰의 테두리에서 자르는데 한 줄짜리 뷰의 높이는 줄높이가
-   * 정한다. 그래서 줄높이를 글자 크기의 세 배로 크게 열어 둔다 — 어떤 글꼴이 와도 먹이
-   * 그 안에 들어온다. 뷰가 표식 자리(100)보다 커지지만 자리 높이는 고정이라 아래 칩을
-   * 밀지 않고, 눈에 보이는 먹은 가운데에 그대로 앉는다.
-   *
-   * 둘, 먹의 실제 높이가 글자 크기의 두 배에 이른다(60으로 줄여도 100을 넘었다). 그래서
-   * 50까지 내린다 — 두 배로 잡아도 100 안에 들어온다.
-   *
-   * 크게 그리는 것보다 온전히 그리는 것이 먼저다. 온전히 나온 뒤에 키우면 된다.
-   */
-  coverGlyph: {
-    fontSize: 50,
-    lineHeight: 150,
-    textAlignVertical: 'center',
-    color: Colors.brown50,
-  },
   labelChip: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -1793,14 +1754,11 @@ const styles = StyleSheet.create({
    * 이 시스템은 보통 순백을 쓰지 않지만(따뜻한 흰색 eggshell을 쓴다), 사진 위에서는
    * 무엇이 깔릴지 알 수 없어 가장 밝은 흰색이라야 어느 사진에서도 읽힌다.
    */
-  coverTextOnPhoto: {
+  coverTextOnDark: {
     color: Colors.white,
   },
-  coverSymbolImageOnPhoto: {
-    tintColor: Colors.white,
-  },
-  /** 사진 위의 책 이름 칩 — 베이지 바탕 대신 흰빛을 옅게 깐다. */
-  labelChipOnPhoto: {
+  /** 어두운 바탕 위의 책 이름 칩 — 베이지 바탕 대신 흰빛을 옅게 깐다. */
+  labelChipOnDark: {
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   /** 표제 아래 한 줄 — 작곡가·훈음·뜻처럼 책마다 다른 것이 들어온다. */
@@ -2209,10 +2167,14 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: AVATAR,
+    height: AVATAR,
+    borderRadius: AVATAR / 2,
     backgroundColor: Colors.brown50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // 표지는 원보다 세로로 길다 — 넘치는 위아래를 원이 잘라 낸다.
+    overflow: 'hidden',
   },
   account: {
     fontFamily: Fonts.semiBold,

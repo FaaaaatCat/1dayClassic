@@ -1,17 +1,25 @@
-import { Image, Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import BookCoverArt from '@/components/book/BookCoverArt';
 import TagChip from '@/components/TagChip';
 import { Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import type { BookId } from '@/types';
 
 /** 모서리에서 잘라 낼 정사각 영역 — 띠는 이 안에서만 보인다. */
 const RIBBON_BOX = 72;
 /** 대각선 띠의 길이 — 정사각 영역의 대각선(≈102)보다 길어야 양 끝이 카드 밖으로 잘려 나간다. */
 const RIBBON_BAND_WIDTH = 110;
 
+/** 격자 한 칸의 표지 폭 — 높이는 표지 비율이 정한다. */
+const COVER_W = 108;
+
 interface BookCardProps {
   title: string;
   author: string;
-  cover: ImageSourcePropType;
+  /** 학습 콘텐츠가 있는 책이면 그 id — 표지를 그릴 값을 여기서 찾는다. */
+  bookId: BookId | null;
+  /** 학습 콘텐츠가 없는 책의 표지 주소. */
+  coverImage?: string;
   /** 이 책이 속한 시리즈들 — 파란 칩. */
   series: string[];
   /** 이 책의 분야들 — 베이지 칩. */
@@ -50,7 +58,8 @@ function CornerRibbon({ text }: { text: string }) {
 export default function BookCard({
   title,
   author,
-  cover,
+  bookId,
+  coverImage,
   series,
   fields,
   mvp,
@@ -67,7 +76,7 @@ export default function BookCard({
       onPress={onPress}>
       {mvp && <CornerRibbon text="MVP" />}
 
-      <Image source={cover} style={styles.cover} resizeMode="cover" />
+      <BookCoverArt bookId={bookId} coverImage={coverImage} width={COVER_W} />
       <Text style={styles.title} numberOfLines={2}>
         {title}
       </Text>
@@ -129,11 +138,6 @@ const styles = StyleSheet.create({
     lineHeight: 13,
     letterSpacing: trackBody(11),
     color: Ink.onDark,
-  },
-  cover: {
-    width: 108,
-    height: 160,
-    borderRadius: 2,
   },
   title: {
     fontFamily: Type.readingBold,

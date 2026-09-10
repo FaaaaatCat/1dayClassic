@@ -33,7 +33,7 @@ export async function syncAlarmBook(bookId: BookId): Promise<void> {
 
   await Promise.all([
     placeImage(book.alarmBackground, targets.background),
-    placeImage(book.alarmCover ?? book.coverImage, targets.cover),
+    placeImage(book.alarmCover, targets.cover),
   ]);
 }
 

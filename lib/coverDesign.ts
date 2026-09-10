@@ -1,0 +1,222 @@
+import type { BookId, CoverDesign } from '@/types';
+
+/**
+ * 권마다 하나씩 있는 표지 값 — 표지를 그리는 데 필요한 전부.
+ *
+ * 표지 색은 여기서만 산다. 앱의 지정 팔레트(global.css·constants/theme)에는 넣지 않는다 —
+ * 표지는 화면 UI가 아니라 인쇄물이고, 종이색과 잉크색은 권마다 달라야 하는 값이라
+ * '토큰'이 되는 순간 스무 개가 팔레트에 얹힌다. UI에 쓰이는 색은 여전히 팔레트가 정한다.
+ *
+ * 값을 고를 때 지킨 것(부록 B):
+ * - 종이색은 노랑이 살짝 섞인 미색. 순백도 찬 회색도 쓰지 않는다.
+ * - 잉크색은 권마다 하나. 제목·패턴·저자·마크가 투명도만 달리해 나눠 쓴다.
+ * - 정렬은 권마다 달리한다. 여덟 권이 같은 자리에 같은 크기면 템플릿 티가 난다.
+ *
+ * 패턴은 지어낸 무늬가 아니라 그 책의 목차에서 뽑은 것이다. 지금은 씨앗값이고,
+ * 실제 목차 데이터가 생기면 그것으로 갈아끼운다.
+ */
+const COVER_DESIGNS: Record<BookId, CoverDesign> = {
+  quote: {
+    paper: '#F1EBDB',
+    ink: '#1E3A62',
+    title: '하루 명심보감',
+    subtitle: '마음을 밝히는 거울 스무 이야기',
+    author: '밑줄사이 편집부',
+    imprint: '밑줄사이',
+    mark: 'underline',
+    align: 'center',
+    // 편명 격자.
+    pattern: ['繼善', '天命', '順命', '孝行', '正己', '安分', '存心', '戒性', '勤學', '訓子'],
+  },
+  hanja: {
+    paper: '#EDE7D8',
+    ink: '#26221C',
+    title: '하루 천자문',
+    subtitle: '네 글자씩 읽는 첫 열 구',
+    author: '밑줄사이 편집부',
+    imprint: '밑줄사이',
+    mark: 'underline',
+    align: 'top',
+    // 목차의 열 구를 그대로 깐다.
+    pattern: [
+      '天地玄黃',
+      '宇宙洪荒',
+      '日月盈昃',
+      '辰宿列張',
+      '寒來暑往',
+      '秋收冬藏',
+      '閏餘成歲',
+      '律呂調陽',
+      '雲騰致雨',
+      '露結爲霜',
+    ],
+  },
+  hanmun: {
+    paper: '#E5E9E2',
+    ink: '#25382A',
+    title: '하루 논어',
+    subtitle: '두 장씩 읽는 여섯 편',
+    author: '낮은문장 편집부',
+    imprint: '낮은문장',
+    mark: 'lowline',
+    align: 'center',
+    // 이 열 화가 지나가는 편들.
+    pattern: ['學而', '爲政', '里仁', '述而', '子罕', '衛靈公'],
+  },
+  listening: {
+    paper: '#211F1B',
+    ink: '#E6DEC9',
+    dark: true,
+    title: '하루 채근담',
+    subtitle: '나물 뿌리를 씹는 열 이야기',
+    author: '낮은문장 편집부',
+    imprint: '낮은문장',
+    mark: 'lowline',
+    align: 'bottom',
+    // 목차 열 화의 조 번호.
+    pattern: [
+      '前 001',
+      '前 002',
+      '前 003',
+      '前 005',
+      '前 006',
+      '前 011',
+      '前 012',
+      '前 016',
+      '前 024',
+      '前 026',
+    ],
+  },
+  psychology: {
+    paper: '#ECE7DF',
+    ink: '#77382A',
+    title: '하루 명상록',
+    subtitle: '열 권에서 고른 열 단상',
+    author: '첫자리 편집부',
+    imprint: '첫자리',
+    mark: 'quadrant',
+    align: 'top',
+    /*
+     * 목차 열 화의 권·절 번호.
+     *
+     * 로마 숫자를 유니코드 전용 글자(Ⅱ, Ⅲ …)로 두지 않고 로마자로 적는다. 번들된
+     * 서체(을유1945·Pretendard)에 그 글자들이 없으면 두부(□)로 나오는데, 표지는
+     * 글꼴을 고를 수 없는 자리라 안전한 쪽을 쓴다. 읽히는 모양은 똑같다.
+     */
+    pattern: [
+      'II·1',
+      'III·4',
+      'IV·3',
+      'V·1',
+      'VI·6',
+      'VII·59',
+      'VIII·47',
+      'IX·4',
+      'X·16',
+      'XI·18',
+    ],
+  },
+  latin: {
+    paper: '#F2EEE1',
+    ink: '#1F3C6A',
+    title: '하루 라틴어',
+    subtitle: '고전에서 온 스무 격언',
+    author: '첫자리 편집부',
+    imprint: '첫자리',
+    mark: 'quadrant',
+    align: 'center',
+    // 목차 열 화의 첫 낱말.
+    pattern: [
+      'CARPE',
+      'MEMENTO',
+      'COGITO',
+      'ALEA',
+      'DUM',
+      'FESTINA',
+      'ERRARE',
+      'AMOR',
+      'FORTUNA',
+      'DIVIDE',
+    ],
+  },
+  english: {
+    paper: '#E3E9ED',
+    ink: '#1C3143',
+    title: '하루 영어 속담',
+    subtitle: '두 마디씩 읽는 스무 속담',
+    author: '한밤서가 편집부',
+    imprint: '한밤서가',
+    mark: 'halfmoon',
+    align: 'top',
+    // 목차 열 화의 첫 낱말.
+    pattern: [
+      'ACTIONS',
+      'JUDGE',
+      'BETTER',
+      'TWO',
+      'COUNT',
+      'ROME',
+      'PICTURE',
+      'NECESSITY',
+      'EARLY',
+      'CLOUD',
+    ],
+  },
+  writing: {
+    paper: '#F6F4EF',
+    ink: '#17191B',
+    title: '하루 글쓰기',
+    subtitle: '문장을 세우는 열 규칙',
+    author: '한밤서가 편집부',
+    imprint: '한밤서가',
+    mark: 'halfmoon',
+    align: 'center',
+    // 목차 열 화의 규칙 번호.
+    pattern: ['8.', '9.', '10.', '11.', '12.', '13.', '14.', '15.', '16.', '18.'],
+  },
+  classic: {
+    paper: '#EAE6EE',
+    ink: '#2E2A3F',
+    title: '하루 클래식',
+    subtitle: '시대순으로 듣는 열한 곡',
+    author: '한밤서가 편집부',
+    imprint: '한밤서가',
+    mark: 'halfmoon',
+    align: 'center',
+    // 목차 열한 곡의 작품 번호 — 번호가 없는 두 곡(Sognai·피치카토 폴카)은 뺀다.
+    pattern: [
+      'BWV 846',
+      'K. 550',
+      'Op. 27',
+      'Op. 92',
+      'D. 810',
+      'Op. 9',
+      'Op. 20',
+      'CNW 42',
+      'Op. 37',
+    ],
+  },
+  /**
+   * 하루 교양은 아직 원고가 없는 책이다(data/liberal.json이 비어 있다). MVP 밖이라
+   * 목차를 열 수 없고 서점 격자에만 놓이므로, 표지도 자리를 지키는 값만 둔다.
+   *
+   * 색은 명언 쪽에서 빌려 쓴다. 원고가 정해지면 종이색·잉크색·패턴을 그 책의 목차에서
+   * 다시 뽑는다 — 지금 패턴의 번호는 목차에서 온 것이 아니라 자리표시다.
+   */
+  liberal: {
+    paper: '#F1EBDB',
+    ink: '#1E3A62',
+    title: '하루 교양',
+    subtitle: '준비 중',
+    author: '밑줄사이 편집부',
+    imprint: '밑줄사이',
+    mark: 'underline',
+    align: 'bottom',
+    pattern: ['001', '002', '003', '004', '005', '006'],
+  },
+};
+
+/** 그 책의 표지 값. 모든 책이 하나씩 갖는다 — 표지가 비는 책은 없다. */
+export function getCoverDesign(bookId: BookId): CoverDesign {
+  return COVER_DESIGNS[bookId];
+}

@@ -1,6 +1,5 @@
 import type { ImageSourcePropType } from 'react-native';
 
-import { getCatalogBookByBookId } from '@/lib/catalog';
 import type { BookId } from '@/types';
 
 export interface BookstoreBook {
@@ -8,25 +7,28 @@ export interface BookstoreBook {
   title: string;
   author: string;
   /**
-   * 표지 그림 주소. 열 권 모두 카탈로그(data/uupress-catalog.json)의 것을 그대로 쓴다 —
-   * 예전에는 아홉 권이 로컬 에셋이고 한 권만 URL이라 화면마다 둘을 갈라 처리해야 했다.
-   */
-  coverImage: string;
-  /**
-   * 카드 표지 맨 위에 놓이는 책의 표식. 없는 책은 그 자리가 비어 있다.
+   * 출판사가 준 진짜 표지 그림. 없으면 비워 둔다 — 그러면 표지를 코드로 그린다
+   * (lib/coverDesign의 값을 components/book/BookCover가 그린다).
    *
-   * 항목이 아니라 책의 성질이라 데이터가 아니라 여기 둔다 — 같은 책의 어느 날을 펴도
-   * 같은 표식이 나온다. 지금은 글자 하나로 그리지만, 그림 파일이 들어오면 주소로 바꾼다.
+   * 예전에는 열 권 모두 카탈로그의 표지 주소를 빌려 썼다. 표지를 그리기 시작하면서
+   * 그 의존이 사라졌고, 이 필드는 출판사에서 표지가 들어왔을 때만 채운다.
+   *
+   * 책의 표식(높은음자리표, ')))')도 여기 있었는데, 지금은 표지 값의 마크로 흡수됐다 —
+   * 표식만 따로 두면 종이색·잉크색과 따로 놀아, 같은 책인데 표지와 속표지의 결이 달랐다.
    */
-  symbol?: string;
+  coverImage?: string;
   /**
    * 잠금화면 알람 위쪽 절반을 덮는 사진. 아직 사진이 없는 책은 비워 둔다 —
    * 그 경우 알람 배경은 바탕색만 나오고 나머지 배치는 그대로다.
    */
   alarmBackground?: ImageSourcePropType;
   /**
-   * 알람 전용으로 합성한 표지(그림자·원근이 들어간 목업). 비워 두면 coverImage를 대신 쓰는데,
-   * 그건 납작한 사각형이라 알람 화면에서 조금 작게 놓인다 — lib/alarmBook.ts 참고.
+   * 알람 전용으로 합성한 표지(그림자·원근이 들어간 목업). 지금은 열 권 모두 비어 있어
+   * 알람 화면의 표지 자리가 빈다 — lib/alarmBook.ts 참고.
+   *
+   * 예전에는 네 권이 목업 이미지를 갖고 있었는데 그것이 출판사 실물 표지를 합성한
+   * 그림이라 걷어냈다. 알람은 JS가 안 도는 자리라 BookCover를 렌더할 수 없으므로,
+   * 알람 화면의 표지는 코틀린이 표지 값을 받아 직접 그리게 된다. 그때 이 필드는 사라진다.
    */
   alarmCover?: ImageSourcePropType;
 }
@@ -58,99 +60,64 @@ export function isMvpBook(bookId: BookId): boolean {
   return MVP_BOOK_IDS.includes(bookId);
 }
 
-/**
- * 그 책의 표지 주소 — 카탈로그에서 bookId로 찾는다.
- *
- * 카탈로그에 없으면 빈 문자열이다. 그러면 화면은 표지 자리를 비워 두고 넘어간다 —
- * 목록 한 칸이 비는 것이 앱이 멈추는 것보다 낫다.
- */
-function coverOf(bookId: BookId): string {
-  const book = getCatalogBookByBookId(bookId);
-  if (!book) {
-    console.warn(`[bookstore] 카탈로그에서 표지를 찾지 못했습니다: ${bookId}`);
-    return '';
-  }
-  return book.coverImage;
-}
-
 export const BOOKSTORE_BOOKS: BookstoreBook[] = [
   {
     id: 'classic',
-    title: '하루 클래식 공부',
-    author: '글릿 [유유]',
-    coverImage: coverOf('classic'),
-    // 클래식은 높은음자리표를 표식으로 쓴다. 글자(U+1D11E)로 그렸더니 글꼴이 정한 상자보다
-    // 먹이 커서 위아래가 계속 잘려, 그림으로 바꿨다. 검은 그림이지만 화면에서 brown50으로
-    // 물들여 그린다(CardDeckDetail의 coverSymbolImage).
-    symbol: 'https://freesvg.org/img/rickvanderzwet_Treble_clef_1.png',
+    title: '하루 클래식',
+    author: '한밤서가 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-classic.webp'),
-    alarmCover: require('@/assets/images/alarm/cover-classic.webp'),
   },
   {
     id: 'latin',
-    title: '하루 라틴어 공부',
-    author: '김태권 [유유]',
-    coverImage: coverOf('latin'),
+    title: '하루 라틴어',
+    author: '첫자리 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-latin.webp'),
   },
   {
     id: 'quote',
-    title: '하루 명언 공부',
-    author: '김영수 [유유]',
-    coverImage: coverOf('quote'),
+    title: '하루 명심보감',
+    author: '밑줄사이 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-quote.webp'),
   },
   {
     id: 'hanja',
-    title: '하루 한자 공부',
-    author: '이인호 [유유]',
-    coverImage: coverOf('hanja'),
+    title: '하루 천자문',
+    author: '밑줄사이 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-hanja.webp'),
   },
   {
     id: 'liberal',
-    title: '하루 교양 공부',
-    author: '전성원 [유유]',
-    coverImage: coverOf('liberal'),
+    title: '하루 교양',
+    author: '밑줄사이 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-liberal.webp'),
-    alarmCover: require('@/assets/images/alarm/cover-liberal.webp'),
   },
   {
     id: 'psychology',
-    title: '하루 심리 공부',
-    author: '신고은 [유유]',
-    coverImage: coverOf('psychology'),
+    title: '하루 명상록',
+    author: '첫자리 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-psychology.webp'),
   },
   {
     id: 'writing',
-    title: '하루 쓰기 공부',
-    author: '브라이언 로빈슨 [유유]',
-    coverImage: coverOf('writing'),
+    title: '하루 글쓰기',
+    author: '한밤서가 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-writing.webp'),
   },
   {
     id: 'hanmun',
-    title: '하루 한문 공부',
-    author: '임자헌 [유유]',
-    coverImage: coverOf('hanmun'),
+    title: '하루 논어',
+    author: '낮은문장 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-hanmun.webp'),
-    alarmCover: require('@/assets/images/alarm/cover-hanmun.webp'),
   },
   {
     id: 'english',
-    title: '하루 영어 교양',
-    author: '서미석 [유유]',
-    coverImage: coverOf('english'),
+    title: '하루 영어 속담',
+    author: '한밤서가 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-english.webp'),
-    alarmCover: require('@/assets/images/alarm/cover-english.webp'),
   },
   {
     id: 'listening',
-    title: '듣기의 말들',
-    author: '박총 [유유]',
-    coverImage: coverOf('listening'),
-    // 듣기의 말들은 괄호 셋을 표식으로 쓴다 — 귀 기울이는 소리결이다.
-    symbol: ') ) )',
+    title: '하루 채근담',
+    author: '낮은문장 편집부',
   },
 ];

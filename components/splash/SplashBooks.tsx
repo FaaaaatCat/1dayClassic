@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +8,8 @@ import {
   View,
 } from 'react-native';
 
+import BookCoverArt from '@/components/book/BookCoverArt';
+import { COVER_RATIO } from '@/components/book/BookCover';
 import SplashQuestion from '@/components/splash/SplashQuestion';
 import TagChip from '@/components/TagChip';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
@@ -101,7 +102,7 @@ export default function SplashBooks({
             height={cardHeight}
             title={book.title}
             author={book.author}
-            cover={book.coverImage}
+            bookId={book.id}
             fields={fieldsOf(getCatalogBookByBookId(book.id)?.tags ?? []).slice(0, MAX_CHIPS)}
             selected={picked === book.id}
             onPress={() => choose(index, book.id)}
@@ -118,7 +119,7 @@ function BookChoice({
   height,
   title,
   author,
-  cover,
+  bookId,
   fields,
   selected,
   onPress,
@@ -128,11 +129,19 @@ function BookChoice({
   height: number;
   title: string;
   author: string;
-  cover: string;
+  bookId: BookId;
   fields: string[];
   selected: boolean;
   onPress: () => void;
 }) {
+  /**
+   * 표지가 앉을 자리의 크기 — 재고 나서 그린다.
+   *
+   * 카드 키는 다섯 장이 같은 값으로 고정이고, 표지 자리는 제목·칩이 쓰고 남은 몫이라
+   * 미리 셈할 수 없다. 재어 본 상자 안에 표지 비율대로 들어가는 가장 큰 폭을 고른다.
+   */
+  const [box, setBox] = useState({ width: 0, height: 0 });
+  const coverWidth = Math.floor(Math.min(box.width, box.height / COVER_RATIO));
   return (
     <Pressable
       accessibilityRole="button"
@@ -140,8 +149,13 @@ function BookChoice({
       accessibilityLabel={`${title}, ${author}`}
       style={[styles.card, { width, height }, selected && styles.cardOn]}
       onPress={onPress}>
-      <View style={styles.coverBox}>
-        <Image source={{ uri: cover }} style={styles.cover} resizeMode="contain" />
+      <View
+        style={styles.coverBox}
+        onLayout={(event) => {
+          const { width: w, height: h } = event.nativeEvent.layout;
+          setBox({ width: w, height: h });
+        }}>
+        {coverWidth > 0 ? <BookCoverArt bookId={bookId} width={coverWidth} /> : null}
       </View>
       <Text style={styles.title} numberOfLines={2}>
         {title}
@@ -197,10 +211,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Space[8],
-  },
-  cover: {
-    width: '100%',
-    height: '100%',
   },
   title: {
     fontFamily: Type.uiMedium,

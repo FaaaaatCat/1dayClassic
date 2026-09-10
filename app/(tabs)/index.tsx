@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Image, Modal, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AlarmDetailScreen from '@/app/(tabs)/alarm-detail';
+import BookCoverArt from '@/components/book/BookCoverArt';
 import ScaleButton from '@/components/ScaleButton';
 import WelcomeSheet from '@/components/splash/WelcomeSheet';
 import { StatusBarTint } from '@/components/StatusBarTint';
@@ -21,6 +22,9 @@ import { getReadingProgress, getReadPlan, type ReadPlan } from '@/lib/progress';
 // 말풍선은 흐름에서 빠져 나와 버튼 줄 위에 얹힌다(bubbleWrap). 그래서 제 자리를
 // 스스로 만들지 못하고, 아무도 자리를 비워 주지 않으면 위에 있는 진행 줄을 덮는다 —
 // 실제로 그랬다. 아래 값들로 그만큼을 actionsArea의 위 여백으로 비워 둔다.
+
+/** 홈 표지의 폭 — 높이는 표지 비율이 정한다. */
+const COVER_W = 160;
 
 /** 가운데 읽기 버튼의 지름. 말풍선은 이 위에 뜬다. */
 const READ_BUTTON = 72;
@@ -170,16 +174,7 @@ export default function HomeScreen() {
         {/* 지금 읽는 책 한 권 — 표지, 제목과 지은이, 그리고 어디까지 왔는지. */}
         <View style={styles.card}>
           <View style={styles.coverSlot}>
-            {book?.coverImage ? (
-              <Image
-                source={{ uri: book.coverImage }}
-                style={styles.cover}
-                resizeMode="cover"
-                accessibilityIgnoresInvertColors
-              />
-            ) : (
-              <View style={styles.cover} />
-            )}
+            <BookCoverArt bookId={selectedBookId} coverImage={book?.coverImage} width={COVER_W} />
           </View>
 
           <View style={styles.titles}>
@@ -343,10 +338,6 @@ const styles = StyleSheet.create({
    * 네모의 윤곽을 따라 지므로, 바탕을 지워도 네모가 그림자로 남는다. 입체감은 표지 그림이
    * 이미 제 안에 담고 있다.
    */
-  cover: {
-    width: 160,
-    height: 238,
-  },
   titles: {
     alignItems: 'center',
     gap: Space[4],

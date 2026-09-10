@@ -3,13 +3,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import BookCoverArt from '@/components/book/BookCoverArt';
 import ScaleButton from '@/components/ScaleButton';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
 import { formatPrice, type CatalogBook } from '@/lib/catalog';
+import { getBookCoverPlan } from '@/lib/cover';
 import { fieldsOf, seriesOf } from '@/lib/tags';
 
 /** 배경에 깔리는 표지를 흐리게 하는 정도 — 무엇이 깔렸는지만 알아볼 만큼. */
 const BACKDROP_BLUR = 24;
+
+/** 세워 놓는 표지의 폭 — 높이는 표지 비율이 정한다. */
+const COVER_W = 180;
 
 /**
  * 책 구매 안내.
@@ -43,18 +48,28 @@ export default function BookPurchaseNotice({
 }) {
   const insets = useSafeAreaInsets();
   const tags = book?.tags ?? [];
+  /**
+   * 배경에 깔 것. 표지 그림이 있으면 흐리게 깔고, 그린 표지면 그 종이색을 옅게 깐다 —
+   * 그린 표지를 흐리게 해 봐야 종이색 한 겹이고, 그럴 바에는 색을 바로 까는 편이 낫다.
+   */
+  const coverPlan = getBookCoverPlan(book?.bookId, book?.coverImage);
   const chips = [...seriesOf(tags, book?.title ?? ''), ...fieldsOf(tags)].slice(0, 3);
 
   return (
     <View style={styles.screen}>
       {/* 배경 — 같은 표지를 흐리게 깔고, 아래로 갈수록 검게 덮어 글자가 설 자리를 만든다. */}
-      {book?.coverImage ? (
+      {coverPlan.kind === 'image' ? (
         <Image
-          source={{ uri: book.coverImage }}
+          source={{ uri: coverPlan.source }}
           style={styles.backdrop}
           resizeMode="cover"
           blurRadius={BACKDROP_BLUR}
           accessibilityIgnoresInvertColors
+        />
+      ) : coverPlan.kind === 'design' ? (
+        <View
+          style={[styles.backdrop, { backgroundColor: coverPlan.design.paper }]}
+          pointerEvents="none"
         />
       ) : null}
       <View style={styles.backdropDim} pointerEvents="none" />
@@ -78,14 +93,12 @@ export default function BookPurchaseNotice({
           styles.body,
           { paddingTop: insets.top + Space[56], paddingBottom: Space[24] },
         ]}>
-        {book?.coverImage ? (
-          <Image
-            source={{ uri: book.coverImage }}
-            style={styles.cover}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
-        ) : null}
+        <BookCoverArt
+          bookId={book?.bookId}
+          coverImage={book?.coverImage}
+          width={COVER_W}
+          style={styles.cover}
+        />
 
         {/* 지금 무슨 일이 일어났는지 한 줄 — 잠긴 이유를 먼저 말하고 권한다. */}
         <View style={styles.badge}>
@@ -204,8 +217,6 @@ const styles = StyleSheet.create({
   },
   /** 세워 둔 표지 — 이 화면의 주인공이라 크게 두고 그림자를 깐다. */
   cover: {
-    width: 180,
-    height: 266,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,

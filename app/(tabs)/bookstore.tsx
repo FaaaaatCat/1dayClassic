@@ -275,12 +275,8 @@ export default function BookstoreScreen() {
                 <BookCard
                   title={entry.book.title}
                   author={entry.book.author}
-                  cover={
-                    (entry.book.bookId !== null &&
-                      { uri: entry.book.coverImage }) || {
-                      uri: entry.book.coverImage,
-                    }
-                  }
+                  bookId={entry.book.bookId}
+                  coverImage={entry.book.coverImage}
                   series={entry.series}
                   fields={entry.fields}
                   mvp={entry.mvp}

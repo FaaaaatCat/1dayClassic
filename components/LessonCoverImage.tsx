@@ -11,10 +11,11 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
+import CoverMark from '@/components/book/CoverMark';
 import { Ink, Type, TypeScale } from '@/constants/theme';
 import { getCoverPlan, type UnsplashPhoto } from '@/lib/cover';
 import { MEDIA_HEADERS, resolveLessonCoverImageUrl } from '@/lib/lessons';
-import type { BookId, DailyLesson } from '@/types';
+import type { BookId, CoverDesign, DailyLesson } from '@/types';
 
 interface LessonCoverImageProps {
   lesson: DailyLesson;
@@ -38,11 +39,6 @@ interface LessonCoverImageProps {
   creditPlacement?: 'topRight' | 'bottomCenter';
 }
 
-/** 표식이 그림인지(주소) 글자인지 가른다. */
-function isImageSymbol(symbol: string): boolean {
-  return symbol.startsWith('http');
-}
-
 /**
  * 항목 표지.
  *
@@ -50,8 +46,9 @@ function isImageSymbol(symbol: string): boolean {
  * 그림이 없는 자리도 '아직 준비 안 됨'이 아니라 제대로 된 표지여야 한다 — 아홉 권 ×
  * 365일이면 3,285장이고 그 대부분은 오래도록 그림이 없을 것이다.
  *
- * 검은 바탕인 건 표지가 놓이는 자리(홈의 히어로, 상세의 히어로)가 모두 글자를 위에 얹는
- * 자리라, 어두운 바탕이라야 그 글자가 읽히기 때문이다.
+ * 그림이 없으면 그 책의 종이색을 깔고 출판사 마크를 옅게 앉힌다. 예전에는 검은 바탕에
+ * 표식 하나였는데, 검은 면은 어느 책에서나 똑같아서 어느 책을 펴도 같은 자리로 보였다.
+ * 종이색은 권마다 달라 펴는 순간 어느 책인지 알아본다.
  */
 export default function LessonCoverImage({
   lesson,
@@ -130,13 +127,22 @@ export default function LessonCoverImage({
     );
   }
 
-  // 표식이 있으면 표식을, 없으면(또는 사진을 못 불러왔으면) 검은 바탕만.
-  return <SymbolCover style={style} symbol={plan.kind === 'symbol' ? plan.symbol : undefined} />;
+  // 그림이 없으면(또는 못 불러왔으면) 그 책의 종이 위에 마크 하나.
+  return <DesignCover style={style} design={plan.kind === 'design' ? plan.design : undefined} />;
 }
 
-/** 검은 바탕에 책의 표식 하나. 표식이 없으면 바탕만 남는다. */
-function SymbolCover({ style, symbol }: { style?: StyleProp<ImageStyle>; symbol?: string }) {
-  /** 표식 크기는 상자에 맞춘다 — 히어로든 목록의 작은 칸이든 같은 비율로 보이게. */
+/**
+ * 그 책의 종이색 바탕에 출판사 마크 하나. 표지 값이 없으면 검은 바탕만 남는다
+ * (책을 못 찾은 경우인데, 목록 한 칸이 검게 비는 것이 앱이 멈추는 것보다 낫다).
+ */
+function DesignCover({
+  style,
+  design,
+}: {
+  style?: StyleProp<ImageStyle>;
+  design?: CoverDesign;
+}) {
+  /** 마크 크기는 상자에 맞춘다 — 히어로든 목록의 작은 칸이든 같은 비율로 보이게. */
   const [box, setBox] = useState(0);
 
   const onLayout = (event: LayoutChangeEvent) => {
@@ -145,31 +151,24 @@ function SymbolCover({ style, symbol }: { style?: StyleProp<ImageStyle>; symbol?
   };
 
   /**
-   * 표식을 가운데보다 조금 위에 앉힌다.
+   * 마크를 가운데보다 조금 위에 앉힌다.
    *
-   * 표지 아래쪽에는 제목과 버튼이 얹히므로, 한가운데에 두면 표식이 그 글자와 겹친다.
-   * 가운데 정렬을 유지한 채 아래 여백만 주면, 표식은 그 여백의 절반만큼 위로 올라간다.
+   * 표지 아래쪽에는 제목과 버튼이 얹히므로, 한가운데에 두면 마크가 그 글자와 겹친다.
+   * 가운데 정렬을 유지한 채 아래 여백만 주면, 마크는 그 여백의 절반만큼 위로 올라간다.
    */
   const lift = { marginBottom: box * 0.4 };
 
   return (
-    // 표식 표지에는 누를 것이 없다 — 그 위 탭은 그대로 아래로 내려가야 한다.
-    <View style={[style, styles.symbolCover]} onLayout={onLayout} pointerEvents="none">
-      {box > 0 && symbol ? (
-        isImageSymbol(symbol) ? (
-          <Image
-            source={{ uri: symbol }}
-            style={[lift, { width: box * 0.42, height: box * 0.42, opacity: 0.4 }]}
-            // 표식은 검게 그려진 그림이라, 어두운 바탕 위에서는 밝은 쪽으로 물들인다.
-            tintColor={Ink.onDark}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
-        ) : (
-          <Text style={[styles.mark, lift, { fontSize: box * 0.22 }]} numberOfLines={1}>
-            {symbol}
-          </Text>
-        )
+    // 이 표지에는 누를 것이 없다 — 그 위 탭은 그대로 아래로 내려가야 한다.
+    <View
+      style={[style, styles.designCover, design ? { backgroundColor: design.paper } : null]}
+      onLayout={onLayout}
+      pointerEvents="none">
+      {box > 0 && design ? (
+        // 표지 위에 다시 표제가 얹히므로, 마크는 바탕처럼 물러나 있는다.
+        <View style={[lift, styles.markFade]}>
+          <CoverMark kind={design.mark} size={box * 0.16} color={design.ink} />
+        </View>
       ) : null}
     </View>
   );
@@ -217,18 +216,14 @@ function UnsplashCredit({
 }
 
 const styles = StyleSheet.create({
-  /** 표식만 놓인 검은 면. */
-  symbolCover: {
+  /** 마크 하나만 놓인 종이 면. 표지 값이 없을 때만 검게 남는다. */
+  designCover: {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Ink.primary,
   },
-  mark: {
-    fontFamily: Type.serifDisplay,
-    textAlign: 'center',
-    color: Ink.onDark,
-    // 표지 위에 다시 제목이 얹히므로, 표식은 바탕처럼 물러나 있는다.
-    opacity: 0.4,
+  markFade: {
+    opacity: 0.32,
   },
   /** 오른쪽 위 — 오른쪽 끝에 붙이고 그 안에서 오른쪽으로 모은다. */
   credit: {

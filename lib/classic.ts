@@ -25,15 +25,17 @@ export function getTrackHeading(track: Track): LessonHeading {
 
 /**
  * 실제 트랙이 아직 없는 날짜를 채우는 자리표시 곡 목록. 재생되지 않으며 순환 사용된다.
- * 실제 곡 3개와 겹치지 않도록 따로 골라 두었다.
+ *
+ * 실제 열 곡과 겹치지 않도록 따로 골라 두었다 — 겹치면 목차에 같은 곡이 두 번 나오고
+ * 그중 하나는 잠긴 자리표시라, 읽는 사람에게는 같은 곡이 열렸다 잠긴 것처럼 보인다.
  */
 export const TRACK_PLACEHOLDER_HEADINGS: LessonHeading[] = [
   { title: '사계 중 「봄」 1악장', subtitle: '안토니오 비발디' },
-  { title: '녹턴 Op.9 No.2', subtitle: '프레데리크 쇼팽' },
+  { title: '전주곡 Op.28 No.15 「빗방울」', subtitle: '프레데리크 쇼팽' },
   { title: '골드베르크 변주곡 BWV 988', subtitle: '요한 제바스티안 바흐' },
-  { title: "피아노 소나타 14번 '월광'", subtitle: '루트비히 판 베토벤' },
+  { title: "피아노 소나타 8번 '비창' Op.13", subtitle: '루트비히 판 베토벤' },
   { title: '아이네 클라이네 나흐트무지크', subtitle: '볼프강 아마데우스 모차르트' },
-  { title: "현악 4중주 '죽음과 소녀'", subtitle: '프란츠 슈베르트' },
+  { title: "피아노 5중주 '송어' D.667", subtitle: '프란츠 슈베르트' },
   { title: "교향곡 '신세계로부터'", subtitle: '안토닌 드보르자크' },
   { title: '발라드 1번 G단조', subtitle: '프레데리크 쇼팽' },
   { title: '수상 음악 모음곡', subtitle: '게오르크 프리드리히 헨델' },

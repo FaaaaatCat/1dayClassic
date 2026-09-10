@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import BookCoverArt from '@/components/book/BookCoverArt';
 import BookPreviewModal from '@/components/BookPreviewModal';
 import ScreenHeader, { HeaderIconButton } from '@/components/ScreenHeader';
 import { StatusBarTint } from '@/components/StatusBarTint';
@@ -18,6 +19,9 @@ import { getCatalogBook, getCatalogBookByBookId } from '@/lib/catalog';
 
 /** 좌우 여백 — 마이페이지의 것과 같게 둔다. */
 const GUTTER = Space[20];
+
+/** 검은 띠에 놓이는 표지의 폭 — 높이는 표지 비율이 정한다. */
+const COVER_W = 56;
 
 /**
  * 리포트.
@@ -147,11 +151,10 @@ export default function LibraryBookDetailScreen() {
           contentContainerStyle={{ paddingBottom: insets.bottom + Space[40] }}>
           {/* 검은 띠 — 책 한 권과, 이 책을 읽을지 정하는 버튼 하나. */}
           <View style={styles.band}>
-            <Image
-              source={{ uri: catalogBook.coverImage }}
-              style={styles.cover}
-              resizeMode="cover"
-              accessibilityIgnoresInvertColors
+            <BookCoverArt
+              bookId={catalogBook.bookId}
+              coverImage={catalogBook.coverImage}
+              width={COVER_W}
             />
             <View style={styles.bandText}>
               <Text style={styles.title} numberOfLines={2}>
@@ -329,12 +332,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: GUTTER,
     paddingBottom: Space[24],
     backgroundColor: Ink.primary,
-  },
-  /** 표지가 앉는 자리 — 바탕을 깔지 않는다(홈의 cover 주석 참고). */
-  cover: {
-    width: 56,
-    height: 78,
-    borderRadius: 2,
   },
   bandText: {
     flex: 1,

@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BackHandler,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import BookCoverArt from '@/components/book/BookCoverArt';
 import BookPreviewModal from "@/components/BookPreviewModal";
 import ScaleButton from "@/components/ScaleButton";
 import ScreenHeader, { HeaderTextButton } from '@/components/ScreenHeader';
@@ -28,6 +28,9 @@ import {
   type CatalogBook,
 } from "@/lib/catalog";
 import { fieldsOf, seriesOf } from "@/lib/tags";
+
+/** 상세 히어로의 표지 폭 — 높이는 표지 비율이 정한다. */
+const COVER_W = 140;
 
 /**
  * 하루 서점의 책 상세 페이지 — 두 종류가 이 화면 하나를 함께 쓴다.
@@ -87,14 +90,16 @@ export default function BookDetailScreen() {
     ? {
         title: studyBook.title,
         author: studyBook.author,
-        cover: { uri: studyBook.coverImage },
+        bookId: studyBook.id,
+        coverImage: undefined as string | undefined,
         price: catalogBook?.price ?? null,
         sections: catalogBook?.sections ?? [],
       }
     : catalogBook && {
         title: catalogBook.title,
         author: catalogBook.author,
-        cover: { uri: catalogBook.coverImage },
+        bookId: catalogBook.bookId,
+        coverImage: catalogBook.coverImage,
         price: catalogBook.price,
         sections: catalogBook.sections,
       };
@@ -254,7 +259,12 @@ export default function BookDetailScreen() {
       {/* '현재 선택중' 배지는 하단 CTA(renderCta)가 같은 문구로 대신한다 — 히어로 상단에
           또 띄우면 같은 상태를 두 번 말하게 된다. 버튼도 여기 두지 않는다: 담기는 하단
           고정 바로, 미리보기는 헤더로 갔다. */}
-      <Image source={view.cover} style={styles.cover} resizeMode="cover" />
+      <BookCoverArt
+        bookId={view.bookId}
+        coverImage={view.coverImage}
+        width={COVER_W}
+        style={styles.cover}
+      />
       <Text style={styles.title}>{view.title}</Text>
       <Text style={styles.author}>{view.author}</Text>
       {chips.length > 0 && (
@@ -365,9 +375,6 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   cover: {
-    width: 140,
-    height: 207,
-    borderRadius: 2,
     shadowColor: Ink.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,

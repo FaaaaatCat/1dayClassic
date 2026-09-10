@@ -1,231 +1,625 @@
 {
   "lessons": [
     {
-      "id": "english_1_here_is_rhodes",
-      "english": "Here is Rhodes, jump here!",
-      "meaning": "실제로 입증해 보라",
-      "example": "Jimmy bragged so much that he had mastered martial arts in the army that I asked him to compete against me saying, \"Here is Rhodes, jump here!\"",
-      "exampleMeaning": "지미가 군대에서 무술을 익혔다고 자랑하기에 내가 \"어디 제대로 입증해 보시지!\"라고 말하며 겨뤄 보자고 했다.",
+      "id": "english_001",
+      "english": "Actions speak louder than words.",
+      "meaning": "행동이 말보다 크게 말한다",
+      "example": "He kept promising to help, but he never showed up. Actions speak louder than words.",
+      "exampleMeaning": "그는 돕겠다고 계속 말했지만 한 번도 나타나지 않았다. 행동이 말보다 크게 말하는 법이다.",
+      "source": "영어 속담",
       "date": "1월 1일",
-      "story": [
-        "라틴어 'hic Rhodus, hic salta'(여기가 로도스다, 여기서 뛰어라)에서 유래한 이 말은 『이솝 우화』의 허풍쟁이 이야기에 나온 표현이다. 로도스는 그리스 본토에서 멀리 떨어진 이오니아 남방의 섬으로, 이곳의 제우스 신전에서 올림피아 제전이 열렸다. 당시 제전에서는 경주, 투창, 투원반, 멀리뛰기, 레슬링 다섯 종목을 겨루었다.",
-        "어느 날 한 허풍쟁이 청년이 외국 각지를 여행하고 고향에 돌아와 견문과 경험담을 과장해 늘어놓았다. 마침 로도스 이야기가 나오자 자신이 그곳에서 누구보다 멀리뛰기를 잘했다고 자랑하며, 믿기지 않으면 그곳 사람들에게 물어보라고 했다. 그러자 한 사람이 나서서 그 말이 정말이라면 증인 따위는 필요 없으니 여기가 로도스라 생각하고 직접 뛰어 보라고 요구했다. 큰소리치던 청년은 아무 말도 못하고 입을 다물었다.",
-        "이후 이 우화에서 유래한 표현은 '말로만 큰소리치지 말고 실제 행동으로 입증해 보라'는 뜻으로 쓰이게 되었다."
-      ],
       "coverImage": "",
       "featured": true,
+      "story": [
+        "속담은 한 언어가 오래 써서 닳은 문장이다. 누가 지었는지 알 수 없고 고칠 수도 없으며, 그래서 그 언어를 쓰는 사람들이 무엇을 당연하게 여기는지가 그대로 드러난다.",
+        "첫 화에서는 말과 행동에 관한 두 속담을 읽는다. 하나는 행동을 편들고 하나는 되풀이를 편드니, 둘 다 입으로 하는 일을 낮춰 본다.",
+        "Actions speak louder than words.\n\n행동이 말보다 크게 말한다.",
+        "행동이 말보다 크게 말한다. 우리말로는 '말보다 행동'이라 짧게 옮기지만, 영어 원문은 행동에게 말하는 능력을 준다. 행동이 곧 하나의 발언이라는 짜임이다.",
+        "speak louder라는 표현을 눈여겨볼 만하다. 옳다거나 낫다고 하지 않고 '더 크게 말한다'고 하니, 둘을 같은 자리에 세워 놓고 소리 크기만 견준다.",
+        "than words에서 words가 복수인 것도 우연이 아니다. 말 한마디가 아니라 여러 번 되풀이한 말들을 가리키니, 말을 많이 한 쪽이 오히려 지는 구도가 된다.",
+        "Practice makes perfect.\n\n되풀이가 완벽을 만든다.",
+        "되풀이가 완벽을 만든다. practice는 연습이면서 실제로 해 보는 일이고, perfect는 여기서 형용사가 아니라 명사처럼 쓰여 '완벽한 상태'를 가리킨다.",
+        "두 속담이 이어진다. 앞은 말이 아니라 행동을 보라 하고 뒤는 그 행동을 몇 번 했는지 보라 하니, 한 번의 행동에서 되풀이로 눈이 옮겨 간다.",
+        "쓰임을 하나 더 보자. She played the same piece every morning for a year, and now it sounds effortless. Practice makes perfect. — 그는 한 해 동안 아침마다 같은 곡을 쳤고 이제 그 곡이 힘들이지 않은 듯 들린다.",
+        "오늘 하겠다고 말한 일 가운데 하나를 실제로 한다. 말한 일을 다 하기는 어려우니 하나만 고른다. 그 하나가 actions에 해당한다.",
+        "다음 화에서는 겉모습에 관한 두 속담을 읽는다. 표지로 책을 판단하지 말라는 말과, 아름다움이 보는 사람의 눈에 있다는 말이다."
+      ],
       "quizzes": [
         {
           "title": "오늘의 퀴즈",
-          "question": "이 표현이 유래한 이솝 우화에서 허풍쟁이 청년이 로도스에서 가장 잘했다고 자랑한 종목은 무엇일까요?",
+          "question": "본문은 speak louder라는 표현에서 무엇을 읽어 냈나요?",
           "choices": [
-            "멀리뛰기",
-            "레슬링",
-            "투창",
-            "투원반"
+            "행동이 옳다고 못 박는다",
+            "둘을 같은 자리에 세워 놓고 소리 크기만 견준다",
+            "말을 아예 하지 말라는 뜻이다",
+            "소리를 크게 내라는 조언이다"
           ],
-          "answer": 1,
-          "explanation": "로도스의 올림피아 제전에서는 경주, 투창, 투원반, 멀리뛰기, 레슬링 다섯 종목을 겨루었습니다. 청년은 그중 멀리뛰기를 자랑했지만, 직접 뛰어 보라는 요구에는 아무 말도 하지 못했습니다."
+          "answer": 2,
+          "explanation": "옳다거나 낫다고 하지 않고 '더 크게 말한다'고 하니, 둘을 같은 자리에 세워 놓고 소리 크기만 견줍니다."
         },
         {
           "title": "오늘의 퀴즈",
-          "question": "로도스는 어떤 곳이라고 소개되나요?",
+          "question": "본문은 words가 복수인 것을 어떻게 읽었나요?",
           "choices": [
-            "로마 원로원이 있던 도시",
-            "이솝이 태어나 자란 마을",
-            "제우스 신전에서 올림피아 제전이 열린 이오니아 남방의 섬",
-            "그리스 본토에서 가장 큰 항구"
+            "영어에는 단수가 없기 때문이다",
+            "낱말 하나하나를 세는 뜻이다",
+            "여러 번 되풀이한 말들을 가리켜, 말을 많이 한 쪽이 지는 구도가 된다",
+            "행동도 복수여서 짝을 맞춘 것이다"
           ],
           "answer": 3,
-          "explanation": "로도스는 그리스 본토에서 멀리 떨어진 이오니아 남방의 섬으로, 이곳의 제우스 신전에서 올림피아 제전이 열렸습니다. 당시 제전에서는 경주, 투창, 투원반, 멀리뛰기, 레슬링 다섯 종목을 겨루었습니다."
+          "explanation": "말 한마디가 아니라 여러 번 되풀이한 말들을 가리키니, 말을 많이 한 쪽이 오히려 지는 구도가 됩니다."
         },
         {
           "title": "오늘의 퀴즈",
-          "question": "허풍쟁이 청년의 자랑에 사람들이 요구한 것은 무엇인가요?",
+          "question": "Practice makes perfect에서 perfect는 어떻게 쓰였나요?",
           "choices": [
-            "로도스 사람을 증인으로 데려오라",
-            "여행담을 처음부터 다시 들려 달라",
-            "제전의 기록이 적힌 문서를 보여 달라",
-            "여기를 로도스라 여기고 직접 뛰어 보라"
+            "동사로 쓰여 '완성하다'가 되었다",
+            "부사로 쓰였다",
+            "형용사로 practice를 꾸민다",
+            "명사처럼 쓰여 '완벽한 상태'를 가리킨다"
           ],
           "answer": 4,
-          "explanation": "청년이 믿기지 않으면 로도스 사람들에게 물어보라고 하자, 한 사람이 나서서 그 말이 정말이라면 증인 따위는 필요 없으니 여기가 로도스라 생각하고 직접 뛰어 보라고 했습니다. 큰소리치던 청년은 아무 말도 못 하고 입을 다물었습니다."
+          "explanation": "perfect는 여기서 형용사가 아니라 명사처럼 쓰여 '완벽한 상태'를 가리킵니다."
         }
-      ],
-      "unsplash": {
-        "url": "https://images.unsplash.com/photo-1673086636045-9aa873babc91?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjZ8fG9sZCUyMHdvcmxkJTIwbWFwfGVufDF8MHx8fDE3ODgzMzY3MTB8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
-        "photographer": "Arie Oldman",
-        "profile": "https://unsplash.com/@arizard?utm_source=1dayClassic&utm_medium=referral"
-      }
+      ]
     },
     {
-      "id": "english_2_good_wine_needs_no_bush",
-      "english": "good wine needs no bush",
-      "meaning": "좋은 와인은 간판이 필요 없다, 내용이 좋으면 선전이 필요 없다",
-      "example": "The product I've invented is so excellent that it needs no ad campaign, just as good wine needs no bush.",
-      "exampleMeaning": "좋은 와인은 간판이 필요 없듯이 내가 발명한 제품은 너무 훌륭해 별다른 광고를 하지 않아도 된다.",
+      "id": "english_002",
+      "english": "Don't judge a book by its cover.",
+      "meaning": "표지로 책을 판단하지 말라",
+      "example": "The little shop looked shabby, but the bread was the best in town. Don't judge a book by its cover.",
+      "exampleMeaning": "그 작은 가게는 허름해 보였지만 빵은 동네에서 가장 좋았다. 표지로 책을 판단하지 말 것이다.",
+      "source": "영어 속담",
       "date": "1월 2일",
-      "story": [
-        "'좋은 것은 굳이 광고하지 않아도 입소문으로 알려지게 된다'는 의미의 이 속담은 셰익스피어가 『뜻대로 하세요』 4막 5장에서 다음과 같이 쓴 뒤로 유명해졌다. \"If it be true that good wine needs no bush, 'tis true that a good play needs no epilogue; yet to good wine they do use good bushes, and good plays prove the better by the help of good epilogues.\"(좋은 포도주에 간판이 필요 없는 것이 사실이라면, 좋은 연극에 에필로그가 필요 없는 것도 사실이다. 그러나 좋은 포도주에 좋은 간판을 쓰듯 좋은 연극은 좋은 에필로그의 도움으로 훨씬 더 훌륭해진다.)",
-        "이 표현의 기원은 영국의 선술집들이 담쟁이덩굴(bush)이나 나뭇가지를 간판처럼 걸어 놓던 풍습에서 찾아볼 수 있다. 로마 시대부터 담쟁이덩굴은 술의 신 바쿠스에게 바쳐진 식물로 신성시되었고, 아무 곳에서나 잘 자라는 강인한 식물이기 때문에 술을 팔고 있다는 표시로 문 위에 걸어 놓았다고 한다. 지금도 글로스터와 워릭 등지에서는 축제 때에 간판 대신 담쟁이나 꽃이나 나뭇가지 다발을 걸어 술을 판다는 사실을 알리는 풍습이 남아 있다.",
-        "그래서 'good wine needs no bush'는 '술이 좋으면 굳이 간판을 걸어 놓지 않아도 사람들이 알음알음 찾아온다'는 의미가 되었다."
-      ],
       "coverImage": "",
+      "story": [
+        "오늘 두 속담은 겉모습을 말한다. 하나는 겉을 믿지 말라 하고 하나는 아름다움 자체가 보는 사람에게 달렸다 하니, 뒤쪽이 앞쪽보다 한 걸음 더 나간다.",
+        "속담이 늘 서로 맞지는 않는다는 점도 함께 볼 만하다. 같은 언어 안에서 반대되는 속담이 나란히 살아 있는 일이 흔하다.",
+        "Don't judge a book by its cover.\n\n표지로 책을 판단하지 말라.",
+        "표지로 책을 판단하지 말라. 책이라는 비유가 정확한 것은 표지와 내용이 애초에 다른 사람의 손에서 나오기 때문이다. 지은이가 만들지 않은 것으로 지은이를 판단하는 셈이다.",
+        "judge A by B라는 틀을 기억해 두면 쓸모가 넓다. B를 잣대로 삼아 A를 재는 짜임이니, judge people by their clothes처럼 갈아 끼워 쓸 수 있다.",
+        "its가 가리키는 것이 book이라는 점도 짚어 둘 만하다. it's(it is)와 헷갈리기 쉬운 자리인데, 여기서는 소유를 나타내므로 아포스트로피가 없는 its가 맞다.",
+        "Beauty is in the eye of the beholder.\n\n아름다움은 보는 사람의 눈에 있다.",
+        "아름다움은 보는 사람의 눈에 있다. beholder는 behold(바라보다)에서 온 낱말로 '바라보는 사람'이다. 지금은 이 속담 안에서 주로 살아남은 말이다.",
+        "두 속담이 방향을 달리한다. 앞은 겉을 보고 속을 짐작하지 말라는 경계이고, 뒤는 아름다움이라는 판단 자체가 보는 쪽에서 생긴다는 말이니 더 근본을 건드린다.",
+        "지금 형태는 십구세기에 굳었다고 전한다. eye가 단수인 것이 재미있는데, 여러 사람의 눈이 아니라 보는 그 한 사람의 눈이라는 뜻이라 단수가 오히려 정확하다.",
+        "오늘 첫인상으로 판단해 둔 사람이나 물건 하나를 떠올려 그 판단을 미뤄 둔다. 미루는 것만으로 충분하다. 뒤집을 필요는 없다.",
+        "다음 화에서는 시간에 관한 두 속담을 읽는다. 늦더라도 안 하는 것보다 낫다는 말과, 로마는 하루에 지어지지 않았다는 말이다."
+      ],
       "quizzes": [
         {
           "title": "오늘의 퀴즈",
-          "question": "'good wine needs no bush'의 유래가 된 영국 선술집 간판 풍습에서, 담쟁이덩굴은 원래 어떤 신에게 바쳐진 식물이었을까요?",
+          "question": "본문은 책이라는 비유가 정확한 까닭을 무엇이라고 했나요?",
           "choices": [
-            "아폴론",
-            "바쿠스",
-            "제우스",
-            "헤르메스"
+            "책이 가장 흔한 물건이어서",
+            "표지와 내용이 애초에 다른 사람의 손에서 나오기 때문에",
+            "표지가 늘 화려하기 때문에",
+            "책은 겉을 볼 수 없기 때문에"
           ],
           "answer": 2,
-          "explanation": "로마 시대부터 담쟁이덩굴은 술의 신 바쿠스에게 바쳐진 신성한 식물로 여겨졌습니다. 아무 곳에서나 잘 자라는 강인한 식물이라 술을 판다는 표시로 문 위에 걸어 놓았다고 합니다."
+          "explanation": "표지와 내용이 애초에 다른 사람의 손에서 나오기 때문입니다. 지은이가 만들지 않은 것으로 지은이를 판단하는 셈입니다."
         },
         {
           "title": "오늘의 퀴즈",
-          "question": "이 속담을 유명하게 만든 셰익스피어의 작품은 무엇인가요?",
+          "question": "beholder는 어떤 낱말에서 왔나요?",
           "choices": [
-            "『한여름 밤의 꿈』",
-            "『십이야』",
-            "『베니스의 상인』",
-            "『뜻대로 하세요』"
+            "'붙잡다'는 뜻의 hold",
+            "'믿다'는 뜻의 believe",
+            "'바라보다'는 뜻의 behold",
+            "'속하다'는 뜻의 belong"
           ],
-          "answer": 4,
-          "explanation": "셰익스피어가 『뜻대로 하세요』 4막 5장에 쓴 뒤로 유명해졌습니다. 좋은 포도주에 간판이 필요 없듯 좋은 연극에는 에필로그가 필요 없다면서도, 좋은 연극은 좋은 에필로그의 도움으로 훨씬 더 훌륭해진다고 덧붙인 대목입니다."
+          "answer": 3,
+          "explanation": "beholder는 behold(바라보다)에서 온 낱말로 '바라보는 사람'입니다. 지금은 이 속담 안에서 주로 살아남은 말입니다."
         },
         {
           "title": "오늘의 퀴즈",
-          "question": "영국 선술집이 문 위에 담쟁이덩굴을 걸어 둔 까닭은 무엇인가요?",
+          "question": "본문은 eye가 단수인 것을 어떻게 보았나요?",
           "choices": [
-            "술을 팔고 있다는 표시로",
-            "악귀를 막는 부적으로",
-            "세금을 낸 가게라는 증명으로",
-            "주인이 바뀌었다는 신호로"
+            "보는 그 한 사람의 눈이라는 뜻이라 단수가 오히려 정확하다",
+            "옛 영어에서는 복수가 없었다",
+            "한쪽 눈으로만 본다는 뜻이다",
+            "운율을 맞추려고 줄인 것이다"
           ],
           "answer": 1,
-          "explanation": "영국의 선술집들은 담쟁이덩굴이나 나뭇가지를 간판처럼 걸어 술을 판다는 것을 알렸습니다. 지금도 글로스터와 워릭 등지에서는 축제 때 간판 대신 담쟁이나 꽃, 나뭇가지 다발을 거는 풍습이 남아 있습니다."
+          "explanation": "여러 사람의 눈이 아니라 보는 그 한 사람의 눈이라는 뜻이라 단수가 오히려 정확합니다."
         }
-      ],
-      "unsplash": {
-        "url": "https://images.unsplash.com/photo-1699662585139-140a988be1a8?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjJ8fGxldHRlcnByZXNzJTIwdHlwZXxlbnwxfDB8fHwxNzg4MzM2NzEyfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
-        "photographer": "Bret Lama",
-        "profile": "https://unsplash.com/@sepiatone?utm_source=1dayClassic&utm_medium=referral"
-      }
+      ]
     },
     {
-      "id": "english_3_swap_horses_in_midstream",
-      "english": "swap horses in midstream",
-      "meaning": "(계획 따위를) 중간에 바꾸다, (지지 대상을) 바꾸다",
-      "example": "We're about to close on the house, and my husband suddenly wants to swap horses in midstream and look at another property!",
-      "exampleMeaning": "우리는 거의 그 집으로 결정할 참이었는데, 남편이 갑자기 마음을 바꾸어 다른 부동산을 보고 싶어 한다!",
+      "id": "english_003",
+      "english": "Better late than never.",
+      "meaning": "늦더라도 안 하는 것보다 낫다",
+      "example": "She started learning the piano at sixty. Better late than never.",
+      "exampleMeaning": "그는 예순에 피아노를 배우기 시작했다. 늦더라도 안 하는 것보다 낫다.",
+      "source": "라틴어 격언 potius sero quam numquam(리비우스)과 통하는 속담",
       "date": "1월 3일",
-      "story": [
-        "글자 그대로 해석하면 '강을 건너는 도중에 말을 바꾼다'는 이 표현은 미국의 16대 대통령 링컨이 여러 번 사용했다. 특히 1864년, 이듬해에 있을 재선에서 대통령 후보 지명을 수락하면서 링컨은 자신이 유능해서라기보다 동료 공화당 의원들이 '전쟁 중에 후보를 교체하는 것은 좋지 않다'고 결론지었기 때문이라고 겸손하게 말했다. 이때 빗대어 쓴 표현이 \"It is not best to swap horses while crossing the river\"(강을 건너는 중에 말을 바꾸는 것은 최선이 아니다)였다.",
-        "이 표현은 1840년에 발표되어 인기를 얻은 우스꽝스러운 이야기에서 유래한 것으로 추측된다. 한 남자가 암말과 망아지를 데리고 강을 건너다 그만 물에 빠지고 말았다. 경황이 없던 남자는 급류에 휩쓸리지 않으려고 망아지의 꼬리를 잡고 물속에서 끌려갔지만, 강 건너편에 닿기도 전에 망아지는 지친 기색이 역력했다. 그 모습을 지켜보던 구경꾼들이 망아지 대신 암말의 꼬리를 붙잡으라고 충고했다. 그러자 남자는 지금은 말을 바꿀 때가 아니라고 대답했다고 한다."
-      ],
       "coverImage": "",
+      "story": [
+        "오늘 두 속담은 시간을 말한다. 하나는 늦게라도 시작하라 하고 하나는 빨리 끝내려 하지 말라 하니, 시작과 과정을 각각 편든다.",
+        "앞 속담은 라틴어에 같은 뜻의 격언이 먼저 있었다. 리비우스의 글에 나오는 potius sero quam numquam이 그것이니, 영어 속담이 라틴어에서 건너온 경우다.",
+        "Better late than never.\n\n늦더라도 안 하는 것보다 낫다.",
+        "늦더라도 안 하는 것보다 낫다. 낱말이 네 개뿐인데 문장이 성립하는 것은 It is와 to do가 통째로 빠져 있기 때문이다. 속담은 이렇게 뼈만 남기고 줄인다.",
+        "better A than B는 견주는 틀이다. A와 B에 형용사든 부사든 명사든 같은 성질의 말을 넣으면 되니, better safe than sorry처럼 갈아 끼울 수 있다.",
+        "late와 never를 견준 것이 이 속담의 핵심이다. 빠름과 늦음을 견주지 않고 늦음과 없음을 견주었으니, 비교의 상대를 낮춰 잡아 늦은 쪽을 이기게 만들었다.",
+        "Rome wasn't built in a day.\n\n로마는 하루에 지어지지 않았다.",
+        "로마는 하루에 지어지지 않았다. 중세 프랑스 속담집에 있는 표현에서 왔다고 전한다. 로마가 예로 쓰인 것은 그 도시가 오래 걸려 커진 것의 대표였기 때문이다.",
+        "두 속담을 이어 읽으면 조바심이 앞뒤로 눌린다. 앞은 늦게 시작해도 된다고 하고 뒤는 빨리 끝나지 않아도 된다고 하니, 시작할 때와 하는 중에 각각 쓸 말이 된다.",
+        "쓰임을 하나 더 보자. We have only finished the first floor, but Rome wasn't built in a day. — 아직 일층만 끝냈지만 로마는 하루에 지어지지 않았다.",
+        "오늘 늦었다고 접어 둔 일 하나를 꺼내 첫 걸음만 밟는다. never와 견주면 늦은 것은 언제나 이긴다.",
+        "다음 화에서는 함께 하는 일에 관한 두 속담을 읽는다. 머리 둘이 하나보다 낫다는 말과, 손이 많으면 일이 가벼워진다는 말이다."
+      ],
       "quizzes": [
         {
           "title": "오늘의 퀴즈",
-          "question": "1840년 유래담에서, 강을 건너던 남자가 급류에 휩쓸리지 않으려고 처음 붙잡은 것은 무엇일까요?",
+          "question": "Better late than never가 네 낱말로 성립하는 까닭은 무엇인가요?",
           "choices": [
-            "암말의 꼬리",
-            "자신의 짐",
-            "망아지의 꼬리",
-            "강가의 나뭇가지"
-          ],
-          "answer": 3,
-          "explanation": "남자는 암말과 망아지를 데리고 강을 건너다 물에 빠졌고, 급류에 휩쓸리지 않으려 망아지의 꼬리를 잡고 끌려갔습니다. 구경꾼들이 암말 꼬리로 바꿔 잡으라고 했지만 남자는 지금은 말을 바꿀 때가 아니라고 답했습니다."
-        },
-        {
-          "title": "오늘의 퀴즈",
-          "question": "이 표현을 여러 번 쓴 것으로 알려진 미국 대통령은 누구인가요?",
-          "choices": [
-            "링컨",
-            "워싱턴",
-            "제퍼슨",
-            "루스벨트"
+            "It is와 to do가 통째로 빠져 있기 때문에",
+            "명령문이기 때문에",
+            "감탄문이기 때문에",
+            "두 낱말이 합쳐졌기 때문에"
           ],
           "answer": 1,
-          "explanation": "미국의 16대 대통령 링컨이 여러 번 썼습니다. 1864년 재선 후보 지명을 수락하면서, 자신이 유능해서가 아니라 동료 공화당 의원들이 전쟁 중에 후보를 교체하는 것은 좋지 않다고 결론지었기 때문이라며 이 말을 빗대어 썼습니다."
+          "explanation": "낱말이 네 개뿐인데 문장이 성립하는 것은 It is와 to do가 통째로 빠져 있기 때문입니다. 속담은 이렇게 뼈만 남기고 줄입니다."
         },
         {
           "title": "오늘의 퀴즈",
-          "question": "암말의 꼬리를 잡으라는 구경꾼의 충고에 남자는 뭐라고 답했나요?",
+          "question": "본문은 이 속담이 무엇과 무엇을 견주었다고 했나요?",
           "choices": [
-            "이미 늦었다고 했다",
-            "지금은 말을 바꿀 때가 아니라고 했다",
-            "도와 달라고 소리쳤다",
-            "망아지를 놓아주고 헤엄쳤다"
+            "빠름과 늦음",
+            "늦음과 없음",
+            "빠름과 없음",
+            "시작과 끝"
           ],
           "answer": 2,
-          "explanation": "지친 망아지 대신 암말의 꼬리를 붙잡으라는 충고에 남자는 지금은 말을 바꿀 때가 아니라고 대답했습니다. 여기서 강을 건너는 도중에 말을 바꾼다는 표현이 나왔습니다."
+          "explanation": "빠름과 늦음을 견주지 않고 늦음과 없음을 견주었으니, 비교의 상대를 낮춰 잡아 늦은 쪽을 이기게 만들었습니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "Rome wasn't built in a day에서 로마가 예로 쓰인 까닭은 무엇인가요?",
+          "choices": [
+            "로마가 가장 오래된 도시라서",
+            "속담이 로마에서 만들어져서",
+            "로마 사람들이 게을렀다고 전해서",
+            "그 도시가 오래 걸려 커진 것의 대표였기 때문에"
+          ],
+          "answer": 4,
+          "explanation": "로마가 예로 쓰인 것은 그 도시가 오래 걸려 커진 것의 대표였기 때문입니다."
         }
-      ],
-      "unsplash": {
-        "url": "https://images.unsplash.com/photo-1746440603928-6a1979f2a111?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjN8fHJvYWQlMjBzaWdufGVufDF8MHx8fDE3ODgzMzY3MTR8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
-        "photographer": "Haberdoedas",
-        "profile": "https://unsplash.com/@haberdoedas?utm_source=1dayClassic&utm_medium=referral"
-      }
+      ]
     },
     {
-      "id": "english_4_buridans_ass",
-      "english": "buridan's ass",
-      "meaning": "우유부단한 인물, 미적지근한 사람",
-      "example": "I feel stuffy when I see Paul. He always hesitates as buridan's ass in the face of important matters.",
-      "exampleMeaning": "폴을 보면 답답한 마음이 든다. 그는 언제나 중요한 문제 앞에서 우유부단하게 망설인다.",
+      "id": "english_004",
+      "english": "Two heads are better than one.",
+      "meaning": "머리 둘이 하나보다 낫다",
+      "example": "I could not solve the puzzle alone, so I asked my sister. Two heads are better than one.",
+      "exampleMeaning": "혼자서는 그 퍼즐을 풀지 못해 언니에게 물었다. 머리 둘이 하나보다 낫다.",
+      "source": "영어 속담",
       "date": "1월 4일",
-      "story": [
-        "글자 그대로 해석하면 '뷔리당의 당나귀'라는 뜻의 이 말은 14세기 프랑스의 철학자 장 뷔리당이 도덕 결정론을 풍자하며 사례로 가정한 역설에서 유래했다. 어느 날 길을 가다 지쳐 쓰러지기 일보 직전인 당나귀가 건초 더미와 물동이가 있는 곳에 이르렀다. 하지만 다음 날 아침 당나귀는 죽은 채로 발견되었다. 어느 것을 먼저 먹어야 할지 선택하지 못하고 망설이기만 하다가 결국 배고픔과 갈증으로 죽고 만 것이다. 이로부터 '망설이며 결단을 내리지 못하는 사람이나 상황'을 '뷔리당의 당나귀'라고 부르게 되었다.",
-        "장 뷔리당 이전에도 비슷한 개념에 대해 논의한 철학자들이 있다. 특히 아리스토텔레스는 『천체에 관하여』에서 지구가 둥글고 사방에서 가해지는 힘이 같기 때문에 움직이지 않는다는 소피스트의 견해를 조롱하며 이와 유사한 비유를 사용했다. \"……a man, being just as hungry as thirsty, and placed in between food and drink, must necessarily remain where he is and starve to death.\"(음식과 술 사이에 끼어 똑같이 갈증과 허기에 시달리는 사람은 그 자리에서 굶어 죽을 것이 분명하다.)"
-      ],
       "coverImage": "",
+      "story": [
+        "오늘 두 속담은 함께 하는 일을 말한다. 하나는 생각을 모으는 쪽이고 하나는 손을 모으는 쪽이니, 머리와 손으로 갈라 같은 말을 두 번 한다.",
+        "앞 화에서 본 better A than B 틀이 오늘 다시 나온다. 속담은 몇 개의 틀을 되풀이해 쓰는데, 그 틀을 알아보면 처음 보는 속담도 뜻이 짚인다.",
+        "Two heads are better than one.\n\n머리 둘이 하나보다 낫다.",
+        "머리 둘이 하나보다 낫다. head가 사람을 가리키는 자리에 쓰였으니, 사람을 머리로 세는 셈이다. 우리말에서 '식구'를 입으로 세는 것과 결이 비슷하다.",
+        "than one 뒤에 head가 생략되어 있다. 앞에 나온 말을 되풀이하지 않는 것이 영어의 습관이라, 견주는 문장에서는 뒤쪽이 이렇게 짧아진다.",
+        "heads가 복수인데 뒤의 동사가 are인 것도 눈여겨볼 만하다. 우리말은 수에 따라 동사를 바꾸지 않지만 영어는 바꾸므로, 주어의 수를 먼저 정해야 문장이 시작된다.",
+        "Many hands make light work.\n\n손이 많으면 일이 가벼워진다.",
+        "손이 많으면 일이 가벼워진다. light가 여기서 '밝은'이 아니라 '가벼운'이라는 뜻으로 쓰였고, make light work는 일을 가볍게 만든다는 짜임이다.",
+        "두 속담이 나누는 일이 다르다. 앞은 생각처럼 나눌 수 없는 일도 둘이 하면 낫다 하고, 뒤는 나눌 수 있는 일이라면 사람이 많을수록 가벼워진다 한다.",
+        "쓰임을 하나 더 보자. Everyone carried one box, and the room was empty in ten minutes. Many hands make light work. — 모두가 상자 하나씩을 들었고 방은 십 분 만에 비었다.",
+        "오늘 혼자 붙들고 있는 일 하나를 골라 한 사람에게만 말해 본다. 도움을 청하지 않아도 좋다. 말하는 것만으로 머리가 둘이 된다.",
+        "다음 화에서는 섣부름에 관한 두 속담을 읽는다. 알이 깨기 전에 병아리를 세지 말라는 말과, 달걀을 한 바구니에 담지 말라는 말이다."
+      ],
       "quizzes": [
         {
           "title": "오늘의 퀴즈",
-          "question": "뷔리당의 당나귀 우화에서 당나귀가 결국 죽음에 이른 직접적인 원인은 무엇일까요?",
+          "question": "본문은 head가 사람을 가리키는 것을 무엇과 견주었나요?",
           "choices": [
-            "포식자에게 습격당해서",
-            "길을 잃고 헤매서",
-            "먹이가 상해서",
-            "무엇을 먼저 먹을지 결정하지 못해서"
+            "우리말에서 '식구'를 입으로 세는 것",
+            "우리말에서 나이를 살로 세는 것",
+            "영어에서 소를 마리로 세는 것",
+            "한자에서 사람을 人으로 적는 것"
           ],
-          "answer": 4,
-          "explanation": "건초 더미와 물동이 앞에 선 당나귀는 어느 것을 먼저 먹어야 할지 선택하지 못하고 망설이기만 했습니다. 그러다 배고픔과 갈증으로 죽고 말았고, 이 이야기에서 우유부단한 사람을 가리키는 표현이 유래했습니다."
+          "answer": 1,
+          "explanation": "head가 사람을 가리키는 자리에 쓰였으니 사람을 머리로 세는 셈입니다. 우리말에서 '식구'를 입으로 세는 것과 결이 비슷합니다."
         },
         {
           "title": "오늘의 퀴즈",
-          "question": "장 뷔리당은 무엇을 풍자하며 이 역설을 가정했나요?",
+          "question": "than one 뒤에는 무엇이 생략되어 있나요?",
           "choices": [
-            "회의주의",
-            "도덕 결정론",
-            "경험론",
-            "원자론"
-          ],
-          "answer": 2,
-          "explanation": "14세기 프랑스의 철학자 장 뷔리당이 도덕 결정론을 풍자하며 사례로 가정한 역설에서 나온 말입니다. 건초 더미와 물동이 사이에서 무엇을 먼저 먹을지 정하지 못한 당나귀는 이튿날 죽은 채 발견됩니다."
-        },
-        {
-          "title": "오늘의 퀴즈",
-          "question": "뷔리당보다 앞서 비슷한 비유를 쓴 철학자와 저작은 무엇인가요?",
-          "choices": [
-            "플라톤 『국가』",
-            "에피쿠로스 『자연에 관하여』",
-            "아리스토텔레스 『천체에 관하여』",
-            "세네카 『인생의 짧음에 관하여』"
+            "is",
+            "better",
+            "head",
+            "two"
           ],
           "answer": 3,
-          "explanation": "아리스토텔레스는 『천체에 관하여』에서 지구가 둥글고 사방에서 가해지는 힘이 같아 움직이지 않는다는 소피스트의 견해를 조롱하며, 음식과 술 사이에 끼어 똑같이 갈증과 허기에 시달리는 사람은 그 자리에서 굶어 죽을 것이라고 했습니다."
+          "explanation": "than one 뒤에 head가 생략되어 있습니다. 앞에 나온 말을 되풀이하지 않는 것이 영어의 습관입니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "Many hands make light work의 light는 어떤 뜻인가요?",
+          "choices": [
+            "밝은",
+            "빠른",
+            "적은",
+            "가벼운"
+          ],
+          "answer": 4,
+          "explanation": "light가 여기서 '밝은'이 아니라 '가벼운'이라는 뜻으로 쓰였고, make light work는 일을 가볍게 만든다는 짜임입니다."
         }
+      ]
+    },
+    {
+      "id": "english_005",
+      "english": "Don't count your chickens before they hatch.",
+      "meaning": "알이 깨기 전에 병아리를 세지 말라",
+      "example": "He is already planning how to spend the prize money. Don't count your chickens before they hatch.",
+      "exampleMeaning": "그는 벌써 상금을 어떻게 쓸지 계획하고 있다. 알이 깨기 전에 병아리를 세지 말 것이다.",
+      "source": "영어 속담",
+      "date": "1월 5일",
+      "coverImage": "",
+      "story": [
+        "오늘 두 속담은 달걀을 함께 쓴다. 하나는 아직 깨지 않은 알을 세지 말라 하고 하나는 담는 방법을 말하니, 같은 물건으로 다른 조심을 가르친다.",
+        "속담이 농사와 살림에서 많이 나온다는 점을 짚어 둘 만하다. 누구나 매일 보는 것으로 만들어야 말이 오래 전해지기 때문이다.",
+        "Don't count your chickens before they hatch.\n\n알이 깨기 전에 병아리를 세지 말라.",
+        "알이 깨기 전에 병아리를 세지 말라. 아직 오지 않은 결과를 이미 온 것처럼 셈에 넣지 말라는 뜻이다. 기대를 금하는 것이 아니라 셈을 금한다.",
+        "hatch는 알에서 깨어 나오는 일을 가리키는 동사다. 알을 품는 쪽에도 쓰이고 깨어 나오는 쪽에도 쓰이니, 여기서는 병아리가 주어라 깨어 나온다는 뜻이 된다.",
+        "count가 열쇠다. 기대하지 말라고 하지 않고 세지 말라고 했으니, 마음이 아니라 계획을 겨눈다. 상금을 어떻게 쓸지 적어 두는 순간이 바로 count다.",
+        "Don't put all your eggs in one basket.\n\n달걀을 모두 한 바구니에 담지 말라.",
+        "달걀을 모두 한 바구니에 담지 말라. 바구니를 떨어뜨리면 전부 깨지니, 위험을 한곳에 모으지 말라는 뜻이다. 지금은 투자를 말할 때 특히 자주 쓰인다.",
+        "두 속담이 시간과 공간으로 갈린다. 앞은 아직 오지 않은 것을 미리 세지 말라는 시간의 조심이고, 뒤는 있는 것을 한곳에 두지 말라는 공간의 조심이다.",
+        "쓰임을 하나 더 보자. She keeps her savings in three different places. She never puts all her eggs in one basket. — 그는 저축을 세 곳에 나눠 둔다. 달걀을 한 바구니에 담는 일이 없다.",
+        "오늘 이미 될 것으로 여기고 세어 둔 것이 있는지 살펴본다. 있다면 그 셈만 지운다. 기대는 그대로 두어도 된다.",
+        "다음 화에서는 어울림에 관한 두 속담을 읽는다. 로마에서는 로마 사람처럼 하라는 말과, 같은 깃의 새가 함께 모인다는 말이다."
       ],
-      "unsplash": {
-        "url": "https://images.unsplash.com/photo-1581867225533-c25da1bf99a9?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjJ8fHRyYWluJTIwc3RhdGlvbnxlbnwxfDB8fHwxNzg4MzM2NzE2fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
-        "photographer": "Sinitta Leunen",
-        "profile": "https://unsplash.com/@sinileunen?utm_source=1dayClassic&utm_medium=referral"
-      }
+      "quizzes": [
+        {
+          "title": "오늘의 퀴즈",
+          "question": "본문은 이 속담이 무엇을 금한다고 했나요?",
+          "choices": [
+            "기대 자체를 금한다",
+            "기대가 아니라 셈을 금한다",
+            "병아리를 기르는 일을 금한다",
+            "계획 세우기를 통째로 금한다"
+          ],
+          "answer": 2,
+          "explanation": "아직 오지 않은 결과를 이미 온 것처럼 셈에 넣지 말라는 뜻입니다. 기대를 금하는 것이 아니라 셈을 금합니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "hatch는 어떤 일을 가리키는 동사인가요?",
+          "choices": [
+            "알을 삶는 일",
+            "병아리를 세는 일",
+            "알에서 깨어 나오는 일",
+            "닭장을 짜는 일"
+          ],
+          "answer": 3,
+          "explanation": "hatch는 알에서 깨어 나오는 일을 가리키는 동사입니다. 여기서는 병아리가 주어라 깨어 나온다는 뜻이 됩니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "본문은 두 속담이 무엇으로 갈린다고 했나요?",
+          "choices": [
+            "농사와 장사",
+            "옛말과 요즘말",
+            "기대와 계획",
+            "시간의 조심과 공간의 조심"
+          ],
+          "answer": 4,
+          "explanation": "앞은 아직 오지 않은 것을 미리 세지 말라는 시간의 조심이고, 뒤는 있는 것을 한곳에 두지 말라는 공간의 조심입니다."
+        }
+      ]
+    },
+    {
+      "id": "english_006",
+      "english": "When in Rome, do as the Romans do.",
+      "meaning": "로마에 있을 때는 로마 사람처럼 하라",
+      "example": "Everyone took off their shoes at the door, so I did the same. When in Rome, do as the Romans do.",
+      "exampleMeaning": "모두가 문에서 신을 벗었으므로 나도 그렇게 했다. 로마에 있을 때는 로마 사람처럼 하는 것이다.",
+      "source": "성 암브로시우스가 아우구스티누스에게 한 조언에서 비롯되었다고 전하는 속담",
+      "date": "1월 6일",
+      "coverImage": "",
+      "story": [
+        "오늘 두 속담은 어울림을 말한다. 하나는 낯선 곳에서 어떻게 할지 알려 주고 하나는 사람들이 어떻게 모이는지 관찰하니, 하나는 조언이고 하나는 관찰이다.",
+        "앞 화의 로마가 여기서 다시 나온다. 로마는 영어 속담에 자주 등장하는데, 오래 큰 나라였던 곳이라 무엇을 빗대기에 편했기 때문이다.",
+        "When in Rome, do as the Romans do.\n\n로마에 있을 때는 로마 사람처럼 하라.",
+        "로마에 있을 때는 로마 사람처럼 하라. 성 암브로시우스가 아우구스티누스에게 한 조언에서 비롯되었다고 전한다. 지역마다 다른 관습을 어떻게 대할지 물었을 때의 답이었다.",
+        "When in Rome에는 you are가 빠져 있다. 접속사 뒤의 주어와 be동사를 줄이는 것이 영어의 습관이니, 원래 문장은 When you are in Rome이다.",
+        "do as the Romans do에서 as는 '~하는 것처럼'이라는 뜻이다. do가 두 번 나오는데 뒤의 do는 앞의 do를 되풀이하지 않으려고 세운 대리 동사다.",
+        "Birds of a feather flock together.\n\n같은 깃의 새가 함께 모인다.",
+        "같은 깃의 새가 함께 모인다. of a feather는 '같은 깃의'라는 뜻으로, a가 '하나의'가 아니라 '같은'에 가깝게 쓰인 오래된 용법이다.",
+        "두 속담이 방향을 달리한다. 앞은 다른 사람들 사이에 들어갔을 때 어떻게 할지 말하고, 뒤는 사람들이 애초에 비슷한 쪽끼리 모인다고 말한다.",
+        "쓰임을 하나 더 보자. The three of them talk about nothing but bicycles. Birds of a feather flock together. — 그 셋은 자전거 이야기만 한다. 같은 깃의 새가 함께 모이는 법이다.",
+        "오늘 자주 만나는 사람들을 떠올려 무엇이 비슷한지 하나만 찾아본다. 찾기 쉬우면 flock together가 맞는 말이다.",
+        "다음 화에서는 말 없이 전하는 일에 관한 두 속담을 읽는다. 그림 한 장이 천 마디에 값한다는 말과, 침묵이 금이라는 말이다."
+      ],
+      "quizzes": [
+        {
+          "title": "오늘의 퀴즈",
+          "question": "When in Rome에는 무엇이 빠져 있나요?",
+          "choices": [
+            "you are",
+            "it is",
+            "we go",
+            "they live"
+          ],
+          "answer": 1,
+          "explanation": "접속사 뒤의 주어와 be동사를 줄이는 것이 영어의 습관이니, 원래 문장은 When you are in Rome입니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "do as the Romans do에서 뒤의 do는 무엇인가요?",
+          "choices": [
+            "명령을 강조하는 말",
+            "앞의 do를 되풀이하지 않으려고 세운 대리 동사",
+            "의문문을 만드는 조동사",
+            "'주다'라는 뜻의 다른 동사"
+          ],
+          "answer": 2,
+          "explanation": "do가 두 번 나오는데 뒤의 do는 앞의 do를 되풀이하지 않으려고 세운 대리 동사입니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "of a feather의 a는 어떤 뜻으로 쓰였나요?",
+          "choices": [
+            "'하나의'라는 뜻",
+            "'어떤'이라는 뜻",
+            "'같은'에 가깝게 쓰인 오래된 용법",
+            "뜻 없이 소리를 맞추는 말"
+          ],
+          "answer": 3,
+          "explanation": "of a feather는 '같은 깃의'라는 뜻으로, a가 '하나의'가 아니라 '같은'에 가깝게 쓰인 오래된 용법입니다."
+        }
+      ]
+    },
+    {
+      "id": "english_007",
+      "english": "A picture is worth a thousand words.",
+      "meaning": "그림 한 장이 천 마디에 값한다",
+      "example": "I tried to explain the route for ten minutes, then drew a map. A picture is worth a thousand words.",
+      "exampleMeaning": "십 분 동안 길을 설명하려 애쓰다가 지도를 그렸다. 그림 한 장이 천 마디에 값한다.",
+      "source": "이십세기 초 미국 광고에서 굳은 표현으로 전한다",
+      "date": "1월 7일",
+      "coverImage": "",
+      "story": [
+        "오늘 두 속담은 말 없이 전하는 일을 말한다. 하나는 그림을 세우고 하나는 침묵을 세우니, 둘 다 말을 줄이는 편이 낫다는 쪽이다.",
+        "속담이 다 오래된 것은 아니다. 오늘 첫 속담은 이십세기에 만들어진 말이니, 백 년만 쓰여도 속담 자리에 앉을 수 있다는 뜻이다.",
+        "A picture is worth a thousand words.\n\n그림 한 장이 천 마디에 값한다.",
+        "그림 한 장이 천 마디에 값한다. 이십세기 초 미국 광고에서 굳은 표현으로 전한다. 신문 광고에 그림을 넣자고 설득하려던 자리에서 나온 말이라고 한다.",
+        "be worth는 '~의 값이 있다'는 짜임이다. 뒤에 명사가 바로 오므로 worth를 형용사로 보되 목적어를 받는 특이한 낱말로 익혀 두는 편이 편하다.",
+        "a thousand가 정확히 천이 아니라 '아주 많이'라는 뜻으로 쓰였다. 영어도 우리말처럼 큰 수를 어림으로 쓰는데, 백보다 천이 어림수로 더 자주 쓰인다.",
+        "Silence is golden.\n\n침묵은 금이다.",
+        "침묵은 금이다. 본래는 Speech is silver, silence is golden, 곧 말은 은이고 침묵은 금이라는 긴 형태였는데 뒷부분만 남아 널리 쓰이게 되었다.",
+        "두 속담이 말을 줄이는 두 방법을 보여 준다. 앞은 말 대신 다른 것을 내놓으라 하고 뒤는 아무것도 내놓지 말라 하니, 대신하기와 비우기로 갈린다.",
+        "뒷 속담은 십구세기에 토머스 칼라일이 독일 격언을 옮겨 영어에 들여왔다고 전한다. 은과 금을 견준 짜임이라, 말이 나쁘다고 하지 않고 침묵이 더 값지다고만 한다.",
+        "오늘 길게 설명하려던 것 하나를 그림이나 표로 바꿔 본다. 못 그려도 좋다. 그리려 해 보면 무엇이 핵심인지가 먼저 드러난다.",
+        "다음 화에서는 궁하면 통한다는 쪽의 두 속담을 읽는다. 필요가 발명의 어머니라는 말과, 뜻이 있으면 길이 있다는 말이다."
+      ],
+      "quizzes": [
+        {
+          "title": "오늘의 퀴즈",
+          "question": "본문은 a thousand가 어떻게 쓰였다고 했나요?",
+          "choices": [
+            "정확히 천을 가리킨다",
+            "천 개의 낱말을 세라는 뜻이다",
+            "'아주 많이'라는 어림수로 쓰였다",
+            "값을 매기는 단위다"
+          ],
+          "answer": 3,
+          "explanation": "a thousand가 정확히 천이 아니라 '아주 많이'라는 뜻으로 쓰였습니다. 영어도 우리말처럼 큰 수를 어림으로 씁니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "Silence is golden의 본래 형태는 무엇인가요?",
+          "choices": [
+            "Silence is gold and speech is iron",
+            "Speech is silver, silence is golden",
+            "Golden silence, silver words",
+            "Silence is worth a thousand words"
+          ],
+          "answer": 2,
+          "explanation": "본래는 Speech is silver, silence is golden, 곧 말은 은이고 침묵은 금이라는 긴 형태였는데 뒷부분만 남았습니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "본문은 은과 금을 견준 짜임에서 무엇을 읽어 냈나요?",
+          "choices": [
+            "말이 나쁘다고 하지 않고 침묵이 더 값지다고만 한다",
+            "말을 아예 하지 말라는 뜻이다",
+            "금과 은의 값을 비교한 말이다",
+            "칼라일이 침묵을 좋아했다는 뜻이다"
+          ],
+          "answer": 1,
+          "explanation": "은과 금을 견준 짜임이라, 말이 나쁘다고 하지 않고 침묵이 더 값지다고만 합니다."
+        }
+      ]
+    },
+    {
+      "id": "english_008",
+      "english": "Necessity is the mother of invention.",
+      "meaning": "필요는 발명의 어머니다",
+      "example": "The power went out, so we cooked on the camping stove. Necessity is the mother of invention.",
+      "exampleMeaning": "전기가 끊겨 캠핑용 버너로 요리를 했다. 필요는 발명의 어머니다.",
+      "source": "라틴어 격언 mater artium necessitas와 통하는 속담",
+      "date": "1월 8일",
+      "coverImage": "",
+      "story": [
+        "오늘 두 속담은 막혔을 때를 말한다. 하나는 막힘이 새것을 만든다 하고 하나는 뜻이 있으면 길이 열린다 하니, 둘 다 없는 쪽에서 시작한다.",
+        "앞 속담은 라틴어에 같은 뜻의 격언이 있다. mater artium necessitas, 곧 '필요는 기술들의 어머니'이니 앞선 화의 ars가 여기 복수로 다시 나온다.",
+        "Necessity is the mother of invention.\n\n필요는 발명의 어머니다.",
+        "필요는 발명의 어머니다. 발명이 넉넉한 자리에서 나오지 않고 모자란 자리에서 나온다는 관찰이다. 없어서 만든다는 것이 이 문장의 뼈대다.",
+        "the mother of라는 짜임을 눈여겨볼 만하다. 무엇을 낳은 것을 어머니라 부르는 비유는 여러 언어에 있는데, 원인과 결과를 낳음과 태어남으로 바꿔 놓는다.",
+        "necessity는 필요이면서 필연이기도 하다. 그래서 이 문장은 '있으면 좋은 것'이 아니라 '없으면 안 되는 것'이 발명을 낳는다고 읽는 편이 더 가깝다.",
+        "Where there's a will, there's a way.\n\n뜻이 있는 곳에 길이 있다.",
+        "뜻이 있는 곳에 길이 있다. will은 여기서 조동사가 아니라 '의지'라는 명사다. way도 '방법'과 '길' 두 뜻을 함께 지녀, 둘 다로 읽어도 뜻이 통한다.",
+        "두 속담이 순서로 이어진다. 앞은 필요가 있어야 만든다 하고 뒤는 뜻이 있어야 길이 보인다 하니, 필요에서 뜻으로 그리고 길로 옮겨 간다.",
+        "Where there's ~ , there's ~ 라는 틀은 그대로 갈아 끼워 쓸 수 있다. Where there's smoke, there's fire처럼 앞의 것이 있으면 뒤의 것도 있다고 말하는 짜임이다.",
+        "오늘 막혀 있는 일 하나에서 없는 것 한 가지를 적어 본다. 없는 것을 정확히 적으면 그것이 necessity가 되고, 그다음이 invention이다.",
+        "다음 화에서는 때에 관한 두 속담을 읽는다. 이른 새가 벌레를 잡는다는 말과, 쇠가 달았을 때 쳐라는 말이다."
+      ],
+      "quizzes": [
+        {
+          "title": "오늘의 퀴즈",
+          "question": "본문은 the mother of라는 짜임이 무엇을 바꿔 놓는다고 했나요?",
+          "choices": [
+            "크기와 무게를 바꿔 놓는다",
+            "앞과 뒤의 순서를 바꿔 놓는다",
+            "원인과 결과를 낳음과 태어남으로 바꿔 놓는다",
+            "필요와 발명을 같은 것으로 만든다"
+          ],
+          "answer": 3,
+          "explanation": "무엇을 낳은 것을 어머니라 부르는 비유는 원인과 결과를 낳음과 태어남으로 바꿔 놓습니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "Where there's a will, there's a way의 will은 무엇인가요?",
+          "choices": [
+            "미래를 나타내는 조동사",
+            "'의지'라는 명사",
+            "'바라다'라는 동사",
+            "유언을 뜻하는 법률 용어"
+          ],
+          "answer": 2,
+          "explanation": "will은 여기서 조동사가 아니라 '의지'라는 명사입니다. way도 '방법'과 '길' 두 뜻을 함께 지닙니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "본문이 든 Where there's ~ 틀의 다른 예는 무엇인가요?",
+          "choices": [
+            "Where there's a book, there's a cover",
+            "Where there's rain, there's a cloud",
+            "Where there's smoke, there's fire",
+            "Where there's late, there's never"
+          ],
+          "answer": 3,
+          "explanation": "Where there's smoke, there's fire처럼 앞의 것이 있으면 뒤의 것도 있다고 말하는 짜임입니다."
+        }
+      ]
+    },
+    {
+      "id": "english_009",
+      "english": "The early bird catches the worm.",
+      "meaning": "이른 새가 벌레를 잡는다",
+      "example": "The tickets sold out by nine in the morning. The early bird catches the worm.",
+      "exampleMeaning": "표는 아침 아홉 시에 다 팔렸다. 이른 새가 벌레를 잡는다.",
+      "source": "십칠세기 영국 속담집에 실려 있는 속담",
+      "date": "1월 9일",
+      "coverImage": "",
+      "story": [
+        "오늘 두 속담은 때를 말한다. 하나는 남보다 먼저 움직이라 하고 하나는 알맞은 순간을 놓치지 말라 하니, 이름은 비슷하지만 겨누는 곳이 다르다.",
+        "앞 속담은 십칠세기 영국 속담집에 실려 있으니 적어도 사백 년을 쓰인 말이다. 새와 벌레라는 그림이 그만큼 갈아치울 필요가 없었다는 뜻이기도 하다.",
+        "The early bird catches the worm.\n\n이른 새가 벌레를 잡는다.",
+        "이른 새가 벌레를 잡는다. 먼저 나온 쪽이 얻는다는 말인데, 새와 벌레를 함께 놓아 둔 것이 이 속담의 재미다. 벌레 쪽에서 보면 늦게 나오는 편이 낫다.",
+        "the early bird에서 the가 특정한 새 한 마리를 가리키지 않는다. 종류 전체를 대표하게 만드는 the이니, '이른 새라는 것은'에 가깝게 읽으면 정확하다.",
+        "catches의 -es도 그 the와 짝을 이룬다. 한 마리를 세는 단수라 동사에 -es가 붙으니, 대표하는 하나를 세우고 그것으로 전체를 말하는 영어의 방식이다.",
+        "Strike while the iron is hot.\n\n쇠가 달았을 때 쳐라.",
+        "쇠가 달았을 때 쳐라. 대장간 일에서 온 비유로 초서 시대부터 쓰였다고 전한다. 쇠는 식으면 두드려도 모양이 잡히지 않으므로, 때를 놓치면 힘만 든다는 뜻이다.",
+        "두 속담이 이르다와 알맞다로 갈린다. 앞은 남보다 먼저를 말하고 뒤는 지금이 그때인지를 말하니, 뒤쪽은 이르게 나서면 오히려 어긋난다고 본다.",
+        "while이 '~하는 동안'이라는 점도 짚어 둘 만하다. 앞 화의 라틴어 dum과 같은 구실을 하니, 두 언어가 같은 자리에 같은 종류의 낱말을 둔 셈이다.",
+        "오늘 미뤄 둔 일 가운데 지금 달아 있는 것 하나를 찾는다. 급한 것이 아니라 달아 있는 것이다. 그 둘은 자주 다르다.",
+        "다음 화는 영어 속담 열 번째 이야기이자 이 열 화의 마지막이다. 뒤에 오는 것에 관한 두 속담으로 맺는다."
+      ],
+      "quizzes": [
+        {
+          "title": "오늘의 퀴즈",
+          "question": "본문은 the early bird의 the가 무엇이라고 했나요?",
+          "choices": [
+            "종류 전체를 대표하게 만드는 the",
+            "특정한 새 한 마리를 가리키는 the",
+            "앞에 나온 새를 되받는 the",
+            "습관을 나타내는 the"
+          ],
+          "answer": 1,
+          "explanation": "the early bird에서 the는 특정한 새 한 마리를 가리키지 않고 종류 전체를 대표하게 만드는 the입니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "Strike while the iron is hot은 어디에서 온 비유인가요?",
+          "choices": [
+            "농사일",
+            "대장간 일",
+            "뱃일",
+            "부엌일"
+          ],
+          "answer": 2,
+          "explanation": "대장간 일에서 온 비유로 초서 시대부터 쓰였다고 전합니다. 쇠는 식으면 두드려도 모양이 잡히지 않습니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "본문은 두 속담이 무엇으로 갈린다고 했나요?",
+          "choices": [
+            "새와 쇠",
+            "옛말과 요즘말",
+            "이르다와 알맞다",
+            "일과 놀이"
+          ],
+          "answer": 3,
+          "explanation": "앞은 남보다 먼저를 말하고 뒤는 지금이 그때인지를 말하니, 이르다와 알맞다로 갈립니다."
+        }
+      ]
+    },
+    {
+      "id": "english_010",
+      "english": "Every cloud has a silver lining.",
+      "meaning": "모든 구름에는 은빛 테두리가 있다",
+      "example": "I missed the train, but I met an old friend at the station. Every cloud has a silver lining.",
+      "exampleMeaning": "기차를 놓쳤지만 역에서 오랜 친구를 만났다. 모든 구름에는 은빛 테두리가 있다.",
+      "source": "밀턴 『코머스』(1634)의 표현에서 자란 속담으로 전한다",
+      "date": "1월 10일",
+      "coverImage": "",
+      "story": [
+        "영어 속담 열 번째 이야기이자 이 열 화의 마지막이다. 마지막 두 속담은 나쁜 일 뒤에 오는 것을 말하니, 스무 속담을 여기서 맺기에 알맞다.",
+        "앞 속담은 시에서 왔다. 밀턴이 『코머스』에서 검은 구름이 밤을 향해 은빛 안쪽을 내보인다고 쓴 대목이 있는데, 그 그림에서 이 속담이 자랐다고 전한다.",
+        "Every cloud has a silver lining.\n\n모든 구름에는 은빛 테두리가 있다.",
+        "모든 구름에는 은빛 테두리가 있다. 구름이 해를 가려도 그 둘레는 빛이 새어 밝으니, 나쁜 일에도 좋은 구석이 있다는 뜻으로 쓰인다.",
+        "lining은 옷의 안감을 가리키는 낱말이다. 겉과 안이 다르다는 감각이 이미 낱말에 들어 있어, 구름의 검은 겉과 은빛 안을 말하기에 꼭 맞았다.",
+        "every가 열쇠다. 어떤 구름에는 있다고 하지 않고 모든 구름에 있다고 했으니, 찾을 수 있다는 말이 아니라 반드시 있다는 말이 된다.",
+        "After the storm comes the calm.\n\n폭풍 뒤에 고요가 온다.",
+        "폭풍 뒤에 고요가 온다. 어순이 뒤집혀 있는 것을 눈여겨볼 만하다. After the storm이 앞으로 나오면서 주어 the calm이 동사 뒤로 밀렸다.",
+        "두 속담이 자리와 때로 갈린다. 앞은 나쁜 일 안에 좋은 구석이 있다 하고 뒤는 나쁜 일이 지나간 다음에 좋은 것이 온다 하니, 하나는 동시이고 하나는 순서다.",
+        "쓰임을 하나 더 보자. The week of exams finally ended and the house went quiet. After the storm comes the calm. — 시험 주가 드디어 끝나고 집이 조용해졌다.",
+        "오늘 잘 풀리지 않은 일 하나에서 은빛 테두리 하나만 찾아본다. 억지로 좋게 볼 필요는 없다. 하나만 찾으면 every가 지켜진다.",
+        "여기까지가 영어 속담 열 이야기다. 말과 행동, 겉모습, 시간, 함께 하기, 섣부름, 어울림, 침묵, 궁함, 때, 그 뒤에 오는 것을 지나며 스무 속담을 읽었다."
+      ],
+      "quizzes": [
+        {
+          "title": "오늘의 퀴즈",
+          "question": "lining은 본래 무엇을 가리키는 낱말인가요?",
+          "choices": [
+            "줄을 세우는 일",
+            "구름의 모양",
+            "옷의 안감",
+            "빛이 새는 틈"
+          ],
+          "answer": 3,
+          "explanation": "lining은 옷의 안감을 가리키는 낱말입니다. 겉과 안이 다르다는 감각이 이미 낱말에 들어 있어 구름의 검은 겉과 은빛 안을 말하기에 꼭 맞았습니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "본문은 every가 이 속담에서 어떤 구실을 한다고 했나요?",
+          "choices": [
+            "구름의 수를 세는 구실",
+            "찾을 수 있다는 말을 반드시 있다는 말로 바꾸는 구실",
+            "은빛을 강조하는 구실",
+            "밀턴의 시를 가리키는 구실"
+          ],
+          "answer": 2,
+          "explanation": "어떤 구름에는 있다고 하지 않고 모든 구름에 있다고 했으니, 찾을 수 있다는 말이 아니라 반드시 있다는 말이 됩니다."
+        },
+        {
+          "title": "오늘의 퀴즈",
+          "question": "After the storm comes the calm에서 어순이 뒤집힌 결과는 무엇인가요?",
+          "choices": [
+            "동사가 사라졌다",
+            "주어가 둘이 되었다",
+            "폭풍이 주어가 되었다",
+            "주어 the calm이 동사 뒤로 밀렸다"
+          ],
+          "answer": 4,
+          "explanation": "After the storm이 앞으로 나오면서 주어 the calm이 동사 뒤로 밀렸습니다."
+        }
+      ]
     }
   ]
 }

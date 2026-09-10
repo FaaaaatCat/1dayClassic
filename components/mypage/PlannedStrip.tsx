@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
+import BookCoverArt from '@/components/book/BookCoverArt';
 import { MY_PAGE } from '@/components/mypage/MyPageShell';
 import type { ShelfBook } from '@/components/mypage/useShelfBooks';
 import ScaleButton from '@/components/ScaleButton';
@@ -49,11 +50,10 @@ export default function PlannedStrip({
             끊기지 않게 하는 테두리다(피그마의 1px ink + 2px eggshell).
           */}
           <View style={styles.ring}>
-            <Image
-              source={{ uri: entry.book.coverImage }}
-              style={styles.art}
-              resizeMode="cover"
-              accessibilityIgnoresInvertColors
+            <BookCoverArt
+              bookId={entry.book.bookId}
+              coverImage={entry.book.coverImage}
+              width={ART_W}
             />
           </View>
         </ScaleButton>
@@ -66,16 +66,13 @@ export default function PlannedStrip({
 const AVATAR = 52;
 
 /**
- * 원 안에 넣는 표지 그림의 크기 — 원보다 한참 크다.
+ * 원 안에 넣는 표지의 폭 — 원의 지름과 같다.
  *
- * 표지 그림은 알파 PNG라 책 둘레에 투명한 여백이 있고, 비스듬히 세운 표지일수록 그 여백이
- * 넓다. 원 크기에 딱 맞추면 정작 책은 원 한가운데에 작게 앉는다. 그래서 여백까지 셈에
- * 넣어 세로로 두 배 가까이 키우고, 넘치는 만큼은 원이 잘라 낸다.
- *
- * 가로는 표지 비율(108:160)을 따른다.
+ * 예전에는 원보다 한참 크게 넣었다. 표지가 알파 PNG라 책 둘레에 투명한 여백이 있었고,
+ * 원에 딱 맞추면 정작 책이 한가운데 작게 앉았기 때문이다. 표지를 그리기 시작하면서
+ * 그 여백이 사라져, 이제는 지름에 맞추면 원이 표지의 가운데 띠를 그대로 보여 준다.
  */
-const ART_H = 104;
-const ART_W = Math.round((ART_H * 108) / 160);
+const ART_W = AVATAR;
 
 const styles = StyleSheet.create({
   strip: {
@@ -110,9 +107,5 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Surface.canvas,
     overflow: 'hidden',
-  },
-  art: {
-    width: ART_W,
-    height: ART_H,
   },
 });

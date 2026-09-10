@@ -14,22 +14,46 @@ function lessonsOf(bookId: BookId): CalendarDay[] {
 }
 
 /**
- * 무료로 열어 두는 항목 수 — 책 앞에서부터 다섯 개다.
+ * 무료로 열어 두는 몫 — 그 책 전체의 10분의 1.
  *
- * 시간과 무관하게 앞 다섯 개를 열어 둔다 — 처음 들어온 사람이 한 쪽만 보고 판단하지
- * 않아도 되게 하려는 것이다. 목차의 자물쇠와 홈의 이어읽기가 같은 값을 봐야 하므로
- * 여기 한 곳에만 둔다.
+ * 예전에는 권마다 다섯 개로 못박혀 있었다. 책의 분량이 스무 화, 열 화로 제각각이 되면서
+ * 그 값이 어떤 책에서는 4분의 1을, 어떤 책에서는 절반을 열어 주는 값이 됐다. 미리보기는
+ * 책의 크기에 비례해야 하는 것이라 비율로 바꾼다.
  */
-export const FREE_LESSON_COUNT = 5;
+const FREE_LESSON_RATIO = 0.1;
+
+/**
+ * 비율로 셌을 때 아무리 적어도 이만큼은 연다.
+ *
+ * 열 화짜리 책은 10%가 한 화인데, 한 화만 읽고는 이 책이 어떤 책인지 판단할 수 없다.
+ * 첫 화는 대개 그 편의 소개로 지나가기 때문이다. 두 화라야 소개와 본론을 함께 본다.
+ */
+const FREE_LESSON_MIN = 2;
+
+/**
+ * 그 책에서 무료로 열리는 항목 수.
+ *
+ * 목차의 자물쇠, 홈의 이어읽기, 구매 안내가 모두 이 값 하나를 봐야 해서 여기 한 곳에만 둔다.
+ * 지금 열 권은 모두 스무 화 이하라 결과가 늘 두 화이고, 계약 문구의 '10% 내외, 최대 2화'와
+ * 같은 값이 된다. 분량이 늘면 비율이 그대로 따라 올라간다.
+ */
+export function getFreeLessonCount(bookId: BookId): number {
+  const total = lessonsOf(bookId).length;
+  return Math.min(total, Math.max(FREE_LESSON_MIN, Math.floor(total * FREE_LESSON_RATIO)));
+}
 
 /** 그 책에서 잠긴 항목 수 — 무료 범위 밖에 남아 있는 것들. 구매 안내가 이 수를 말한다. */
 export function getLockedLessonCount(bookId: BookId): number {
-  return Math.max(0, lessonsOf(bookId).length - FREE_LESSON_COUNT);
+  return Math.max(0, lessonsOf(bookId).length - getFreeLessonCount(bookId));
 }
 
 /** 무료로 열려 있는 항목의 id들. */
 export function getFreeLessonIds(bookId: BookId): Set<string> {
-  return new Set(lessonsOf(bookId).slice(0, FREE_LESSON_COUNT).map((day) => day.lessonId!));
+  return new Set(
+    lessonsOf(bookId)
+      .slice(0, getFreeLessonCount(bookId))
+      .map((day) => day.lessonId!),
+  );
 }
 
 /**
@@ -70,7 +94,7 @@ export type ReadPlan = {
  * @param cursorLessonId 그 책에서 마지막으로 끝낸 항목(ReadingCursorContext).
  */
 export function getReadPlan(bookId: BookId, cursorLessonId?: string): ReadPlan | undefined {
-  const free = lessonsOf(bookId).slice(0, FREE_LESSON_COUNT);
+  const free = lessonsOf(bookId).slice(0, getFreeLessonCount(bookId));
   if (free.length === 0) return undefined;
 
   // 콘텐츠가 바뀌어 커서가 가리키던 항목이 사라졌으면 못 끝낸 것으로 친다.
@@ -110,7 +134,7 @@ export function getNextLesson(
   const next = lessons[index + 1];
   if (!next?.lessonId) return undefined;
 
-  return { lessonId: next.lessonId, locked: index + 1 >= FREE_LESSON_COUNT };
+  return { lessonId: next.lessonId, locked: index + 1 >= getFreeLessonCount(bookId) };
 }
 
 /**

@@ -1,9 +1,10 @@
 import { Dimensions } from 'react-native';
 
 import { getLessonHeading, type BookLesson } from '@/lib/books';
-import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
+import { getCoverDesign } from '@/lib/coverDesign';
 import { splitSentences } from '@/lib/narration';
 import type { NarrationStep } from '@/hooks/useCardNarration';
+import type { CoverDesign } from '@/types';
 
 /**
  * 항목 하나를 카드 여러 장으로 나누는 규칙.
@@ -169,8 +170,13 @@ export interface CardCover {
   bookName: string;
   title: string;
   subtitle?: string;
-  /** 책의 표식. 없는 책은 그 자리가 빈다(lib/bookstore의 symbol). */
-  symbol?: string;
+  /**
+   * 그 책의 표지 값 — 표지 장이 종이색·잉크색·출판사 마크를 여기서 가져온다.
+   *
+   * 예전에는 표식(symbol) 하나만 들고 왔다. 표식만으로는 검은 바탕 위의 글리프 하나였고
+   * 그 책의 표지와 아무 관계가 없었다. 이제 표지와 같은 종이 위에 같은 잉크로 그린다.
+   */
+  design: CoverDesign;
   /**
    * 이 항목에 딸린 유튜브 영상 ID. 있으면 카드 아래에 재생기가 늘 앉아 있다.
    *
@@ -233,13 +239,13 @@ function lessonVideoId(lesson: BookLesson['lesson']): string | undefined {
 
 export function getCardCover(bookLesson: BookLesson, bookName: string): CardCover {
   const heading = getLessonHeading(bookLesson);
-  const symbol = BOOKSTORE_BOOKS.find((book) => book.id === bookLesson.book)?.symbol;
+  const design = getCoverDesign(bookLesson.book);
   // 곡 링크는 클래식에만 있는 필드라 여기서 갈라 꺼낸다.
   return {
     bookName,
     title: heading.title,
     subtitle: heading.subtitle,
-    symbol,
+    design,
     listenId: lessonVideoId(bookLesson.lesson),
   };
 }

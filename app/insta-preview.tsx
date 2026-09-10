@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import BookCoverArt from '@/components/book/BookCoverArt';
 import QuizSolver, { quizModalStyles } from '@/components/preview/QuizSolver';
 import ScaleButton from '@/components/ScaleButton';
 import { StatusBarTint } from '@/components/StatusBarTint';
@@ -47,6 +48,11 @@ import {
  */
 
 /** 진행 바 칸 사이 틈. 칸 폭을 재려면 이 값이 필요하다. */
+/** 계정 줄의 동그란 표지 썸네일 지름. */
+const AVATAR = 34;
+/** 구매 안내 장에 세우는 표지의 폭. */
+const BUY_COVER_W = 140;
+
 const BAR_GAP = 4;
 /** 글이 없는 장(표지·구매 안내)에 주는 시간. */
 const PLAIN_MS = 5000;
@@ -136,15 +142,15 @@ export default function InstaPreviewScreen() {
 
       {/* 계정 줄 — 스토리의 프로필·이름·시간 자리에 책 표지·책 이름·날짜를 넣는다. */}
       <View style={styles.header}>
-        {PREVIEW_BOOK ? (
-          <Image
-            source={{ uri: PREVIEW_BOOK.coverImage }}
-            style={styles.avatar}
-            accessibilityIgnoresInvertColors
-          />
-        ) : (
-          <View style={styles.avatar} />
-        )}
+        <View style={styles.avatar}>
+          {PREVIEW_BOOK ? (
+            <BookCoverArt
+              bookId={PREVIEW_BOOK.bookId}
+              coverImage={PREVIEW_BOOK.coverImage}
+              width={AVATAR}
+            />
+          ) : null}
+        </View>
         <Text style={styles.account}>{PREVIEW_BOOK_TITLE}</Text>
         {PREVIEW_DATE ? <Text style={styles.when}>{PREVIEW_DATE}</Text> : null}
         <View style={styles.headerSpacer} />
@@ -418,11 +424,10 @@ function PageContent({
         {'뒷 내용이 더 궁금하시다면\n‘잘 듣는’ 사람이 되기 위한 필독도서\n『듣기의 말들』 을 구매해보세요.'}
       </Text>
       {PREVIEW_BOOK ? (
-        <Image
-          source={{ uri: PREVIEW_BOOK.coverImage }}
-          style={styles.buyCover}
-          resizeMode="contain"
-          accessibilityIgnoresInvertColors
+        <BookCoverArt
+          bookId={PREVIEW_BOOK.bookId}
+          coverImage={PREVIEW_BOOK.coverImage}
+          width={BUY_COVER_W}
         />
       ) : null}
       <View style={styles.buySticker}>
@@ -482,10 +487,14 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: AVATAR,
+    height: AVATAR,
+    borderRadius: AVATAR / 2,
     backgroundColor: Colors.brown90,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // 표지는 원보다 세로로 길다 — 넘치는 위아래를 원이 잘라 낸다.
+    overflow: 'hidden',
   },
   account: {
     fontFamily: Fonts.semiBold,
@@ -649,10 +658,6 @@ const styles = StyleSheet.create({
     letterSpacing: tracking(15),
     textAlign: 'center',
     color: Colors.brown100,
-  },
-  buyCover: {
-    width: 140,
-    height: 200,
   },
   /** 스토리의 링크 스티커를 흉내 낸 값표 — 검은 판에 흰 글씨. */
   buySticker: {
