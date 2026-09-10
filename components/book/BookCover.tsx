@@ -790,7 +790,7 @@ function repeatToFill(pattern: string[], want: number): string[] {
 const FULL_WIDTH = /[ᄀ-ᇿ⺀-꓏가-힣豈-﫿︰-﹏＀-｠]/;
 
 /**
- * 이 폭에 몇 줄로 흐르는지 — 줄바꿈을 그대로 흉내 낸다.
+ * 이 폭에서 몇 줄로 흐르는지, 그리고 낱말 가운데가 끊기지 않는지.
  *
  * 전체 폭을 한 줄 폭으로 나누면 실제보다 적게 나온다. 글자는 채우다 남으면 그 자리를
  * 비우고 다음 줄로 가기 때문이다. '쓰지 않는 글자들'은 나눗셈으로 두 줄이지만 실제로는
@@ -798,20 +798,29 @@ const FULL_WIDTH = /[ᄀ-ᇿ⺀-꓏가-힣豈-﫿︰-﹏＀-｠]/;
  *
  * 한글·한자는 어디서나 끊기므로 낱말 단위가 아니라 글자 단위로 센다. 줄 맨 앞으로
  * 넘어간 공백은 사라지는 것도 그대로 따른다.
+ *
+ * clean은 넘어간 자리가 전부 띄어쓰기였는지다. '하루 교양'이 '하루 교 / 양'으로 끊기면
+ * 제목이 아니라 사고로 보인다 — 이 값을 보고 한 치수 작더라도 성한 쪽을 고른다.
  */
-function countLines(text: string, capacity: number): number {
+function wrapTitle(text: string, capacity: number): { lines: number; clean: boolean } {
+  const chars = [...text];
   let lines = 1;
   let used = 0;
-  for (const ch of text) {
+  let clean = true;
+
+  for (let i = 0; i < chars.length; i += 1) {
+    const ch = chars[i];
     const w = FULL_WIDTH.test(ch) ? 1 : 0.5;
     if (used + w > capacity && used > 0) {
+      const atSpace = /s/.test(ch) || (i > 0 && /s/.test(chars[i - 1]));
+      if (!atSpace) clean = false;
       lines += 1;
       used = 0;
       if (/s/.test(ch)) continue;
     }
     used += w;
   }
-  return lines;
+  return { lines, clean };
 }
 
 function emWidth(text: string): number {
@@ -856,23 +865,29 @@ function fitTitleBlock(
 
   const floor = usableW / 12;
 
+  /** 낱말이 끊기는 치수라도 자리에는 들어가는 것 — 성한 치수가 하나도 없을 때 쓴다. */
+  let fallback: { size: number; height: number } | null = null;
+
   for (let size = usableW / 2; size > floor; size -= 0.5) {
-    /** 한 줄에 들어가는 글자 수(전각 기준). 자간만큼 한 글자가 넓어진 것으로 친다. */
-    const lines = countLines(design.title, (usableW * SAFE_WIDTH) / (size * (1 + TITLE_TRACKING)));
-    let block = lines * size * TITLE_LEADING;
+    const wrapped = wrapTitle(design.title, (usableW * SAFE_WIDTH) / (size * (1 + TITLE_TRACKING)));
+    let block = wrapped.lines * size * TITLE_LEADING;
 
     if (withSubtitle) {
       const sub = subtitleMetrics(size, width);
       // 부제는 두 줄까지만 찍는다(numberOfLines) — 셈도 거기서 멈춰야 맞는다.
       const subLines = Math.min(
         2,
-        countLines(design.subtitle ?? '', (usableW * SAFE_WIDTH) / (sub.size * (1 + LABEL_TRACKING))),
+        wrapTitle(design.subtitle ?? '', (usableW * SAFE_WIDTH) / (sub.size * (1 + LABEL_TRACKING))).lines,
       );
       block += sub.gap + subLines * sub.lineHeight;
     }
 
-    if (block <= maxH) return { size, height: block };
+    if (block > maxH) continue;
+    if (wrapped.clean) return { size, height: block };
+    if (!fallback) fallback = { size, height: block };
   }
+
+  if (fallback) return fallback;
   return { size: floor, height: maxH };
 }
 
