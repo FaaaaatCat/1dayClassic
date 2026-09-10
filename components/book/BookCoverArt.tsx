@@ -2,13 +2,15 @@ import { Image, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 
 import BookCover, { COVER_RATIO } from '@/components/book/BookCover';
 import { getBookCoverPlan } from '@/lib/cover';
-import type { BookId } from '@/types';
+import type { BookId, CoverDesign } from '@/types';
 
 interface BookCoverArtProps {
   /** 학습 콘텐츠가 있는 책이면 그 id — 표지를 그릴 값을 여기서 찾는다. */
   bookId?: BookId | null;
   /** 출판사가 준 표지 주소. 있으면 그림이 이긴다. */
   coverImage?: string;
+  /** 카탈로그에만 있는 책이 들고 있는 표지 값 — 그림이 없을 때 이것으로 그린다. */
+  coverDesign?: CoverDesign;
   /** 표지 폭. 높이는 비율(1:1.45)이 정한다. */
   width: number;
   radius?: number;
@@ -28,11 +30,12 @@ interface BookCoverArtProps {
 export default function BookCoverArt({
   bookId,
   coverImage,
+  coverDesign,
   width,
   radius = 2,
   style,
 }: BookCoverArtProps) {
-  const plan = getBookCoverPlan(bookId, coverImage);
+  const plan = getBookCoverPlan(bookId, coverImage, coverDesign);
   const height = width * COVER_RATIO;
 
   if (plan.kind === 'design') {

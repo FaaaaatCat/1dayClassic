@@ -96,6 +96,7 @@ export default function BookPurchaseNotice({
         <BookCoverArt
           bookId={book?.bookId}
           coverImage={book?.coverImage}
+          coverDesign={book?.coverDesign}
           width={COVER_W}
           style={styles.cover}
         />

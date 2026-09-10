@@ -174,7 +174,12 @@ export default function HomeScreen() {
         {/* 지금 읽는 책 한 권 — 표지, 제목과 지은이, 그리고 어디까지 왔는지. */}
         <View style={styles.card}>
           <View style={styles.coverSlot}>
-            <BookCoverArt bookId={selectedBookId} coverImage={book?.coverImage} width={COVER_W} />
+            <BookCoverArt
+              bookId={selectedBookId}
+              coverImage={book?.coverImage}
+              coverDesign={book?.coverDesign}
+              width={COVER_W}
+            />
           </View>
 
           <View style={styles.titles}>

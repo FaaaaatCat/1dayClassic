@@ -40,7 +40,7 @@ function toRows(entries: Entry[]): Entry[][] {
 }
 
 /**
- * 하루 서점 — 유유출판사 277권을 한 격자에 놓는다.
+ * 하루 서점 — 카탈로그의 모든 책을 한 격자에 놓는다.
  *
  * 제목 줄과 필터는 목록 밖에 있어 스크롤과 무관하게 늘 붙어 있다(그래서 탭 네비게이터의
  * 공용 헤더를 껐다). 예전에는 스크롤 방향을 세어 접었다 폈다 했는데, 방향이 꺾이는 자리마다
@@ -73,7 +73,7 @@ export default function BookstoreScreen() {
    *
    * 이 화면은 Tabs의 형제라 떠나도 사라지지 않는다 — 걸어 둔 필터와 검색어, 내려 둔
    * 스크롤이 그대로 남는다. 저장한 것이 아니라 그때 잠깐 걸어 본 조건이므로, 서점을
-   * 나갔다 오면 277권 전체가 처음처럼 보이는 편이 맞다.
+   * 나갔다 오면 109권 전체가 처음처럼 보이는 편이 맞다.
    *
    * 다만 책 하나를 열어 본 것은 서점을 떠난 것이 아니다. 필터로 좁혀 고른 책을 들여다보고
    * 돌아왔더니 그 필터가 풀려 있으면, 고르던 일을 처음부터 다시 해야 한다.
@@ -105,7 +105,7 @@ export default function BookstoreScreen() {
   };
 
   /**
-   * 책마다 시리즈·분야를 미리 풀어 둔다 — 필터를 누를 때마다 277권치 태그를
+   * 책마다 시리즈·분야를 미리 풀어 둔다 — 필터를 누를 때마다 109권치 태그를
    * 다시 훑지 않기 위해서다. 선택 여부는 자주 바뀌므로 여기 넣지 않는다.
    */
   const tagged = useMemo<Entry[]>(
@@ -277,6 +277,7 @@ export default function BookstoreScreen() {
                   author={entry.book.author}
                   bookId={entry.book.bookId}
                   coverImage={entry.book.coverImage}
+                  coverDesign={entry.book.coverDesign}
                   series={entry.series}
                   fields={entry.fields}
                   mvp={entry.mvp}

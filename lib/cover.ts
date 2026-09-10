@@ -59,19 +59,25 @@ export type BookCoverPlan =
   | { kind: 'blank' };
 
 /**
- * @param coverImage 학습 콘텐츠가 없는 책(카탈로그에만 있는 책)의 표지 주소.
+ * @param coverImage 카탈로그에만 있는 책의 표지 주소.
+ * @param design 카탈로그에만 있는 책이 들고 있는 표지 값.
  *
- * 학습 가능한 책의 표지 주소는 이 값이 아니라 그 책 자신이 들고 있다(lib/bookstore).
- * 두 곳을 가르는 이유는 출처가 다르기 때문이다 — 카탈로그의 주소는 출판사 페이지에서
- * 긁어 온 것이고, 학습 가능한 열 권은 우리가 표지를 직접 만드는 책이다. 그 열 권에
- * 출판사가 준 표지가 들어오면 lib/bookstore의 coverImage를 채우면 된다.
+ * 학습 가능한 열 권은 표지 주소도 표지 값도 이 인자가 아니라 제 자리에서 가져온다
+ * (lib/bookstore와 lib/coverDesign). 두 곳을 가르는 이유는 성격이 다르기 때문이다 —
+ * 그 열 권은 목차와 알람까지 딸린 책이라 표지 값이 코드 쪽에 있어야 하고, 카탈로그의
+ * 나머지는 전시용이라 데이터에 함께 실려 있는 편이 낫다.
  */
-export function getBookCoverPlan(bookId?: BookId | null, coverImage?: string): BookCoverPlan {
+export function getBookCoverPlan(
+  bookId?: BookId | null,
+  coverImage?: string,
+  design?: CoverDesign,
+): BookCoverPlan {
   const source = (
     bookId ? BOOKSTORE_BOOKS.find((book) => book.id === bookId)?.coverImage : coverImage
   )?.trim();
   if (source) return { kind: 'image', source };
 
   if (bookId) return { kind: 'design', design: getCoverDesign(bookId) };
+  if (design) return { kind: 'design', design };
   return { kind: 'blank' };
 }

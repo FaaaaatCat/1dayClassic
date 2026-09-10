@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import BookCoverArt from '@/components/book/BookCoverArt';
 import TagChip from '@/components/TagChip';
 import { Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
-import type { BookId } from '@/types';
+import type { BookId, CoverDesign } from '@/types';
 
 /** 모서리에서 잘라 낼 정사각 영역 — 띠는 이 안에서만 보인다. */
 const RIBBON_BOX = 72;
@@ -20,6 +20,8 @@ interface BookCardProps {
   bookId: BookId | null;
   /** 학습 콘텐츠가 없는 책의 표지 주소. */
   coverImage?: string;
+  /** 카탈로그에만 있는 책이 들고 있는 표지 값. */
+  coverDesign?: CoverDesign;
   /** 이 책이 속한 시리즈들 — 파란 칩. */
   series: string[];
   /** 이 책의 분야들 — 베이지 칩. */
@@ -60,6 +62,7 @@ export default function BookCard({
   author,
   bookId,
   coverImage,
+  coverDesign,
   series,
   fields,
   mvp,
@@ -76,7 +79,12 @@ export default function BookCard({
       onPress={onPress}>
       {mvp && <CornerRibbon text="MVP" />}
 
-      <BookCoverArt bookId={bookId} coverImage={coverImage} width={COVER_W} />
+      <BookCoverArt
+        bookId={bookId}
+        coverImage={coverImage}
+        coverDesign={coverDesign}
+        width={COVER_W}
+      />
       <Text style={styles.title} numberOfLines={2}>
         {title}
       </Text>

@@ -41,6 +41,7 @@ export default function ShelfList({
           <BookCoverArt
             bookId={entry.book.bookId}
             coverImage={entry.book.coverImage}
+            coverDesign={entry.book.coverDesign}
             width={COVER_W}
           />
           <View style={styles.text}>

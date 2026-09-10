@@ -1,13 +1,13 @@
 /**
  * `npm run check:tags` — 태그 분류표(data/tag-taxonomy.json)가 카탈로그를 다 덮는지 본다.
  *
- * 출판사가 신간에 새 태그를 달면 조용히 어느 필터에도 안 걸린다. 그걸 잡아 주는 게 목적이다.
+ * 카탈로그에 새 태그가 들어오면 조용히 어느 필터에도 안 걸린다. 그걸 잡아 주는 게 목적이다.
  */
 import { readFileSync } from 'node:fs';
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 
-const { books } = read('../data/uupress-catalog.json');
+const { books } = read('../data/bookstore-catalog.json');
 const { series, titleRules, fieldGroups, ignored } = read('../data/tag-taxonomy.json');
 
 const seriesTags = new Set(Object.keys(series));

@@ -147,6 +147,7 @@ export default function InstaPreviewScreen() {
             <BookCoverArt
               bookId={PREVIEW_BOOK.bookId}
               coverImage={PREVIEW_BOOK.coverImage}
+              coverDesign={PREVIEW_BOOK.coverDesign}
               width={AVATAR}
             />
           ) : null}
@@ -427,6 +428,7 @@ function PageContent({
         <BookCoverArt
           bookId={PREVIEW_BOOK.bookId}
           coverImage={PREVIEW_BOOK.coverImage}
+          coverDesign={PREVIEW_BOOK.coverDesign}
           width={BUY_COVER_W}
         />
       ) : null}

@@ -641,6 +641,7 @@ export default function CardDeckDetail({ bookLesson, onClose, trackProgress = tr
             <BookCoverArt
               bookId={catalogBook.bookId}
               coverImage={catalogBook.coverImage}
+              coverDesign={catalogBook.coverDesign}
               width={AVATAR}
             />
           ) : null}

@@ -154,6 +154,7 @@ export default function LibraryBookDetailScreen() {
             <BookCoverArt
               bookId={catalogBook.bookId}
               coverImage={catalogBook.coverImage}
+              coverDesign={catalogBook.coverDesign}
               width={COVER_W}
             />
             <View style={styles.bandText}>

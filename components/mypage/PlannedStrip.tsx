@@ -53,6 +53,7 @@ export default function PlannedStrip({
             <BookCoverArt
               bookId={entry.book.bookId}
               coverImage={entry.book.coverImage}
+              coverDesign={entry.book.coverDesign}
               width={ART_W}
             />
           </View>

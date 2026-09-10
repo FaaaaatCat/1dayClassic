@@ -35,8 +35,8 @@ const COVER_W = 140;
 /**
  * 하루 서점의 책 상세 페이지 — 두 종류가 이 화면 하나를 함께 쓴다.
  *
- * 1) 학습 가능한 '하루 시리즈': 표지가 로컬 에셋이다(듣기의 말들만 아직 URL이다).
- * 2) 유유출판사 카탈로그의 나머지 책: 표지가 원격 URL이다.
+ * 1) 학습 가능한 열 권: 표지 값을 lib/coverDesign에서 가져온다.
+ * 2) 카탈로그의 나머지 책: 표지 값이 데이터에 함께 실려 있다.
  *
  * 화면 전체가 warm taupe(Surface.card) 한 색이다 — 헤더·본문·하단 바가 모두 같은 종이라,
  * 나뉘는 자리는 색이 아니라 얇은 선 하나가 맡는다.
@@ -92,6 +92,7 @@ export default function BookDetailScreen() {
         author: studyBook.author,
         bookId: studyBook.id,
         coverImage: undefined as string | undefined,
+        coverDesign: catalogBook?.coverDesign,
         price: catalogBook?.price ?? null,
         sections: catalogBook?.sections ?? [],
       }
@@ -100,6 +101,7 @@ export default function BookDetailScreen() {
         author: catalogBook.author,
         bookId: catalogBook.bookId,
         coverImage: catalogBook.coverImage,
+        coverDesign: catalogBook.coverDesign,
         price: catalogBook.price,
         sections: catalogBook.sections,
       };
@@ -262,6 +264,7 @@ export default function BookDetailScreen() {
       <BookCoverArt
         bookId={view.bookId}
         coverImage={view.coverImage}
+        coverDesign={view.coverDesign}
         width={COVER_W}
         style={styles.cover}
       />
