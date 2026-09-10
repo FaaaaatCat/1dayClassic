@@ -1,6 +1,7 @@
 import { Image, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 
 import BookCover, { COVER_RATIO } from '@/components/book/BookCover';
+import BookCover3D from '@/components/book/BookCover3D';
 import { getBookCoverPlan } from '@/lib/cover';
 import type { BookId, CoverDesign } from '@/types';
 
@@ -13,6 +14,13 @@ interface BookCoverArtProps {
   coverDesign?: CoverDesign;
   /** 표지 폭. 높이는 비율(1:1.45)이 정한다. */
   width: number;
+  /**
+   * 세워 그린다 — 26° 돌린 앞표지에 책등을 붙인다. 홈과 알람만 켠다.
+   *
+   * 그린 표지에만 쓴다. 표지가 그림일 때는 책등에 쓸 종이색도 잉크색도 없어 그늘만 남는데,
+   * 그러면 책이 세워진 것이 아니라 왼쪽에 회색 띠가 붙은 것으로 보인다.
+   */
+  standing?: boolean;
   radius?: number;
   /** 그림자처럼 바깥에서 얹는 것. */
   style?: StyleProp<ViewStyle>;
@@ -32,6 +40,7 @@ export default function BookCoverArt({
   coverImage,
   coverDesign,
   width,
+  standing = false,
   radius = 2,
   style,
 }: BookCoverArtProps) {
@@ -39,6 +48,9 @@ export default function BookCoverArt({
   const height = width * COVER_RATIO;
 
   if (plan.kind === 'design') {
+    if (standing) {
+      return <BookCover3D design={plan.design} width={width} radius={radius} style={style} />;
+    }
     return <BookCover design={plan.design} width={width} radius={radius} style={style} />;
   }
 

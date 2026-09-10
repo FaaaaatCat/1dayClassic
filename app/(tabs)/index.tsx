@@ -179,6 +179,7 @@ export default function HomeScreen() {
               coverImage={book?.coverImage}
               coverDesign={book?.coverDesign}
               width={COVER_W}
+              standing
             />
           </View>
 
@@ -337,11 +338,10 @@ const styles = StyleSheet.create({
   /**
    * 표지가 앉는 자리 — 바탕도 그림자도 없다.
    *
-   * 표지 그림은 정면인 것도 있고 비스듬히 세워 찍은 것도 있는데, 비스듬한 것들은 책
-   * 둘레가 투명하다. 바탕색을 깔아 두면 그 투명한 자리에 색이 비쳐 책 뒤에 어두운 상자가
-   * 생긴다. 그림자도 같은 이유로 뺐다 — 안드로이드의 elevation은 그림 모양이 아니라 이
-   * 네모의 윤곽을 따라 지므로, 바탕을 지워도 네모가 그림자로 남는다. 입체감은 표지 그림이
-   * 이미 제 안에 담고 있다.
+   * 안드로이드의 elevation은 그림 모양이 아니라 네모의 윤곽을 따라 지므로, 세워 둔 책에
+   * 얹으면 책이 아니라 상자의 그림자가 생긴다. 바닥에 흐린 타원을 깔아 볼 수도 있지만
+   * 이 화면 바탕이 #000이라 검은 그늘은 어차피 보이지 않는다. 입체감은 책등과 원근이
+   * 만들고(BookCover3D), 이 자리는 폭만 정한다.
    */
   titles: {
     alignItems: 'center',

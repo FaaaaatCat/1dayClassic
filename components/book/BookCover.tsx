@@ -21,8 +21,20 @@ const INSET = 0.09;
  */
 const FOOTER_ZONE = 0.2;
 
-/** 패턴 띠 하나의 높이 — 표지 높이 기준. */
-const BAND = 0.24;
+/** 제목 블록(제목+부제)이 쓰는 몫 — 표지 높이의 42%. 나머지가 패턴 띠의 몫이다. */
+const TITLE_ZONE = 0.42;
+
+/** 제목 블록과 패턴 띠 사이에 두는 숨. 어림한 제목 높이가 조금 빗나가도 여기서 받는다. */
+const BAND_GAP = 0.035;
+
+/**
+ * 어두운 표지가 검은 바탕 위에서 사라지지 않게 세워 두는 한 겹.
+ * 입체 표지의 책등도 같은 이유로 이 값을 쓴다(BookCover3D).
+ */
+export const DARK_EDGE = {
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.16)',
+} as const;
 
 /** 이보다 좁으면 패턴도 저자 줄도 뭉개져 보이지 않는다 — 종이색과 제목만 남긴다. */
 const COMPACT_WIDTH = 80;
@@ -52,18 +64,33 @@ export default function BookCover({ design, width, radius = 2, style }: BookCove
   const usableW = width - inset * 2;
   const compact = width < COMPACT_WIDTH;
 
-  /** 제목이 차지할 수 있는 높이 — 표지의 40%를 넘겨 잡는다. 작으면 즉시 카드처럼 보인다. */
-  const titleSize = fitTitleSize(design.title, usableW, height * 0.42);
   const centered = design.align === 'center';
 
+  /** 제목이 차지할 수 있는 높이 — 표지의 42%. 작으면 즉시 카드처럼 보인다. */
+  const title = fitTitleBlock(design, usableW, height * TITLE_ZONE, width * 0.03);
+
   /**
-   * 패턴 띠는 제목의 반대편에 둔다.
+   * 패턴 띠는 제목의 반대편에 두고, 높이는 제목이 남긴 만큼으로 정한다.
    *
-   * 세로로 고르게 펼치면 가운데 정렬된 제목 위로 글자가 지나간다. 띠를 위아래로 밀어붙이고
-   * 제목이 앉는 쪽을 비우면 겹칠 자리가 아예 없어진다 — 눈으로 맞추는 대신 구조로 막는다.
+   * 세로로 고르게 펼치면 가운데 정렬된 제목 위로 글자가 지나간다. 그래서 띠를 위아래로
+   * 밀어붙이는데, 높이를 상수로 못박으면 그것만으로는 안 막힌다 — 가운데 정렬은 위아래
+   * 띠가 각각 24%씩 가져가 한가운데에 제목이 들어갈 자리가 남지 않았다(160폭에서 66밖에
+   * 안 남는 자리에 150짜리 제목이 앉았다). 제목이 주인공이니 제목이 먼저 자리를 잡고,
+   * 띠는 남은 만큼만 차지한다. 한 줄도 못 앉을 만큼 얇아지면 아예 걷는다.
    */
   const bandTop = design.align !== 'top';
   const bandBottom = design.align !== 'bottom';
+  const bandCount = (bandTop ? 1 : 0) + (bandBottom ? 1 : 0);
+  const gap = height * BAND_GAP;
+  /**
+   * 제목이 앉는 자리의 아래 끝. 저자 몫에 숨 한 칸을 더해 띄운다 —
+   * 딱 붙여 두면 아래 정렬된 제목의 마지막 줄이 저자 이름에 닿는다.
+   */
+  const zoneBottom = compact ? inset : height * FOOTER_ZONE + gap;
+  const zoneH = height - inset - zoneBottom;
+  const bandH = (zoneH - title.height - gap * bandCount) / Math.max(1, bandCount);
+  /** 패턴 글자 한 줄이 앉을 자리도 안 되면 띠를 그리지 않는다. */
+  const banded = !compact && bandH >= width * 0.062 * 1.2;
 
   return (
     <View
@@ -76,11 +103,11 @@ export default function BookCover({ design, width, radius = 2, style }: BookCove
         design.dark && styles.darkEdge,
         style,
       ]}>
-      {!compact && bandTop && (
-        <PatternBand design={design} width={width} height={height} inset={inset} place="top" />
+      {banded && bandTop && (
+        <PatternBand design={design} width={width} height={height} bandH={bandH} inset={inset} place="top" />
       )}
-      {!compact && bandBottom && (
-        <PatternBand design={design} width={width} height={height} inset={inset} place="bottom" />
+      {banded && bandBottom && (
+        <PatternBand design={design} width={width} height={height} bandH={bandH} inset={inset} place="bottom" />
       )}
 
       {/* 제목 — 표지의 주인공. 아래쪽 20%는 저자 줄의 몫이라 넘어가지 않는다. */}
@@ -91,7 +118,7 @@ export default function BookCover({ design, width, radius = 2, style }: BookCove
             top: inset,
             left: inset,
             right: inset,
-            bottom: compact ? inset : height * FOOTER_ZONE,
+            bottom: zoneBottom,
             justifyContent: verticalOf(design.align),
             alignItems: centered ? 'center' : 'flex-start',
           },
@@ -100,8 +127,8 @@ export default function BookCover({ design, width, radius = 2, style }: BookCove
           numberOfLines={4}
           style={{
             fontFamily: Type.readingBold,
-            fontSize: titleSize,
-            lineHeight: titleSize * 1.28,
+            fontSize: title.size,
+            lineHeight: title.size * 1.28,
             color: design.ink,
             textAlign: centered ? 'center' : 'left',
           }}>
@@ -112,8 +139,8 @@ export default function BookCover({ design, width, radius = 2, style }: BookCove
             numberOfLines={2}
             style={{
               fontFamily: Type.readingRegular,
-              fontSize: titleSize * 0.42,
-              lineHeight: titleSize * 0.58,
+              fontSize: title.size * 0.42,
+              lineHeight: title.size * 0.58,
               marginTop: width * 0.03,
               color: design.ink,
               opacity: 0.72,
@@ -171,12 +198,15 @@ function PatternBand({
   design,
   width,
   height,
+  bandH,
   inset,
   place,
 }: {
   design: CoverDesign;
   width: number;
   height: number;
+  /** 띠 높이 — 제목이 남긴 만큼. 부르는 쪽이 정한다. */
+  bandH: number;
   inset: number;
   place: 'top' | 'bottom';
 }) {
@@ -187,7 +217,7 @@ function PatternBand({
     design.pattern,
     bandCapacity({
       bandW: width - inset * 2,
-      bandH: height * BAND,
+      bandH,
       size,
       columnGap,
       rowGap,
@@ -204,7 +234,7 @@ function PatternBand({
         {
           left: inset,
           right: inset,
-          height: height * BAND,
+          height: bandH,
           ...(place === 'top' ? { top: inset } : { bottom: height * FOOTER_ZONE }),
           columnGap,
           rowGap,
@@ -279,26 +309,46 @@ function emWidth(text: string): number {
 }
 
 /**
- * 주어진 자리에 들어가는 가장 큰 제목 크기.
+ * 주어진 자리에 들어가는 가장 큰 제목 크기와, 그때 제목 블록이 차지하는 높이.
  *
  * 고정 px로 두면 짧은 제목은 초라하고 긴 제목은 넘친다. 그래서 크기를 정해 두지 않고,
- * 큰 쪽에서 내려오며 처음으로 자리에 들어맞는 값을 고른다. 짧은 제목은 커지고 긴 제목은
- * 줄어들되, 어느 쪽도 아래 저자 줄을 침범하지 않는다.
+ * 큰 쪽에서 내려오며 처음으로 자리에 들어맞는 값을 고른다.
+ *
+ * 부제까지 함께 잰다. 예전에는 제목만 재고 부제를 그 아래 얹었는데, 그러면 블록이 예산을
+ * 훌쩍 넘어(160폭에서 97 예산에 150이 들어찼다) 아래 패턴 띠를 파고들었다. 재는 것과
+ * 놓는 것이 어긋나면 어디선가 겹친다.
  *
  * 폭을 실제로 재지 않고 전각·반각으로 어림하는 것은, 재려면 한 번 그린 뒤 다시 나눠야
- * 해서 표지가 눈앞에서 재배치되기 때문이다.
+ * 해서 표지가 눈앞에서 재배치되기 때문이다. 어림값이라 위아래로 조금 빗나가는데,
+ * 그 몫은 BAND_GAP이 받는다.
  */
-function fitTitleSize(title: string, usableW: number, maxH: number): number {
-  const em = Math.max(1, emWidth(title.replace(/\s+/g, '')));
+function fitTitleBlock(
+  design: CoverDesign,
+  usableW: number,
+  maxH: number,
+  subtitleGap: number,
+): { size: number; height: number } {
+  // 띄어쓰기까지 센다. 빼고 재면 '하루 논어'가 한 줄로 계산되는데 실제로는 두 줄로
+  // 흘러(공백도 폭을 차지한다) 블록이 예산을 넘고 아래 패턴 띠를 파고들었다.
+  const em = Math.max(1, emWidth(design.title));
+  const subEm = design.subtitle ? emWidth(design.subtitle) : 0;
   const floor = usableW / 12;
 
   for (let size = usableW / 2; size > floor; size -= 0.5) {
     /** 한 줄에 들어가는 글자 수(전각 기준). */
-    const perLine = usableW / size;
-    const lines = Math.ceil(em / perLine);
-    if (lines * size * 1.28 <= maxH) return size;
+    const lines = Math.ceil(em / (usableW / size));
+    let block = lines * size * 1.28;
+
+    if (design.subtitle) {
+      const subSize = size * 0.42;
+      // 부제는 두 줄까지만 찍는다(numberOfLines) — 셈도 거기서 멈춰야 맞는다.
+      const subLines = Math.min(2, Math.ceil(subEm / (usableW / subSize)));
+      block += subtitleGap + subLines * size * 0.58;
+    }
+
+    if (block <= maxH) return { size, height: block };
   }
-  return floor;
+  return { size: floor, height: maxH };
 }
 
 function verticalOf(align: CoverDesign['align']): ViewStyle['justifyContent'] {
@@ -312,10 +362,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   /** 어두운 표지의 테두리 — 검은 바탕과 표지가 붙어 버리는 것을 막는 한 겹. */
-  darkEdge: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
-  },
+  darkEdge: DARK_EDGE,
   titleZone: {
     position: 'absolute',
   },
