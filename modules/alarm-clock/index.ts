@@ -11,26 +11,34 @@ import type {
 export type { AlarmInput, AlarmPermissionKind, AlarmPermissionStatus };
 
 /**
- * 표지를 어느 크기로 놓을지.
- * - `mockup` — 알람 전용 합성 표지(그림자·원근 포함). 190×256dp 그대로.
- * - `flat` — 서점 표지를 빌려 쓴 경우. 비율이 달라 148×219dp로 작게.
+ * 알람이 표지를 그리는 데 쓰는 값 — 앱의 CoverDesign에서 그리기에 필요한 것만 추린 것.
+ *
+ * 그림을 보내지 않고 값을 보낸다. 알람이 울릴 때는 JS가 안 돌고 있어 그려 줄 수 없고,
+ * 표지를 코드로 그리게 되면서 미리 구워 둘 그림도 없어졌기 때문이다.
  */
-export type AlarmCoverStyle = 'mockup' | 'flat';
-
-/** 알람 화면이 쓸 책 이미지를 복사해 넣을 자리 — 경로는 네이티브가 정한다. */
-export interface AlarmImageTargets {
-  /** background/cover를 담을 폴더. 아직 없을 수 있어 쓰기 전에 만들어야 한다. */
-  directory: string;
-  background: string;
-  cover: string;
+export interface AlarmCoverInput {
+  paper: string;
+  ink: string;
+  title: string;
+  author: string;
+  imprint: string;
+  mark: string;
+  dark: boolean;
+  pattern: string[];
 }
 
-/** 디자인 확인용 미리보기에 넘길 책 한 권. 이미지는 파일로 깔아 두고 경로만 넘긴다. */
+/** 알람 화면이 쓸 배경 사진을 복사해 넣을 자리 — 경로는 네이티브가 정한다. */
+export interface AlarmImageTargets {
+  /** 배경을 담을 폴더. 아직 없을 수 있어 쓰기 전에 만들어야 한다. */
+  directory: string;
+  background: string;
+}
+
+/** 디자인 확인용 미리보기에 넘길 책 한 권. 배경만 파일로 깔고 표지는 값으로 넘긴다. */
 export interface AlarmPreviewBook {
   name: string;
-  coverStyle: AlarmCoverStyle;
+  cover: AlarmCoverInput;
   backgroundUri: string;
-  coverUri: string;
 }
 
 interface AlarmClockNativeModule {
@@ -39,7 +47,7 @@ interface AlarmClockNativeModule {
   getPermissionStatus(): Promise<AlarmPermissionStatus>;
   openAlarmPermissionSettings(): Promise<void>;
   requestPermission(kind: AlarmPermissionKind): Promise<void>;
-  setAlarmBook(name: string, coverStyle: AlarmCoverStyle): Promise<void>;
+  setAlarmBook(name: string, cover: AlarmCoverInput): Promise<void>;
   getAlarmImageTargets(): Promise<AlarmImageTargets>;
   previewAlarm(books: AlarmPreviewBook[]): Promise<void>;
   isAlarmLockFlow(): Promise<boolean>;
@@ -103,12 +111,12 @@ export async function getPermissionStatus(): Promise<AlarmPermissionStatus> {
   return nativeModule.getPermissionStatus();
 }
 
-/** 알람 화면이 쓸 책 이름("하루 클래식 공부")과 표지 종류를 네이티브에 저장한다. */
-export async function setAlarmBook(name: string, coverStyle: AlarmCoverStyle): Promise<void> {
-  await getNativeModule()?.setAlarmBook(name, coverStyle);
+/** 알람 화면이 쓸 책 이름("클래식 공부")과 표지 값을 네이티브에 저장한다. */
+export async function setAlarmBook(name: string, cover: AlarmCoverInput): Promise<void> {
+  await getNativeModule()?.setAlarmBook(name, cover);
 }
 
-/** 책 이미지를 복사해 넣을 자리. 네이티브 모듈이 없으면 null — 그 경우 동기화를 건너뛴다. */
+/** 배경 사진을 복사해 넣을 자리. 네이티브 모듈이 없으면 null — 그 경우 동기화를 건너뛴다. */
 export async function getAlarmImageTargets(): Promise<AlarmImageTargets | null> {
   const nativeModule = getNativeModule();
   if (!nativeModule) return null;

@@ -34,9 +34,8 @@ class AlarmActivity : ComponentActivity() {
   /** 미리보기에서 한 장씩 넘겨 볼 책. 실제 알람에서는 쓰지 않는다. */
   private class PreviewBook(
     val name: String,
-    val coverStyle: String,
-    val backgroundPath: String,
-    val coverPath: String
+    val cover: AlarmCoverDesign,
+    val backgroundPath: String
   )
 
   private var previewBooks: List<PreviewBook> = emptyList()
@@ -67,9 +66,8 @@ class AlarmActivity : ComponentActivity() {
   private fun setUpAlarm() {
     showBook(
       name = AlarmBook.studyLabel(this),
-      coverStyle = AlarmBook.coverStyle(this),
-      background = AlarmBook.backgroundFile(this),
-      cover = AlarmBook.coverFile(this)
+      cover = AlarmBook.cover(this),
+      background = AlarmBook.backgroundFile(this)
     )
 
     findViewById<Button>(R.id.button_snooze).setOnClickListener {
@@ -119,9 +117,8 @@ class AlarmActivity : ComponentActivity() {
     val book = previewBooks[previewIndex]
     showBook(
       name = studyLabel(book.name),
-      coverStyle = book.coverStyle,
-      background = File(book.backgroundPath),
-      cover = File(book.coverPath)
+      cover = book.cover,
+      background = File(book.backgroundPath)
     )
   }
 
@@ -132,31 +129,15 @@ class AlarmActivity : ComponentActivity() {
   // ---- 공통 그리기 -----------------------------------------------------------
 
   /**
-   * 책 한 권을 화면에 얹는다. 이미지가 없어도 화면은 성립한다 — 배경은 밤색 단색, 표지는
-   * 빈 자리로 남고 나머지 배치는 그대로다. 알람은 무슨 일이 있어도 떠야 한다.
+   * 책 한 권을 화면에 얹는다. 배경 사진이 없어도 화면은 성립한다 — 밤색 단색이 되고
+   * 나머지 배치는 그대로다. 표지는 그림이 아니라 값으로 받아 그리므로 늘 나온다.
+   * 알람은 무슨 일이 있어도 떠야 한다.
    */
-  private fun showBook(name: String, coverStyle: String, background: File, cover: File) {
+  private fun showBook(name: String, cover: AlarmCoverDesign, background: File) {
     findViewById<TextView>(R.id.alarm_message).text = getString(R.string.alarm_message, name)
-
     setImageFromFile(R.id.alarm_background, background)
-    applyCoverSize(findViewById(R.id.alarm_book), coverStyle)
-    setImageFromFile(R.id.alarm_book, cover)
+    findViewById<AlarmCoverView>(R.id.alarm_book).design = cover
   }
-
-  /**
-   * 표지 자리의 크기는 표지 종류를 따라간다 — 알람용 목업은 디자인 크기 그대로,
-   * 서점에서 빌려 온 납작한 표지는 비율이 달라 조금 작게 놓는다. AlarmBook 상수 주석 참고.
-   */
-  private fun applyCoverSize(view: ImageView, style: String) {
-    val widthDp = if (style == AlarmBook.COVER_FLAT) FLAT_COVER_WIDTH_DP else MOCKUP_COVER_WIDTH_DP
-    val heightDp = if (style == AlarmBook.COVER_FLAT) FLAT_COVER_HEIGHT_DP else MOCKUP_COVER_HEIGHT_DP
-    view.layoutParams = view.layoutParams.apply {
-      width = dp(widthDp)
-      height = dp(heightDp)
-    }
-  }
-
-  private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
   /** 파일이 없거나 읽히지 않으면 앞 책의 그림이 남지 않도록 비운다 — 미리보기에서 특히 중요하다. */
   private fun setImageFromFile(viewId: Int, file: File) {
@@ -186,23 +167,20 @@ class AlarmActivity : ComponentActivity() {
 
   private fun readPreviewBooks(intent: Intent?): List<PreviewBook> {
     val names = intent?.getStringArrayListExtra(EXTRA_NAMES) ?: return emptyList()
-    val coverStyles = intent.getStringArrayListExtra(EXTRA_COVER_STYLES) ?: return emptyList()
-    val backgrounds = intent.getStringArrayListExtra(EXTRA_BACKGROUNDS) ?: return emptyList()
     val covers = intent.getStringArrayListExtra(EXTRA_COVERS) ?: return emptyList()
+    val backgrounds = intent.getStringArrayListExtra(EXTRA_BACKGROUNDS) ?: return emptyList()
 
     return names.mapIndexed { index, name ->
       PreviewBook(
         name = name,
-        coverStyle = coverStyles.getOrElse(index) { AlarmBook.COVER_MOCKUP },
-        backgroundPath = backgrounds.getOrElse(index) { "" },
-        coverPath = covers.getOrElse(index) { "" }
+        cover = AlarmCoverDesign.parse(covers.getOrNull(index)) ?: AlarmCoverDesign.FALLBACK,
+        backgroundPath = backgrounds.getOrElse(index) { "" }
       )
     }
   }
 
   companion object {
     private const val EXTRA_NAMES = "preview_names"
-    private const val EXTRA_COVER_STYLES = "preview_cover_styles"
     private const val EXTRA_BACKGROUNDS = "preview_backgrounds"
     private const val EXTRA_COVERS = "preview_covers"
 
@@ -212,11 +190,6 @@ class AlarmActivity : ComponentActivity() {
     private val TIME_FORMAT = SimpleDateFormat("HH:mm", Locale.KOREAN)
     private val DATE_FORMAT = SimpleDateFormat("M월 d일 EEEE", Locale.KOREAN)
 
-    // 디자인이 3배 아트보드(469×632px) 기준이라 3으로 나눈 값이다.
-    private const val MOCKUP_COVER_WIDTH_DP = 156
-    private const val MOCKUP_COVER_HEIGHT_DP = 211
-    private const val FLAT_COVER_WIDTH_DP = 148
-    private const val FLAT_COVER_HEIGHT_DP = 219
 
     /**
      * 알람이 울릴 때 이 화면을 띄우는 인텐트.
@@ -232,20 +205,19 @@ class AlarmActivity : ComponentActivity() {
 
     /**
      * 디자인 확인용 — 넘겨받은 책들을 한 장씩 넘겨 보는 모드로 연다.
-     * 경로는 file:// URI로 받아 실제 경로로 바꿔 둔다(BitmapFactory는 URI를 못 읽는다).
+     * 배경 경로는 file:// URI로 받아 실제 경로로 바꿔 둔다(BitmapFactory는 URI를 못 읽는다).
+     * 표지는 그림이 아니라 값이라 묶은 문자열 그대로 넘긴다(AlarmCoverDesign.pack).
      */
     fun previewIntent(
       context: Context,
       names: List<String>,
-      coverStyles: List<String>,
-      backgroundUris: List<String>,
-      coverUris: List<String>
+      covers: List<String>,
+      backgroundUris: List<String>
     ): Intent = Intent(context, AlarmActivity::class.java).apply {
       addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
       putStringArrayListExtra(EXTRA_NAMES, ArrayList(names))
-      putStringArrayListExtra(EXTRA_COVER_STYLES, ArrayList(coverStyles))
+      putStringArrayListExtra(EXTRA_COVERS, ArrayList(covers))
       putStringArrayListExtra(EXTRA_BACKGROUNDS, ArrayList(backgroundUris.map(::toPath)))
-      putStringArrayListExtra(EXTRA_COVERS, ArrayList(coverUris.map(::toPath)))
     }
 
     private fun toPath(uri: String): String = Uri.parse(uri).path ?: uri

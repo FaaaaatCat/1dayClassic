@@ -87,18 +87,19 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!--
-            표지 자리. 크기는 표지 종류에 따라 AlarmActivity가 다시 잡는다 —
-            알람용 목업이면 156×211dp, 서점 표지를 빌려 쓰면 148×219dp.
-            여기 적힌 값은 목업 기준의 기본값이다.
-            fitCenter라 어떤 비율이 들어와도 잘리지 않는다.
+<!--
+            표지 자리 — 세워 둔 책 한 권(AlarmCoverView).
+
+            앞표지 폭은 디자인대로 156dp인데, 세우면 폭은 조금 줄고(0.98배) 높이는
+            늘어난다(1.51배) — 접힘선 쪽이 눈에 가까워 커지기 때문이다. 그래서 236dp를
+            준다. 뷰는 주어진 자리 안에 들어가도록 스스로 줄이므로 이 값이 조금 달라도
+            잘리지는 않고, 위아래 가변 여백이 남는 높이를 나눠 가진다.
         -->
-        <ImageView
+        <expo.modules.alarmclock.AlarmCoverView
             android:id="@+id/alarm_book"
             android:layout_width="156dp"
-            android:layout_height="211dp"
+            android:layout_height="236dp"
             android:layout_gravity="center_horizontal"
-            android:scaleType="fitCenter"
             android:importantForAccessibility="no" />
 
         <Space

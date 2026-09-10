@@ -23,11 +23,25 @@ class AlarmInput : Record {
 }
 
 /** 디자인 확인용 미리보기에 넘길 책 한 권. 이미지는 JS가 미리 파일로 깔아 두고 경로만 넘긴다. */
+/** JS가 넘기는 표지 값 한 벌 — lib/coverDesign의 CoverDesign에서 그리는 데 쓰는 것만 추린 것. */
+class AlarmCoverInput : Record {
+  @Field val paper: String = ""
+  @Field val ink: String = ""
+  @Field val title: String = ""
+  @Field val author: String = ""
+  @Field val imprint: String = ""
+  @Field val mark: String = ""
+  @Field val dark: Boolean = false
+  @Field val pattern: List<String> = emptyList()
+
+  fun toDesign(): AlarmCoverDesign =
+    AlarmCoverDesign.of(paper, ink, title, author, imprint, mark, dark, pattern)
+}
+
 class AlarmPreviewBook : Record {
   @Field val name: String = ""
-  @Field val coverStyle: String = "mockup"
+  @Field val cover: AlarmCoverInput = AlarmCoverInput()
   @Field val backgroundUri: String = ""
-  @Field val coverUri: String = ""
 }
 
 class AlarmClockModule : Module() {
@@ -70,23 +84,22 @@ class AlarmClockModule : Module() {
     }
 
     /**
-     * 알람 화면이 보여 줄 책 이름과 표지 종류. 서점에서 책을 고를 때마다 JS가 밀어 준다 —
+     * 알람 화면이 보여 줄 책 이름과 표지 값. 서점에서 책을 고를 때마다 JS가 밀어 준다 —
      * 알람이 울릴 때는 JS가 안 돌고 있어서 그때 물어볼 수 없다.
-     * coverStyle은 AlarmBook.COVER_MOCKUP / COVER_FLAT 중 하나다.
      */
-    AsyncFunction("setAlarmBook") { name: String, coverStyle: String ->
-      AlarmBook.save(context, name, coverStyle)
+    AsyncFunction("setAlarmBook") { name: String, cover: AlarmCoverInput ->
+      AlarmBook.save(context, name, cover.toDesign())
     }
 
     /**
-     * JS가 책 이미지를 복사해 넣을 자리. 경로를 JS가 조립하지 않게 네이티브가 알려 준다 —
-     * 저장 위치는 알람 화면 사정이지 JS가 알아야 할 일이 아니다.
+     * JS가 배경 사진을 복사해 넣을 자리. 경로를 JS가 조립하지 않게 네이티브가 알려 준다 —
+     * 저장 위치는 알람 화면 사정이지 JS가 알아야 할 일이 아니다. 표지는 그림이 아니라
+     * 값으로 오므로(setAlarmBook) 여기 자리가 없다.
      */
     AsyncFunction("getAlarmImageTargets") {
       mapOf(
         "directory" to Uri.fromFile(AlarmBook.dir(context)).toString(),
-        "background" to Uri.fromFile(AlarmBook.backgroundFile(context)).toString(),
-        "cover" to Uri.fromFile(AlarmBook.coverFile(context)).toString()
+        "background" to Uri.fromFile(AlarmBook.backgroundFile(context)).toString()
       )
     }
 
@@ -100,9 +113,8 @@ class AlarmClockModule : Module() {
         AlarmActivity.previewIntent(
           context,
           names = books.map { it.name },
-          coverStyles = books.map { it.coverStyle },
-          backgroundUris = books.map { it.backgroundUri },
-          coverUris = books.map { it.coverUri }
+          covers = books.map { it.cover.toDesign().pack() },
+          backgroundUris = books.map { it.backgroundUri }
         )
       )
     }

@@ -22,15 +22,6 @@ export interface BookstoreBook {
    * 그 경우 알람 배경은 바탕색만 나오고 나머지 배치는 그대로다.
    */
   alarmBackground?: ImageSourcePropType;
-  /**
-   * 알람 전용으로 합성한 표지(그림자·원근이 들어간 목업). 지금은 열 권 모두 비어 있어
-   * 알람 화면의 표지 자리가 빈다 — lib/alarmBook.ts 참고.
-   *
-   * 예전에는 네 권이 목업 이미지를 갖고 있었는데 그것이 출판사 실물 표지를 합성한
-   * 그림이라 걷어냈다. 알람은 JS가 안 도는 자리라 BookCover를 렌더할 수 없으므로,
-   * 알람 화면의 표지는 코틀린이 표지 값을 받아 직접 그리게 된다. 그때 이 필드는 사라진다.
-   */
-  alarmCover?: ImageSourcePropType;
 }
 
 /**

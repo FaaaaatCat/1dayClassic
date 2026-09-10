@@ -4,31 +4,24 @@ import android.content.Context
 import java.io.File
 
 /**
- * 알람 화면이 쓰는 '지금 고른 책' 한 벌 — 이름과 이미지 두 장.
+ * 알람 화면이 쓰는 '지금 고른 책' 한 벌 — 이름, 배경 사진, 그리고 표지를 그릴 값.
  *
  * 알람이 울릴 때 JS는 안 돌고 있으므로(앱 종료·재부팅 직후에도 울려야 한다) 필요한 것은
  * 미리 네이티브 쪽에 내려와 있어야 한다. 알람 설정(AlarmPrefs)과 분리해 둔 이유는 갱신
- * 시점이 다르기 때문이다 — 알람 설정은 알람을 편집할 때, 이 값들은 서점에서 책을 고를 때 바뀐다.
+ * 시점이 다르기 때문이다 — 알람 설정은 알람을 편집할 때, 이 값들은 책을 고를 때 바뀐다.
  *
- * 이미지는 경로를 저장하지 않고 **자리를 고정**한다. 책이 227권까지 늘어나도 알람에 필요한 건
- * 늘 한 벌뿐이라, JS가 고른 책의 이미지를 이 두 파일에 덮어써 주기만 하면 된다.
+ * 표지는 예전에 이미지 파일이었다. 앱이 표지를 코드로 그리기 시작하면서 깔아 둘 그림이
+ * 없어졌으므로, 이제는 그림 대신 **그리는 데 필요한 값**을 받아 두고 알람이 직접 그린다
+ * (AlarmCoverView). 배경 사진만 파일로 남는다.
+ *
+ * 배경은 경로를 저장하지 않고 **자리를 고정**한다. 책이 백 권을 넘어도 알람에 필요한 건
+ * 늘 한 장뿐이라, JS가 고른 책의 사진을 그 파일에 덮어써 주기만 하면 된다.
  */
 object AlarmBook {
   private const val PREFS_NAME = "alarm_clock_prefs"
   private const val KEY_NAME = "book_name"
-  private const val KEY_COVER_STYLE = "book_cover_style"
+  private const val KEY_COVER = "book_cover"
   private const val DIR = "alarm"
-
-  /**
-   * 알람 전용으로 합성한 목업 표지 — 그림자·원근이 들어 있어 디자인 크기(156×211dp) 그대로 놓는다.
-   */
-  const val COVER_MOCKUP = "mockup"
-
-  /**
-   * 알람용 표지가 없어 서점 표지를 그대로 빌려 쓴 경우 — 납작한 사각형이고 비율도 달라
-   * 조금 작게(148×219dp) 놓는다. 그래야 잘리지 않고 목업 표지와 무게감이 비슷해진다.
-   */
-  const val COVER_FLAT = "flat"
 
   /** 책을 아직 못 받았을 때 쓰는 문구 — "…할 시간입니다"의 앞부분으로 붙는다. */
   private const val FALLBACK_NAME = "오늘의 공부"
@@ -53,11 +46,11 @@ object AlarmBook {
     return if (name.endsWith(STUDY)) name else "$name $STUDY"
   }
 
-  fun save(context: Context, name: String, coverStyle: String) {
+  fun save(context: Context, name: String, cover: AlarmCoverDesign) {
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
       .edit()
       .putString(KEY_NAME, name)
-      .putString(KEY_COVER_STYLE, coverStyle)
+      .putString(KEY_COVER, cover.pack())
       .apply()
   }
 
@@ -67,13 +60,11 @@ object AlarmBook {
   /** 배경 사진. 없으면 화면은 밤색 단색으로 뜬다. */
   fun backgroundFile(context: Context): File = File(dir(context), "background")
 
-  /** 책 표지. 없으면 그 자리는 비워 두고 나머지 배치는 그대로 유지한다. */
-  fun coverFile(context: Context): File = File(dir(context), "cover")
-
-  /** 표지를 어느 크기로 놓을지 — COVER_MOCKUP 또는 COVER_FLAT. */
-  fun coverStyle(context: Context): String =
-    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-      .getString(KEY_COVER_STYLE, COVER_MOCKUP) ?: COVER_MOCKUP
+  /** 표지를 그릴 값. 아직 못 받았으면 중립적인 기본 표지로 그린다. */
+  fun cover(context: Context): AlarmCoverDesign =
+    AlarmCoverDesign.parse(
+      context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_COVER, null)
+    ) ?: AlarmCoverDesign.FALLBACK
 
   /** JS가 이미지를 써 넣을 폴더. 없으면 JS 쪽에서 만든다. */
   fun dir(context: Context): File = File(context.filesDir, DIR)
