@@ -24,7 +24,9 @@ const IMPRINTS = {
     palette: [
       { paper: '#F1EBDB', ink: '#1E3A62' },
       { paper: '#EDE7D8', ink: '#26221C' },
-      { paper: '#F4EEE0', ink: '#5A3B22' },
+      { paper: '#E8B84B', ink: '#2A2113' },
+      { paper: '#1F2D4D', ink: '#EDE3CB', dark: true },
+      { paper: '#B23820', ink: '#F7EFE0' },
     ],
   },
   낮은문장: {
@@ -32,7 +34,9 @@ const IMPRINTS = {
     palette: [
       { paper: '#E5E9E2', ink: '#25382A' },
       { paper: '#211F1B', ink: '#E6DEC9', dark: true },
-      { paper: '#EDEFE8', ink: '#3A4438' },
+      { paper: '#2E6B4F', ink: '#F2EFE4' },
+      { paper: '#DDE6EA', ink: '#1F3B46' },
+      { paper: '#12312C', ink: '#CFE3D6', dark: true },
     ],
   },
   첫자리: {
@@ -40,7 +44,9 @@ const IMPRINTS = {
     palette: [
       { paper: '#ECE7DF', ink: '#77382A' },
       { paper: '#F2EEE1', ink: '#1F3C6A' },
-      { paper: '#EAE6DC', ink: '#3E3A55' },
+      { paper: '#2D5FB4', ink: '#F4F1E6' },
+      { paper: '#F0D9C4', ink: '#8A2F1E' },
+      { paper: '#231A2E', ink: '#E4D9EF', dark: true },
     ],
   },
   한밤서가: {
@@ -49,9 +55,42 @@ const IMPRINTS = {
       { paper: '#E3E9ED', ink: '#1C3143' },
       { paper: '#F6F4EF', ink: '#17191B' },
       { paper: '#EAE6EE', ink: '#2E2A3F' },
+      { paper: '#141A2B', ink: '#D9DEEC', dark: true },
+      { paper: '#102A33', ink: '#7FD4E4', dark: true },
     ],
   },
 };
+
+/**
+ * 표지 색을 나눠 준다.
+ *
+ * 출판사마다 다섯 짝인데 그중 어두운 종이가 여섯(스물에 여섯, 30%)이다. 어두운 책이
+ * 몇 권이어야 하는지는 서가 전체의 성질이라, 책마다 따로 고르면 맞출 수가 없다.
+ * 그래서 색은 책의 데이터에 적지 않고 여기서 셈해 나눠 준다.
+ *
+ * 차례로 돌리면 격자에 색 줄무늬가 생기므로, 제목의 글자값으로 순서를 흩은 뒤 그 차례대로
+ * 다섯 색을 돌린다 — 권수는 고르게 나뉘고 자리는 흩어진다.
+ */
+function sharePalettes(rows, palette) {
+  const order = rows
+    .map((row, index) => {
+      let sum = 0;
+      for (const ch of row.title) sum += ch.codePointAt(0);
+      return { index, key: sum };
+    })
+    .sort((a, b) => a.key - b.key || a.index - b.index);
+
+  const picked = new Array(rows.length);
+  order.forEach((row, rank) => { picked[row.index] = rank % palette.length; });
+
+  // 나란히 놓인 두 권이 같은 색이면 다음 권과 바꿔 준다.
+  for (let i = 1; i < picked.length; i += 1) {
+    if (picked[i] !== picked[i - 1]) continue;
+    const swap = picked.findIndex((value, j) => j > i && value !== picked[i - 1] && value !== picked[i + 1]);
+    if (swap > 0) { [picked[i], picked[swap]] = [picked[swap], picked[i]]; }
+  }
+  return picked;
+}
 
 /**
  * 꼭지 하나가 차지하는 쪽수 — 규격의 2~4쪽 안에서 정한다.
@@ -69,6 +108,22 @@ function pageRatio(chapters) {
 }
 /** 본문 밖의 쪽수(표제지·머리말·찾아보기). */
 const FRONT_BACK = 24;
+
+/**
+ * 표지 짜임 여섯. 어느 책이 어느 짜임인지는 제목에서 뽑는다.
+ *
+ * 차례로 돌리면 서점 격자에 여섯 칸짜리 무늬가 생겨 오히려 규칙이 보인다. 그래서 제목의
+ * 글자값으로 흩되, 바로 앞 책과 같아지면 한 칸 밀어 이웃끼리는 겹치지 않게 한다.
+ */
+const LAYOUTS = ['band', 'plaque', 'rule', 'vertical', 'block', 'margin'];
+
+function layoutOf(title, previous) {
+  let sum = 0;
+  for (const ch of title) sum += ch.codePointAt(0);
+  let picked = LAYOUTS[sum % LAYOUTS.length];
+  if (picked === previous) picked = LAYOUTS[(sum + 1) % LAYOUTS.length];
+  return picked;
+}
 
 /** 발행일을 흩는다 — 2023년 1월부터 한 권씩 열흘 남짓 간격으로 뒤로 온다. */
 function pubDate(index) {
@@ -96,18 +151,21 @@ const IMPRINT_FILES = ['midjulsai', 'najeunmunjang', 'cheotjari', 'hanbamseoga']
 
 const books = [];
 let index = 0;
+let lastLayout = null;
 
 for (const file of IMPRINT_FILES) {
   const { imprint, books: rows } = JSON.parse(readFileSync(new URL(`${file}.json`, HERE), 'utf8'));
   const spec = IMPRINTS[imprint];
   if (!spec) throw new Error(`팔레트 없는 출판사: ${imprint}`);
 
-  for (const row of rows) {
+  const shared = sharePalettes(rows, spec.palette);
+
+  for (const [order, row] of rows.entries()) {
     const chapters = row.parts.reduce((n, [, count]) => n + count, 0);
     const ratio = pageRatio(chapters);
     const pages = Math.round(chapters * ratio) + FRONT_BACK;
-    const swatch = spec.palette[row.palette];
-    if (!swatch) throw new Error(`${row.title}: palette ${row.palette}`);
+    const swatch = spec.palette[shared[order]];
+    if (!swatch) throw new Error(`${row.title}: palette ${shared[order]}`);
 
     /** 목차 절 — 부 제목과 그 부의 꼭지 수. 꼭지 수를 세면 쪽수 비율을 검산할 수 있다. */
     const contents = row.parts.map(([name, count]) => `${name} (${count}꼭지)`);
@@ -141,11 +199,13 @@ for (const file of IMPRINT_FILES) {
         imprint,
         mark: spec.mark,
         align: row.align,
+        layout: layoutOf(row.title, lastLayout),
         // 패턴은 그 책 목차의 부 제목에서 뽑는다 — 지어낸 무늬가 아니다.
         pattern: row.parts.map(([name]) => name),
       };
     }
 
+    if (book.coverDesign) lastLayout = book.coverDesign.layout;
     books.push(book);
     index += 1;
   }

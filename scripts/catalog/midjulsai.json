@@ -3,12 +3,12 @@
   "books": [
     {
       "bookId": "quote",
-      "title": "하루 명심보감",
+      "title": "명심보감",
       "author": "밑줄사이 편집부 엮음",
       "tags": [
         "고전",
         "동양고전",
-        "하루시리즈"
+        "곁에두는고전"
       ],
       "palette": 0,
       "align": "center",
@@ -42,12 +42,12 @@
     },
     {
       "bookId": "hanja",
-      "title": "하루 천자문",
+      "title": "천자문",
       "author": "밑줄사이 편집부 엮음",
       "tags": [
         "한자",
         "낱글자",
-        "하루시리즈"
+        "낱글자공부"
       ],
       "palette": 1,
       "align": "top",
@@ -77,8 +77,7 @@
       "author": "밑줄사이 편집부 엮음",
       "tags": [
         "교양",
-        "인문교양",
-        "하루시리즈"
+        "인문교양"
       ],
       "palette": 2,
       "align": "bottom",

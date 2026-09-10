@@ -3,13 +3,12 @@
   "books": [
     {
       "bookId": "english",
-      "title": "하루 영어 속담",
+      "title": "영어 속담",
       "author": "한밤서가 편집부 엮음",
       "tags": [
         "영어",
         "언어",
-        "밤의서가",
-        "하루시리즈"
+        "밤의서가"
       ],
       "palette": 0,
       "align": "top",
@@ -43,13 +42,12 @@
     },
     {
       "bookId": "writing",
-      "title": "하루 글쓰기",
+      "title": "글쓰기",
       "author": "한밤서가 편집부 엮음",
       "tags": [
         "글쓰기",
         "문장",
-        "밤의서가",
-        "하루시리즈"
+        "밤의서가"
       ],
       "palette": 1,
       "align": "center",
@@ -79,13 +77,12 @@
     },
     {
       "bookId": "classic",
-      "title": "하루 클래식",
+      "title": "클래식",
       "author": "한밤서가 편집부 엮음",
       "tags": [
         "클래식",
         "음악",
-        "음악시리즈",
-        "하루시리즈"
+        "음악시리즈"
       ],
       "palette": 2,
       "align": "center",

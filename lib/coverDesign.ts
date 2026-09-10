@@ -17,26 +17,28 @@ import type { BookId, CoverDesign } from '@/types';
  */
 const COVER_DESIGNS: Record<BookId, CoverDesign> = {
   quote: {
-    paper: '#F1EBDB',
-    ink: '#1E3A62',
-    title: '하루 명심보감',
-    subtitle: '마음을 밝히는 거울 스무 이야기',
+    paper: '#B23820',
+    ink: '#F7EFE0',
+    title: '명심보감',
+    subtitle: '거울 스무 이야기',
     author: '밑줄사이 편집부',
     imprint: '밑줄사이',
     mark: 'underline',
     align: 'center',
+    layout: 'plaque',
     // 편명 격자.
     pattern: ['繼善', '天命', '順命', '孝行', '正己', '安分', '存心', '戒性', '勤學', '訓子'],
   },
   hanja: {
-    paper: '#EDE7D8',
-    ink: '#26221C',
-    title: '하루 천자문',
+    paper: '#E8B84B',
+    ink: '#2A2113',
+    title: '천자문',
     subtitle: '네 글자씩 읽는 첫 열 구',
     author: '밑줄사이 편집부',
     imprint: '밑줄사이',
     mark: 'underline',
     align: 'top',
+    layout: 'vertical',
     // 목차의 열 구를 그대로 깐다.
     pattern: [
       '天地玄黃',
@@ -52,14 +54,15 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
     ],
   },
   hanmun: {
-    paper: '#E5E9E2',
-    ink: '#25382A',
-    title: '하루 논어',
+    paper: '#2E6B4F',
+    ink: '#F2EFE4',
+    title: '논어',
     subtitle: '두 장씩 읽는 여섯 편',
     author: '낮은문장 편집부',
     imprint: '낮은문장',
     mark: 'lowline',
     align: 'center',
+    layout: 'rule',
     // 이 열 화가 지나가는 편들.
     pattern: ['學而', '爲政', '里仁', '述而', '子罕', '衛靈公'],
   },
@@ -67,12 +70,13 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
     paper: '#211F1B',
     ink: '#E6DEC9',
     dark: true,
-    title: '하루 채근담',
-    subtitle: '나물 뿌리를 씹는 열 이야기',
+    title: '채근담',
+    subtitle: '나물 뿌리 열 이야기',
     author: '낮은문장 편집부',
     imprint: '낮은문장',
     mark: 'lowline',
     align: 'bottom',
+    layout: 'block',
     // 목차 열 화의 조 번호.
     pattern: [
       '前 001',
@@ -88,14 +92,16 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
     ],
   },
   psychology: {
-    paper: '#ECE7DF',
-    ink: '#77382A',
-    title: '하루 명상록',
-    subtitle: '열 권에서 고른 열 단상',
+    paper: '#231A2E',
+    ink: '#E4D9EF',
+    dark: true,
+    title: '명상록',
+    subtitle: '고른 열 단상',
     author: '첫자리 편집부',
     imprint: '첫자리',
     mark: 'quadrant',
     align: 'top',
+    layout: 'band',
     /*
      * 목차 열 화의 권·절 번호.
      *
@@ -117,14 +123,15 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
     ],
   },
   latin: {
-    paper: '#F2EEE1',
-    ink: '#1F3C6A',
-    title: '하루 라틴어',
+    paper: '#2D5FB4',
+    ink: '#F4F1E6',
+    title: '라틴어',
     subtitle: '고전에서 온 스무 격언',
     author: '첫자리 편집부',
     imprint: '첫자리',
     mark: 'quadrant',
     align: 'center',
+    layout: 'margin',
     // 목차 열 화의 첫 낱말.
     pattern: [
       'CARPE',
@@ -142,12 +149,13 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
   english: {
     paper: '#E3E9ED',
     ink: '#1C3143',
-    title: '하루 영어 속담',
-    subtitle: '두 마디씩 읽는 스무 속담',
+    title: '영어 속담',
+    subtitle: '스무 편의 속담',
     author: '한밤서가 편집부',
     imprint: '한밤서가',
     mark: 'halfmoon',
     align: 'top',
+    layout: 'plaque',
     // 목차 열 화의 첫 낱말.
     pattern: [
       'ACTIONS',
@@ -165,24 +173,28 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
   writing: {
     paper: '#F6F4EF',
     ink: '#17191B',
-    title: '하루 글쓰기',
+    title: '글쓰기',
     subtitle: '문장을 세우는 열 규칙',
     author: '한밤서가 편집부',
     imprint: '한밤서가',
     mark: 'halfmoon',
     align: 'center',
+    layout: 'rule',
     // 목차 열 화의 규칙 번호.
     pattern: ['8.', '9.', '10.', '11.', '12.', '13.', '14.', '15.', '16.', '18.'],
   },
   classic: {
-    paper: '#EAE6EE',
-    ink: '#2E2A3F',
-    title: '하루 클래식',
+    paper: '#141A2B',
+    ink: '#D9DEEC',
+    dark: true,
+    title: '클래식',
     subtitle: '시대순으로 듣는 열한 곡',
     author: '한밤서가 편집부',
     imprint: '한밤서가',
     mark: 'halfmoon',
     align: 'center',
+    layout: 'block',
+    patternKind: 'staff',
     // 목차 열한 곡의 작품 번호 — 번호가 없는 두 곡(Sognai·피치카토 폴카)은 뺀다.
     pattern: [
       'BWV 846',
@@ -212,6 +224,7 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
     imprint: '밑줄사이',
     mark: 'underline',
     align: 'bottom',
+    layout: 'margin',
     pattern: ['001', '002', '003', '004', '005', '006'],
   },
 };

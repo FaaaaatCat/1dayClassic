@@ -3,13 +3,12 @@
   "books": [
     {
       "bookId": "psychology",
-      "title": "하루 명상록",
+      "title": "명상록",
       "author": "첫자리 편집부 엮음",
       "tags": [
         "철학",
         "스토아",
-        "처음시리즈",
-        "하루시리즈"
+        "처음시리즈"
       ],
       "palette": 0,
       "align": "top",
@@ -39,13 +38,12 @@
     },
     {
       "bookId": "latin",
-      "title": "하루 라틴어",
+      "title": "라틴어",
       "author": "첫자리 편집부 엮음",
       "tags": [
         "라틴어",
         "고전어",
-        "처음시리즈",
-        "하루시리즈"
+        "처음시리즈"
       ],
       "palette": 1,
       "align": "center",

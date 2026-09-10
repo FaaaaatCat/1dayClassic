@@ -69,7 +69,7 @@ export default function AdScreen() {
 
       <View style={styles.adSlot}>
         <Text style={styles.adBadge}>광고</Text>
-        <Text style={styles.adTitle}>하루 클래식</Text>
+        <Text style={styles.adTitle}>클래식</Text>
         <Text style={styles.adBody}>
           아침을 여는 한 편의 고전.{'\n'}오늘의 공부가 기다리고 있어요.
         </Text>

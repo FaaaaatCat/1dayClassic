@@ -3,13 +3,12 @@
   "books": [
     {
       "bookId": "hanmun",
-      "title": "하루 논어",
+      "title": "논어",
       "author": "낮은문장 편집부 엮음",
       "tags": [
         "고전",
         "한문",
-        "문장시리즈",
-        "하루시리즈"
+        "문장시리즈"
       ],
       "palette": 0,
       "align": "center",
@@ -35,13 +34,12 @@
     },
     {
       "bookId": "listening",
-      "title": "하루 채근담",
+      "title": "채근담",
       "author": "낮은문장 편집부 엮음",
       "tags": [
         "고전",
         "동양고전",
-        "문장시리즈",
-        "하루시리즈"
+        "문장시리즈"
       ],
       "palette": 1,
       "align": "bottom",

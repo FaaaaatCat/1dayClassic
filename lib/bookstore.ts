@@ -63,25 +63,25 @@ export function isMvpBook(bookId: BookId): boolean {
 export const BOOKSTORE_BOOKS: BookstoreBook[] = [
   {
     id: 'classic',
-    title: '하루 클래식',
+    title: '클래식',
     author: '한밤서가 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-classic.webp'),
   },
   {
     id: 'latin',
-    title: '하루 라틴어',
+    title: '라틴어',
     author: '첫자리 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-latin.webp'),
   },
   {
     id: 'quote',
-    title: '하루 명심보감',
+    title: '명심보감',
     author: '밑줄사이 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-quote.webp'),
   },
   {
     id: 'hanja',
-    title: '하루 천자문',
+    title: '천자문',
     author: '밑줄사이 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-hanja.webp'),
   },
@@ -93,31 +93,31 @@ export const BOOKSTORE_BOOKS: BookstoreBook[] = [
   },
   {
     id: 'psychology',
-    title: '하루 명상록',
+    title: '명상록',
     author: '첫자리 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-psychology.webp'),
   },
   {
     id: 'writing',
-    title: '하루 글쓰기',
+    title: '글쓰기',
     author: '한밤서가 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-writing.webp'),
   },
   {
     id: 'hanmun',
-    title: '하루 논어',
+    title: '논어',
     author: '낮은문장 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-hanmun.webp'),
   },
   {
     id: 'english',
-    title: '하루 영어 속담',
+    title: '영어 속담',
     author: '한밤서가 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-english.webp'),
   },
   {
     id: 'listening',
-    title: '하루 채근담',
+    title: '채근담',
     author: '낮은문장 편집부',
   },
 ];
