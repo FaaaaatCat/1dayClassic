@@ -12,6 +12,10 @@ import type { BookId, CoverDesign } from '@/types';
  * - 잉크색은 권마다 하나. 제목·패턴·저자·마크가 투명도만 달리해 나눠 쓴다.
  * - 정렬은 권마다 달리한다. 여덟 권이 같은 자리에 같은 크기면 템플릿 티가 난다.
  *
+ * 표지의 title은 화면의 책 이름과 다를 수 있다. 논어 표지에는 論語가, 천자문에는 千字文이,
+ * 라틴어에는 Latin이 찍힌다 — 원전이 쓰던 글자다. 목록과 알람은 lib/bookstore의 우리말
+ * 이름을 쓰므로 검색이나 읽기에는 영향이 없다.
+ *
  * 패턴은 지어낸 무늬가 아니라 그 책의 목차에서 뽑은 것이다. 지금은 씨앗값이고,
  * 실제 목차 데이터가 생기면 그것으로 갈아끼운다.
  */
@@ -32,18 +36,18 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
   hanja: {
     paper: '#E8B84B',
     ink: '#2A2113',
-    title: '천자문',
+    title: '千字文',
     subtitle: '네 글자씩 읽는 첫 열 구',
     author: '밑줄사이 편집부',
     imprint: '밑줄사이',
     mark: 'underline',
     align: 'top',
     layout: 'vertical',
-    // 목차의 열 구를 그대로 깐다.
+    // 목차의 첫 구절들을 깐다. '日月盈昃'만 뺐다 — 昃(U+6603)이 을유1945에 없어
+    // 표지에서 두부(□)로 뜬다. 패턴은 목차의 일부만 쓰므로 아홉으로도 채워진다.
     pattern: [
       '天地玄黃',
       '宇宙洪荒',
-      '日月盈昃',
       '辰宿列張',
       '寒來暑往',
       '秋收冬藏',
@@ -56,7 +60,7 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
   hanmun: {
     paper: '#2E6B4F',
     ink: '#F2EFE4',
-    title: '논어',
+    title: '論語',
     subtitle: '두 장씩 읽는 여섯 편',
     author: '낮은문장 편집부',
     imprint: '낮은문장',
@@ -125,7 +129,7 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
   latin: {
     paper: '#2D5FB4',
     ink: '#F4F1E6',
-    title: '라틴어',
+    title: 'Latin',
     subtitle: '고전에서 온 스무 격언',
     author: '첫자리 편집부',
     imprint: '첫자리',
