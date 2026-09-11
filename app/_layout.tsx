@@ -3,6 +3,7 @@ import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import { useFonts } from 'expo-font';
 import { DefaultTheme, Stack, ThemeProvider, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { NavigationBar } from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
 import { Alert, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -234,6 +235,15 @@ function StatusBarBand() {
         pointerEvents="none"
       />
       <StatusBar style={tint.icons} />
+      {/*
+        하단의 버튼 세 개(뒤로·홈·최근 앱) — 갤럭시에서 버튼 탐색을 쓸 때만 보인다.
+        색을 칠할 수는 없다(안드로이드 15의 edge-to-edge가 막는다). 대신 app.json의
+        enforceContrast: false로 시스템이 깔던 연회색 보호막을 걷어, 버튼 뒤로 화면 색이
+        그대로 비치게 했다. 여기서는 버튼 아이콘의 밝기만 상단 바에 맞춘다.
+        style의 뜻이 상단과 반대라 뒤집어 넘긴다 — 상단의 'light'는 흰 글자인데, 하단의
+        'light'는 밝은 바에 어두운 버튼이다.
+      */}
+      <NavigationBar style={tint.icons === 'light' ? 'dark' : 'light'} />
     </>
   );
 }
