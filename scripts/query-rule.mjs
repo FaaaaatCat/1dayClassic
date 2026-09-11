@@ -71,7 +71,6 @@ export const BOOK_FILES = {
   psychology: 'psychology.json',
   writing: 'writing.json',
   english: 'english.json',
-  liberal: 'liberal.json',
 };
 
 /** 그 책의 항목들 — 원고가 있는 것만. */

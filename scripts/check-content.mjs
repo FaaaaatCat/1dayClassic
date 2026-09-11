@@ -22,7 +22,7 @@ const source = (path) => readFileSync(path, 'utf8');
 const BOOKS = {
   quote: 'quote', hanja: 'hanja', hanmun: 'hanmun', listening: 'listening',
   psychology: 'psychology', latin: 'latin', english: 'english', writing: 'writing',
-  classic: 'tracks', liberal: 'liberal',
+  classic: 'tracks',
 };
 
 const lessonsOf = (file) => {
@@ -166,7 +166,7 @@ for (const [bookId, design] of Object.entries(designs)) {
   if (!LAYOUTS.includes(design.layout)) fail(`${bookId}: 모르는 짜임 ${design.layout}`);
   if (!MARKS.includes(design.mark)) fail(`${bookId}: 모르는 마크 ${design.mark}`);
   if (!ALIGNS.includes(design.align)) fail(`${bookId}: 모르는 정렬 ${design.align}`);
-  if (!design.pattern?.length && bookId !== 'liberal') warn(`${bookId}: 패턴이 비었다`);
+  if (!design.pattern?.length) warn(`${bookId}: 패턴이 비었다`);
   if (design.dark) dark += 1;
 
   const ratio = contrast(design.paper, design.ink);

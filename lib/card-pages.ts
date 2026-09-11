@@ -218,10 +218,9 @@ export function getLessonEpigraph(bookLesson: BookLesson): CardEpigraph | undefi
     case 'writing':
     case 'listening':
       return { text: bookLesson.lesson.epigraph, by: bookLesson.lesson.epigraphBy };
-    // 한자·심리·교양은 지면에 인용문이 없다.
+    // 천자문·명상록은 지면에 인용문이 없다.
     case 'hanja':
     case 'psychology':
-    case 'liberal':
       return undefined;
   }
 }

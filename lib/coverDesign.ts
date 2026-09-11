@@ -212,25 +212,6 @@ const COVER_DESIGNS: Record<BookId, CoverDesign> = {
       'Op. 37',
     ],
   },
-  /**
-   * 하루 교양은 아직 원고가 없는 책이다(data/liberal.json이 비어 있다). 고를 수
-   * 없는 책이라 목차를 열 수 없고 서점 격자에만 놓이므로, 표지도 자리를 지키는 값만 둔다.
-   *
-   * 색은 명언 쪽에서 빌려 쓴다. 원고가 정해지면 종이색·잉크색·패턴을 그 책의 목차에서
-   * 다시 뽑는다 — 지금 패턴의 번호는 목차에서 온 것이 아니라 자리표시다.
-   */
-  liberal: {
-    paper: '#F1EBDB',
-    ink: '#1E3A62',
-    title: '하루 교양',
-    subtitle: '준비 중',
-    author: '밑줄사이 편집부',
-    imprint: '밑줄사이',
-    mark: 'underline',
-    align: 'center',
-    layout: 'band',
-    pattern: ['001', '002', '003', '004', '005', '006'],
-  },
 };
 
 /** 그 책의 표지 값. 모든 책이 하나씩 갖는다 — 표지가 비는 책은 없다. */

@@ -8,7 +8,6 @@ import type {
   HanjaLesson,
   HanmunLesson,
   LatinLesson,
-  LiberalLesson,
   PsychologyLesson,
   QuoteLesson,
   Track,
@@ -37,8 +36,6 @@ export default function LessonHeading({ bookLesson, bookName }: Props) {
       return <QuoteHeading lesson={bookLesson.lesson} bookName={bookName} />;
     case 'hanja':
       return <HanjaHeading lesson={bookLesson.lesson} bookName={bookName} />;
-    case 'liberal':
-      return <LiberalHeading lesson={bookLesson.lesson} bookName={bookName} />;
     case 'psychology':
       return <PsychologyHeading lesson={bookLesson.lesson} bookName={bookName} />;
     case 'writing':
@@ -150,19 +147,6 @@ function HanjaHeading({ lesson, bookName }: { lesson: HanjaLesson; bookName: str
           </View>
         ))}
       </View>
-    </View>
-  );
-}
-
-/** 하루 교양 공부 — 글 제목과, 글이 기대고 있는 참고 도서. */
-function LiberalHeading({ lesson, bookName }: { lesson: LiberalLesson; bookName: string }) {
-  return (
-    <View style={headingStyles.section}>
-      <Tag label={bookName} />
-      <View style={headingStyles.titles}>
-        <Text style={headingStyles.title}>{lesson.title}</Text>
-      </View>
-      {lesson.source && <Text style={headingStyles.source}>{lesson.source}</Text>}
     </View>
   );
 }

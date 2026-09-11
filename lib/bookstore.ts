@@ -37,7 +37,7 @@ export interface BookstoreBook {
  * 런타임 상태다 — 사용자가 서점에서 고를 때마다 바뀌기 때문이다.
  */
 /**
- * 오늘의 책으로 고를 수 있는 책 — 원고가 들어 있는 책만 담는다. 하루 교양은 아직 원고가 없다.
+ * 오늘의 책으로 고를 수 있는 책 — 원고가 들어 있는 책만 담는다.
  *
  * 예전에는 이 목록을 'MVP'라 불렀다. 유유출판사의 실제 책들 사이에서 앱이 내용을 가진
  * 몇 권을 가려내는 표시였는데, 서가 전체를 데모용으로 바꾸면서 그 구분은 사라졌다.
@@ -91,13 +91,6 @@ export const BOOKSTORE_BOOKS: BookstoreBook[] = [
     author: '밑줄사이 편집부',
     alarmBackground: require('@/assets/images/alarm/bg-hanja.jpg'),
     backgroundCredit: 'Sixian Li',
-  },
-  {
-    id: 'liberal',
-    title: '하루 교양',
-    author: '밑줄사이 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-liberal.jpg'),
-    backgroundCredit: 'Pur Gon',
   },
   {
     id: 'psychology',

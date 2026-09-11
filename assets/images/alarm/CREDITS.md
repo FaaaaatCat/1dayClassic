@@ -25,7 +25,6 @@
 | 영어 속담 | `bg-english.jpg` | Marek Szturc | [4CDdd1RCt6w](https://unsplash.com/photos/4CDdd1RCt6w) | 노출 -6 |
 | 글쓰기 | `bg-writing.jpg` | Miguel Alcântara | [ZgT86iu3CAw](https://unsplash.com/photos/ZgT86iu3CAw) | 노출 -18 |
 | 클래식 | `bg-classic.jpg` | Geert Pieters | [8QrPJ3Kfie4](https://unsplash.com/photos/8QrPJ3Kfie4) | 노출 -42 |
-| 하루 교양 | `bg-liberal.jpg` | Pur Gon | [BGiy6QQ9WII](https://unsplash.com/photos/BGiy6QQ9WII) | 원본 그대로 |
 
 교체하려면 `scripts`가 아니라 사람이 고릅니다 — 어두운 사진이어야 하고, 시계(80sp)가
 놓이는 가운데 위쪽이 밝지 않아야 합니다.

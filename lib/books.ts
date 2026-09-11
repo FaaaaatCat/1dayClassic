@@ -28,12 +28,6 @@ import {
   getTodayListeningLesson,
 } from '@/lib/listening';
 import {
-  getLiberalHeading,
-  getLiberalLessonById,
-  getLiberalLessons,
-  getTodayLiberalLesson,
-} from '@/lib/liberal';
-import {
   getPsychologyHeading,
   getPsychologyLessonById,
   getPsychologyLessons,
@@ -54,7 +48,6 @@ import type {
   LatinLesson,
   LessonHeading,
   ListeningLesson,
-  LiberalLesson,
   PsychologyLesson,
   QuoteLesson,
   Track,
@@ -72,7 +65,6 @@ const BUILD_CALENDAR: Record<BookId, () => CalendarDay[]> = {
   latin: () => buildCalendarYear(getLatinLessons(), getLatinHeading),
   quote: () => buildCalendarYear(getQuoteLessons(), getQuoteHeading),
   hanja: () => buildCalendarYear(getHanjaLessons(), getHanjaHeading),
-  liberal: () => buildCalendarYear(getLiberalLessons(), getLiberalHeading),
   psychology: () => buildCalendarYear(getPsychologyLessons(), getPsychologyHeading),
   writing: () => buildCalendarYear(getWritingLessons(), getWritingHeading),
   hanmun: () => buildCalendarYear(getHanmunLessons(), getHanmunHeading),
@@ -104,7 +96,6 @@ export type BookLesson =
   | { book: 'latin'; lesson: LatinLesson }
   | { book: 'quote'; lesson: QuoteLesson }
   | { book: 'hanja'; lesson: HanjaLesson }
-  | { book: 'liberal'; lesson: LiberalLesson }
   | { book: 'psychology'; lesson: PsychologyLesson }
   | { book: 'writing'; lesson: WritingLesson }
   | { book: 'hanmun'; lesson: HanmunLesson }
@@ -135,7 +126,6 @@ const DATED_BOOK: Record<BookId, boolean> = {
   quote: false,
   // 천자문은 네 자씩 이백오십 구로 엮인 책이라 원본에 날짜가 없다.
   hanja: false,
-  liberal: true,
   // 명상록은 권과 절로 엮인 책이라 원본에 날짜가 없다.
   psychology: false,
   // 규칙을 번호로 엮은 책이라 원본에 날짜가 없다.
@@ -176,10 +166,6 @@ function lessonById(bookId: BookId, lessonId: string): BookLesson | undefined {
     case 'hanja': {
       const lesson = getHanjaLessonById(lessonId);
       return lesson && { book: 'hanja', lesson };
-    }
-    case 'liberal': {
-      const lesson = getLiberalLessonById(lessonId);
-      return lesson && { book: 'liberal', lesson };
     }
     case 'psychology': {
       const lesson = getPsychologyLessonById(lessonId);
@@ -222,10 +208,6 @@ function todayLesson(bookId: BookId): BookLesson | undefined {
     case 'hanja': {
       const lesson = getTodayHanjaLesson();
       return lesson && { book: 'hanja', lesson };
-    }
-    case 'liberal': {
-      const lesson = getTodayLiberalLesson();
-      return lesson && { book: 'liberal', lesson };
     }
     case 'psychology': {
       const lesson = getTodayPsychologyLesson();
@@ -300,8 +282,6 @@ export function getLessonHeading(bookLesson: BookLesson): LessonHeading {
       return getQuoteHeading(bookLesson.lesson);
     case 'hanja':
       return getHanjaHeading(bookLesson.lesson);
-    case 'liberal':
-      return getLiberalHeading(bookLesson.lesson);
     case 'psychology':
       return getPsychologyHeading(bookLesson.lesson);
     case 'writing':

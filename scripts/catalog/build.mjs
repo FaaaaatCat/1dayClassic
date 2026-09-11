@@ -66,7 +66,9 @@ const IMPRINTS = {
  *
  * 출판사마다 다섯 짝인데 그중 어두운 종이가 여섯(스물에 여섯, 30%)이다. 어두운 책이
  * 몇 권이어야 하는지는 서가 전체의 성질이라, 책마다 따로 고르면 맞출 수가 없다.
- * 그래서 색은 책의 데이터에 적지 않고 여기서 셈해 나눠 준다.
+ * 그래서 색은 여기서 셈해 나눠 주고, 한 번 나눠 준 색은 책마다 swatch로 적어 둔다 — 책을
+ * 하나 빼거나 넣어도 이미 있는 책의 색이 바뀌지 않게. 하루 교양을 뺐을 때 순서가 한 칸씩
+ * 밀려 밑줄사이 스물두 권의 색이 한꺼번에 바뀐 적이 있다.
  *
  * 차례로 돌리면 격자에 색 줄무늬가 생기므로, 제목의 글자값으로 순서를 흩은 뒤 그 차례대로
  * 다섯 색을 돌린다 — 권수는 고르게 나뉘고 자리는 흩어진다.
@@ -164,14 +166,17 @@ for (const file of IMPRINT_FILES) {
     const chapters = row.parts.reduce((n, [, count]) => n + count, 0);
     const ratio = pageRatio(chapters);
     const pages = Math.round(chapters * ratio) + FRONT_BACK;
-    const swatch = spec.palette[shared[order]];
+    // 한 번 나눠 준 색은 책마다 swatch로 적혀 있다 — 그걸 먼저 쓴다. 새 책만 셈해서 받는다.
+    const swatch = spec.palette[row.swatch ?? shared[order]];
     if (!swatch) throw new Error(`${row.title}: palette ${shared[order]}`);
 
     /** 목차 절 — 부 제목과 그 부의 꼭지 수. 꼭지 수를 세면 쪽수 비율을 검산할 수 있다. */
     const contents = row.parts.map(([name, count]) => `${name} (${count}꼭지)`);
 
     const book = {
-      id: `${file}-${String(index).padStart(3, '0')}`,
+      // 한 번 붙은 id는 데이터에 적어 두고 그대로 쓴다. 서재가 이 id로 책을 기억하므로,
+      // 앞의 책 하나를 빼도 뒤의 id가 당겨지면 안 된다. 새 책만 순번으로 받는다.
+      id: row.id ?? `${file}-${String(index).padStart(3, '0')}`,
       bookId: row.bookId ?? null,
       title: row.title,
       author: row.author,

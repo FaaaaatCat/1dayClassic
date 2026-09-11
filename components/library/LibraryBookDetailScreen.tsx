@@ -75,7 +75,7 @@ export default function LibraryBookDetailScreen() {
 
   const changeBook = () => {
     // 학습 콘텐츠가 없는 책은 고를 수 없다 — BUILD_CALENDAR에 없는 키라 selectBook이 받지
-    // 못한다. 하루 교양처럼 원고가 아직 없는 책도 읽을 것이 없으니 함께 막는다.
+    // 못한다. 원고가 아직 없는 책도 읽을 것이 없으니 함께 막는다.
     if (!studyBook || !isReadableBook(studyBook.id)) {
       showToast('아직 준비 중인 책입니다.');
       return;

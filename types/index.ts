@@ -1,5 +1,5 @@
 /**
- * '하루 시리즈' 9권의 식별자 — 하루 서점 카탈로그와 책별 데이터 모듈을 잇는 키.
+ * 읽을 수 있는 책 9권의 식별자 — 하루 서점 카탈로그와 책별 데이터 모듈을 잇는 키.
  * 라우트 파라미터(/book/[id])로도 그대로 쓰인다.
  */
 export type BookId =
@@ -7,7 +7,6 @@ export type BookId =
   | 'latin'
   | 'quote'
   | 'hanja'
-  | 'liberal'
   | 'psychology'
   | 'writing'
   | 'hanmun'
@@ -160,16 +159,6 @@ export interface HanmunLesson extends DailyLesson {
 
 export interface HanmunData {
   lessons: HanmunLesson[];
-}
-
-/** 하루 교양 공부 — 표제는 글 제목. 원문/독음이 없는 대신 글 한 편이 통째로 본문이다. */
-export interface LiberalLesson extends DailyLesson {
-  /** 글 제목 (예: "루이 암스트롱의 새해") */
-  title: string;
-}
-
-export interface LiberalData {
-  lessons: LiberalLesson[];
 }
 
 /** 하루 영어 교양 — 표제는 영어 관용 표현. 표제 아래에 쓰임을 보여 주는 예문 한 쌍이 붙는다. */

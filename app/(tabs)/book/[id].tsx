@@ -147,7 +147,7 @@ export default function BookDetailScreen() {
     // getTomorrowLesson → getBookCalendar → BUILD_CALENDAR[bookId]()가 이 값을 그대로 키로
     // 쓴다. 카탈로그 전용 책의 id를 selectBook에 넘기면 BUILD_CALENDAR에 없는 키라 홈 화면이
     // 그 자리에서 크래시한다 — 그래서 studyBook이 없을 때는 절대 selectBook을 호출하지 않고
-    // 안내 토스트만 띄운다. 하루 교양처럼 원고가 아직 없는 책도 읽을 것이 없으니 함께 막는다.
+    // 안내 토스트만 띄운다. 원고가 아직 없는 책도 읽을 것이 없으니 함께 막는다.
     if (!studyBook || !isReadableBook(studyBook.id)) {
       showToast("아직 준비 중인 책입니다.");
       return;
