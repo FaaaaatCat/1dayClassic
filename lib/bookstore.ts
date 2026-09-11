@@ -37,11 +37,16 @@ export interface BookstoreBook {
  * 런타임 상태다 — 사용자가 서점에서 고를 때마다 바뀌기 때문이다.
  */
 /**
- * MVP가 지금 제공하는 학습 가능한 책 — liberal(하루 교양 공부)만 아직 없다.
- * 제외 목록이 아니라 포함 목록이다 — 새 책을 추가해도 여기 명시하기 전에는
- * 자동으로 MVP가 되지 않는다(기본값이 Non-MVP).
+ * 오늘의 책으로 고를 수 있는 책 — 원고가 들어 있는 책만 담는다. 하루 교양은 아직 원고가 없다.
+ *
+ * 예전에는 이 목록을 'MVP'라 불렀다. 유유출판사의 실제 책들 사이에서 앱이 내용을 가진
+ * 몇 권을 가려내는 표시였는데, 서가 전체를 데모용으로 바꾸면서 그 구분은 사라졌다.
+ * 남은 일은 막는 것 하나다 — 카탈로그에만 있는 책은 고르면 홈이 멈추고(BUILD_CALENDAR에
+ * 없는 키다), 원고 없는 책은 고른 뒤 읽을 것이 없다.
+ *
+ * 제외 목록이 아니라 포함 목록이다 — 새 책을 추가해도 여기 적기 전에는 고를 수 없다.
  */
-const MVP_BOOK_IDS: readonly BookId[] = [
+const READABLE_BOOK_IDS: readonly BookId[] = [
   'classic',
   'latin',
   'quote',
@@ -53,9 +58,9 @@ const MVP_BOOK_IDS: readonly BookId[] = [
   'listening',
 ];
 
-/** 이 책이 지금 MVP에서 제공되는 학습 콘텐츠인지. 카드 리본·서점 필터·책 변경 제한이 함께 쓴다. */
-export function isMvpBook(bookId: BookId): boolean {
-  return MVP_BOOK_IDS.includes(bookId);
+/** 이 책을 오늘의 책으로 고를 수 있는지. 책 변경과 첫 실행의 추천 목록이 함께 쓴다. */
+export function isReadableBook(bookId: BookId): boolean {
+  return READABLE_BOOK_IDS.includes(bookId);
 }
 
 export const BOOKSTORE_BOOKS: BookstoreBook[] = [

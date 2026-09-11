@@ -8,22 +8,14 @@ import ScreenHeader, { HeaderIconButton } from '@/components/ScreenHeader';
 import SelectField, { SelectRow, type SelectOption } from "@/components/SelectField";
 import { Ink, Surface, Type, trackBody } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
-import { BOOKSTORE_BOOKS, isMvpBook } from "@/lib/bookstore";
 import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
 import { FIELD_NAMES, fieldsOf, SERIES_NAMES, seriesOf } from "@/lib/tags";
 
-/**
- * 시리즈 필터에 얹는 MVP 칩의 라벨. 출판사 태그가 아니라 앱이 만든 합성 카테고리라
- * lib/tags.ts의 SERIES_NAMES에는 넣지 않고, 이 화면에서만 특수 케이스로 다룬다.
- */
-const MVP_FILTER = "MVP";
 
 interface Entry {
   book: CatalogBook;
   series: string[];
   fields: string[];
-  /** 학습 가능한 책 중 지금 MVP가 제공하는 책인지(liberal 제외). */
-  mvp: boolean;
   /** 제목+저자를 공백 없이 소문자로 붙여 둔 검색용 문자열. */
   searchKey: string;
 }
@@ -114,7 +106,6 @@ export default function BookstoreScreen() {
         book,
         series: seriesOf(book.tags, book.title),
         fields: fieldsOf(book.tags),
-        mvp: book.bookId !== null && isMvpBook(book.bookId),
         searchKey: normalize(`${book.title}${book.author}`),
       })),
     [],
@@ -123,11 +114,7 @@ export default function BookstoreScreen() {
   const rows = useMemo(() => {
     const needle = normalize(query);
     const matched = tagged
-      .filter((entry) => {
-        if (series === null) return true;
-        if (series === MVP_FILTER) return entry.mvp;
-        return entry.series.includes(series);
-      })
+      .filter((entry) => series === null || entry.series.includes(series))
       .filter((entry) => field === null || entry.fields.includes(field))
       .filter((entry) => needle === "" || entry.searchKey.includes(needle));
 
@@ -220,10 +207,8 @@ export default function BookstoreScreen() {
     allLabel: string,
     names: string[],
     tally: Record<string, number>,
-    pinned: string[] = [],
   ): SelectOption[] => [
     { value: null, label: allLabel },
-    ...pinned.map((name) => ({ value: name, label: name })),
     ...names
       .filter((name) => (tally[name] ?? 0) > 0)
       .sort((a, b) => tally[b] - tally[a])
@@ -235,7 +220,7 @@ export default function BookstoreScreen() {
       <SelectField
         title="시리즈"
         label={series ?? '시리즈 전체'}
-        options={optionsFor('시리즈 전체', SERIES_NAMES, counts.bySeries, [MVP_FILTER])}
+        options={optionsFor('시리즈 전체', SERIES_NAMES, counts.bySeries)}
         value={series}
         onChange={setSeries}
       />
@@ -280,7 +265,6 @@ export default function BookstoreScreen() {
                   coverDesign={entry.book.coverDesign}
                   series={entry.series}
                   fields={entry.fields}
-                  mvp={entry.mvp}
                   selected={
                     entry.book.bookId !== null &&
                     entry.book.bookId === selectedBookId

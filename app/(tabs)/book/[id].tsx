@@ -21,7 +21,7 @@ import { Colors, Corner, Ink, Spark, Surface, Type, trackBody, trackDisplay } fr
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { useShelf } from "@/context/ShelfContext";
 import { useToast } from "@/context/ToastContext";
-import { BOOKSTORE_BOOKS, isMvpBook } from "@/lib/bookstore";
+import { BOOKSTORE_BOOKS, isReadableBook } from "@/lib/bookstore";
 import {
   getCatalogBook,
   getCatalogBookByBookId,
@@ -43,7 +43,7 @@ const COVER_W = 140;
  *
  * 헤더는 60px 한 줄이다: 왼쪽 뒤로가기, 가운데 '책 정보', 오른쪽 미리보기. 미리보기는
  * 예전에 하단 CTA 옆에 있었는데, 아래 자리를 '읽을 책에 추가하기' 하나에 통째로 내주고
- * 위로 올라왔다. 다만 MVP에서는 아직 팝업을 열지 않고 안내 토스트만 띄운다(openPreview).
+ * 위로 올라왔다. 다만 아직 팝업을 열지 않고 안내 토스트만 띄운다(openPreview).
  *
  * 하단 CTA 바는 catalogBook이 있으면 늘 뜨고, 화면 폭을 꽉 채운 버튼 하나다. 진입
  * 경로(from)로 버튼 역할이 완전히 갈린다 — 하루 서점 쪽에는 '읽을 책에 추가하기'류만,
@@ -147,9 +147,9 @@ export default function BookDetailScreen() {
     // getTomorrowLesson → getBookCalendar → BUILD_CALENDAR[bookId]()가 이 값을 그대로 키로
     // 쓴다. 카탈로그 전용 책의 id를 selectBook에 넘기면 BUILD_CALENDAR에 없는 키라 홈 화면이
     // 그 자리에서 크래시한다 — 그래서 studyBook이 없을 때는 절대 selectBook을 호출하지 않고
-    // 안내 토스트만 띄운다. liberal처럼 학습 가능한 책에는 있지만 아직 MVP가 제공하지 않는 책도 같은 이유로 막는다.
-    if (!studyBook || !isMvpBook(studyBook.id)) {
-      showToast("MVP에서는 제공하지 않는 콘텐츠입니다.");
+    // 안내 토스트만 띄운다. 하루 교양처럼 원고가 아직 없는 책도 읽을 것이 없으니 함께 막는다.
+    if (!studyBook || !isReadableBook(studyBook.id)) {
+      showToast("아직 준비 중인 책입니다.");
       return;
     }
     selectBook(studyBook.id);
@@ -169,12 +169,13 @@ export default function BookDetailScreen() {
   /**
    * 미리보기 팝업 — 지금은 열리지 않는다.
    *
-   * MVP에서 이 기능을 아직 내보내지 않기로 해서, 헤더의 미리보기 버튼은 팝업 대신 안내
-   * 토스트만 띄운다. 팝업(BookPreviewModal)과 이 상태는 그대로 둔다 — 기능을 되살릴 때
-   * openPreview를 setPreviewOpen(true)로 되돌리면 그만이다.
+   * 보여 줄 페이지가 없다. 자리를 잡아 두었던 사진이 유유출판사 책의 표지라 걷어 냈고,
+   * 데모용 책들에는 아직 펼친 면을 찍은 이미지가 없다. 그래서 헤더의 미리보기 버튼은 팝업
+   * 대신 안내 토스트만 띄운다. 팝업(BookPreviewModal)과 이 상태는 그대로 둔다 — 페이지
+   * 이미지가 생기면 openPreview를 setPreviewOpen(true)로 되돌리면 그만이다.
    */
   const [previewOpen, setPreviewOpen] = useState(false);
-  const openPreview = () => showToast("MVP에선 제공되지 않는 기능입니다");
+  const openPreview = () => showToast("준비 중인 기능입니다");
 
   const scrollToSection = (sectionIndex: number) => {
     const y = sectionOffsetsRef.current[sectionIndex];
@@ -217,9 +218,9 @@ export default function BookDetailScreen() {
       return (
         <ScaleButton
           accessibilityLabel={
-            studyBook && isMvpBook(studyBook.id)
+            studyBook && isReadableBook(studyBook.id)
               ? `${view.title}을(를) 오늘의 공부로 선택`
-              : `${view.title}은(는) MVP에서 제공하지 않는 콘텐츠`
+              : `${view.title}은(는) 아직 준비 중인 책`
           }
           style={[styles.ctaButton, styles.ctaFilled]}
           onPress={chooseBook}

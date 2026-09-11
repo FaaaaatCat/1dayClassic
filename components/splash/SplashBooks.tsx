@@ -13,7 +13,7 @@ import { COVER_RATIO } from '@/components/book/BookCover';
 import SplashQuestion from '@/components/splash/SplashQuestion';
 import TagChip from '@/components/TagChip';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
-import { BOOKSTORE_BOOKS, isMvpBook } from '@/lib/bookstore';
+import { BOOKSTORE_BOOKS, isReadableBook } from '@/lib/bookstore';
 import { getCatalogBookByBookId } from '@/lib/catalog';
 import { fieldsOf } from '@/lib/tags';
 import type { BookId } from '@/types';
@@ -36,13 +36,13 @@ const CARD_ASPECT = 1.7;
 const MAX_CHIPS = 3;
 
 /** 추천으로 내보일 책들 — 학습 콘텐츠가 있는 책 중 앞의 다섯 권. */
-const BOOKS = BOOKSTORE_BOOKS.filter((book) => isMvpBook(book.id)).slice(0, PICK_COUNT);
+const BOOKS = BOOKSTORE_BOOKS.filter((book) => isReadableBook(book.id)).slice(0, PICK_COUNT);
 
 /**
  * 질문 2 — 처음 읽을 책 한 권.
  *
  * 원래는 앞에서 고른 분야로 걸러 다섯 권을 추천하는 자리다. 지금은 학습 콘텐츠가 있는 책이
- * MVP 아홉 권뿐이라 걸러 낼 것이 없어, 분야와 상관없이 그중 앞의 다섯 권을 보여 준다 —
+ * 아홉 권뿐이라 걸러 낼 것이 없어, 분야와 상관없이 그중 앞의 다섯 권을 보여 준다 —
  * 거르는 일은 책이 늘고 추천을 만드는 서버가 생긴 뒤에 붙인다.
  *
  * 가로로 넘겨 고르고, 고른 카드에만 주황 테두리가 선다. 옆 카드를 누르면 가운데로 데려온다.

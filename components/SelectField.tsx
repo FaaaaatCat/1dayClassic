@@ -8,7 +8,7 @@ export interface SelectOption {
   /** 고른 값. 전체를 뜻하는 항목은 null이다. */
   value: string | null;
   label: string;
-  /** 오른쪽에 적는 권수. 셀 수 없는 항목(전체·MVP)은 비워 둔다. */
+  /** 오른쪽에 적는 권수. 셀 수 없는 항목('전체')은 비워 둔다. */
   count?: number;
 }
 

@@ -5,11 +5,6 @@ import TagChip from '@/components/TagChip';
 import { Ink, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
 import type { BookId, CoverDesign } from '@/types';
 
-/** 모서리에서 잘라 낼 정사각 영역 — 띠는 이 안에서만 보인다. */
-const RIBBON_BOX = 72;
-/** 대각선 띠의 길이 — 정사각 영역의 대각선(≈102)보다 길어야 양 끝이 카드 밖으로 잘려 나간다. */
-const RIBBON_BAND_WIDTH = 110;
-
 /** 격자 한 칸의 표지 폭 — 높이는 표지 비율이 정한다. */
 const COVER_W = 108;
 
@@ -26,33 +21,18 @@ interface BookCardProps {
   series: string[];
   /** 이 책의 분야들 — 베이지 칩. */
   fields: string[];
-  /** MVP에서 제공하는 학습 콘텐츠면 구매 리본 대신 MVP 리본을 단다. */
-  mvp: boolean;
   selected: boolean;
   onPress: () => void;
 }
 
 /**
- * 카드 오른쪽 위 모서리를 가로지르는 대각선 띠.
- * 정사각 영역으로 잘라 낸(overflow: hidden) 안에서 띠를 45° 눕혀, 양 끝이 영역 밖으로
- * 나가 잘리면서 모서리에 감긴 것처럼 보이게 한다.
- */
-function CornerRibbon({ text }: { text: string }) {
-  return (
-    <View style={styles.ribbonCorner} pointerEvents="none">
-      <View style={styles.ribbonBand}>
-        <Text style={styles.ribbonText}>{text}</Text>
-      </View>
-    </View>
-  );
-}
-
-/**
  * 하루 서점 격자의 책 한 칸.
  *
- * 배경은 상태와 무관하게 흰색이고, 눈에 보이는 표시는 MVP 콘텐츠에 다는 대각선 띠 하나뿐이다.
- * 구매·선택 여부는 값으로는 그대로 들고 있지만(스크린리더가 읽는 상태 문구에 쓰인다)
- * 카드 위에 따로 그리지는 않는다.
+ * 배경은 상태와 무관하게 흰색이고, 카드 위에는 아무 표시도 달지 않는다. 선택 여부는 값으로
+ * 들고 있지만(스크린리더가 읽는 상태 문구에 쓰인다) 그리지는 않는다.
+ *
+ * 예전에는 오른쪽 위에 'MVP' 띠를 둘렀다 — 유유의 실제 책들 사이에서 앱이 내용을 가진 몇 권을
+ * 가려내는 표시였다. 서가 전체가 데모용이 되면서 가려낼 것이 없어져 걷었다.
  *
  * 한 줄에 놓인 두 카드의 높이를 맞추려고 카드가 칸을 flex로 가득 채운다
  * (FlatList의 행은 기본이 alignItems: stretch라 짧은 쪽이 긴 쪽까지 늘어난다).
@@ -65,20 +45,17 @@ export default function BookCard({
   coverDesign,
   series,
   fields,
-  mvp,
   selected,
   onPress,
 }: BookCardProps) {
-  const state = selected ? '현재 선택중' : mvp ? 'MVP' : '';
+  const state = selected ? '현재 선택중' : '';
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${title} 상세 보기, ${state}`}
+      accessibilityLabel={state ? `${title} 상세 보기, ${state}` : `${title} 상세 보기`}
       style={styles.card}
       onPress={onPress}>
-      {mvp && <CornerRibbon text="MVP" />}
-
       <BookCoverArt
         bookId={bookId}
         coverImage={coverImage}
@@ -118,34 +95,6 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Ink.strong,
     backgroundColor: Surface.canvas,
-  },
-  ribbonCorner: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: RIBBON_BOX,
-    height: RIBBON_BOX,
-    overflow: 'hidden',
-    zIndex: 1,
-  },
-  // top·left는 45° 회전의 중심이 모서리 대각선 위에 오도록 잡은 값이다 — 띠가 모서리를
-  // 비스듬히 가로지르고 양 끝은 위 영역 밖으로 나가 잘린다.
-  ribbonBand: {
-    position: 'absolute',
-    top: 4,
-    left: 2,
-    width: RIBBON_BAND_WIDTH,
-    alignItems: 'center',
-    paddingVertical: 4,
-    backgroundColor: Ink.primary,
-    transform: [{ rotate: '45deg' }],
-  },
-  ribbonText: {
-    fontFamily: Type.uiMedium,
-    fontSize: 11,
-    lineHeight: 13,
-    letterSpacing: trackBody(11),
-    color: Ink.onDark,
   },
   title: {
     fontFamily: Type.readingBold,

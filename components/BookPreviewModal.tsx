@@ -21,34 +21,24 @@ interface BookPreviewModalProps {
   onClose: () => void;
 }
 
-/** 더미 페이지 수 — 실제 책 분량과 무관하게 미리보기 느낌만 준다. */
-const PAGE_COUNT = 10;
-
 /**
- * 미리보기 10장 — assets/images/preview/page-1.jpg ~ page-10.jpg.
+ * 미리보기로 넘겨 볼 페이지 이미지 — 지금은 비어 있다.
  *
- * 지금은 자리만 잡아 둔 플레이스홀더(표지 이미지를 복사해 둔 것)라 전부 같은 그림으로
- * 보인다. 같은 파일명으로 실제 페이지 스캔 이미지를 덮어쓰기만 하면 코드 변경 없이
- * 바로 반영된다 — 세로가 긴 책 페이지 비율(예: 3:4)을 권장하지만, 다른 비율이어도
- * resizeMode="contain"이라 잘리지 않고 카드 안에 맞춰 보인다.
+ * 자리를 잡아 두었던 열 장은 유유출판사 책의 표지를 복사해 둔 것이라
+ * data/_archive/uupress/preview로 옮겼다. 데모용 책들에는 아직 펼친 면을 찍은 이미지가 없어,
+ * 이 모달은 어느 화면에서도 열지 않는다(책 상세·서재 상세의 미리보기는 토스트만 띄운다).
+ * 페이지 이미지가 생기면 require('@/assets/…')로 여기 채우고 두 화면의 버튼을 되돌리면 된다.
+ * 세로가 긴 책 페이지 비율(예: 3:4)을 권장하지만, resizeMode="contain"이라 잘리지 않는다.
  */
-const PAGE_IMAGES = [
-  require('@/assets/images/preview/page-1.jpg'),
-  require('@/assets/images/preview/page-2.jpg'),
-  require('@/assets/images/preview/page-3.jpg'),
-  require('@/assets/images/preview/page-4.jpg'),
-  require('@/assets/images/preview/page-5.jpg'),
-  require('@/assets/images/preview/page-6.jpg'),
-  require('@/assets/images/preview/page-7.jpg'),
-  require('@/assets/images/preview/page-8.jpg'),
-  require('@/assets/images/preview/page-9.jpg'),
-  require('@/assets/images/preview/page-10.jpg'),
-] as const;
+const PAGE_IMAGES: number[] = [];
+
+/** 페이지 수 — 이미지 수가 곧 쪽수다. */
+const PAGE_COUNT = PAGE_IMAGES.length;
 
 /**
  * 책 상세페이지의 '미리보기' 버튼을 누르면 뜨는 팝업.
  *
- * 10장을 가로로 스와이프하며 넘겨본다. 이미지는 PAGE_IMAGES 참고 — 지금은 플레이스홀더다.
+ * 페이지를 가로로 스와이프하며 넘겨본다. 이미지는 PAGE_IMAGES 참고 — 지금은 비어 있다.
  *
  * 책 데이터는 받지 않는다 — 더미 내용이라 어떤 책의 상세페이지에서 열어도 항상 같다.
  */
@@ -87,7 +77,7 @@ export default function BookPreviewModal({ visible, onClose }: BookPreviewModalP
         </View>
 
         <Text style={styles.notice}>
-          MVP 미리보기입니다. 실제 책의 내용이 아닌 예시 콘텐츠로 구성되어
+          미리보기입니다. 실제 책의 내용이 아닌 예시 콘텐츠로 구성되어
           있습니다.
         </Text>
 

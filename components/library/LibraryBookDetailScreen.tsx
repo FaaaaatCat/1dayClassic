@@ -14,7 +14,7 @@ import { Corner, Feedback, Ink, Space, Spark, Surface, Type, TypeScale } from '@
 import { useBookSelection } from '@/context/BookSelectionContext';
 import { useShelf } from '@/context/ShelfContext';
 import { useToast } from '@/context/ToastContext';
-import { BOOKSTORE_BOOKS, isMvpBook } from '@/lib/bookstore';
+import { BOOKSTORE_BOOKS, isReadableBook } from '@/lib/bookstore';
 import { getCatalogBook, getCatalogBookByBookId } from '@/lib/catalog';
 
 /** 좌우 여백 — 마이페이지의 것과 같게 둔다. */
@@ -75,9 +75,9 @@ export default function LibraryBookDetailScreen() {
 
   const changeBook = () => {
     // 학습 콘텐츠가 없는 책은 고를 수 없다 — BUILD_CALENDAR에 없는 키라 selectBook이 받지
-    // 못한다. liberal처럼 책은 있지만 아직 MVP가 제공하지 않는 것도 같은 이유로 막는다.
-    if (!studyBook || !isMvpBook(studyBook.id)) {
-      showToast('MVP에서는 제공하지 않는 콘텐츠입니다.');
+    // 못한다. 하루 교양처럼 원고가 아직 없는 책도 읽을 것이 없으니 함께 막는다.
+    if (!studyBook || !isReadableBook(studyBook.id)) {
+      showToast('아직 준비 중인 책입니다.');
       return;
     }
     selectBook(studyBook.id);
@@ -257,7 +257,8 @@ export default function LibraryBookDetailScreen() {
               style={styles.menuItem}
               onPress={() => {
                 setMenuOpen(false);
-                setPreviewOpen(true);
+                // 보여 줄 페이지가 아직 없다 — 책 상세의 미리보기와 같은 까닭이다(openPreview).
+                showToast('준비 중인 기능입니다');
               }}>
               <Ionicons name="eye-outline" color={Ink.primary} size={20} />
               <Text style={styles.menuText}>미리보기</Text>

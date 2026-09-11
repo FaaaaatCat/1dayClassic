@@ -113,9 +113,21 @@ for (const [bookId, total] of Object.entries(counts)) {
 
 console.log('\n― 화면이 부르는 파일 ―\n');
 
-/** require('@/assets/...')로 부르는 것이 실제로 있는지. 없으면 번들이 통째로 깨진다. */
-const required = [...source('lib/bookstore.ts').matchAll(/require\('@\/(assets\/[^']+)'\)/g)]
-  .map((m) => m[1]);
+/**
+ * require('@/assets/...')로 부르는 것이 실제로 있는지. 없으면 번들이 통째로 깨진다.
+ *
+ * 화면 전체(app·components·lib)를 훑는다. 처음에는 lib/bookstore.ts 한 파일만 봤는데,
+ * 그 사이 미리보기 모달이 유유출판사 책 표지 열 장을 부르고 있던 것을 놓쳤다.
+ */
+const sourceFiles = (dir) => readdirSync(dir, { recursive: true })
+  .map(String)
+  .filter((file) => /\.tsx?$/.test(file))
+  .map((file) => `${dir}/${file}`.replace(/\\/g, '/'));
+const required = [...new Set(['app', 'components', 'lib']
+  .flatMap(sourceFiles)
+  // 주석은 걷고 본다 — 주석에 적힌 require 예시를 진짜 호출로 읽으면 없는 파일이라고 떠든다.
+  .map((file) => source(file).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/[^\n]*/gm, ''))
+  .flatMap((code) => [...code.matchAll(/require\('@\/(assets\/[^']+)'\)/g)].map((m) => m[1])))];
 const missing = required.filter((path) => !existsSync(path));
 if (missing.length) missing.forEach((path) => fail(`없는 파일: ${path}`));
 console.log(`  부르는 에셋 ${required.length}개 · 없는 것 ${missing.length}개`);
