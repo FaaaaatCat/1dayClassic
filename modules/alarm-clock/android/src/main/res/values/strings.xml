@@ -22,4 +22,6 @@
     -->
     <string name="alarm_action_snooze">다시 울림</string>
     <string name="alarm_action_dismiss">공부하기</string>
+    <!-- 배경 사진 출처. %1$s는 찍은 사람 이름이다. -->
+    <string name="alarm_photo_credit">사진 %1$s · Unsplash</string>
 </resources>

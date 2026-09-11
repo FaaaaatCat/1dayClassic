@@ -42,6 +42,25 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/alarm_photo_fade" />
+
+            <!--
+                배경 사진 출처. 사진이 끝나는 자리(위쪽 절반의 아래끝) 왼쪽에 작게 붙는다 —
+                시계와 표지를 피하면서도 사진과 같은 화면 안에 있어야 출처로 읽힌다.
+                배경이 없는 책에서는 AlarmActivity가 숨긴다.
+            -->
+            <TextView
+                android:id="@+id/alarm_credit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="32dp"
+                android:layout_marginBottom="12dp"
+                android:fontFamily="sans-serif"
+                android:textSize="10sp"
+                android:letterSpacing="0.04"
+                android:alpha="0.55"
+                android:textColor="@color/alarm_on_dark"
+                tools:text="사진 Geert Pieters · Unsplash" />
         </FrameLayout>
 
         <Space

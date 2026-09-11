@@ -35,7 +35,8 @@ class AlarmActivity : ComponentActivity() {
   private class PreviewBook(
     val name: String,
     val cover: AlarmCoverDesign,
-    val backgroundPath: String
+    val backgroundPath: String,
+    val credit: String
   )
 
   private var previewBooks: List<PreviewBook> = emptyList()
@@ -67,7 +68,8 @@ class AlarmActivity : ComponentActivity() {
     showBook(
       name = AlarmBook.studyLabel(this),
       cover = AlarmBook.cover(this),
-      background = AlarmBook.backgroundFile(this)
+      background = AlarmBook.backgroundFile(this),
+      credit = AlarmBook.credit(this)
     )
 
     findViewById<Button>(R.id.button_snooze).setOnClickListener {
@@ -118,7 +120,8 @@ class AlarmActivity : ComponentActivity() {
     showBook(
       name = studyLabel(book.name),
       cover = book.cover,
-      background = File(book.backgroundPath)
+      background = File(book.backgroundPath),
+      credit = book.credit
     )
   }
 
@@ -133,10 +136,21 @@ class AlarmActivity : ComponentActivity() {
    * 나머지 배치는 그대로다. 표지는 그림이 아니라 값으로 받아 그리므로 늘 나온다.
    * 알람은 무슨 일이 있어도 떠야 한다.
    */
-  private fun showBook(name: String, cover: AlarmCoverDesign, background: File) {
+  private fun showBook(
+    name: String,
+    cover: AlarmCoverDesign,
+    background: File,
+    credit: String
+  ) {
     findViewById<TextView>(R.id.alarm_message).text = getString(R.string.alarm_message, name)
     setImageFromFile(R.id.alarm_background, background)
     findViewById<AlarmCoverView>(R.id.alarm_book).design = cover
+
+    // 사진이 없으면 출처도 없다 — 빈 줄이 남으면 무엇의 출처인지 알 수 없다.
+    findViewById<TextView>(R.id.alarm_credit).apply {
+      text = if (credit.isBlank()) "" else getString(R.string.alarm_photo_credit, credit)
+      visibility = if (credit.isBlank() || !background.exists()) View.GONE else View.VISIBLE
+    }
   }
 
   /** 파일이 없거나 읽히지 않으면 앞 책의 그림이 남지 않도록 비운다 — 미리보기에서 특히 중요하다. */
@@ -174,7 +188,8 @@ class AlarmActivity : ComponentActivity() {
       PreviewBook(
         name = name,
         cover = AlarmCoverDesign.parse(covers.getOrNull(index)) ?: AlarmCoverDesign.FALLBACK,
-        backgroundPath = backgrounds.getOrElse(index) { "" }
+        backgroundPath = backgrounds.getOrElse(index) { "" },
+        credit = intent.getStringArrayListExtra(EXTRA_CREDITS)?.getOrElse(index) { "" } ?: ""
       )
     }
   }
@@ -183,6 +198,7 @@ class AlarmActivity : ComponentActivity() {
     private const val EXTRA_NAMES = "preview_names"
     private const val EXTRA_BACKGROUNDS = "preview_backgrounds"
     private const val EXTRA_COVERS = "preview_covers"
+    private const val EXTRA_CREDITS = "preview_credits"
 
     private const val STUDY = "공부"
 
@@ -212,12 +228,14 @@ class AlarmActivity : ComponentActivity() {
       context: Context,
       names: List<String>,
       covers: List<String>,
-      backgroundUris: List<String>
+      backgroundUris: List<String>,
+      credits: List<String>
     ): Intent = Intent(context, AlarmActivity::class.java).apply {
       addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
       putStringArrayListExtra(EXTRA_NAMES, ArrayList(names))
       putStringArrayListExtra(EXTRA_COVERS, ArrayList(covers))
       putStringArrayListExtra(EXTRA_BACKGROUNDS, ArrayList(backgroundUris.map(::toPath)))
+      putStringArrayListExtra(EXTRA_CREDITS, ArrayList(credits))
     }
 
     private fun toPath(uri: String): String = Uri.parse(uri).path ?: uri

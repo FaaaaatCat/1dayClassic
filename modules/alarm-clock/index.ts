@@ -39,6 +39,8 @@ export interface AlarmPreviewBook {
   name: string;
   cover: AlarmCoverInput;
   backgroundUri: string;
+  /** 배경 사진을 찍은 사람. 비면 출처 줄이 숨는다. */
+  credit: string;
 }
 
 interface AlarmClockNativeModule {
@@ -47,7 +49,7 @@ interface AlarmClockNativeModule {
   getPermissionStatus(): Promise<AlarmPermissionStatus>;
   openAlarmPermissionSettings(): Promise<void>;
   requestPermission(kind: AlarmPermissionKind): Promise<void>;
-  setAlarmBook(name: string, cover: AlarmCoverInput): Promise<void>;
+  setAlarmBook(name: string, cover: AlarmCoverInput, credit: string): Promise<void>;
   getAlarmImageTargets(): Promise<AlarmImageTargets>;
   previewAlarm(books: AlarmPreviewBook[]): Promise<void>;
   isAlarmLockFlow(): Promise<boolean>;
@@ -111,9 +113,13 @@ export async function getPermissionStatus(): Promise<AlarmPermissionStatus> {
   return nativeModule.getPermissionStatus();
 }
 
-/** 알람 화면이 쓸 책 이름("클래식 공부")과 표지 값을 네이티브에 저장한다. */
-export async function setAlarmBook(name: string, cover: AlarmCoverInput): Promise<void> {
-  await getNativeModule()?.setAlarmBook(name, cover);
+/** 알람 화면이 쓸 책 이름("클래식 공부")과 표지 값, 배경 사진의 출처를 네이티브에 저장한다. */
+export async function setAlarmBook(
+  name: string,
+  cover: AlarmCoverInput,
+  credit: string,
+): Promise<void> {
+  await getNativeModule()?.setAlarmBook(name, cover, credit);
 }
 
 /** 배경 사진을 복사해 넣을 자리. 네이티브 모듈이 없으면 null — 그 경우 동기화를 건너뛴다. */

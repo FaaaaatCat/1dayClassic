@@ -22,6 +22,13 @@ export interface BookstoreBook {
    * 그 경우 알람 배경은 바탕색만 나오고 나머지 배치는 그대로다.
    */
   alarmBackground?: ImageSourcePropType;
+  /**
+   * 배경 사진을 찍은 사람 — 알람 화면 아래에 "사진 ○○○ · Unsplash"로 적힌다.
+   *
+   * Unsplash 라이선스는 표기를 요구하지 않지만, 남의 사진을 쓰면서 이름을 지우는 것은
+   * 다른 문제다. 게다가 이 앱은 출판사에 보여 줄 물건이라 출처가 화면에 있어야 한다.
+   */
+  backgroundCredit?: string;
 }
 
 /**
@@ -56,59 +63,70 @@ export const BOOKSTORE_BOOKS: BookstoreBook[] = [
     id: 'classic',
     title: '클래식',
     author: '한밤서가 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-classic.webp'),
+    alarmBackground: require('@/assets/images/alarm/bg-classic.jpg'),
+    backgroundCredit: 'Geert Pieters',
   },
   {
     id: 'latin',
     title: '라틴어',
     author: '첫자리 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-latin.webp'),
+    alarmBackground: require('@/assets/images/alarm/bg-latin.jpg'),
+    backgroundCredit: 'Miguel Alcântara',
   },
   {
     id: 'quote',
     title: '명심보감',
     author: '밑줄사이 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-quote.webp'),
+    alarmBackground: require('@/assets/images/alarm/bg-quote.jpg'),
+    backgroundCredit: 'Yifeng Lu',
   },
   {
     id: 'hanja',
     title: '천자문',
     author: '밑줄사이 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-hanja.webp'),
+    alarmBackground: require('@/assets/images/alarm/bg-hanja.jpg'),
+    backgroundCredit: 'Sixian Li',
   },
   {
     id: 'liberal',
     title: '하루 교양',
     author: '밑줄사이 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-liberal.webp'),
+    alarmBackground: require('@/assets/images/alarm/bg-liberal.jpg'),
+    backgroundCredit: 'Pur Gon',
   },
   {
     id: 'psychology',
     title: '명상록',
     author: '첫자리 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-psychology.webp'),
+    alarmBackground: require('@/assets/images/alarm/bg-psychology.jpg'),
+    backgroundCredit: 'Jameson Berrios',
   },
   {
     id: 'writing',
     title: '글쓰기',
     author: '한밤서가 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-writing.webp'),
+    alarmBackground: require('@/assets/images/alarm/bg-writing.jpg'),
+    backgroundCredit: 'Miguel Alcântara',
   },
   {
     id: 'hanmun',
     title: '논어',
     author: '낮은문장 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-hanmun.webp'),
+    alarmBackground: require('@/assets/images/alarm/bg-hanmun.jpg'),
+    backgroundCredit: 'Paul Pastourmatzis',
   },
   {
     id: 'english',
     title: '영어 속담',
     author: '한밤서가 편집부',
-    alarmBackground: require('@/assets/images/alarm/bg-english.webp'),
+    alarmBackground: require('@/assets/images/alarm/bg-english.jpg'),
+    backgroundCredit: 'Marek Szturc',
   },
   {
     id: 'listening',
     title: '채근담',
     author: '낮은문장 편집부',
+    alarmBackground: require('@/assets/images/alarm/bg-listening.jpg'),
+    backgroundCredit: 'Max van den Oetelaar',
   },
 ];

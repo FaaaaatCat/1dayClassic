@@ -42,6 +42,7 @@ class AlarmPreviewBook : Record {
   @Field val name: String = ""
   @Field val cover: AlarmCoverInput = AlarmCoverInput()
   @Field val backgroundUri: String = ""
+  @Field val credit: String = ""
 }
 
 class AlarmClockModule : Module() {
@@ -87,8 +88,8 @@ class AlarmClockModule : Module() {
      * 알람 화면이 보여 줄 책 이름과 표지 값. 서점에서 책을 고를 때마다 JS가 밀어 준다 —
      * 알람이 울릴 때는 JS가 안 돌고 있어서 그때 물어볼 수 없다.
      */
-    AsyncFunction("setAlarmBook") { name: String, cover: AlarmCoverInput ->
-      AlarmBook.save(context, name, cover.toDesign())
+    AsyncFunction("setAlarmBook") { name: String, cover: AlarmCoverInput, credit: String ->
+      AlarmBook.save(context, name, cover.toDesign(), credit)
     }
 
     /**
@@ -114,7 +115,8 @@ class AlarmClockModule : Module() {
           context,
           names = books.map { it.name },
           covers = books.map { it.cover.toDesign().pack() },
-          backgroundUris = books.map { it.backgroundUri }
+          backgroundUris = books.map { it.backgroundUri },
+          credits = books.map { it.credit }
         )
       )
     }

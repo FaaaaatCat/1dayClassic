@@ -21,6 +21,7 @@ object AlarmBook {
   private const val PREFS_NAME = "alarm_clock_prefs"
   private const val KEY_NAME = "book_name"
   private const val KEY_COVER = "book_cover"
+  private const val KEY_CREDIT = "book_credit"
   private const val DIR = "alarm"
 
   /** 책을 아직 못 받았을 때 쓰는 문구 — "…할 시간입니다"의 앞부분으로 붙는다. */
@@ -46,11 +47,12 @@ object AlarmBook {
     return if (name.endsWith(STUDY)) name else "$name $STUDY"
   }
 
-  fun save(context: Context, name: String, cover: AlarmCoverDesign) {
+  fun save(context: Context, name: String, cover: AlarmCoverDesign, credit: String) {
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
       .edit()
       .putString(KEY_NAME, name)
       .putString(KEY_COVER, cover.pack())
+      .putString(KEY_CREDIT, credit)
       .apply()
   }
 
@@ -65,6 +67,10 @@ object AlarmBook {
     AlarmCoverDesign.parse(
       context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_COVER, null)
     ) ?: AlarmCoverDesign.FALLBACK
+
+  /** 배경 사진을 찍은 사람. 비어 있으면 출처 줄을 숨긴다. */
+  fun credit(context: Context): String =
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_CREDIT, "") ?: ""
 
   /** JS가 이미지를 써 넣을 폴더. 없으면 JS 쪽에서 만든다. */
   fun dir(context: Context): File = File(context.filesDir, DIR)

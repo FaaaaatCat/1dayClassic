@@ -28,7 +28,7 @@ export async function syncAlarmBook(bookId: BookId): Promise<void> {
   const book = BOOKSTORE_BOOKS.find((candidate) => candidate.id === bookId);
   if (!book) return;
 
-  await setAlarmBook(book.title, coverInput(bookId));
+  await setAlarmBook(book.title, coverInput(bookId), book.backgroundCredit ?? '');
 
   const targets = await getAlarmImageTargets();
   // 네이티브 모듈이 없는 환경(웹 등) — 알람 자체가 없으므로 조용히 건너뛴다.
@@ -76,7 +76,12 @@ export async function previewAlarmScreens(): Promise<void> {
   for (const book of BOOKSTORE_BOOKS) {
     const backgroundUri = new File(directory, `${book.id}-bg`).uri;
     await placeImage(book.alarmBackground, backgroundUri);
-    books.push({ name: book.title, cover: coverInput(book.id), backgroundUri });
+    books.push({
+      name: book.title,
+      cover: coverInput(book.id),
+      backgroundUri,
+      credit: book.backgroundCredit ?? '',
+    });
   }
 
   await previewAlarm(books);
