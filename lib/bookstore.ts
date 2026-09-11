@@ -58,7 +58,7 @@ const READABLE_BOOK_IDS: readonly BookId[] = [
   'listening',
 ];
 
-/** 이 책을 오늘의 책으로 고를 수 있는지. 책 변경과 첫 실행의 추천 목록이 함께 쓴다. */
+/** 이 책을 오늘의 책으로 고를 수 있는지. 책 변경, 첫 실행의 추천 목록, 서점 카드의 '읽기 가능' 탭이 함께 쓴다. */
 export function isReadableBook(bookId: BookId): boolean {
   return READABLE_BOOK_IDS.includes(bookId);
 }

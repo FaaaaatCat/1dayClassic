@@ -9,6 +9,7 @@ import SelectField, { SelectRow, type SelectOption } from "@/components/SelectFi
 import { Ink, Surface, Type, trackBody } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
+import { isReadableBook } from "@/lib/bookstore";
 import { FIELD_NAMES, fieldsOf, SERIES_NAMES, seriesOf } from "@/lib/tags";
 
 
@@ -16,6 +17,8 @@ interface Entry {
   book: CatalogBook;
   series: string[];
   fields: string[];
+  /** 오늘의 책으로 고를 수 있는 책인지 — 카드 모서리의 '읽기 가능' 탭. */
+  readable: boolean;
   /** 제목+저자를 공백 없이 소문자로 붙여 둔 검색용 문자열. */
   searchKey: string;
 }
@@ -106,6 +109,7 @@ export default function BookstoreScreen() {
         book,
         series: seriesOf(book.tags, book.title),
         fields: fieldsOf(book.tags),
+        readable: book.bookId !== null && isReadableBook(book.bookId),
         searchKey: normalize(`${book.title}${book.author}`),
       })),
     [],
@@ -265,6 +269,7 @@ export default function BookstoreScreen() {
                   coverDesign={entry.book.coverDesign}
                   series={entry.series}
                   fields={entry.fields}
+                  readable={entry.readable}
                   selected={
                     entry.book.bookId !== null &&
                     entry.book.bookId === selectedBookId

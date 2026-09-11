@@ -21,6 +21,8 @@ interface BookCardProps {
   series: string[];
   /** 이 책의 분야들 — 베이지 칩. */
   fields: string[];
+  /** 오늘의 책으로 고를 수 있는 책인지 — 모서리에 '읽기 가능' 탭을 단다. */
+  readable: boolean;
   selected: boolean;
   onPress: () => void;
 }
@@ -28,11 +30,14 @@ interface BookCardProps {
 /**
  * 하루 서점 격자의 책 한 칸.
  *
- * 배경은 상태와 무관하게 흰색이고, 카드 위에는 아무 표시도 달지 않는다. 선택 여부는 값으로
- * 들고 있지만(스크린리더가 읽는 상태 문구에 쓰인다) 그리지는 않는다.
+ * 배경은 상태와 무관하게 흰색이다. 카드 위에 그리는 표시는 오른쪽 위의 '읽기 가능' 탭
+ * 하나뿐이다 — 백 권 남짓한 서가에서 지금 열어 읽을 수 있는 열 권을 가려낸다. 선택 여부는
+ * 값으로 들고 있지만(스크린리더가 읽는 상태 문구에 쓰인다) 그리지는 않는다.
  *
- * 예전에는 오른쪽 위에 'MVP' 띠를 둘렀다 — 유유의 실제 책들 사이에서 앱이 내용을 가진 몇 권을
- * 가려내는 표시였다. 서가 전체가 데모용이 되면서 가려낼 것이 없어져 걷었다.
+ * 예전에는 같은 자리에 'MVP' 대각선 띠를 둘렀다. 문구를 '읽기 가능'으로 바꾸면서 띠를 탭으로
+ * 바꾼 것은 글자가 길어져서다 — 72px 모서리 안에서 대각선이 지나는 길이는 42px 남짓인데
+ * '읽기 가능'은 11px로 45px을 넘어 양 끝이 잘린다. 띠를 키우면 표지를 덮는다. 가로 탭은
+ * 카드 윗여백(32px) 안에 앉아 표지에 닿지 않는다.
  *
  * 한 줄에 놓인 두 카드의 높이를 맞추려고 카드가 칸을 flex로 가득 채운다
  * (FlatList의 행은 기본이 alignItems: stretch라 짧은 쪽이 긴 쪽까지 늘어난다).
@@ -45,10 +50,11 @@ export default function BookCard({
   coverDesign,
   series,
   fields,
+  readable,
   selected,
   onPress,
 }: BookCardProps) {
-  const state = selected ? '현재 선택중' : '';
+  const state = selected ? '현재 선택중' : readable ? '읽기 가능' : '';
 
   return (
     <Pressable
@@ -56,6 +62,12 @@ export default function BookCard({
       accessibilityLabel={state ? `${title} 상세 보기, ${state}` : `${title} 상세 보기`}
       style={styles.card}
       onPress={onPress}>
+      {readable && (
+        <View style={styles.readableTab} pointerEvents="none">
+          <Text style={styles.readableText}>읽기 가능</Text>
+        </View>
+      )}
+
       <BookCoverArt
         bookId={bookId}
         coverImage={coverImage}
@@ -95,6 +107,26 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Ink.strong,
     backgroundColor: Surface.canvas,
+  },
+  /**
+   * '읽기 가능' 탭 — 카드 오른쪽 위 모서리에 붙는다. 색·서체는 예전 MVP 띠와 같다.
+   * 높이 21px(위아래 4 + 글줄 13)이라 카드 윗여백 32px 안에 들어가 표지에 닿지 않는다.
+   */
+  readableTab: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: Ink.primary,
+    zIndex: 1,
+  },
+  readableText: {
+    fontFamily: Type.uiMedium,
+    fontSize: 11,
+    lineHeight: 13,
+    letterSpacing: trackBody(11),
+    color: Ink.onDark,
   },
   title: {
     fontFamily: Type.readingBold,
