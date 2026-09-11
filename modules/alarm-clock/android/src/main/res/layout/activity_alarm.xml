@@ -79,7 +79,7 @@
             android:fontFamily="sans-serif"
             android:textSize="14sp"
             android:letterSpacing="0"
-            android:textColor="@color/alarm_violet_10"
+            android:textColor="@color/alarm_on_dark"
             android:gravity="center_horizontal"
             tools:text="11월 26일 금요일" />
 
@@ -201,7 +201,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:text="ver.3"
+            android:text="ver.4"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/alarm_debug" />
