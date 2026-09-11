@@ -108,12 +108,14 @@ export default function BookCover3D({ design, width, radius = 2, style }: BookCo
     <View
       pointerEvents="none"
       style={[{ width: geometry.stageW, height: geometry.stageH }, style]}>
-      <Spine design={design} width={width} geometry={geometry} radius={radius} />
+      <Spine design={design} width={width} geometry={geometry} />
 
       <BookCover
         design={design}
         width={width}
         radius={radius}
+        // 무대 안에서는 자르지 않는다 — BookCover의 clip 주석 참고.
+        clip={false}
         style={{
           position: 'absolute',
           left: geometry.coverLeft,
@@ -136,12 +138,10 @@ function Spine({
   design,
   width,
   geometry,
-  radius,
 }: {
   design: CoverDesign;
   width: number;
   geometry: ReturnType<typeof cover3dGeometry>;
-  radius: number;
 }) {
   const { spineW, spineH } = geometry;
   const size = spineW * 0.72;
@@ -167,8 +167,6 @@ function Spine({
           width: spineW,
           height: spineH,
           backgroundColor: design.paper,
-          borderTopLeftRadius: radius,
-          borderBottomLeftRadius: radius,
           paddingVertical: padding,
         },
         // 앞표지와 같은 이유로 어두운 책등에도 테두리 한 겹(BookCover의 darkEdge).
@@ -203,13 +201,17 @@ function Spine({
 }
 
 const styles = StyleSheet.create({
+  /**
+   * 자르지도 둥글리지도 않는다. 글자는 들어갈 만큼만 미리 뽑아 두었고, 모서리를 둥글리면
+   * 안드로이드가 모서리 경로로 자식을 자르는데 그 경로가 비어 그늘까지 사라졌다
+   * (BookCover의 clip 주석 참고). 2px 모서리는 이 크기에서 보이지 않는다.
+   */
   spine: {
     position: 'absolute',
     left: 0,
     top: 0,
     alignItems: 'center',
     justifyContent: 'space-between',
-    overflow: 'hidden',
   },
   shade: {
     backgroundColor: 'rgba(0,0,0,0.2)',

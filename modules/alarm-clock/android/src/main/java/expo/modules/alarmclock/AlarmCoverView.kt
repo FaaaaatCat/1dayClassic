@@ -57,27 +57,24 @@ class AlarmCoverView @JvmOverloads constructor(
     /**
      * 앞표지 폭을 자리에 맞춘다.
      *
-     * 세워 두면 폭은 조금 줄고(0.98배) 높이는 늘어난다(1.51배) — 접힘선 쪽이 눈에 가까워
-     * 커지기 때문이다. 둘 다 자리 안에 들어가는 쪽으로 잡는다.
+     * 원근은 dp로 센다(PERSPECTIVE × 밀도). 처음에는 850을 px로 넣어 원근이 기기 밀도만큼
+     * (약 2.6배) 과해졌고, 접힘선 쪽이 너무 커져 무대가 자리보다 높아지는 바람에 위아래가
+     * 잘렸다. 원근이 고정이라 무대 크기는 표지 폭에 정비례하지 않으므로, 한 번 재어 보고
+     * 자리의 FIT 안에 들도록 줄이기를 몇 번 되풀이한다(두세 번이면 수렴한다).
      */
-    val faceW = min(width / STAGE_W_RATIO, height / STAGE_H_RATIO)
+    val perspective = PERSPECTIVE * density()
+    var faceW = width * FIT
+    var stage = measureStage(faceW, perspective)
+    repeat(3) {
+      faceW *= min(width * FIT / stage.width, height * FIT / stage.height)
+      stage = measureStage(faceW, perspective)
+    }
     val faceH = faceW * RATIO
-    val half = faceW / 2f
-    val thickness = faceW * THICKNESS
-
-    // 26° 돌렸을 때 세 모서리의 깊이(z). 클수록 눈에 가깝다.
-    val zFold = SIN * half
-    val zBack = zFold - COS * thickness
-
-    val foldX = scaleAt(zFold) * -(COS * half)
-    val rightX = scaleAt(-zFold) * (COS * half)
-    val backX = scaleAt(zBack) * -(COS * half + SIN * thickness)
-
-    val spineW = foldX - backX
-    val stageW = rightX - backX
-    val foldHalfH = faceH / 2f * scaleAt(zFold)
-    val rightHalfH = faceH / 2f * scaleAt(-zFold)
-    val stageH = foldHalfH * 2f
+    val spineW = stage.spineW
+    val stageW = stage.width
+    val foldHalfH = stage.foldHalfH
+    val rightHalfH = stage.rightHalfH
+    val stageH = stage.height
 
     // 무대를 자리 한가운데에 놓는다.
     val originX = (width - stageW) / 2f
@@ -111,6 +108,42 @@ class AlarmCoverView @JvmOverloads constructor(
     canvas.restore()
 
     canvas.restore()
+  }
+
+  /** 세워 둔 무대의 화면상 치수(px). */
+  private class Stage(
+    val width: Float,
+    val height: Float,
+    val spineW: Float,
+    val foldHalfH: Float,
+    val rightHalfH: Float
+  )
+
+  /**
+   * 앞표지 폭이 faceW(px)일 때 26° 돌린 책의 치수 — 앱의 cover3dGeometry와 같은 셈이다.
+   * 세 모서리(접힘선·오른쪽·책등 바깥)의 깊이만 알면 나머지는 원근 배율로 나온다.
+   */
+  private fun measureStage(faceW: Float, perspective: Float): Stage {
+    val scaleAt = { z: Float -> perspective / (perspective - z) }
+    val half = faceW / 2f
+    val faceH = faceW * RATIO
+    val thickness = faceW * THICKNESS
+
+    // 26° 돌렸을 때 세 모서리의 깊이(z). 클수록 눈에 가깝다.
+    val zFold = SIN * half
+    val zBack = zFold - COS * thickness
+
+    val foldX = scaleAt(zFold) * -(COS * half)
+    val rightX = scaleAt(-zFold) * (COS * half)
+    val backX = scaleAt(zBack) * -(COS * half + SIN * thickness)
+
+    return Stage(
+      width = rightX - backX,
+      height = faceH * scaleAt(zFold),
+      spineW = foldX - backX,
+      foldHalfH = faceH / 2f * scaleAt(zFold),
+      rightHalfH = faceH / 2f * scaleAt(-zFold)
+    )
   }
 
   /**
@@ -371,6 +404,7 @@ class AlarmCoverView @JvmOverloads constructor(
     const val FOOTER_ZONE = 0.2f
     const val PATTERN_SIZE = 0.062f
     const val THICKNESS = 0.22f
+    /** 원근 거리(dp). 앱의 BookCover3D와 같은 값이다 — 쓸 때 밀도를 곱해 px로 바꾼다. */
     const val PERSPECTIVE = 850f
     const val TITLE_LEADING = 1.15f
     const val TITLE_TRACKING = 0.02f
@@ -393,10 +427,10 @@ class AlarmCoverView @JvmOverloads constructor(
     val COS = cos(RADIANS).toFloat()
     val SIN = sin(RADIANS).toFloat()
 
-    /** 세워 두면 폭은 이만큼으로 줄고 높이는 이만큼 늘어난다 — 위 기하에서 나온 값이다. */
-    const val STAGE_W_RATIO = 0.9796f
-    const val STAGE_H_RATIO = 1.5124f
-
-    fun scaleAt(z: Float): Float = PERSPECTIVE / (PERSPECTIVE - z)
+    /**
+     * 무대가 자리에서 차지하는 몫. 꽉 채우면 어두운 표지의 테두리와 책등 모서리가 뷰 끝에
+     * 닿는다 — 실기기에서 위아래가 잘렸던 것을 고치며 한 뼘 여유를 둔다.
+     */
+    const val FIT = 0.9f
   }
 }

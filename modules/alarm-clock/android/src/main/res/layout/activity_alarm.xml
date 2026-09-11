@@ -42,25 +42,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/alarm_photo_fade" />
-
-            <!--
-                배경 사진 출처. 사진이 끝나는 자리(위쪽 절반의 아래끝) 왼쪽에 작게 붙는다 —
-                시계와 표지를 피하면서도 사진과 같은 화면 안에 있어야 출처로 읽힌다.
-                배경이 없는 책에서는 AlarmActivity가 숨긴다.
-            -->
-            <TextView
-                android:id="@+id/alarm_credit"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|start"
-                android:layout_marginStart="32dp"
-                android:layout_marginBottom="12dp"
-                android:fontFamily="sans-serif"
-                android:textSize="10sp"
-                android:letterSpacing="0.04"
-                android:alpha="0.55"
-                android:textColor="@color/alarm_on_dark"
-                tools:text="사진 Geert Pieters · Unsplash" />
         </FrameLayout>
 
         <Space
@@ -83,7 +64,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="serif"
-            android:textSize="80sp"
+            android:textSize="70sp"
+            android:includeFontPadding="false"
             android:letterSpacing="-0.025"
             android:textColor="@color/alarm_violet_5"
             android:gravity="center_horizontal"
@@ -93,7 +75,7 @@
             android:id="@+id/alarm_date"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="0dp"
             android:fontFamily="sans-serif"
             android:textSize="14sp"
             android:letterSpacing="0"
@@ -106,13 +88,11 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-<!--
+        <!--
             표지 자리 — 세워 둔 책 한 권(AlarmCoverView).
 
-            앞표지 폭은 디자인대로 156dp인데, 세우면 폭은 조금 줄고(0.98배) 높이는
-            늘어난다(1.51배) — 접힘선 쪽이 눈에 가까워 커지기 때문이다. 그래서 236dp를
-            준다. 뷰는 주어진 자리 안에 들어가도록 스스로 줄이므로 이 값이 조금 달라도
-            잘리지는 않고, 위아래 가변 여백이 남는 높이를 나눠 가진다.
+            뷰가 원근을 dp로 셈해, 세운 무대를 이 자리의 90% 안에 스스로 맞춘다.
+            앞표지 폭은 대략 130dp 남짓이 된다.
         -->
         <expo.modules.alarmclock.AlarmCoverView
             android:id="@+id/alarm_book"
@@ -177,6 +157,23 @@
             android:textSize="14sp"
             android:letterSpacing="0.036"
             android:textColor="@color/alarm_button_label" />
+
+        <!--
+            배경 사진 출처 — 다시 알림 버튼 아래 맨 끝에 작게 둔다. 사진 위에 얹었더니 표지 옆에
+            붙어 책의 글처럼 읽혔다. 배경이 없는 책에서는 AlarmActivity가 숨긴다.
+        -->
+        <TextView
+            android:id="@+id/alarm_credit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_horizontal"
+            android:fontFamily="sans-serif"
+            android:textSize="10sp"
+            android:letterSpacing="0.04"
+            android:alpha="0.55"
+            android:textColor="@color/alarm_on_dark"
+            tools:text="사진 Geert Pieters · Unsplash" />
     </LinearLayout>
 
     <!--
@@ -204,7 +201,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:text="ver.2"
+            android:text="ver.3"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/alarm_debug" />

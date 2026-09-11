@@ -14,10 +14,12 @@
     <color name="alarm_on_dark">#FFFFFF</color>
 
     <!--
-        사진 위에 고르게 까는 40% 어둠(66 = 40%). 사진 아래쪽은 이 값에서 alarm_night
+        사진 위에 고르게 까는 20% 어둠(33 = 20%). 사진 아래쪽은 이 값에서 alarm_night
         불투명으로 넘어가며 바탕색과 이어진다 : alarm_photo_fade 참고.
+        처음에는 40%였는데 실기기에서 사진이 너무 어두웠다. 아래쪽 밤색 그라데이션은
+        그대로라 사진이 끝나는 자리에 경계는 생기지 않는다.
     -->
-    <color name="alarm_photo_veil">#66111114</color>
+    <color name="alarm_photo_veil">#33111114</color>
 
     <!-- 미리보기 전용 빌드 표식 (global.css의 red-100) -->
     <color name="alarm_debug">#EB5757</color>

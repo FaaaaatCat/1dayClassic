@@ -72,6 +72,16 @@ interface BookCoverProps {
   width: number;
   /** 모서리. 기본 2 — 기존 표지 그림들이 쓰던 값이다. */
   radius?: number;
+  /**
+   * 테두리 밖으로 넘치는 것을 잘라 낼지. 기본은 자른다.
+   *
+   * 세워 둔 표지(BookCover3D)는 끈다. 안드로이드는 overflow: hidden을, 자식을 그리기 직전에
+   * 배경 드로어블의 bounds로 만든 모서리 경로로 캔버스를 잘라 구현한다
+   * (BackgroundStyleApplicator.clipToPaddingBox). 실기기의 홈에서 앞표지와 책등이 배경색만
+   * 남고 글자·패턴·마크가 통째로 사라졌는데, 그 자르기가 자식 전부를 잘라 낸 모양과 같다.
+   * 안쪽 조각들은 제 상자 안에서 스스로 잘리므로 바깥에서 한 번 더 자를 까닭이 없다.
+   */
+  clip?: boolean;
   /** 그림자처럼 바깥에서 얹는 것들. 크기는 여기서 덮지 않는다. */
   style?: StyleProp<ViewStyle>;
 }
@@ -104,7 +114,7 @@ interface Sheet {
  *
  * 모든 치수가 width에 비례한다. 고정 px로 두면 서점 격자(108)에서 넘치고 홈(160)에서 빈다.
  */
-export default function BookCover({ design, width, radius = 2, style }: BookCoverProps) {
+export default function BookCover({ design, width, radius = 2, clip = true, style }: BookCoverProps) {
   const height = width * COVER_RATIO;
   const inset = width * INSET;
   const sheet: Sheet = {
@@ -122,7 +132,7 @@ export default function BookCover({ design, width, radius = 2, style }: BookCove
       pointerEvents="none"
       style={[
         { width, height, borderRadius: radius, backgroundColor: design.paper },
-        styles.cover,
+        clip && styles.cover,
         // 어두운 표지는 검은 홈 화면 위에서 경계가 사라진다. 테두리 한 겹으로 세워 둔다.
         design.dark && styles.darkEdge,
         style,
