@@ -20,6 +20,7 @@ import StudyReport from '@/components/StudyReport';
 import { Colors, Fonts, tracking } from '@/constants/theme';
 import { useCardNarration, type SpokenRange } from '@/hooks/useCardNarration';
 import { openBookDetail } from '@/lib/preview-nav';
+import { formatPrice } from '@/lib/catalog';
 import {
   DESC_PARAGRAPHS,
   NARRATION_STEPS,
@@ -399,7 +400,7 @@ function PageContent({
         </View>
         <View style={styles.titleRow}>
           <Text style={styles.no}>{String(PREVIEW_NO).padStart(3, '0')}</Text>
-          <Text style={styles.title}>번째 듣는 법</Text>
+          <Text style={styles.title}>번째 이야기</Text>
         </View>
       </View>
     );
@@ -422,7 +423,7 @@ function PageContent({
   return (
     <View style={styles.buyBlock}>
       <Text style={styles.buyLead}>
-        {'뒷 내용이 더 궁금하시다면\n‘잘 듣는’ 사람이 되기 위한 필독도서\n『듣기의 말들』 을 구매해보세요.'}
+        {`뒷 내용이 더 궁금하시다면\n『${PREVIEW_BOOK_TITLE}』에서\n이어 읽어 보세요.`}
       </Text>
       {PREVIEW_BOOK ? (
         <BookCoverArt
@@ -432,9 +433,12 @@ function PageContent({
           width={BUY_COVER_W}
         />
       ) : null}
-      <View style={styles.buySticker}>
-        <Text style={styles.buyStickerText}>￦8,820</Text>
-      </View>
+      {/* 값은 카탈로그에서 온다 — 예전에는 다른 책의 실제 정가가 박혀 있었다. */}
+      {PREVIEW_BOOK?.price ? (
+        <View style={styles.buySticker}>
+          <Text style={styles.buyStickerText}>{formatPrice(PREVIEW_BOOK.price)}</Text>
+        </View>
+      ) : null}
       {/* 스토리의 '더 보기'처럼 아래로 붙는 한 줄 — 여기서 퀴즈로 들어간다. */}
       <ScaleButton
         accessibilityLabel="퀴즈 풀러 가기"

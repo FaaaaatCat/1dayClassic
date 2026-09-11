@@ -1,4 +1,5 @@
 import listeningData from '@/data/listening.json';
+import { isDatedBook } from '@/lib/books';
 import { getCatalogBooks } from '@/lib/catalog';
 import { splitSentences } from '@/lib/narration';
 import type { NarrationStep } from '@/hooks/useCardNarration';
@@ -14,8 +15,19 @@ import type { Quiz } from '@/types';
  * 보여 주는 '모양'은 화면마다 다르므로 여기 두지 않는다. 여기 있는 것은 글과 순서뿐이다.
  */
 
-/** 이 미리보기가 소개하는 책 — 카탈로그에서 제목으로 찾는다. */
-export const PREVIEW_BOOK_TITLE = '듣기의 말들';
+/**
+ * 이 미리보기가 소개하는 책 — 카탈로그에서 bookId로 찾는다.
+ *
+ * 예전에는 제목('듣기의 말들')으로 찾았다. 그 책을 아카이브로 옮긴 뒤에도 문자열이 남아
+ * "카탈로그에 없는 제목" 경고만 내고 표지가 비었다. 제목은 바뀌어도 bookId는 그대로다.
+ */
+const PREVIEW_BOOK_ID = 'listening';
+export const PREVIEW_BOOK = (() => {
+  const book = getCatalogBooks().find((b) => b.bookId === PREVIEW_BOOK_ID);
+  if (!book) console.warn(`[preview] 카탈로그에 없는 책입니다: ${PREVIEW_BOOK_ID}`);
+  return book;
+})();
+export const PREVIEW_BOOK_TITLE = PREVIEW_BOOK?.title ?? '';
 
 /** 표지에 뜨는 회차. 낭독은 같은 값을 우리말 서수로 읽는다("001" → "첫 번째"). */
 export const PREVIEW_NO = 1;
@@ -24,7 +36,7 @@ const KOREAN_ORDINALS = ['', '첫', '두', '세', '네', '다섯', '여섯', '�
 /**
  * 제목이 아니라 id로 찾는 건 미리보기가 항목 하나를 콕 집어 쓰기 때문이다.
  */
-export const PREVIEW_LESSON_ID = 'listening_2_admit_first';
+export const PREVIEW_LESSON_ID = 'listening_001';
 const PREVIEW_LESSON = (() => {
   const lesson = listeningData.lessons.find((l) => l.id === PREVIEW_LESSON_ID);
   if (!lesson) console.warn(`[preview] 없는 항목입니다: ${PREVIEW_LESSON_ID}`);
@@ -39,13 +51,10 @@ export const DESC_PARAGRAPHS = PREVIEW_LESSON?.story ?? [];
 // JSON은 타입 검사를 거치지 않아 answer가 number로 읽힌다. 데이터 층의 다른 곳과 같은
 // 방식으로 여기서 한 번 좁혀 둔다(check:quizzes가 실제 값이 1~4인지 확인한다).
 export const PREVIEW_QUIZZES = (PREVIEW_LESSON?.quizzes ?? []) as Quiz[];
-export const PREVIEW_DATE = PREVIEW_LESSON?.date ?? '';
+// 날짜 없이 엮인 책(채근담이 그렇다)에는 날짜를 적지 않는다. 데이터의 date는 목차의 자리표일
+// 뿐이라, 화면에 적으면 원본에 없는 날짜를 앱이 지어내는 꼴이 된다(lib/books의 isDatedBook).
+export const PREVIEW_DATE = isDatedBook(PREVIEW_BOOK_ID) ? (PREVIEW_LESSON?.date ?? '') : '';
 
-export const PREVIEW_BOOK = (() => {
-  const book = getCatalogBooks().find((b) => b.title === PREVIEW_BOOK_TITLE);
-  if (!book) console.warn(`[preview] 카탈로그에 없는 제목입니다: ${PREVIEW_BOOK_TITLE}`);
-  return book;
-})();
 
 export type PageKind = 'intro' | 'quote' | 'desc' | 'buy';
 
@@ -85,9 +94,9 @@ function stepsFor(page: number, paragraph: string): NarrationStep[] {
  * 본문이 끝나면 그대로 엔딩으로 간다.
  */
 export const NARRATION_STEPS: NarrationStep[] = [
-  // 표지는 그린 글("001번째 듣는 법")과 읽는 말이 달라 하이라이트를 걸지 않는다.
+  // 표지는 그린 글("001번째 이야기")과 읽는 말이 달라 하이라이트를 걸지 않는다.
   { page: 0, text: PREVIEW_BOOK_TITLE },
-  { page: 0, text: `${KOREAN_ORDINALS[PREVIEW_NO] ?? PREVIEW_NO} 번째 듣는 법` },
+  { page: 0, text: `${KOREAN_ORDINALS[PREVIEW_NO] ?? PREVIEW_NO} 번째 이야기` },
   ...stepsFor(1, QUOTE_TEXT),
   ...DESC_PARAGRAPHS.flatMap((paragraph, i) => stepsFor(2 + i, paragraph)),
 ];
