@@ -43,8 +43,11 @@ function loadPlayer(): React.ComponentType<Record<string, unknown>> | null {
 export default function MusicPlayer({
   videoId,
   paused,
+  width = CARD_W,
 }: {
   videoId: string;
+  /** 재생기의 폭. 기본은 카드 폭 — 카드 덱이 아닌 화면은 제 폭을 넘긴다. */
+  width?: number;
   /** 밖에서 세워야 할 때(낭독을 켠 동안). 소리가 둘이 되면 아무것도 안 들린다. */
   paused: boolean;
 }) {
@@ -74,7 +77,7 @@ export default function MusicPlayer({
       <YoutubePlayer
         videoId={videoId}
         height={PLAYER_H}
-        width={CARD_W}
+        width={width}
         // 들어오자마자 소리를 내지 않는다 — 재생기는 늘 여기 있고, 들을지는 사람이 정한다.
         play={playing && !paused}
         onChangeState={(state: string) => {

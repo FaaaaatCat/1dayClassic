@@ -1,0 +1,14 @@
+{
+  "name": "1dayClassic 화면 내보내기",
+  "id": "1dayclassic-screen-export",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": { "allowedDomains": ["none"] },
+  "menu": [
+    { "name": "나머지 화면 내보내기", "command": "export" },
+    { "name": "하루 서점만 내보내기", "command": "bookstore" },
+    { "name": "온보딩 화면 서체 바꾸기 (Noto → Pretendard·을유1945)", "command": "refont" }
+  ]
+}

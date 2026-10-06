@@ -35,6 +35,8 @@
   "devDependencies": {
     "@expo/ngrok": "^4.1.3",
     "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -50,7 +52,9 @@
     "web": "expo start --web",
     "check:queries": "node scripts/check-image-queries.mjs",
     "fetch:unsplash": "node scripts/fetch-unsplash.mjs",
-    "build:catalog": "node scripts/catalog/build.mjs"
+    "fetch:illustrations": "node scripts/fetch-illustrations.mjs",
+    "build:catalog": "node scripts/catalog/build.mjs",
+    "lint": "expo lint"
   },
   "private": true
 }

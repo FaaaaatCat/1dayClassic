@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "1dayClassic",
+    "name": "하루서점",
     "slug": "1dayClassic",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/appicon/appicon.png",
     "scheme": "1dayclassic",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -14,21 +14,22 @@
       "package": "com.onedayalarm.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/appicon/appicon_android_foreground.png",
+        "monochromeImage": "./assets/images/appicon/appicon_android_foreground.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.VIBRATE",
-        "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
       "blockedPermissions": [
-        "android.permission.SYSTEM_ALERT_WINDOW"
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -41,12 +42,18 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/appicon/appicon_transparent.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-asset",
       [
         "expo-navigation-bar",

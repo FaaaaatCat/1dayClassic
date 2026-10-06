@@ -129,11 +129,20 @@ export function HeaderIconButton({
 }
 
 /** 헤더 오른쪽의 글자 하나 — 저장·미리보기처럼 그림으로 줄일 수 없는 일. */
-export function HeaderTextButton({ label, onPress }: { label: string; onPress: () => void }) {
+export function HeaderTextButton({
+  label,
+  onPress,
+  color,
+}: {
+  label: string;
+  onPress: () => void;
+  /** 글자색을 따로 줄 때 — 저장처럼 그 화면에서 가장 중요한 일이면 포인트 색(ember)을 준다. */
+  color?: string;
+}) {
   const { ink } = TONE[useContext(HeaderToneContext)];
   return (
     <ScaleButton accessibilityLabel={label} style={styles.textAction} onPress={onPress}>
-      <Text style={[styles.textActionLabel, { color: ink }]}>{label}</Text>
+      <Text style={[styles.textActionLabel, { color: color ?? ink }]}>{label}</Text>
     </ScaleButton>
   );
 }

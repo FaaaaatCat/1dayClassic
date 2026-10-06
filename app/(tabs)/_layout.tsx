@@ -1,4 +1,6 @@
 import { Tabs } from 'expo-router';
+import type { ComponentProps } from 'react';
+import { Dimensions, Easing } from 'react-native';
 
 import AppHeader from '@/components/AppHeader';
 import { Surface } from '@/constants/theme';
@@ -38,8 +40,20 @@ export default function TabLayout() {
       <Tabs.Screen name="library/notes" options={{ headerShown: false, href: null }} />
       <Tabs.Screen name="library/account" options={{ headerShown: false, href: null }} />
       {/* 서점은 타이틀이 스크롤을 따라 올라가야 해서 공용 헤더를 쓰지 않고 화면이 직접 그린다. */}
-      <Tabs.Screen name="bookstore" options={{ title: '하루 서점', headerShown: false }} />
-      <Tabs.Screen name="book/[id]" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen
+        name="bookstore"
+        options={{ title: '하루 서점', headerShown: false, ...STAY_UNDER }}
+      />
+      <Tabs.Screen
+        name="book/[id]"
+        options={({ route }) => ({
+          headerShown: false,
+          href: null,
+          ...((route.params as { from?: string } | undefined)?.from === 'bookstore'
+            ? SLIDE_IN
+            : {}),
+        })}
+      />
       <Tabs.Screen name="library/book/[id]" options={{ headerShown: false, href: null }} />
       <Tabs.Screen name="settings" options={{ title: '설정' }} />
     </Tabs>
@@ -51,4 +65,52 @@ const TITLES: Record<string, string> = {
   library: '내 서재',
   bookstore: '하루 서점',
   settings: '설정',
+};
+
+/**
+ * ── 서점 → 책 상세의 넘어가는 모양 ──
+ *
+ * 서점에서 책을 열면 상세가 오른쪽에서 들어와 서점 위를 덮는다. 서점 안의 페이지들
+ * (첫 화면·목록·검색)이 넘어가는 모양과 같다(app/(tabs)/bookstore.tsx).
+ *
+ * 탭 네비게이터는 애니메이션이 없는 화면을 떠나는 순간 바로 숨긴다. 그래서 서점에도
+ * 애니메이션을 켜 두되 제자리에 가만히 있게 한다(STAY_UNDER) — 그래야 상세가 덮고 들어오는
+ * 동안 그 밑에 서점이 보인다. 홈에서 서점으로 들어올 때는 서점이 움직이지 않으므로 지금처럼
+ * 그 자리에서 바뀐다.
+ *
+ * 닫을 때는 애니메이션 없이 바로 돌아간다. 탭은 전환 중에 '가려는 화면'을 늘 위에 그려서
+ * (BottomTabView의 zIndex), 상세가 걷히는 모습이 서점 밑에 가려지기 때문이다.
+ *
+ * 상세는 내 서재에서도 열린다. 그쪽은 서재에 애니메이션이 없어 밑이 빈 바탕으로 보이므로,
+ * 서점에서 열었을 때(from=bookstore)만 건다. 방향은 등록 순서가 정한다 — 상세가 서점보다
+ * 뒤에 등록되어 있어야 오른쪽에서 들어온다.
+ */
+/** 화면 하나의 옵션 객체 — 탭 네비게이터의 옵션 타입은 expo-router 밖으로 나와 있지 않아 여기서 꺼낸다. */
+type TabOptions = Exclude<NonNullable<ComponentProps<typeof Tabs.Screen>['options']>, (...args: never[]) => unknown>;
+
+const TRANSITION: TabOptions['transitionSpec'] = {
+  animation: 'timing',
+  config: { duration: 300, easing: Easing.out(Easing.cubic) },
+};
+
+const STAY_UNDER: TabOptions = {
+  transitionSpec: TRANSITION,
+  sceneStyleInterpolator: () => ({ sceneStyle: {} }),
+};
+
+const SLIDE_IN: TabOptions = {
+  transitionSpec: TRANSITION,
+  // 오른쪽에 대기하던 상세(1)만 제 폭만큼 밀려 들어온다. 물러날 때(0 → -1)는 움직이지 않는다.
+  sceneStyleInterpolator: ({ current }) => ({
+    sceneStyle: {
+      transform: [
+        {
+          translateX: current.progress.interpolate({
+            inputRange: [-1, 0, 1],
+            outputRange: [0, 0, Dimensions.get('window').width],
+          }),
+        },
+      ],
+    },
+  }),
 };

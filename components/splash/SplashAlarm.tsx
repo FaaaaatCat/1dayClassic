@@ -128,7 +128,7 @@ export default function SplashAlarm({
  * 공공장소일 수 있으니 멈추는 버튼이 가장 크고 가운데에 있다.
  */
 function PreviewSheet({ onClose }: { onClose: () => void }) {
-  const player = useAudioPlayer(require('@/assets/test/1_1.mp3'));
+  const player = useAudioPlayer(require('@/assets/audio/alarm-preview.mp3'));
   const status = useAudioPlayerStatus(player);
 
   const elapsed = Math.min(status.currentTime ?? 0, PREVIEW_SECONDS);
@@ -210,9 +210,11 @@ const styles = StyleSheet.create({
     paddingBottom: Space[8],
   },
 
-  /** 휠 셋이 나란히 선다. 남는 높이를 다 갖고 그 한가운데에 시각을 놓는다. */
+  /**
+   * 휠 셋이 나란히 선다. 물음 바로 아래에 붙인다 — 남는 높이 한가운데에 두면 키 큰 화면에서
+   * 시각이 아래로 처져 카드 쪽에 붙어 보인다. 남는 높이는 시각과 카드 사이가 갖는다.
+   */
   clock: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

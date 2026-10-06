@@ -35,6 +35,11 @@ export interface NarrationStep {
    * 없으면 하이라이트를 하지 않는다 — 표지처럼 읽는 말과 그린 글이 다른 장이 그렇다.
    */
   offset?: number;
+  /**
+   * 읽을 말의 글자마다, 그것이 그려진 문장의 몇 번째 글자인지(lib/narration의 toSpeech).
+   * 괄호를 걸러 읽는 말과 그린 글이 어긋날 때 쓴다. 없으면 둘이 같은 것으로 본다.
+   */
+  origin?: number[];
 }
 
 /**
@@ -164,6 +169,9 @@ export function useCardNarration({
       next();
     };
 
+    // 자리가 없는 덩이를 읽는 동안에는 앞 문장의 하이라이트를 남기지 않는다.
+    if (step.offset == null) setSpoken(null);
+
     Speech.speak(step.text, {
       ...koreanSpeech(voiceRef.current),
       // 지금 읽는 단어의 자리. 안드로이드는 UtteranceProgressListener.onRangeStart,
@@ -174,8 +182,10 @@ export function useCardNarration({
         if (base == null) return;
         const { charIndex, charLength } = event;
         if (typeof charIndex !== 'number') return;
-        const start = base + charIndex;
-        const end = start + (charLength || 0);
+        const { origin } = step;
+        const drawn = (i: number) => (origin ? (origin[Math.min(i, origin.length - 1)] ?? i) : i);
+        const start = base + drawn(charIndex);
+        const end = charLength ? base + drawn(charIndex + charLength - 1) + 1 : start;
         setSpoken((prev) =>
           prev && prev.page === step.page && prev.start === start && prev.end === end
             ? prev

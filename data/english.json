@@ -61,7 +61,12 @@
           "answer": 4,
           "explanation": "perfect는 여기서 형용사가 아니라 명사처럼 쓰여 '완벽한 상태'를 가리킵니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1572670014853-1d3a3f22b40f?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8N3x8cm9hZCUyMHNpZ258ZW58MXwwfHx8MTc5MDk0MTAxMXww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Joshua Hoehne",
+        "profile": "https://unsplash.com/@joshua_hoehne?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_002",
@@ -123,7 +128,12 @@
           "answer": 1,
           "explanation": "여러 사람의 눈이 아니라 보는 그 한 사람의 눈이라는 뜻이라 단수가 오히려 정확합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1787430146627-7ac1f12787de?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mnx8ZGljdGlvbmFyeSUyMHBhZ2V8ZW58MXwwfHx8MTc5MDk0MTAxM3ww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Painted BobCat",
+        "profile": "https://unsplash.com/@paintedbobcat?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_003",
@@ -185,7 +195,12 @@
           "answer": 4,
           "explanation": "로마가 예로 쓰인 것은 그 도시가 오래 걸려 커진 것의 대표였기 때문입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1723306743407-cb6ac8f19941?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mnx8b2xkJTIwd29ybGQlMjBtYXB8ZW58MXwwfHx8MTc5MDk0MTAxNXww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "The New York Public Library",
+        "profile": "https://unsplash.com/@nypl?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_004",
@@ -247,7 +262,12 @@
           "answer": 4,
           "explanation": "light가 여기서 '밝은'이 아니라 '가벼운'이라는 뜻으로 쓰였고, make light work는 일을 가볍게 만든다는 짜임입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1703381132774-caeab4f6a9db?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8M3x8bmV3c3BhcGVyJTIwc3RhY2t8ZW58MXwwfHx8MTc5MDk0MTAxN3ww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Jonathan Gong",
+        "profile": "https://unsplash.com/@jonathangongphotography?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_005",
@@ -309,7 +329,12 @@
           "answer": 4,
           "explanation": "앞은 아직 오지 않은 것을 미리 세지 말라는 시간의 조심이고, 뒤는 있는 것을 한곳에 두지 말라는 공간의 조심입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1584830302778-45958aff71ec?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTZ8fHRyYWluJTIwc3RhdGlvbnxlbnwxfDB8fHwxNzkwOTQxMDE5fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Richard Tao",
+        "profile": "https://unsplash.com/@richardtao28?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_006",
@@ -371,7 +396,12 @@
           "answer": 3,
           "explanation": "of a feather는 '같은 깃의'라는 뜻으로, a가 '하나의'가 아니라 '같은'에 가깝게 쓰인 오래된 용법입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1758685734671-21838fcd724e?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mjl8fGNoYWxrYm9hcmR8ZW58MXwwfHx8MTc5MDk0MTAyMXww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Vitaly Gariev",
+        "profile": "https://unsplash.com/@silverkblack?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_007",
@@ -433,7 +463,12 @@
           "answer": 1,
           "explanation": "은과 금을 견준 짜임이라, 말이 나쁘다고 하지 않고 침묵이 더 값지다고만 합니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1631530515498-401ec312c99b?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTJ8fGxldHRlcnByZXNzJTIwdHlwZXxlbnwxfDB8fHwxNzkwOTQxMDIzfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Taso Katsionis",
+        "profile": "https://unsplash.com/@tasokats?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_008",
@@ -495,7 +530,12 @@
           "answer": 3,
           "explanation": "Where there's smoke, there's fire처럼 앞의 것이 있으면 뒤의 것도 있다고 말하는 짜임입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1651964723487-722c8acc07d6?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTN8fGxvbmRvbiUyMHN0cmVldHxlbnwxfDB8fHwxNzkwOTQxMDI1fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Daniil Korbut",
+        "profile": "https://unsplash.com/@rtriangle?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_009",
@@ -557,7 +597,12 @@
           "answer": 3,
           "explanation": "앞은 남보다 먼저를 말하고 뒤는 지금이 그때인지를 말하니, 이르다와 알맞다로 갈립니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1532974861612-e82ce3477f50?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjV8fGhhcmJvcnxlbnwxfDB8fHwxNzkwOTQxMDI3fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Kirsten Drew",
+        "profile": "https://unsplash.com/@k_drew?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "english_010",
@@ -619,7 +664,12 @@
           "answer": 4,
           "explanation": "After the storm이 앞으로 나오면서 주어 the calm이 동사 뒤로 밀렸습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1676149150667-55bd762e0795?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjR8fHN0cmVldCUyMGxhbXB8ZW58MXwwfHx8MTc5MDk0MTAyOXww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Jessica Christian",
+        "profile": "https://unsplash.com/@lovesquish?utm_source=1dayClassic&utm_medium=referral"
+      }
     }
   ]
 }

@@ -1,8 +1,19 @@
 import { useMemo } from 'react';
+import { useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useBookmarks } from '@/context/BookmarkContext';
 import { getBookCalendar, getBookLesson, getLessonHeading, type BookLesson } from '@/lib/books';
-import { buildCardPages, getLessonEpigraph, type CardPageKind } from '@/lib/card-pages';
+import { useReaderSettings } from '@/context/ReaderSettingsContext';
+import {
+  buildCardPages,
+  CARD_H,
+  CARD_W,
+  CARD_W_WIDE,
+  getLessonEpigraph,
+  simpleCardHeight,
+  type CardPageKind,
+} from '@/lib/card-pages';
 import type { BookId, DailyLesson } from '@/types';
 
 /** 꽂아 둔 책갈피 하나 — 그 장에 무엇이 적혀 있었는지까지 붙여 준다. */
@@ -40,6 +51,13 @@ export interface BookmarkEntry {
  */
 export function useBookmarkList(bookId?: BookId): BookmarkEntry[] {
   const { listOf } = useBookmarks();
+  // 읽기 화면과 같은 글자 크기·카드 폭으로 나눠야 장 번호가 같은 장을 가리킨다.
+  const { body, settings } = useReaderSettings();
+  const { height: windowH } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const wide = settings.turn === 'none';
+  const cardW = wide ? CARD_W_WIDE : CARD_W;
+  const cardH = wide ? simpleCardHeight(windowH, insets.top, insets.bottom) : CARD_H;
 
   return useMemo(() => {
     if (!bookId) return [];
@@ -60,7 +78,7 @@ export function useBookmarkList(bookId?: BookId): BookmarkEntry[] {
       if (!day || !bookLesson) continue;
 
       const quizCount = bookLesson.lesson.quizzes?.length ?? (bookLesson.lesson.quiz ? 1 : 0);
-      const pages = buildCardPages(bookLesson, { hasQuiz: quizCount > 0 });
+      const pages = buildCardPages(bookLesson, { hasQuiz: quizCount > 0, body, cardW, cardH });
       const card = pages[mark.page];
       // 글이 짧아져 그 장이 없어졌으면 가리킬 자리가 없다.
       if (!card) continue;
@@ -77,7 +95,7 @@ export function useBookmarkList(bookId?: BookId): BookmarkEntry[] {
     }
 
     return entries;
-  }, [bookId, listOf]);
+  }, [bookId, listOf, body, cardW, cardH]);
 }
 
 /** 그 장에 적혀 있던 글 — 장 종류마다 글이 담긴 자리가 다르다. */

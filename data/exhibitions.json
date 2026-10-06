@@ -1,0 +1,30 @@
+{
+  "exhibitions": [
+    {
+      "id": "languages",
+      "title": "가볍게 시작하는 외국어",
+      "subtitle": "하루 한 문장이면 충분한 영어, 라틴어, 그리스어",
+      "color": "#26282A",
+      "books": ["hanbamseoga-082", "cheotjari-056", "cheotjari-060"]
+    },
+    {
+      "id": "east-classics",
+      "title": "곁에 두고 읽는 동양 고전",
+      "subtitle": "짧은 구절부터 읽는 명심보감, 논어, 채근담",
+      "color": "#7AA6C3",
+      "books": ["midjulsai-000", "najeunmunjang-028", "najeunmunjang-029"],
+      "spotlight": {
+        "midjulsai-000": ["지혜가 필요한 날", "마음에 새기는 한 문장"],
+        "najeunmunjang-028": ["삶이 흔들리는 순간,", "다시 꺼내 읽는 공자의 한마디"],
+        "najeunmunjang-029": ["홍자성(洪自誠)이 알려주는", "흔들리지 않는 처세의 기술"]
+      }
+    },
+    {
+      "id": "writing",
+      "title": "글을 쓰는 사람에게",
+      "subtitle": "시작하고, 쓰고, 고치는 세 권",
+      "color": "#C37A7B",
+      "books": ["hanbamseoga-101", "hanbamseoga-083", "najeunmunjang-035"]
+    }
+  ]
+}

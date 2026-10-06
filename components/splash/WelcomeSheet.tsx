@@ -65,8 +65,11 @@ export default function WelcomeSheet({ onDone }: { onDone: () => void }) {
           <Animated.View
             entering={FadeInDown.delay(RISE_MS + 90).duration(320)}
             style={styles.badge}>
-            <Text style={styles.badgeCount}>{FREE_LESSONS}</Text>
-            <Text style={styles.badgeUnit}>화</Text>
+            {/* 숫자와 단위는 밑줄을 맞춰 한 덩이로 묶고, 그 덩이를 원 한가운데에 둔다. */}
+            <View style={styles.badgeLabel}>
+              <Text style={styles.badgeCount}>{FREE_LESSONS}</Text>
+              <Text style={styles.badgeUnit}>화</Text>
+            </View>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(RISE_MS + 180).duration(320)}>
@@ -162,14 +165,18 @@ const styles = StyleSheet.create({
    * 이 창에서 눈이 가장 먼저 닿아야 하는 것이 '몇 화'라서, 글월보다 위에 크게 둔다.
    */
   badge: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 2,
     width: 96,
     height: 96,
+    alignItems: 'center',
     justifyContent: 'center',
     borderRadius: Corner.pill,
     backgroundColor: Spark.ember,
+  },
+  /** 숫자 옆에 단위를 낮게 — 둘의 아랫선을 맞춘다. */
+  badgeLabel: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
   },
   badgeCount: {
     fontFamily: Type.displayLight,
@@ -187,6 +194,8 @@ const styles = StyleSheet.create({
   line: {
     fontFamily: Type.uiMedium,
     ...TypeScale.headingSm,
+    // 두 줄이 붙어 보이지 않게 — 글자 크기의 160%(시안).
+    lineHeight: 22 * 1.6,
     textAlign: 'center',
     color: Ink.onDark,
   },

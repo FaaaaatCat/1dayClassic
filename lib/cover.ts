@@ -12,14 +12,15 @@ export type { UnsplashPhoto };
  * 그리게 된다.
  *
  * 1. 항목에 coverImage가 있으면 그것. 사람이 고른 그림이라 자동으로 가져온 것보다 앞선다.
- * 2. 없으면 그 책의 표지 값(coverDesign) — 종이색 바탕에 잉크색 마크. 예전의 '표식' 층이
- *    여기로 흡수됐다. 표식이 책마다 따로 놀던 값이었던 데 비해, 표지 값은 종이색·잉크색과
- *    한 벌이라 그 책의 표지와 항목 표지가 같은 결로 그려진다.
- * 3. 그래도 없으면 Unsplash 사진과 크레딧.
+ * 2. 없으면 그 항목에 골라 둔 Unsplash 사진과 크레딧.
+ * 3. 사진이 없으면 그 책의 표지 값(coverDesign) — 종이색 바탕에 잉크색 마크. 예전의 '표식'
+ *    층이 여기로 흡수됐다. 표식이 책마다 따로 놀던 값이었던 데 비해, 표지 값은 종이색·
+ *    잉크색과 한 벌이라 그 책의 표지와 항목 표지가 같은 결로 그려진다.
  * 4. 그마저 없으면 검은 바탕만.
  *
- * 2번이 3번보다 앞선 것이 이 화면의 성격을 정한다 — 사진을 붙이면 책이 아니라 콘텐츠
- * 카드로 읽히므로, 사진은 표지 값이 없을 때의 폴백으로 내려앉았다.
+ * 한때 표지 값이 사진보다 앞섰다(사진을 붙이면 책이 아니라 콘텐츠 카드로 읽힌다는 이유로).
+ * 그러자 사진을 골라 둔 항목에서도 사진이 영영 나오지 않아, 사진을 다시 앞에 세웠다.
+ * 사진을 쓰지 않는 책(클래식·듣기)은 데이터에 사진이 없으니 그대로 표지 값으로 그려진다.
  *
  * 책 표지(홈·서점·서재의 표지 그림)는 이 함수가 아니라 getBookCoverPlan이 정한다.
  * 항목 표지는 '그날의 속표지'라 표제가 항목의 것이고, 책 표지는 책 제목이 인쇄된 물건이다.
@@ -37,11 +38,11 @@ export function getCoverPlan(lesson: DailyLesson, bookId?: BookId): CoverPlan {
   const source = lesson.coverImage?.trim();
   if (source) return { kind: 'image', source };
 
-  const id = bookId ?? findLesson(lesson.id)?.book;
-  if (id) return { kind: 'design', design: getCoverDesign(id) };
-
   const photo = lesson.unsplash;
   if (photo?.url && photo.photographer) return { kind: 'unsplash', photo };
+
+  const id = bookId ?? findLesson(lesson.id)?.book;
+  if (id) return { kind: 'design', design: getCoverDesign(id) };
 
   return { kind: 'blank' };
 }

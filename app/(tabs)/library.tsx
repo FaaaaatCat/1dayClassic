@@ -8,6 +8,7 @@ import { useShelfBooks } from '@/components/mypage/useShelfBooks';
 import ScaleButton from '@/components/ScaleButton';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
 import { useBgm } from '@/context/BgmContext';
+import { useReaderSettings } from '@/context/ReaderSettingsContext';
 import { findBgm } from '@/lib/bgm';
 
 /**
@@ -25,6 +26,11 @@ import { findBgm } from '@/lib/bgm';
 export default function MyPageScreen() {
   const router = useRouter();
   const { bgmId } = useBgm();
+  const { settings } = useReaderSettings();
+  // 책 설정 줄 오른쪽에 지금 고른 배경과 글자 크기를 짧게 적는다.
+  const readerSummary = `${settings.background === 'dark' ? '다크' : '라이트'} · 글자 ${
+    { small: '작게', medium: '중간', large: '크게' }[settings.fontSize]
+  }`;
   const { planned, finished } = useShelfBooks();
 
   return (
@@ -68,8 +74,8 @@ export default function MyPageScreen() {
         />
         <MyPageRow
           icon="color-palette-outline"
-          label="책 배경 설정"
-          value="기본"
+          label="책 보기 설정"
+          value={readerSummary}
           onPress={() => router.push('/library/book-theme')}
           last
         />
@@ -84,7 +90,9 @@ export default function MyPageScreen() {
       </View>
 
       <MyPageGroup>
-        <MyPageRow label="설정" onPress={() => router.push('/settings')} />
+        {/* 설정은 미리보기 데모들만 모아 둔 개발용 화면이라 출시 빌드에서는 보이지 않는다.
+            개발 빌드(__DEV__)에서만 들어갈 수 있다. */}
+        {__DEV__ ? <MyPageRow label="설정" onPress={() => router.push('/settings')} /> : null}
         <MyPageRow label="권한 관리" onPress={() => router.push('/library/permissions')} />
         <MyPageRow label="계정 관리" onPress={() => router.push('/library/account')} last />
       </MyPageGroup>

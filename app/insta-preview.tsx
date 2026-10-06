@@ -1,19 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  cancelAnimation,
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import BookCoverArt from '@/components/book/BookCoverArt';
+import SpokenText from '@/components/lesson/SpokenText';
 import QuizSolver, { quizModalStyles } from '@/components/preview/QuizSolver';
+import StoryBars from '@/components/preview/StoryBars';
 import ScaleButton from '@/components/ScaleButton';
 import { StatusBarTint } from '@/components/StatusBarTint';
 import StudyReport from '@/components/StudyReport';
@@ -41,39 +35,17 @@ import {
  * 보여 주는 글과 순서는 카드 슬라이드와 한 곳(lib/preview-content)에서 나온다. 여기서
  * 정하는 것은 옷뿐이다 — 위의 칸 진행 바, 계정 줄, 어두운 바닥 위의 밝은 판, 아래 아이콘.
  *
- * 넘기는 방법은 스토리 그대로 셋이다 — 시간이 차면 저절로, 좌우를 탭하면 곧바로,
- * 붙잡고 있으면 멈춘다. 메시지 보내기만 만들지 않았다(보낼 곳이 없다).
+ * 좌우를 탭하면 곧바로 넘어간다. 시간이 차면 저절로 넘어가던 스토리의 자동 넘김은 없앴다 —
+ * 장은 손으로만 넘긴다. 메시지 보내기는 만들지 않았다(보낼 곳이 없다).
  *
  * 퀴즈와 리포트는 카드 슬라이드와 같은 것을 쓴다(components/preview/QuizSolver,
  * components/StudyReport). 두 미리보기가 갈라지면 안 되는 흐름이다.
  */
 
-/** 진행 바 칸 사이 틈. 칸 폭을 재려면 이 값이 필요하다. */
 /** 계정 줄의 동그란 표지 썸네일 지름. */
 const AVATAR = 34;
 /** 구매 안내 장에 세우는 표지의 폭. */
 const BUY_COVER_W = 140;
-
-const BAR_GAP = 4;
-/** 글이 없는 장(표지·구매 안내)에 주는 시간. */
-const PLAIN_MS = 5000;
-/** 글 한 자에 주는 시간. 한국어를 눈으로 읽는 속도에 맞춘 값이다. */
-const MS_PER_CHAR = 110;
-const MIN_MS = 5000;
-const MAX_MS = 15000;
-
-/**
- * 이 장에 줄 시간.
- *
- * 스토리는 모든 장이 같은 시간이지만 여기는 글의 길이가 제각각이라(87자에서 201자까지)
- * 같은 시간을 주면 짧은 장은 지루하고 긴 장은 다 못 읽고 넘어간다. 그래서 글자 수로
- * 정하되 위아래를 잘라 둔다 — 너무 짧아 놓치거나 너무 길어 늘어지지 않게.
- */
-function durationFor(page: (typeof PAGES)[number]): number {
-  const text = page.kind === 'quote' ? QUOTE_TEXT : (page.paragraph ?? '');
-  if (!text) return PLAIN_MS;
-  return Math.min(MAX_MS, Math.max(MIN_MS, 1200 + text.length * MS_PER_CHAR));
-}
 
 export default function InstaPreviewScreen() {
   const router = useRouter();
@@ -110,14 +82,6 @@ export default function InstaPreviewScreen() {
   };
 
   const current = PAGES[page];
-  const last = page === PAGES.length - 1;
-  /** 손가락을 대고 있는 동안. 스토리처럼 글을 더 보려고 붙잡는 자리다. */
-  const [held, setHeld] = useState(false);
-  /** 시간이 흐를 자리가 아닌 경우 — 낭독이 장을 끌고 가는 중이거나, 갈 곳이 없는 마지막 장. */
-  const filled = narration.playing || last;
-  const advance = useCallback(() => {
-    setPage((p) => (p + 1 < PAGES.length ? p + 1 : p));
-  }, []);
 
   /**
    * 퀴즈와 리포트 — 카드 슬라이드와 같은 흐름이다.
@@ -132,14 +96,10 @@ export default function InstaPreviewScreen() {
       {/* 어두운 화면이라 상태바도 검게, 시계는 희게. */}
       <StatusBarTint />
 
-      {/* 위 진행 바 — 지나온 칸은 채우고, 지금 칸은 시간에 맞춰 차오른다. */}
-      <ProgressBars
-        page={page}
-        duration={durationFor(current)}
-        held={held}
-        filled={filled}
-        onDone={advance}
-      />
+      {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. */}
+      <View style={styles.bars}>
+        <StoryBars count={PAGES.length} page={page} />
+      </View>
 
       {/* 계정 줄 — 스토리의 프로필·이름·시간 자리에 책 표지·책 이름·날짜를 넣는다. */}
       <View style={styles.header}>
@@ -192,21 +152,12 @@ export default function InstaPreviewScreen() {
             <Pressable
               accessibilityLabel="이전 장"
               style={styles.tapZone}
-              onPressIn={() => setHeld(true)}
-              onPressOut={() => setHeld(false)}
               onPress={() => goByTap(page - 1)}
             />
-            <Pressable
-              accessibilityLabel="잠시 멈춤"
-              style={styles.tapZone}
-              onPressIn={() => setHeld(true)}
-              onPressOut={() => setHeld(false)}
-            />
+            <View style={styles.tapZone} />
             <Pressable
               accessibilityLabel="다음 장"
               style={styles.tapZone}
-              onPressIn={() => setHeld(true)}
-              onPressOut={() => setHeld(false)}
               onPress={() => goByTap(page + 1)}
             />
           </View>
@@ -275,111 +226,6 @@ export default function InstaPreviewScreen() {
   );
 }
 
-/**
- * 위의 칸 진행 바 — 지나온 칸은 채워 두고, 지금 칸만 시간에 맞춰 차오른다.
- *
- * 차오르는 폭은 퍼센트가 아니라 픽셀로 준다. 칸이 flex로 나뉘어 있어 폭을 미리 알 수
- * 없으므로 onLayout으로 한 번 재 둔다. transformOrigin으로 왼쪽에서 늘리는 방법도 있지만
- * 안드로이드에서 행렬 분해 오차가 있어 쓰지 않는다.
- *
- * 다 차면 onDone으로 다음 장을 부른다. 그 콜백을 ref에 담아 두는 건, 매 렌더 새로 만들어진
- * 함수가 의존성으로 들어오면 타이머가 계속 다시 걸려 영영 차지 않기 때문이다.
- */
-function ProgressBars({
-  page,
-  duration,
-  held,
-  filled,
-  onDone,
-}: {
-  page: number;
-  duration: number;
-  /** 손가락을 대고 있다. 차오르던 자리에 그대로 세운다. */
-  held: boolean;
-  /** 시간이 흐를 자리가 아니다(낭독 중·마지막 장). 지금 칸을 채운 채로 둔다. */
-  filled: boolean;
-  onDone: () => void;
-}) {
-  const [barWidth, setBarWidth] = useState(0);
-  const progress = useSharedValue(0);
-  const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
-  /** 지금 타이머가 걸려 있는 장. 장이 바뀐 것과 붙잡았다 놓은 것을 가른다. */
-  const timedPage = useRef(-1);
-
-  const fire = useCallback(() => onDoneRef.current(), []);
-
-  useEffect(() => {
-    // 장이 바뀌었으면 무조건 처음부터.
-    if (timedPage.current !== page) {
-      timedPage.current = page;
-      cancelAnimation(progress);
-      progress.value = 0;
-    }
-
-    if (filled) {
-      cancelAnimation(progress);
-      progress.value = 1;
-      return;
-    }
-    if (held) {
-      // 차오르던 그 자리에서 멈춘다. 채워 버리면 손을 떼기도 전에 다 본 것처럼 보이고,
-      // 0으로 되돌리면 붙잡을 때마다 처음부터 다시 읽어야 한다.
-      cancelAnimation(progress);
-      return;
-    }
-
-    // 남은 만큼만 마저 채운다 — 붙잡았다 놓으면 이어서 간다.
-    const remaining = duration * (1 - progress.value);
-    progress.value = withTiming(1, { duration: remaining, easing: Easing.linear }, (finished) => {
-      if (finished) runOnJS(fire)();
-    });
-  }, [page, duration, held, filled, progress, fire]);
-
-  const fillStyle = useAnimatedStyle(() => ({ width: progress.value * barWidth }));
-
-  return (
-    <View
-      style={styles.bars}
-      onLayout={(event) => {
-        const total = event.nativeEvent.layout.width;
-        setBarWidth((total - BAR_GAP * (PAGES.length - 1)) / PAGES.length);
-      }}>
-      {PAGES.map((_, i) => (
-        <View key={i} style={[styles.bar, i < page && styles.barFilled]}>
-          {i === page ? <Animated.View style={[styles.barFill, fillStyle]} /> : null}
-        </View>
-      ))}
-    </View>
-  );
-}
-
-/**
- * 낭독이 읽는 자리에 밑칠을 하는 글. 카드 슬라이드의 것과 같은 방식이다 —
- * 중첩 Text 세 조각이라야 줄바꿈과 자간을 물려받아 글이 밀리지 않는다.
- */
-function SpokenText({
-  text,
-  style,
-  spoken,
-}: {
-  text: string;
-  style: object;
-  spoken: SpokenRange | null;
-}) {
-  if (!spoken || spoken.start >= text.length || spoken.end <= spoken.start) {
-    return <Text style={style}>{text}</Text>;
-  }
-  const end = Math.min(spoken.end, text.length);
-  return (
-    <Text style={style}>
-      {text.slice(0, spoken.start)}
-      <Text style={styles.spokenWord}>{text.slice(spoken.start, end)}</Text>
-      {text.slice(end)}
-    </Text>
-  );
-}
-
 function PageContent({
   kind,
   paragraph,
@@ -409,14 +255,21 @@ function PageContent({
   if (kind === 'quote') {
     return (
       <View style={styles.quoteBlock}>
-        <SpokenText text={QUOTE_TEXT} style={styles.quoteText} spoken={spoken} />
+        <SpokenText text={QUOTE_TEXT} style={styles.quoteText} highlightStyle={styles.spokenWord} spoken={spoken} />
         <Text style={styles.quoteSource}>{QUOTE_SOURCE}</Text>
       </View>
     );
   }
 
   if (kind === 'desc') {
-    return <SpokenText text={paragraph ?? ''} style={styles.descText} spoken={spoken} />;
+    return (
+      <SpokenText
+        text={paragraph ?? ''}
+        style={styles.descText}
+        highlightStyle={styles.spokenWord}
+        spoken={spoken}
+      />
+    );
   }
 
   // 구매 안내 — 스토리에서는 표지와 값만 얹고 사는 곳은 링크 스티커처럼 한 줄로 둔다.
@@ -459,28 +312,7 @@ const styles = StyleSheet.create({
 
   // 위 진행 바
   bars: {
-    flexDirection: 'row',
-    gap: BAR_GAP,
     paddingHorizontal: 4,
-  },
-  bar: {
-    flex: 1,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: Colors.brown50,
-    overflow: 'hidden',
-  },
-  barFilled: {
-    backgroundColor: Colors.white,
-  },
-  /** 지금 칸에서 차오르는 부분. 왼쪽에 붙어 폭만 늘어난다. */
-  barFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    borderRadius: 1.5,
-    backgroundColor: Colors.white,
   },
 
   // 계정 줄

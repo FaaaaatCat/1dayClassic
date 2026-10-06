@@ -68,6 +68,26 @@
           "answer": 3,
           "explanation": "왼손의 가장 낮은 음만 따라가 보는 것입니다. 그 음이 한 마디에 하나씩 바뀌면서 곡 전체의 길을 만들고, 오른손의 물결은 그 길 위에 얹힌 무늬입니다."
         }
+      ],
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP887765.jpg",
+          "width": 599,
+          "height": 458,
+          "title": "Le Concert",
+          "artist": "Antoine Jean Duclos",
+          "date": "1774",
+          "source": "https://www.metmuseum.org/art/collection/search/828363"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP885919.jpg",
+          "width": 599,
+          "height": 415,
+          "title": "A group of elegantly dressed people playing the piano and other instruments",
+          "artist": "Bartolomeo Crivellari",
+          "date": "1740–68",
+          "source": "https://www.metmuseum.org/art/collection/search/814801"
+        }
       ]
     },
     {
@@ -482,6 +502,26 @@
           "answer": 4,
           "explanation": "전체를 한 번에 붙들려 하지 않고 바뀌는 자리만 세어 두면, 다음 번에는 그 사이를 채워 들을 수 있습니다."
         }
+      ],
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP888260.jpg",
+          "width": 600,
+          "height": 441,
+          "title": "Le Joueur de Violin (The Violin Player), from Les Caprices Series A, The Florence Set",
+          "artist": "Jacques Callot",
+          "date": "1617",
+          "source": "https://www.metmuseum.org/art/collection/search/417581"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP883490.jpg",
+          "width": 599,
+          "height": 440,
+          "title": "Seven men gathered around a table, drinking and listening to a lute player",
+          "artist": "Jean-Baptiste Haussard",
+          "date": "ca. 1729",
+          "source": "https://www.metmuseum.org/art/collection/search/816582"
+        }
       ]
     },
     {
@@ -551,6 +591,26 @@
           "answer": 1,
           "explanation": "널리 알려진 곡만 모으면 목록이 그럴듯해지지만 듣는 사람이 이미 아는 것만 확인하게 되니, 한 자리는 낯선 이름에 두는 편이 낫습니다."
         }
+      ],
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP820129.jpg",
+          "width": 599,
+          "height": 466,
+          "title": "Piano Player",
+          "artist": "Fred Becker",
+          "date": "1935–40",
+          "source": "https://www.metmuseum.org/art/collection/search/374224"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP888329.jpg",
+          "width": 600,
+          "height": 476,
+          "title": "Copy of Le Joeuer de Violon (The Violin Player), from \"Les Caprices\"",
+          "artist": "Anonymous",
+          "date": "17th century",
+          "source": "https://www.metmuseum.org/art/collection/search/417039"
+        }
       ]
     },
     {
@@ -619,6 +679,26 @@
           ],
           "answer": 1,
           "explanation": "폴카는 본래 보헤미아에서 온 춤곡입니다. 둘씩 세는 박자에 빠른 걸음으로 도는 춤이니, 셋씩 세는 왈츠와 함께 십구세기 무도회의 두 축을 이루었습니다."
+        }
+      ],
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP833455.jpg",
+          "width": 600,
+          "height": 441,
+          "title": "Small, masked male figure playing a violin, from \"Varie Figure Gobbi\"",
+          "artist": "Jacques Callot",
+          "date": "ca. 1621–25",
+          "source": "https://www.metmuseum.org/art/collection/search/409936"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP-42509-001.jpg",
+          "width": 599,
+          "height": 410,
+          "title": "Master John Blockhead or The Lute Maker",
+          "artist": "Frans Huys",
+          "date": "mid-16th century",
+          "source": "https://www.metmuseum.org/art/collection/search/350108"
         }
       ]
     },
@@ -757,6 +837,26 @@
           ],
           "answer": 4,
           "explanation": "슈베르트의 사중주는 같은 계열 넷으로 색을 하나로 묶었고 이 곡은 다른 계열 여섯으로 색을 갈라 놓았으니, 실내악의 두 방향입니다."
+        }
+      ],
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP818535.jpg",
+          "width": 600,
+          "height": 409,
+          "title": "Le Joeuer de Luth (The Lute Player), from \"Varie Figure Gobbi, suite appelée aussi Les Bossus, Les Pygmées, Les Nains Grotesques\" (Various Hunchbacked Figures, The Hunchbacks, The Pygmes, The Grotesque Dwarfs)",
+          "artist": "Jacques Callot",
+          "date": "1616–22",
+          "source": "https://www.metmuseum.org/art/collection/search/398564"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP890474.jpg",
+          "width": 600,
+          "height": 394,
+          "title": "Le Jouer de Violon (The Violin Player), from \"Les Caprices\" Series B, The Nancy Set",
+          "artist": "Jacques Callot",
+          "date": "1617–20",
+          "source": "https://www.metmuseum.org/art/collection/search/418159"
         }
       ]
     }

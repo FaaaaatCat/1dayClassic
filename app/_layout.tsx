@@ -11,6 +11,7 @@ import 'react-native-reanimated';
 
 import { AlarmProvider } from '@/context/AlarmContext';
 import { BgmProvider } from '@/context/BgmContext';
+import { ReaderSettingsProvider } from '@/context/ReaderSettingsContext';
 import { BookmarkProvider } from '@/context/BookmarkContext';
 import { BookSelectionProvider } from '@/context/BookSelectionContext';
 import { NotesProvider } from '@/context/NotesContext';
@@ -153,6 +154,7 @@ export default function RootLayout() {
               <ReadingCursorProvider>
               <BookmarkProvider>
               <BgmProvider>
+              <ReaderSettingsProvider>
               <ToastProvider>
                 <Stack>
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -175,6 +177,18 @@ export default function RootLayout() {
                     name="insta-preview"
                     options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
                   />
+                  {/* 그림전체배경 미리보기 — 인스타 스토리와 같은 이유로 전면에 띄우고
+                      뒤로가기 제스처를 막는다. */}
+                  <Stack.Screen
+                    name="backdrop-preview"
+                    options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+                  />
+                  {/* 섞어쓰기 미리보기 — 카드 슬라이드와 같은 화면이라 같은 이유로 전면에 띄우고
+                      뒤로가기 제스처를 막는다. */}
+                  <Stack.Screen
+                    name="mixed-preview"
+                    options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }}
+                  />
                   {/* 원페이지 미리보기 — 상세와 같은 껍데기라 탭바 없이 전면으로 떠야 한다.
                       여기는 좌우 스와이프를 쓰지 않으므로 뒤로가기 제스처를 막지 않는다. */}
                   <Stack.Screen name="onepage-preview" options={{ headerShown: false }} />
@@ -194,6 +208,7 @@ export default function RootLayout() {
 
                 <FirstRunGate onboarded={onboarded} />
               </ToastProvider>
+              </ReaderSettingsProvider>
               </BgmProvider>
               </BookmarkProvider>
               </ReadingCursorProvider>

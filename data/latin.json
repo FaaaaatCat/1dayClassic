@@ -60,6 +60,31 @@
           "answer": 2,
           "explanation": "고전 라틴어로는 '템푸스 푸기트'라 읽지만, 교회 라틴어에서는 gi를 부드럽게 소리 내어 '템푸스 푸지트'가 됩니다."
         }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1579943690353-fd7d19f1aacd?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjF8fHJvbWFuJTIwcnVpbnN8ZW58MXwwfHx8MTc5MDkzMzQzNnww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Gunnar Ridderström",
+        "profile": "https://unsplash.com/@gunnarridder?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP870253.jpg",
+          "width": 599,
+          "height": 427,
+          "title": "Arch of Constantine, from \"Speculum Romanae Magnificentiae\"",
+          "artist": "Anonymous",
+          "date": "1583",
+          "source": "https://www.metmuseum.org/art/collection/search/402906"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP874589.jpg",
+          "width": 600,
+          "height": 450,
+          "title": "View of the Temple of Vesta",
+          "artist": "Jean Jacques de Boissieu",
+          "date": "1774",
+          "source": "https://www.metmuseum.org/art/collection/search/342437"
+        }
       ]
     },
     {
@@ -120,6 +145,31 @@
           ],
           "answer": 4,
           "explanation": "히포크라테스의 그리스어 잠언을 옮기면서 순서가 뒤집혔습니다. 원문은 삶이 짧다는 말이 먼저이니, 라틴어판은 기술을 앞으로 끌어냈습니다."
+        }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1618172762258-ba4a32ad5e93?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTl8fGFxdWVkdWN0fGVufDF8MHx8fDE3OTA5MzM0Mzh8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Catrin Ellis",
+        "profile": "https://unsplash.com/@catrinellis?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP828289.jpg",
+          "width": 600,
+          "height": 447,
+          "title": "Veduta interna dell'Atrio del Portico di Ottavia (Internal View of the Atrium of the Portico of Octavia), in: 'Vedute di Roma' (Views of Rome)",
+          "artist": "Giovanni Battista Piranesi",
+          "date": "1760",
+          "source": "https://www.metmuseum.org/art/collection/search/360268"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP-13033-001.jpg",
+          "width": 599,
+          "height": 422,
+          "title": "Birdseye View of the Port of Rome, from \"Speculum Romanae Magnificentiae\"",
+          "artist": "Giulio de Musi",
+          "date": "1554",
+          "source": "https://www.metmuseum.org/art/collection/search/403938"
         }
       ]
     },
@@ -182,6 +232,31 @@
           "answer": 1,
           "explanation": "nosce의 sc를 고전 라틴어에서는 '스크'로 읽어 '노스케'가 되지만, 교회 라틴어에서는 '노쉐'에 가깝게 소리 냅니다."
         }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1638127275946-0a10f1785562?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mnx8bGF1cmVsJTIwd3JlYXRofGVufDF8MHx8fDE3OTA5MzM0NDB8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Kier in Sight Archives",
+        "profile": "https://unsplash.com/@kierinsightarchives?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/MM24263.jpg",
+          "width": 600,
+          "height": 366,
+          "title": "Bird's Eye View of Rome",
+          "artist": "Giulio de Musi",
+          "date": "1553",
+          "source": "https://www.metmuseum.org/art/collection/search/396154"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP874499.jpg",
+          "width": 599,
+          "height": 465,
+          "title": "Ancient Rome and its Hills, from the West, from \"Speculum Romanae Magnificentiae\"",
+          "artist": "Etienne DuPérac",
+          "date": "1573",
+          "source": "https://www.metmuseum.org/art/collection/search/403211"
+        }
       ]
     },
     {
@@ -242,6 +317,31 @@
           ],
           "answer": 4,
           "explanation": "고전 라틴어의 v는 영어의 w에 가까워 veni vidi vici가 '웨니 위디 위키'가 됩니다. 교회 라틴어에서는 '베니 비디 비치'로 읽습니다."
+        }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1659075759239-9f20955ca8c1?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mjl8fGxhdGluJTIwaW5zY3JpcHRpb258ZW58MXwwfHx8MTc5MDkzMzQ0Mnww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "George Tasios",
+        "profile": "https://unsplash.com/@george_tasios?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP870571.jpg",
+          "width": 599,
+          "height": 348,
+          "title": "Port of Rome, from \"Speculum Romanae Magnificentiae\"",
+          "artist": "Giovanni Ambrogio Brambilla",
+          "date": "1581",
+          "source": "https://www.metmuseum.org/art/collection/search/403529"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP874551.jpg",
+          "width": 600,
+          "height": 448,
+          "title": "Ruins of an Aqueduct",
+          "artist": "Jean Jacques de Boissieu",
+          "date": "1763",
+          "source": "https://www.metmuseum.org/art/collection/search/395360"
         }
       ]
     },
@@ -304,6 +404,31 @@
           "answer": 2,
           "explanation": "per는 '~을 지나', ad는 '~로'라는 방향을 만듭니다. aspera는 거칠고 험한 것, astra는 별들입니다."
         }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1649360831159-13ce9675dbf4?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTJ8fHBhcmNobWVudHxlbnwxfDB8fHwxNzkwOTMzNDQ0fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Hyeonyoung Yang",
+        "profile": "https://unsplash.com/@daisylovesfilmgrain?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP828241.jpg",
+          "width": 599,
+          "height": 396,
+          "title": "View of the Palazzo della Consulta on the Quirinal housing the Papal Secreteriat, from Vedute di Roma (Roman Views)",
+          "artist": "Giovanni Battista Piranesi",
+          "date": "ca. 1760–78",
+          "source": "https://www.metmuseum.org/art/collection/search/363321"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP823383.jpg",
+          "width": 600,
+          "height": 388,
+          "title": "Thermaru diocletiani Ruinae (Baths of Diocletian), from \"Roman Ruins\"",
+          "artist": "Wenceslaus Hollar",
+          "date": "1651",
+          "source": "https://www.metmuseum.org/art/collection/search/360678"
+        }
       ]
     },
     {
@@ -364,6 +489,31 @@
           ],
           "answer": 4,
           "explanation": "호라티우스의 『서간시』에 나오는 구절인데, 십팔세기에 칸트가 계몽의 표어로 끌어 쓰면서 다시 널리 알려졌습니다."
+        }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1534099946341-34fe5ef39eef?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8NHx8b2xpdmUlMjB0cmVlfGVufDF8MHx8fDE3OTA5MzM0NDZ8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Nazar Hrabovyi",
+        "profile": "https://unsplash.com/@nazarhrbv?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP880251.jpg",
+          "width": 599,
+          "height": 438,
+          "title": "The Baths of Diocletian, from \"Roman Ruins and Buildings\"",
+          "artist": "Johannes van Doetecum I",
+          "date": "1562",
+          "source": "https://www.metmuseum.org/art/collection/search/390208"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP828223.jpg",
+          "width": 600,
+          "height": 402,
+          "title": "The Arch of Titus (Veduta dell'Arco di Tito)",
+          "artist": "Giovanni Battista Piranesi",
+          "date": "ca. 1760",
+          "source": "https://www.metmuseum.org/art/collection/search/363083"
         }
       ]
     },
@@ -426,6 +576,31 @@
           "answer": 4,
           "explanation": "말 하나 글 하나가 아니라 말들과 글들이니, 개별 사건이 아니라 성질을 말하는 문장이 됩니다."
         }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1684135383432-ae1f28cbd414?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTZ8fGFtcGhpdGhlYXRlcnxlbnwxfDB8fHwxNzkwOTMzNDQ4fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Photo 11",
+        "profile": "https://unsplash.com/@photo_11?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP260583.jpg",
+          "width": 600,
+          "height": 419,
+          "title": "View of the Flavian Amphitheater, called the Colosseum, from \"Vedute di Roma\" (Roman Views), part II",
+          "artist": "Giovanni Battista Piranesi",
+          "date": "ca. 1750–78",
+          "source": "https://www.metmuseum.org/art/collection/search/409630"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP823381.jpg",
+          "width": 600,
+          "height": 375,
+          "title": "Ruinae Coliseum, from \"Roman Ruins\"",
+          "artist": "Wenceslaus Hollar",
+          "date": "ca. 1650",
+          "source": "https://www.metmuseum.org/art/collection/search/360661"
+        }
       ]
     },
     {
@@ -486,6 +661,31 @@
           ],
           "answer": 4,
           "explanation": "in은 '~안에'라는 뜻인데, 뒤에 오는 낱말의 꼬리가 vinum에서 vino로 바뀝니다. 라틴어에서는 앞말이 뒷말의 꼬리를 정합니다."
+        }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1702160931278-8d3556792ff3?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8M3x8bGF0aW4lMjBpbnNjcmlwdGlvbnxlbnwxfDB8fHwxNzkwOTMzNDQyfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Eric Prouzet",
+        "profile": "https://unsplash.com/@eprouzet?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP880252.jpg",
+          "width": 599,
+          "height": 458,
+          "title": "Massive Ruins with Many Figures in the Foreground, from \"Roman Ruins and Buildings\"",
+          "artist": "Johannes van Doetecum I",
+          "date": "1562",
+          "source": "https://www.metmuseum.org/art/collection/search/390207"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP828292.jpg",
+          "width": 599,
+          "height": 445,
+          "title": "The Theatre of Marcellus (Teatro di Marcello), from \"Vedute di Roma\"",
+          "artist": "Giovanni Battista Piranesi",
+          "date": "ca. 1757",
+          "source": "https://www.metmuseum.org/art/collection/search/363908"
         }
       ]
     },
@@ -548,6 +748,31 @@
           "answer": 4,
           "explanation": "전쟁을 막기 위한 대비로 읽히기도 하고 전쟁을 정당화하는 말로 쓰이기도 했으니, 격언의 쓰임은 문장 밖에서 정해집니다."
         }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1617565085015-13cb9d366120?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTZ8fHBhcmNobWVudHxlbnwxfDB8fHwxNzkwOTMzNDQ0fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Julia Maior",
+        "profile": "https://unsplash.com/@juliamaior?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP828215.jpg",
+          "width": 600,
+          "height": 400,
+          "title": "View of the Palazzo Odeschali, from Vedute di Roma (Roman Views)",
+          "artist": "Giovanni Battista Piranesi",
+          "date": "ca. 1753",
+          "source": "https://www.metmuseum.org/art/collection/search/363254"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP823387.jpg",
+          "width": 600,
+          "height": 398,
+          "title": "Roman Ruins, from \"Roman Ruins\"",
+          "artist": "Wenceslaus Hollar",
+          "date": "1673",
+          "source": "https://www.metmuseum.org/art/collection/search/360679"
+        }
       ]
     },
     {
@@ -608,6 +833,31 @@
           ],
           "answer": 4,
           "explanation": "팔세기에 알퀴누스가 샤를마뉴에게 보낸 편지에서 이 말을 인용하면서, 그런 말을 하는 자들에게 귀 기울이지 말라고 적었습니다. 지금 쓰임과는 정반대입니다."
+        }
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1768360498351-482a7dd8f3b7?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8OHx8bGF1cmVsJTIwd3JlYXRofGVufDF8MHx8fDE3OTA5MzM0NDB8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Altman Pargauma",
+        "profile": "https://unsplash.com/@altmanb?utm_source=1dayClassic&utm_medium=referral"
+      },
+      "illustrations": [
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP836142.jpg",
+          "width": 599,
+          "height": 450,
+          "title": "The Forum Romanum, or Campo Vaccino, from the capitol, with the Arch of Septimus Severus in the foreground left, Temple of Vespian right, and the Colosseum in the distance (Veduta di Campo Vaccino), from \"Vedute di Roma\"",
+          "artist": "Giovanni Battista Piranesi",
+          "date": "ca. 1775",
+          "source": "https://www.metmuseum.org/art/collection/search/363433"
+        },
+        {
+          "url": "https://images.metmuseum.org/CRDImages/dp/web-large/DP823386.jpg",
+          "width": 600,
+          "height": 389,
+          "title": "St. Croix de Jerusalem, from \"Roman Ruins\"",
+          "artist": "Wenceslaus Hollar",
+          "date": "1650",
+          "source": "https://www.metmuseum.org/art/collection/search/360663"
         }
       ]
     }

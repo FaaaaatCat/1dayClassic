@@ -6,7 +6,7 @@ import { Ink } from '@/constants/theme';
 /**
  * 마지막 걸음 — 미리보기 전용.
  *
- * 뒤에 깔린 것은 홈 화면을 찍어 둔 그림이다(assets/test/home-shot.png — 원래 이름에 빈칸과
+ * 뒤에 깔린 것은 홈 화면을 찍어 둔 그림이다(assets/images/preview/home-shot.png — 원래 이름에 빈칸과
  * 한글이 있어 번들러가 헛짚을 수 있으므로 영문으로 바꿔 두었다). 진짜 홈을 띄우지 않은 것은
  * 미리보기 안에서 홈을 열면 그 홈이 또 자기 일을 하기 시작하기 때문이다.
  *
@@ -16,7 +16,7 @@ import { Ink } from '@/constants/theme';
 export default function SplashHome({ onDone }: { onDone: () => void }) {
   return (
     <View style={styles.screen}>
-      <Image source={require('@/assets/test/home-shot.png')} style={styles.shot} resizeMode="cover" />
+      <Image source={require('@/assets/images/preview/home-shot.png')} style={styles.shot} resizeMode="cover" />
       <WelcomeSheet onDone={onDone} />
     </View>
   );

@@ -27,7 +27,7 @@ import {
   getCatalogBookByBookId,
   type CatalogBook,
 } from "@/lib/catalog";
-import { fieldsOf, seriesOf } from "@/lib/tags";
+import { fieldsOf } from "@/lib/tags";
 
 /** 상세 히어로의 표지 폭 — 높이는 표지 비율이 정한다. */
 const COVER_W = 140;
@@ -111,16 +111,8 @@ export default function BookDetailScreen() {
   // 그대로 쓰면 안 된다(catalogBook은 studyBook 여부와 무관하게 항상 계산되어 있다).
   const inShelf = catalogBook ? isInShelf(catalogBook.id) : false;
 
-  // 시리즈 칩을 앞에, 분야 칩을 뒤에 둔다. 학습 가능한 책도 카탈로그 태그를 그대로 쓴다.
-  const tags = catalogBook?.tags ?? [];
-  const chips = [
-    // 제목 규칙이 걸린 시리즈도 있어서 카탈로그 쪽 제목을 넘긴다(표기가 조금 다르다).
-    ...seriesOf(tags, catalogBook?.title ?? "").map((label) => ({
-      label,
-      variant: "series" as const,
-    })),
-    ...fieldsOf(tags).map((label) => ({ label, variant: "field" as const })),
-  ];
+  // 분야 칩. 학습 가능한 책도 카탈로그 태그를 그대로 쓴다.
+  const chips = fieldsOf(catalogBook?.tags ?? []);
 
   /**
    * 안드로이드 뒤로가기(제스처 포함)를 닫기(X)와 같은 동작으로 묶는다.
@@ -273,8 +265,8 @@ export default function BookDetailScreen() {
       <Text style={styles.author}>{view.author}</Text>
       {chips.length > 0 && (
         <View style={styles.chips}>
-          {chips.map((chip) => (
-            <TagChip key={`${chip.variant}-${chip.label}`} detail {...chip} />
+          {chips.map((label) => (
+            <TagChip key={label} label={label} detail />
           ))}
         </View>
       )}

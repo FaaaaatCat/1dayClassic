@@ -30,7 +30,7 @@ export interface SplashAnswers {
 /**
  * 걸음의 차례.
  *
- * 로그인은 여기 없다 — 첫 화면 마지막 장 위로 올라오는 시트라서 걸음이 아니라 그 화면이
+ * 로그인은 여기 없다 — 첫 화면 위로 올라오는 시트라서 걸음이 아니라 그 화면이
  * 품는 상태다(SplashIntro).
  */
 const STEPS = ['intro', 'q1', 'q1loading', 'q2', 'q3', 'q4'] as const;
@@ -56,11 +56,8 @@ const PAPER_TINT: StatusTint = { color: Surface.card, icons: 'dark' };
  */
 export default function SplashFlow({
   onFinish,
-  withLogin = false,
 }: {
   onFinish: (answers: SplashAnswers) => void;
-  /** 로그인 시트를 띄울지. 아직 붙일 것이 없어 미리보기에서만 켠다(SplashIntro 주석 참고). */
-  withLogin?: boolean;
 }) {
   const [step, setStep] = useState<Step>('intro');
 
@@ -106,7 +103,7 @@ export default function SplashFlow({
       */}
       <StatusBarTint tint={DARK_STEPS.includes(step) ? DARK_TINT : PAPER_TINT} />
 
-      {step === 'intro' ? <SplashIntro onDone={next} withLogin={withLogin} /> : null}
+      {step === 'intro' ? <SplashIntro onDone={next} /> : null}
       {step === 'q1' ? (
         <SplashFields
           onNext={(picked) => {

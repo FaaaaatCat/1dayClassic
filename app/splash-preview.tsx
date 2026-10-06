@@ -1,12 +1,10 @@
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { BackHandler, StyleSheet, View } from 'react-native';
 
-import ScaleButton from '@/components/ScaleButton';
 import SplashFlow from '@/components/splash/SplashFlow';
 import SplashHome from '@/components/splash/SplashHome';
-import { Corner, Ink, Space, Type, TypeScale } from '@/constants/theme';
+import { Ink } from '@/constants/theme';
 
 /**
  * 첫 실행 흐름 미리보기 — 설정에서 연다.
@@ -24,26 +22,28 @@ import { Corner, Ink, Space, Type, TypeScale } from '@/constants/theme';
  */
 export default function SplashPreviewScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [done, setDone] = useState(false);
 
-  /** 미리보기를 닫고 설정으로 — 우측 위 ✕와 마지막 화면의 버튼이 함께 쓴다. */
-  const close = () => router.replace('/settings');
+  /** 미리보기를 닫고 설정으로 — 기기의 뒤로가기와 마지막 화면의 버튼이 함께 쓴다. */
+  const close = useCallback(() => router.replace('/settings'), [router]);
+
+  /**
+   * 나가는 길은 기기의 뒤로가기다. 예전에는 오른쪽 위에 ✕를 띄웠는데, 진짜 첫 실행과 똑같이
+   * 보이도록 걷어냈다(질문 화면의 진행 줄이 그 자리를 비워 두지 않아도 된다).
+   */
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        close();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [close]),
+  );
 
   return (
     <View style={styles.screen}>
-      {done ? <SplashHome onDone={close} /> : <SplashFlow withLogin onFinish={() => setDone(true)} />}
-
-      {/*
-        나가는 문 — 어느 걸음에서든 바로 설정으로 되돌아간다. 걸음이 바뀌어도 같은 자리에
-        못 박혀 있어야 찾지 않고 누를 수 있어 오른쪽 맨 위에 둔다.
-      */}
-      <ScaleButton
-        accessibilityLabel="미리보기 닫기"
-        style={[styles.close, { top: insets.top + Space[8] }]}
-        onPress={close}>
-        <Text style={styles.closeText}>✕</Text>
-      </ScaleButton>
+      {done ? <SplashHome onDone={close} /> : <SplashFlow onFinish={() => setDone(true)} />}
     </View>
   );
 }
@@ -52,19 +52,5 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Ink.primary,
-  },
-  /** 닫기 — 어느 화면 위에든 뜬다. 밝은 화면에서도 보이게 어두운 알약을 깐다. */
-  close: {
-    position: 'absolute',
-    right: Space[16],
-    width: 36,
-    height: 36,
-    borderRadius: Corner.pill,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  closeText: {
-    fontFamily: Type.uiMedium,
-    ...TypeScale.subheading,
-    color: Ink.onDark,
   },
 });

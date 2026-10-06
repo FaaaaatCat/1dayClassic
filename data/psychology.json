@@ -63,7 +63,12 @@
           "answer": 2,
           "explanation": "원전은 그리스어입니다. 라틴어를 쓰는 황제가 굳이 그리스어로 적은 것은 그 시절 철학의 언어가 그리스어였기 때문입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1560843129-eadc7e088fde?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjV8fHdhdGVyJTIwcmlwcGxlc3xlbnwxfDB8fHwxNzkwOTM3Mjc3fDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Irina Grotkjaer",
+        "profile": "https://unsplash.com/@irinagrotkjaer?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_002",
@@ -127,7 +132,12 @@
           "answer": 3,
           "explanation": "나에게 이로운지를 묻지 않고 함께 쓸 수 있는지를 물으니, 잣대가 나 밖에 세워져 있습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1564132254865-639bfec4c5bf?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8M3x8c2hhZG93JTIwb24lMjB3YWxsfGVufDF8MHx8fDE3OTA5MzcyNzh8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Agata Create",
+        "profile": "https://unsplash.com/@agatacreate?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_003",
@@ -191,7 +201,12 @@
           "answer": 4,
           "explanation": "안이 어지러운 사람에게는 안으로 물러나는 일이 쉼이 되지 않으니, 그 안을 정리해 두는 일이 먼저입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1635898832375-4381bf11da7e?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjB8fHN0YWlyY2FzZXxlbnwxfDB8fHwxNzkwOTM3MjgwfDA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Ansgar Scheffold",
+        "profile": "https://unsplash.com/@ansgarscheffold?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_004",
@@ -255,7 +270,12 @@
           "answer": 1,
           "explanation": "무엇을 하라고 정해 주지 않고 왜 하는지만 되물으니, 게으름의 반대말을 성실이 아니라 이유로 두었습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1645377401019-2189e3b7b166?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8Mjh8fGVtcHR5JTIwY2hhaXJ8ZW58MXwwfHx8MTc5MDkzNzI4Mnww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Samuele Sala Veni",
+        "profile": "https://unsplash.com/@samusv11?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_005",
@@ -319,7 +339,12 @@
           "answer": 1,
           "explanation": "상대를 잘못한 사람이라 부르는 판단은 그대로 두었으니, 이 절이 바꾸라는 것은 판단이 아니라 대응입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1675522008471-4b304e5b719e?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTZ8fHdpbmRvdyUyMGxpZ2h0fGVufDF8MHx8fDE3OTA5MzcyODR8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Lucas de Moura",
+        "profile": "https://unsplash.com/@root_br?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_006",
@@ -383,7 +408,12 @@
           "answer": 4,
           "explanation": "샘은 만드는 것이 아니라 이미 있는 물길을 찾아 내는 것이니, 좋음을 새로 지어내지 않아도 된다는 말이 됩니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1559580148-d691e9c43d79?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjR8fHNpbGhvdWV0dGV8ZW58MXwwfHx8MTc5MDkzNzI4Nnww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Nicholas Selman",
+        "profile": "https://unsplash.com/@n_selman?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_007",
@@ -447,7 +477,12 @@
           "answer": 3,
           "explanation": "앞은 어디가 아픈지 짚고 뒤는 무엇을 할 수 있는지 말하니, 이 절은 한 절 안에서 문제와 해결을 함께 담습니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1509029032154-54ba8b3216d4?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTF8fG1pcnJvciUyMHJlZmxlY3Rpb258ZW58MXwwfHx8MTc5MDkzNzI4OHww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Laurenz Kleinheider",
+        "profile": "https://unsplash.com/@laurlenz?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_008",
@@ -511,7 +546,12 @@
           "answer": 3,
           "explanation": "재산이나 이름을 잃는 것은 밖의 일이니, 그 사람의 성품이 나빠지는 일뿐이 진짜 해입니다. 그래서 잘못하는 사람만이 진짜 손해를 봅니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1565621775772-6e3f64cb7a7d?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MjZ8fGVtcHR5JTIwY2hhaXJ8ZW58MXwwfHx8MTc5MDkzNzI4Mnww&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Avi Waxman",
+        "profile": "https://unsplash.com/@aviosly?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_009",
@@ -575,7 +615,12 @@
           "answer": 4,
           "explanation": "말하지 말라 한 것이지 알지 말라 한 것이 아니니, 금하는 것은 아는 것과 되는 것 사이에서 말이 자리를 차지하는 일입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1565896643288-8b1f8ac7f1a2?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MTN8fHdpbmRvdyUyMGxpZ2h0fGVufDF8MHx8fDE3OTA5MzcyODR8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Kevin Ortiz",
+        "profile": "https://unsplash.com/@kevinortizdesign?utm_source=1dayClassic&utm_medium=referral"
+      }
     },
     {
       "id": "psychology_010",
@@ -639,7 +684,12 @@
           "answer": 1,
           "explanation": "잘못의 크기나 벌의 종류가 아니라 우리가 어떤 사이인가를 먼저 물으니, 남은 항목들이 모두 그 위에 놓입니다."
         }
-      ]
+      ],
+      "unsplash": {
+        "url": "https://images.unsplash.com/photo-1507837357635-0c89d2d066de?ixid=M3wxMDUyMzE2fDB8MXxzZWFyY2h8MzB8fGxvbmUlMjB0cmVlfGVufDF8MHx8fDE3OTA5MzcyOTN8MA&ixlib=rb-4.1.0&w=1200&q=80&fm=jpg&fit=crop",
+        "photographer": "Johny Goerend",
+        "profile": "https://unsplash.com/@johnygoerend?utm_source=1dayClassic&utm_medium=referral"
+      }
     }
   ]
 }

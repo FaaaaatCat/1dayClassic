@@ -8,7 +8,7 @@ import ScaleButton from '@/components/ScaleButton';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
 import { formatPrice, type CatalogBook } from '@/lib/catalog';
 import { getBookCoverPlan } from '@/lib/cover';
-import { fieldsOf, seriesOf } from '@/lib/tags';
+import { fieldsOf } from '@/lib/tags';
 
 /** 배경에 깔리는 표지를 흐리게 하는 정도 — 무엇이 깔렸는지만 알아볼 만큼. */
 const BACKDROP_BLUR = 24;
@@ -53,7 +53,7 @@ export default function BookPurchaseNotice({
    * 그린 표지를 흐리게 해 봐야 종이색 한 겹이고, 그럴 바에는 색을 바로 까는 편이 낫다.
    */
   const coverPlan = getBookCoverPlan(book?.bookId, book?.coverImage);
-  const chips = [...seriesOf(tags, book?.title ?? ''), ...fieldsOf(tags)].slice(0, 3);
+  const chips = fieldsOf(tags).slice(0, 3);
 
   return (
     <View style={styles.screen}>

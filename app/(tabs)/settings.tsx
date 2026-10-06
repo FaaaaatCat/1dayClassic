@@ -116,6 +116,48 @@ export default function SettingsScreen() {
         </ScaleButton>
       </Animated.View>
 
+      <Animated.View entering={FadeIn.duration(700).delay(475)} style={styles.card}>
+        <Text style={styles.sectionTitle}>그림전체배경 미리보기</Text>
+        <Text style={styles.sectionHint}>
+          항목의 사진을 화면 가득 깔고 그 위에 글을 큰 글씨로 얹은 형식입니다. 유튜브가 딸린
+          항목은 재생기가 아래에 붙고 글씨가 작아져서, 두 경우를 따로 엽니다. 좌우를 탭해
+          넘기고, 우측 상단 ✕로 닫습니다.
+        </Text>
+        <ScaleButton
+          accessibilityLabel="그림전체배경 미리보기 열기, 유튜브 없는 항목"
+          style={styles.testButton}
+          onPress={() => router.push('/backdrop-preview')}>
+          <Text style={styles.testButtonLabel}>유튜브 없는 화면 보기</Text>
+        </ScaleButton>
+        <ScaleButton
+          accessibilityLabel="그림전체배경 미리보기 열기, 유튜브 있는 항목"
+          style={[styles.testButton, styles.testButtonSecond]}
+          onPress={() => router.push('/backdrop-preview?music=1')}>
+          <Text style={styles.testButtonLabel}>유튜브 있는 화면 보기</Text>
+        </ScaleButton>
+      </Animated.View>
+
+      <Animated.View entering={FadeIn.duration(700).delay(475)} style={styles.card}>
+        <Text style={styles.sectionTitle}>섞어쓰기 미리보기</Text>
+        <Text style={styles.sectionHint}>
+          카드 슬라이드를 뼈대로 두고, 표지 장과 구절 장만 그림을 카드 가득 깔아 흰 글을
+          얹습니다. 해설 본문은 종이 카드 그대로입니다. 좌우로 쓸어 넘기고, 우측 상단 ✕로
+          닫습니다.
+        </Text>
+        <ScaleButton
+          accessibilityLabel="섞어쓰기 미리보기 열기, 유튜브 없는 항목"
+          style={styles.testButton}
+          onPress={() => router.push('/mixed-preview')}>
+          <Text style={styles.testButtonLabel}>유튜브 없는 화면 보기</Text>
+        </ScaleButton>
+        <ScaleButton
+          accessibilityLabel="섞어쓰기 미리보기 열기, 유튜브 있는 항목"
+          style={[styles.testButton, styles.testButtonSecond]}
+          onPress={() => router.push('/mixed-preview?music=1')}>
+          <Text style={styles.testButtonLabel}>유튜브 있는 화면 보기</Text>
+        </ScaleButton>
+      </Animated.View>
+
       <Animated.View entering={FadeIn.duration(700).delay(500)} style={styles.card}>
         <Text style={styles.sectionTitle}>원페이지 미리보기</Text>
         <Text style={styles.sectionHint}>
@@ -202,6 +244,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     letterSpacing: trackBody(15),
     color: Surface.canvas,
+  },
+  /** 같은 무게의 버튼이 둘일 때 둘째 — 사이를 좁힌다. */
+  testButtonSecond: {
+    marginTop: Space[8],
   },
   /** 실제로 값을 바꾸는 버튼 — 선만 두어 채운 버튼과 무게를 달리한다. */
   testButtonAlt: {

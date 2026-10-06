@@ -1,0 +1,34 @@
+{
+  "latin": {
+    "queries": [
+      "roman ruins etching",
+      "roman forum etching",
+      "colosseum etching",
+      "triumphal arch rome etching",
+      "roman temple etching",
+      "aqueduct etching",
+      "pantheon rome etching",
+      "view of rome etching",
+      "ancient tomb rome etching",
+      "piranesi vedute di roma"
+    ],
+    "must": "rom|ruin|temple|tempio|forum|foro|coloss|arch|arco|pantheon|aqueduct|tomb|veduta",
+    "reject": "plan|map|alphabet|title|frontispiece|portrait|battle|army"
+  },
+  "classic": {
+    "queries": [
+      "musicians etching",
+      "concert engraving",
+      "harpsichord engraving",
+      "violin player etching",
+      "lute player engraving",
+      "musical instruments engraving",
+      "organ player engraving",
+      "flute player etching",
+      "singers engraving",
+      "string quartet print"
+    ],
+    "must": "music|concert|violin|lute|harpsichord|organ|flute|sing|instrument|orchestra|piano|cello|harp|quartet|serenade|song",
+    "reject": "portrait|title|frontispiece|plan|map|caricature|satire"
+  }
+}

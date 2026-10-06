@@ -1,7 +1,7 @@
 import listeningData from '@/data/listening.json';
 import { isDatedBook } from '@/lib/books';
 import { getCatalogBooks } from '@/lib/catalog';
-import { splitSentences } from '@/lib/narration';
+import { stepsFor } from '@/lib/card-pages';
 import type { NarrationStep } from '@/hooks/useCardNarration';
 import type { Quiz } from '@/types';
 
@@ -73,19 +73,6 @@ export const PAGES: Page[] = [
   // 버튼으로 여는 전체 화면 팝업이다.
   { kind: 'buy' },
 ];
-
-/**
- * 문단 하나를 문장 덩이로 쪼개면서, 각 문장이 문단 어디서 시작했는지를 함께 적어 둔다.
- * 그 자리를 알아야 TTS가 알려 주는 단어 위치를 화면 위의 글자로 옮길 수 있다.
- */
-function stepsFor(page: number, paragraph: string): NarrationStep[] {
-  let cursor = 0;
-  return splitSentences(paragraph).map((text) => {
-    const offset = paragraph.indexOf(text, cursor);
-    cursor = offset + text.length;
-    return { page, text, offset };
-  });
-}
 
 /**
  * 자동으로 읽기가 읽어 줄 대본.

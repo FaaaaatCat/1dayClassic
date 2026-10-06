@@ -55,6 +55,23 @@ export interface Quiz {
  * 링크를 함께 보이라고 정한다. 그래서 주소만 저장하면 안 되고 이 셋을 한 덩이로 들고 다닌다
  * — 주소만 남고 이름이 사라지면 그 사진은 쓸 수 없는 사진이 된다.
  */
+/**
+ * 미술관이 공개 저작물(CC0)로 내놓은 옛 판화 한 점.
+ * 누구의 무엇인지를 함께 적어 둔다 — 크레딧이 의무는 아니지만 출처를 잃으면 되찾을 수 없다.
+ */
+export interface Illustration {
+  /** 미술관 서버의 그림 주소. */
+  url: string;
+  /** 그림의 가로·세로(px). 받아 오기 전에 자리를 잡아 두는 데 쓴다. */
+  width: number;
+  height: number;
+  title: string;
+  artist?: string;
+  date?: string;
+  /** 미술관의 작품 페이지. */
+  source: string;
+}
+
 export interface UnsplashPhoto {
   /** images.unsplash.com 주소. 가이드라인이 다시 올리는 것을 금하므로 이 주소를 그대로 쓴다. */
   url: string;
@@ -83,6 +100,11 @@ export interface DailyLesson {
    * 하기 때문이다 — 주소만 남으면 쓸 수 없는 사진이 된다.
    */
   unsplash?: UnsplashPhoto;
+  /**
+   * 구절만 따로 세운 장(원문과 한글을 빈 줄로 가른 문단)에 얹는 삽화 — 그런 장이 나오는
+   * 순서대로 하나씩 쓴다. scripts/fetch-illustrations가 골라 적는다.
+   */
+  illustrations?: Illustration[];
   /**
    * 이 항목의 사진을 찾을 때 쓸 검색어(영어). 적어 두면 책의 낱말 묶음보다 앞선다 —
    * 사람이 정한 것이 자동으로 고른 것을 이긴다(lib/unsplash-query 참고).

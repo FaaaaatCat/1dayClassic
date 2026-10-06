@@ -9,12 +9,6 @@ import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants
 /** 질문은 넷이다 — 위 진행 줄이 몇 번째인지 말한다. */
 export const QUESTION_COUNT = 4;
 
-/**
- * 머리띠 오른쪽에 비워 두는 폭 — 미리보기의 닫기 ✕(36)와 그 바깥 여백(16), 그리고 진행
- * 줄이 닿지 않을 만큼의 틈.
- */
-const EXIT_SLOT = 60;
-
 /** 상태바 아래로 머리띠가 갖는 높이. 공용 헤더(ScreenHeader)와 같은 값이다. */
 const HEADER_H = 60;
 
@@ -170,9 +164,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Space[8],
     paddingLeft: Space[28],
-    // 오른쪽만 더 비운다 — 미리보기의 닫기 ✕가 이 자리에 떠 있어서, 여기까지 진행 줄을
-    // 늘이면 그 아래로 깔린다. 미리보기를 걷어낼 때 Space[28]로 되돌리면 된다.
-    paddingRight: EXIT_SLOT,
+    paddingRight: Space[28],
   },
   back: {
     width: 32,
