@@ -8,16 +8,25 @@ export type ReaderBackground = 'light' | 'dark';
 /** 장 넘김 효과. scroll은 장을 넘기지 않고 글 전체를 세로로 쭉 내려 읽는다. */
 export type ReaderPageTurn = 'bookmark' | 'none' | 'scroll';
 
+/** 낭독 목소리. */
+export type ReaderVoice = 'female' | 'male';
+/** 자동읽기 — 켜면 오늘의 공부를 열자마자 낭독이 시작된다. */
+export type ReaderAutoRead = 'on' | 'off';
+
 export interface ReaderSettings {
   background: ReaderBackground;
   turn: ReaderPageTurn;
   fontSize: BodyFontSize;
+  voice: ReaderVoice;
+  autoRead: ReaderAutoRead;
 }
 
 export const DEFAULT_READER_SETTINGS: ReaderSettings = {
   background: 'light',
   turn: 'bookmark',
   fontSize: 'medium',
+  voice: 'female',
+  autoRead: 'off',
 };
 
 interface ReaderSettingsContextValue {
@@ -42,13 +51,16 @@ function parse(raw: string | null): ReaderSettings {
     background: pick(saved.background, ['light', 'dark'], DEFAULT_READER_SETTINGS.background),
     turn: pick(saved.turn, ['bookmark', 'none', 'scroll'], DEFAULT_READER_SETTINGS.turn),
     fontSize: pick(saved.fontSize, ['small', 'medium', 'large'], DEFAULT_READER_SETTINGS.fontSize),
+    voice: pick(saved.voice, ['female', 'male'], DEFAULT_READER_SETTINGS.voice),
+    autoRead: pick(saved.autoRead, ['on', 'off'], DEFAULT_READER_SETTINGS.autoRead),
   };
 }
 
 /**
- * 읽기 화면 설정(책 배경·넘기기·글자 크기). BgmContext와 같은 구조를 따른다.
+ * 읽기 화면 설정(책 배경·넘기기·글자 크기)과 낭독 설정(목소리·자동읽기). BgmContext와 같은
+ * 구조를 따른다.
  *
- * 셋을 한 덩이로 저장한다 — 늘 함께 읽히고, 따로 두면 키만 셋으로 늘어난다.
+ * 한 덩이로 저장한다 — 늘 함께 읽히고, 따로 두면 키만 늘어난다.
  * 셋 다 읽기 화면(CardDeckDetail)에 반영된다. 배경과 넘기기는 실제로 읽는 화면에만 걸고,
  * 미리보기들은 제 모양을 그대로 보여 준다.
  */

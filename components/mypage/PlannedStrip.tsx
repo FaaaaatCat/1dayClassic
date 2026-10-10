@@ -5,7 +5,7 @@ import BookCoverArt from '@/components/book/BookCoverArt';
 import { MY_PAGE } from '@/components/mypage/MyPageShell';
 import type { ShelfBook } from '@/components/mypage/useShelfBooks';
 import ScaleButton from '@/components/ScaleButton';
-import { Corner, Ink, Space, Surface } from '@/constants/theme';
+import { Corner, Ink, Space } from '@/constants/theme';
 import type { CatalogBook } from '@/lib/catalog';
 
 /**
@@ -35,7 +35,7 @@ export default function PlannedStrip({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.strip}>
       <ScaleButton accessibilityLabel="하루 서점에서 책 담기" style={styles.add} onPress={onAdd}>
-        <Ionicons name="add" color={Ink.muted} size={24} />
+        <Ionicons name="add" color={Ink.body} size={24} />
       </ScaleButton>
 
       {books.map((entry) => (
@@ -89,14 +89,14 @@ const styles = StyleSheet.create({
     height: AVATAR,
     borderRadius: Corner.pill,
     borderWidth: 1,
-    borderColor: Surface.plate,
+    borderColor: Ink.strong,
   },
   circle: {
     width: AVATAR,
     height: AVATAR,
     borderRadius: Corner.pill,
     borderWidth: 1,
-    borderColor: Ink.primary,
+    borderColor: Ink.onDark,
   },
   /** 표지를 가두는 원 — 종이색 테를 한 겹 두르고 넘치는 그림을 잘라 낸다. */
   ring: {
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: Corner.pill,
     borderWidth: 2,
-    borderColor: Surface.canvas,
+    borderColor: Ink.primary,
     overflow: 'hidden',
   },
 });

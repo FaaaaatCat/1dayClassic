@@ -11,7 +11,6 @@ import android.net.Uri
  * 이미 떠 있는 인스턴스를 재사용하고 앱이 새 태스크로 중복 실행되지 않게 한다.
  */
 object MainActivityIntent {
-  private const val MAIN_ACTIVITY = "com.onedayalarm.app.MainActivity"
 
   /** 잠금화면 위 알람 플로우로 열렸음을 MainActivity에 알리는 표시. */
   const val EXTRA_LOCK_FLOW = "alarm_lock_flow"
@@ -42,9 +41,19 @@ object MainActivityIntent {
   fun ad(context: Context): Intent =
     create(context, "1dayclassic://ad?t=${System.currentTimeMillis()}")
 
-  private fun create(context: Context, uri: String): Intent =
-    Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
-      setClassName(context.packageName, MAIN_ACTIVITY)
+  /**
+   * 그 앱의 첫 화면(런처가 여는 액티비티)을 지목한다.
+   *
+   * 이름을 박아 두지 않는 건 앱이 패키지 이름을 바꿔 가며 여러 벌로 빌드되기 때문이다 —
+   * 데모 앱(com.onedayalarm.app.demo)은 MainActivity의 이름도 그만큼 달라진다. 박아 둔
+   * 이름으로는 그 앱에서 알람의 '공부하기'가 아무것도 열지 못한다. 그래서 그 앱 스스로에게
+   * 런처 액티비티를 물어 쓴다. 못 찾으면(있을 수 없는 경우) 패키지만 지목해 둔다.
+   */
+  private fun create(context: Context, uri: String): Intent {
+    val launcher = context.packageManager.getLaunchIntentForPackage(context.packageName)?.component
+    return Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+      if (launcher != null) component = launcher else setPackage(context.packageName)
       addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     }
+  }
 }

@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
 import ScaleButton from '@/components/ScaleButton';
-import { Corner, Feedback, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
+import { Corner, Feedback, Ink, Space, Type, TypeScale } from '@/constants/theme';
 
 /**
  * 계정 관리 — 로그아웃과 회원탈퇴.
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
   note: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.muted,
+    color: Ink.body,
     paddingHorizontal: MY_PAGE.gutter,
     paddingBottom: Space[24],
   },
@@ -48,13 +48,13 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: Corner.pill,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Surface.plate,
-    backgroundColor: Surface.canvas,
+    borderColor: Ink.strong,
+    backgroundColor: Ink.primary,
   },
   logoutText: {
     fontFamily: Type.uiMedium,
     ...TypeScale.body,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   /** 회원탈퇴 — 되돌릴 수 없어 색으로 경고한다(퀴즈 오답과 같은 붉은색을 나눠 쓴다). */
   leave: {

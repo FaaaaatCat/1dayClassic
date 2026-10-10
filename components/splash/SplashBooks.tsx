@@ -70,7 +70,7 @@ export default function SplashBooks({
 
   return (
     <SplashQuestion
-      step={2}
+      step={4}
       title="처음 읽을 책 1권을 선택해주세요"
       hint="고른 관심분야에서 가장 인기있는 책입니다."
       canGoNext={picked !== null}

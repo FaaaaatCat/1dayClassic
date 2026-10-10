@@ -5,8 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import ScreenHeader from '@/components/ScreenHeader';
+import { StatusBarTint } from '@/components/StatusBarTint';
 import WheelPicker from '@/components/WheelPicker';
-import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
+import { Corner, Ink, Space, Spark, Type, TypeScale, Colors } from '@/constants/theme';
 import { useAlarm } from '@/context/AlarmContext';
 import { useToast } from '@/context/ToastContext';
 import { getNextAlarmMessage } from '@/lib/alarmTime';
@@ -93,11 +94,14 @@ export default function AlarmDetailScreen({ onClose }: { onClose?: () => void } 
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="알림" back={goHome} />
+      {/* 알림 설정은 다크다 — 상태바도 검게, 헤더도 검은 띠로. */}
+      <StatusBarTint />
+      <ScreenHeader title="알림" back={goHome} tone="dark" />
 
       {/* 시각 — 화면에서 가장 큰 것이라 남는 높이를 다 갖는다. */}
       <View style={styles.clock}>
         <WheelPicker
+          dark
           items={MERIDIEMS}
           selectedIndex={meridiemIndex}
           onChange={setMeridiemIndex}
@@ -105,6 +109,7 @@ export default function AlarmDetailScreen({ onClose }: { onClose?: () => void } 
           weight="medium"
         />
         <WheelPicker
+          dark
           items={HOUR_LABELS}
           selectedIndex={hour12 - 1}
           onChange={(i) => setHour12(i + 1)}
@@ -113,6 +118,7 @@ export default function AlarmDetailScreen({ onClose }: { onClose?: () => void } 
         {/* 쌍점은 고른 줄에만 있어야 하므로 휠이 아니라 가운데에 못 박아 둔다. */}
         <Text style={styles.colon}>:</Text>
         <WheelPicker
+          dark
           items={MINUTE_LABELS}
           selectedIndex={minute}
           onChange={setMinute}
@@ -168,7 +174,7 @@ export default function AlarmDetailScreen({ onClose }: { onClose?: () => void } 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Surface.canvas,
+    backgroundColor: Ink.primary,
   },
 
   /** 휠 셋이 나란히 선다. 남는 높이를 다 갖고 그 한가운데에 시각을 놓는다. */
@@ -186,7 +192,7 @@ const styles = StyleSheet.create({
     fontFamily: Type.displayLight,
     fontSize: 36,
     lineHeight: 36 * 1.2,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
 
   cardWrap: {
@@ -195,15 +201,15 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: Corner.card,
     borderWidth: 1,
-    borderColor: Surface.plate,
-    backgroundColor: Surface.card,
+    borderColor: Ink.strong,
+    backgroundColor: Colors.brown90,
     overflow: 'hidden',
   },
   cardTop: {
     gap: Space[8],
     padding: Space[20],
     borderBottomWidth: 1,
-    borderBottomColor: Surface.plate,
+    borderBottomColor: Ink.strong,
   },
   cardBottom: {
     gap: Space[16],
@@ -212,12 +218,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: Type.uiMedium,
     ...TypeScale.bodySm,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   cardValue: {
     fontFamily: Type.uiMedium,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
   },
   switchRow: {
     flexDirection: 'row',
@@ -230,7 +236,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: Corner.pill,
     padding: 3,
-    backgroundColor: Surface.plate,
+    backgroundColor: Ink.strong,
     justifyContent: 'center',
     alignItems: 'flex-start',
   },
@@ -241,7 +247,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: Corner.pill,
-    backgroundColor: Surface.canvas,
+    backgroundColor: Ink.primary,
   },
   knobOn: {
     transform: [{ translateX: 20 }],
@@ -258,27 +264,27 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: Corner.pill,
     borderWidth: 1,
-    borderColor: Surface.plate,
-    backgroundColor: Surface.canvas,
+    borderColor: Ink.strong,
+    backgroundColor: Ink.primary,
   },
   dayOn: {
-    borderColor: Ink.primary,
-    backgroundColor: Ink.primary,
+    borderColor: Ink.onDark,
+    backgroundColor: Ink.onDark,
   },
   dayText: {
     fontFamily: Type.uiMedium,
     ...TypeScale.subheading,
-    color: Ink.body,
+    color: Ink.muted,
   },
   dayTextOn: {
-    color: Ink.onDark,
+    color: Ink.primary,
   },
 
   /** 저장이 앉는 줄 — 버튼이 폭을 다 차지하도록 줄로 두고 flex를 준다. */
   footer: {
     flexDirection: 'row',
     padding: Space[8],
-    backgroundColor: Surface.canvas,
+    backgroundColor: Ink.primary,
   },
   save: {
     flex: 1,

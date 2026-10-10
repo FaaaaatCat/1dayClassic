@@ -4,7 +4,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScreenHeader from '@/components/ScreenHeader';
-import { Space, Surface } from '@/constants/theme';
+import { StatusBarTint } from '@/components/StatusBarTint';
+import { Ink, Space } from '@/constants/theme';
 
 /**
  * 마이페이지와 그 안의 화면들이 함께 쓰는 껍데기.
@@ -48,7 +49,9 @@ export default function MyPageShell({
   // 위 세이프에어리어는 헤더가 맡는다 — 여기서 또 대면 제목만 그만큼 내려앉는다.
   return (
     <View style={styles.screen}>
-      <ScreenHeader title={title} back={back} action={action} />
+      {/* 마이페이지와 그 안의 화면들은 다크다 — 상태바도 검게, 헤더도 검은 띠로. */}
+      <StatusBarTint />
+      <ScreenHeader title={title} back={back} action={action} tone="dark" />
 
       <ScrollView
         ref={scrollRef}
@@ -73,7 +76,7 @@ export const MY_PAGE = {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Surface.canvas,
+    backgroundColor: Ink.primary,
   },
   body: {
     paddingTop: Space[8],
@@ -82,6 +85,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: MY_PAGE.gutter,
     paddingTop: Space[16],
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Surface.plate,
+    borderTopColor: Ink.strong,
   },
 });

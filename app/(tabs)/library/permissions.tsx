@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
   note: {
     fontFamily: Type.ui,
     ...TypeScale.body,
-    color: Ink.muted,
+    color: Ink.body,
     paddingHorizontal: MY_PAGE.gutter,
     paddingVertical: Space[40],
     textAlign: 'center',

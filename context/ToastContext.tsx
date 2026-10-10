@@ -3,7 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Fonts, Radius, Shadow, tracking } from '@/constants/theme';
+import { Colors, Fonts, Ink, Radius, Shadow, tracking } from '@/constants/theme';
 
 interface ToastContextValue {
   showToast: (message: string) => void;
@@ -70,7 +70,8 @@ const styles = StyleSheet.create({
     right: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.brown100,
+    // 화면 바닥(검정)보다 한 단 밝게 — 같은 검정이면 토스트가 바닥에 묻힌다.
+    backgroundColor: Ink.strong,
     borderRadius: Radius.card,
     paddingVertical: 14,
     paddingHorizontal: 20,

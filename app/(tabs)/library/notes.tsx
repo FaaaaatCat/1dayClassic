@@ -5,7 +5,7 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
 import { useNoteList, type NoteEntry } from '@/components/mypage/useNoteList';
 import ScaleButton from '@/components/ScaleButton';
-import { Corner, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
+import { Corner, Ink, Space, Surface, Type, TypeScale, Colors } from '@/constants/theme';
 import { useNotes } from '@/context/NotesContext';
 import { useToast } from '@/context/ToastContext';
 import { isDatedBook } from '@/lib/books';
@@ -112,7 +112,7 @@ function NoteCard({
         accessibilityLabel={`${item.lessonTitle}에 남긴 노트 지우기`}
         style={styles.delete}
         onPress={onDelete}>
-        <Ionicons name="close-outline" color={Ink.muted} size={18} />
+        <Ionicons name="close-outline" color={Ink.body} size={18} />
       </ScaleButton>
     </View>
   );
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   count: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
   },
   empty: {
     gap: Space[4],
@@ -138,12 +138,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: Type.uiMedium,
     ...TypeScale.subheading,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   emptyNote: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
     textAlign: 'center',
   },
 
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     gap: Space[8],
     padding: Space[20],
     borderRadius: Corner.card,
-    backgroundColor: Surface.card,
+    backgroundColor: Colors.brown90,
   },
   cardBody: {
     flex: 1,
@@ -173,18 +173,18 @@ const styles = StyleSheet.create({
   where: {
     fontFamily: Type.uiMedium,
     ...TypeScale.bodySm,
-    color: Ink.strong,
+    color: Surface.plate,
   },
   when: {
     fontFamily: Type.ui,
     ...TypeScale.caption,
-    color: Ink.muted,
+    color: Ink.body,
   },
   /** 적은 글 — 읽는 글이라 본문 서체(을유1945)를 쓴다. 줄이지 않고 통째로 보여 준다. */
   text: {
     fontFamily: Type.readingRegular,
     ...TypeScale.body,
-    color: Ink.primary,
+    color: Ink.onDark,
     paddingTop: Space[4],
   },
 });

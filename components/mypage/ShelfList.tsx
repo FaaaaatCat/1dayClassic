@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import BookCoverArt from '@/components/book/BookCoverArt';
 import { MY_PAGE } from '@/components/mypage/MyPageShell';
 import type { ShelfBook } from '@/components/mypage/useShelfBooks';
-import { Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
+import { Ink, Space, Spark, Type, TypeScale } from '@/constants/theme';
 import type { CatalogBook } from '@/lib/catalog';
 
 /** 줄 왼쪽의 작은 표지 — 높이는 표지 비율이 정한다. */
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     fontFamily: Type.ui,
     ...TypeScale.body,
     textAlign: 'center',
-    color: Ink.muted,
+    color: Ink.body,
     paddingHorizontal: MY_PAGE.gutter,
     paddingVertical: Space[40],
   },
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: MY_PAGE.gutter,
     paddingVertical: Space[16],
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Surface.plate,
+    borderBottomColor: Ink.strong,
   },
   rowLast: {
     borderBottomWidth: 0,
@@ -95,18 +95,18 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: Type.readingBold,
     ...TypeScale.subheading,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   author: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
   },
   bar: {
     height: 4,
     marginTop: Space[4],
     borderRadius: 2,
-    backgroundColor: Surface.plate,
+    backgroundColor: Ink.strong,
     overflow: 'hidden',
   },
   barFill: {
@@ -116,6 +116,6 @@ const styles = StyleSheet.create({
   percent: {
     fontFamily: Type.uiMedium,
     ...TypeScale.body,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
 });

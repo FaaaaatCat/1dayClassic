@@ -6,7 +6,7 @@ import LessonCoverImage from '@/components/LessonCoverImage';
 import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
 import { useBookmarkList, type BookmarkEntry } from '@/components/mypage/useBookmarkList';
 import ScaleButton from '@/components/ScaleButton';
-import { Corner, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
+import { Corner, Ink, Space, Surface, Type, TypeScale, Colors } from '@/constants/theme';
 import { useBookmarks } from '@/context/BookmarkContext';
 import { useToast } from '@/context/ToastContext';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   count: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
   },
   empty: {
     gap: Space[4],
@@ -159,12 +159,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: Type.uiMedium,
     ...TypeScale.subheading,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   emptyNote: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
     textAlign: 'center',
   },
 
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   card: {
     minHeight: 300,
     borderRadius: Corner.card,
-    backgroundColor: Ink.primary,
+    backgroundColor: Colors.brown90,
     overflow: 'hidden',
   },
   /** 사진 위에 까는 어둠 — 밝은 사진에서도 eggshell 글자가 읽혀야 한다. */

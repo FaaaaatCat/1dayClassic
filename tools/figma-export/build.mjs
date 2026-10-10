@@ -9,6 +9,7 @@
  * 판본의 같은 그림이 나오고, 새 패키지도 필요 없다.
  */
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -119,7 +120,7 @@ const ICON_NAMES = [
   'create-outline', 'musical-notes-outline', 'heart-outline', 'globe-outline', 'book-outline', 'close', 'close-circle',
   'musical-note-outline', 'color-palette-outline', 'add', 'sync', 'ellipsis-vertical', 'eye-outline',
   'trash-outline', 'headset', 'create', 'bookmark-outline', 'bookmark', 'play', 'pause', 'arrow-up',
-  'logo-youtube',
+  'logo-youtube', 'albums-outline', 'text-outline', 'person-circle-outline', 'chevron-forward', 'alarm-outline', 'mic-outline', 'headset-outline',
 ];
 function loadIcons(names) {
   const base = 'node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons';
@@ -276,6 +277,75 @@ const now = new Date();
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const pad = (v) => String(v).padStart(2, '0');
 
+// ── 읽기 화면의 장 — 앱의 장 나누기(lib/card-pages.ts)를 그대로 돌린다 ────────
+/**
+ * 카드에 무엇이 몇 장으로 담기는지는 앱이 글자 크기·카드 크기로 셈한다. 여기서 흉내 내면
+ * 앱과 어긋나므로, TypeScript를 그 자리에서 풀어 앱의 셈을 그대로 부른다. 화면 크기는
+ * 플러그인의 프레임(360×780)으로 못 박는다.
+ */
+function loadCardPages() {
+  const require = createRequire(import.meta.url);
+  const ts = require(path.join(root, 'node_modules/typescript'));
+  const Module = require('node:module');
+  const stubs = {
+    'react-native': { Dimensions: { get: () => ({ width: 360, height: 780 }) } },
+    '@/lib/books': { getLessonHeading: () => ({ title: '', subtitle: '' }) },
+    '@/lib/coverDesign': { getCoverDesign: () => ({}) },
+  };
+  const originalResolve = Module._resolveFilename;
+  Module._resolveFilename = function (request, parent, ...rest) {
+    if (stubs[request]) return request;
+    if (request.startsWith('@/')) {
+      return originalResolve.call(this, path.join(root, request.slice(2)) + '.ts', parent, ...rest);
+    }
+    return originalResolve.call(this, request, parent, ...rest);
+  };
+  for (const key of Object.keys(stubs)) {
+    require.cache[key] = { id: key, filename: key, loaded: true, exports: stubs[key] };
+  }
+  require.extensions['.ts'] = (module, filename) => {
+    const out = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019 },
+    });
+    module._compile(out.outputText, filename);
+  };
+  try {
+    return require(path.join(root, 'lib/card-pages.ts'));
+  } finally {
+    Module._resolveFilename = originalResolve;
+  }
+}
+const cardPages = loadCardPages();
+/** 플러그인의 상태바(32)와 아래 제스처 바(16) — plugin.js의 TOP·BOTTOM과 같은 값. */
+const FRAME_TOP = 32;
+const FRAME_BOTTOM = 16;
+const firstLesson = { book: SELECTED, lesson: first };
+const hasQuiz = (first.quizzes ?? []).length > 0;
+const body = cardPages.BODY_METRICS.medium;
+const pagesOf = (options) =>
+  cardPages.buildCardPages(firstLesson, { hasQuiz, body, ...options }).map((page) => ({
+    kind: page.kind,
+    paragraph: page.paragraph ?? null,
+  }));
+const READER = {
+  body,
+  paragraphBreak: cardPages.PARAGRAPH_BREAK,
+  /** 책 넘김 효과 — 카드 기본 크기. */
+  turn: pagesOf({}),
+  /** 카드로 보기 — 좌우 16, 헤더 아래부터 화면 끝 16 위까지. */
+  card: pagesOf({
+    cardW: cardPages.CARD_W_WIDE,
+    cardH: cardPages.simpleCardHeight(780, FRAME_TOP, FRAME_BOTTOM),
+  }),
+  /** 스크롤 보기 — 문단을 나누지 않는다. */
+  scroll: pagesOf({ cardW: cardPages.CARD_W_WIDE, split: false }),
+};
+
+/** 첫 권 고르기의 다섯 권 — components/splash/SplashBooks와 같은 셈(학습 가능한 책 앞의 다섯). */
+const SPLASH_BOOKS = BOOKSTORE.filter((book) => READABLE.includes(book.id))
+  .slice(0, 5)
+  .map((book) => ({ title: book.title, author: book.author, design: COVER_DESIGNS[book.id] }));
+
 const DATA = {
   /** 화면에 날짜가 필요한 자리(공부 리포트·마지막으로 읽은 날)에 쓴다 — 만든 날이다. */
   today: `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`,
@@ -304,6 +374,9 @@ const DATA = {
   perLesson,
   lesson: { title: first.title, subtitle: first.composer, story: first.story, quizzes: first.quizzes, youtubeId: first.youtubeId },
   bgm: BGM,
+  reader: READER,
+  splashBooks: SPLASH_BOOKS,
+  fieldNames: FIELD_NAMES,
   icons: loadIcons(ICON_NAMES),
 };
 

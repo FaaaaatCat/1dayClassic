@@ -5,10 +5,12 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import LessonQuizModal from '@/components/quiz/LessonQuizModal';
+import ScoreBoard from '@/components/toc/ScoreBoard';
 import Chevron from '@/components/Chevron';
 import ScaleButton from '@/components/ScaleButton';
 import ScreenHeader from '@/components/ScreenHeader';
-import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
+import { StatusBarTint } from '@/components/StatusBarTint';
+import { Corner, Ink, Space, Spark, Type, TypeScale, Colors } from '@/constants/theme';
 import { useBookSelection } from '@/context/BookSelectionContext';
 import { useQuiz } from '@/context/QuizContext';
 import { useReadingCursor } from '@/context/ReadingCursorContext';
@@ -123,18 +125,23 @@ export default function TocScreen() {
   return (
     <View style={styles.screen}>
       {/* 홈은 Tabs의 형제라 back()이 아니라 이름으로 되돌린다. */}
-      <ScreenHeader title="목차" back="/" />
+      {/* 목차는 다크다 — 상태바도 검게, 헤더도 검은 띠로. */}
+      <StatusBarTint />
+      <ScreenHeader title="목차" back="/" tone="dark" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + Space[40] }}>
+        {/* 성적 현황 — 진행도와 오답률. 목록보다 먼저 이 책에서 어디쯤 왔는지 보인다. */}
+        <ScoreBoard bookId={selectedBookId} />
+
         {/* 정렬 — 오른쪽 끝에 붙는다. */}
         <View style={styles.sortRow}>
           <ScaleButton
             accessibilityLabel={`정렬 ${newestFirst ? '최신순' : '첫장부터'}, 바꾸기`}
             style={styles.sortButton}
             onPress={() => setNewestFirst((v) => !v)}>
-            <Ionicons name="swap-vertical" color={Ink.primary} size={18} />
+            <Ionicons name="swap-vertical" color={Ink.onDark} size={18} />
             <Text style={styles.sortText}>{newestFirst ? '최신순' : '첫장부터'}</Text>
           </ScaleButton>
         </View>
@@ -232,9 +239,9 @@ function TocRow({
       </View>
 
       {free ? (
-        <Chevron direction="forward" color={Ink.muted} size={18} />
+        <Chevron direction="forward" color={Ink.body} size={18} />
       ) : (
-        <Ionicons name="lock-closed" color={Ink.muted} size={18} />
+        <Ionicons name="lock-closed" color={Ink.body} size={18} />
       )}
     </View>
   );
@@ -278,7 +285,7 @@ function QuizScoreChip({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Surface.canvas,
+    backgroundColor: Ink.primary,
   },
   sortRow: {
     height: 40,
@@ -295,7 +302,7 @@ const styles = StyleSheet.create({
   sortText: {
     fontFamily: Type.uiMedium,
     ...TypeScale.caption,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
 
   /** 줄들은 붙어 있지 않고 8씩 떨어진 카드다 — 저마다 한 장으로 읽힌다. */
@@ -315,11 +322,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Space[20],
     paddingVertical: Space[8],
     borderRadius: Corner.small,
-    backgroundColor: Surface.card,
+    backgroundColor: Colors.brown90,
   },
   /** 다 읽은 줄 — 바탕이 한 단 더 깊어진다. */
   rowRead: {
-    backgroundColor: Surface.plate,
+    backgroundColor: Ink.strong,
   },
   rowText: {
     flex: 1,
@@ -329,12 +336,12 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontFamily: Type.readingBold,
     ...TypeScale.subheading,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   rowSubtitle: {
     fontFamily: Type.ui,
     ...TypeScale.caption,
-    color: Ink.muted,
+    color: Ink.body,
   },
 
   /**
@@ -348,13 +355,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Space[8],
     borderRadius: Corner.pill,
     borderWidth: 1,
-    borderColor: Ink.muted,
+    borderColor: Ink.body,
     marginTop: Space[4],
   },
   chipText: {
     fontFamily: Type.uiMedium,
     ...TypeScale.caption,
-    color: Ink.body,
+    color: Ink.muted,
   },
   /** 아직 안 푼 줄 — 이 줄에서 지금 할 일이라 포인트 컬러가 여기 붙는다. */
   quizButton: {

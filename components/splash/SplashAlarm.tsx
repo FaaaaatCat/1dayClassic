@@ -59,7 +59,7 @@ export default function SplashAlarm({
 
   return (
     <SplashQuestion
-      step={3}
+      step={5}
       title="매일 알림을 드릴까요?"
       hint="매일 책 한쪽의 내용으로 아침을 시작해보세요"
       canGoNext

@@ -3,8 +3,9 @@ import { useRouter } from 'expo-router';
 import SplashFlow, { type SplashAnswers } from '@/components/splash/SplashFlow';
 import { useAlarm } from '@/context/AlarmContext';
 import { useBookSelection } from '@/context/BookSelectionContext';
+import { useShelf } from '@/context/ShelfContext';
+import { getCatalogBookByBookId } from '@/lib/catalog';
 import { markOnboarded, markPermissionPrompted } from '@/lib/onboarding';
-import { requestAlarmPermission } from '@/modules/alarm-clock';
 
 /**
  * 알람이 울릴 요일.
@@ -28,6 +29,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { selectBook } = useBookSelection();
   const { updateAlarm } = useAlarm();
+  const { addToShelf } = useShelf();
 
   /**
    * 다 물어본 뒤.
@@ -36,16 +38,13 @@ export default function OnboardingScreen() {
    * 부탁하는 일이라, 부탁할 자격을 먼저 얻어 두는 편이 맞다. 거절해도 그냥 진행한다.
    * 권한은 값이 아니라 부탁이고, 없다고 앱을 못 쓰게 할 일은 아니다.
    */
-  const handleFinish = async ({ bookId, alarm, permissions }: SplashAnswers) => {
-    for (const kind of permissions) {
-      try {
-        await requestAlarmPermission(kind);
-      } catch (error) {
-        console.warn(`[onboarding] ${kind} 권한 요청 실패:`, error);
-      }
-    }
-
+  // 권한은 여기서 묻지 않는다 — 권한 질문 화면이 줄을 누를 때 그 자리에서 하나씩 묻는다
+  // (SplashPermissions). 예전처럼 끝에서 한꺼번에 물으면 설정 화면이 겹쳐 열린 채로 홈으로 넘어갔다.
+  const handleFinish = async ({ bookId, alarm }: SplashAnswers) => {
     selectBook(bookId);
+    // 고른 첫 권은 서재의 '읽을 예정인 책'에도 꽂아 둔다 — 첫 실행 직후 서재가 비어 있지 않게.
+    const catalogBook = getCatalogBookByBookId(bookId);
+    if (catalogBook) addToShelf(catalogBook.id);
     updateAlarm({ ...alarm, repeatDays: EVERY_DAY });
     // 여기서 권한을 이미 물었으니, 앱을 켤 때 뜨던 권한 안내는 다시 할 말이 없다.
     await Promise.all([markOnboarded(), markPermissionPrompted()]);

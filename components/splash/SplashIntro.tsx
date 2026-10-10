@@ -1,5 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -7,6 +18,7 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,12 +26,19 @@ import ScaleButton from '@/components/ScaleButton';
 import SplashLogin from '@/components/splash/SplashLogin';
 import { Corner, Ink, Space, Spark, Type } from '@/constants/theme';
 
+/** 세 장의 그림과 한 줄. 넘기는 차례가 곧 이 앱이 하는 일의 차례다 — 자르고, 깨우고, 되묻는다. */
+const SLIDES = [
+  { key: 'cut', lead: '좋은 책을 하루치로 잘라 드립니다', label: '반으로 갈리는 종이' },
+  { key: 'alarm', lead: '까먹지 않게 매일 알람을 드려요', label: '울리는 자명종' },
+  { key: 'quiz', lead: '퀴즈로 까먹지않게 복습까지 챙겨요.', label: '퀴즈 위로 떠오르는 말풍선' },
+] as const;
+
 /**
- * 첫 화면 — 이 앱이 무엇인지 한 장으로 말한다(피그마 시안 '01 인트로').
+ * 첫 화면 — 이 앱이 무엇인지 세 장으로 말한다.
  *
- * 가운데 종이 한 장이 점선을 따라 반으로 갈리는 그림, 그 아래 한 줄과 이름, 맨 아래
- * 시작하기 버튼과 로그인 길. 예전에는 세 장을 넘겼는데, 하고 싶은 말은 '좋은 책을 하루치로
- * 잘라 드린다' 하나라 한 장으로 줄였다.
+ * 장마다 가운데에 움직이는 그림 하나와 그 아래 한 줄, 그리고 이름(하루서점). 좌우로 넘기거나
+ * '다음'을 눌러 넘기고, 아래 점이 몇 번째 장인지 알린다. 마지막 장에서는 버튼이
+ * '하루서점 시작하기'가 되어 회원가입 시트를 올린다.
  *
  * '하루서점 시작하기'와 '로그인하기'는 둘 다 아래에서 회원가입 시트를 올린다(SplashLogin).
  * 시트의 버튼은 아직 실제 가입을 하지 않고 그대로 다음 걸음으로 넘어간다 — MVP에는 서버가
@@ -27,26 +46,62 @@ import { Corner, Ink, Space, Spark, Type } from '@/constants/theme';
  */
 export default function SplashIntro({ onDone }: { onDone: () => void }) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const [login, setLogin] = useState(false);
+  const [page, setPage] = useState(0);
+  const pagerRef = useRef<ScrollView>(null);
+  const last = page === SLIDES.length - 1;
+
+  const onSettle = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setPage(Math.round(event.nativeEvent.contentOffset.x / width));
+  };
+
+  const goNext = () => {
+    if (last) {
+      setLogin(true);
+      return;
+    }
+    pagerRef.current?.scrollTo({ x: (page + 1) * width, animated: true });
+    setPage(page + 1);
+  };
 
   return (
     <View style={styles.screen}>
-      <View style={styles.body}>
-        <View style={styles.art}>
-          <PageBreak />
-        </View>
-        <View style={styles.words}>
-          <Text style={styles.lead}>좋은 책을 하루치로 잘라 드립니다</Text>
-          <Text style={styles.logo}>하루서점</Text>
-        </View>
+      <ScrollView
+        ref={pagerRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onSettle}
+        style={styles.pager}>
+        {SLIDES.map((slide) => (
+          <View key={slide.key} style={[styles.body, { width }]}>
+            <View style={styles.art} accessibilityRole="image" accessibilityLabel={slide.label}>
+              {slide.key === 'cut' ? <PageBreak /> : null}
+              {slide.key === 'alarm' ? <AlarmRing /> : null}
+              {slide.key === 'quiz' ? <QuizBubbles /> : null}
+            </View>
+            <View style={styles.words}>
+              <Text style={styles.lead}>{slide.lead}</Text>
+              <Text style={styles.logo}>하루서점</Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* 몇 장 중 몇 번째인지. 누르는 것이 아니라 알려 주는 것이라 점으로만 둔다. */}
+      <View style={styles.dots}>
+        {SLIDES.map((slide, index) => (
+          <View key={slide.key} style={[styles.dot, index === page && styles.dotOn]} />
+        ))}
       </View>
 
       <View style={[styles.footer, { paddingBottom: Space[36] + insets.bottom }]}>
         <ScaleButton
-          accessibilityLabel="하루서점 시작하기"
+          accessibilityLabel={last ? '하루서점 시작하기' : '다음'}
           style={styles.cta}
-          onPress={() => setLogin(true)}>
-          <Text style={styles.ctaText}>하루서점 시작하기</Text>
+          onPress={goNext}>
+          <Text style={styles.ctaText}>{last ? '하루서점 시작하기' : '다음'}</Text>
         </ScaleButton>
         <View style={styles.loginRow}>
           <Text style={styles.loginHint}>이미 계정이 있나요?</Text>
@@ -62,6 +117,107 @@ export default function SplashIntro({ onDone }: { onDone: () => void }) {
 
       {login ? <SplashLogin onDone={onDone} onDismiss={() => setLogin(false)} /> : null}
     </View>
+  );
+}
+
+/** 끝없이 0→1을 되풀이하는 시계 — 세 그림이 저마다 한 바퀴의 길이로 쓴다. */
+function useLoop(cycleMs: number): SharedValue<number> {
+  const progress = useSharedValue(0);
+  useEffect(() => {
+    progress.value = withRepeat(withTiming(1, { duration: cycleMs, easing: Easing.linear }), -1);
+  }, [progress, cycleMs]);
+  return progress;
+}
+
+/**
+ * 울리는 자명종 — 한 바퀴의 앞 절반 동안 좌우로 떨고, 그 양옆에 울림 선이 번진다.
+ * 뒤 절반은 가만히 쉰다. 계속 떨기만 하면 울림이 아니라 고장처럼 보인다.
+ */
+const ALARM_CYCLE_MS = 1800;
+const RING_UNTIL = 0.45;
+
+function AlarmRing() {
+  const progress = useLoop(ALARM_CYCLE_MS);
+
+  const shake = useAnimatedStyle(() => {
+    const p = progress.value;
+    if (p >= RING_UNTIL) return { transform: [{ rotate: '0deg' }] };
+    // 여덟 번 오가며 끝으로 갈수록 잦아든다.
+    const t = p / RING_UNTIL;
+    const angle = Math.sin(t * Math.PI * 16) * 12 * (1 - t * 0.6);
+    return { transform: [{ rotate: `${angle}deg` }] };
+  });
+
+  const waves = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 0.05, RING_UNTIL - 0.05, RING_UNTIL], [0, 1, 1, 0], 'clamp'),
+  }));
+
+  return (
+    <View style={styles.alarm}>
+      <Animated.View style={[styles.alarmWaves, waves]}>
+        <View style={[styles.wave, styles.waveLeftTop]} />
+        <View style={[styles.wave, styles.waveLeftBottom]} />
+        <View style={[styles.wave, styles.waveRightTop]} />
+        <View style={[styles.wave, styles.waveRightBottom]} />
+      </Animated.View>
+      <Animated.View style={shake}>
+        <Ionicons name="alarm-outline" size={ART} color={Ink.onDark} />
+      </Animated.View>
+    </View>
+  );
+}
+
+/**
+ * '퀴즈' 위로 말풍선 셋이 차례로 떠오른다 — 하나씩 톡 튀어나와 셋이 다 모이면 잠시 머물고,
+ * 함께 사라진 뒤 다시 처음부터.
+ */
+const QUIZ_CYCLE_MS = 3000;
+/** 말풍선 셋 — 자리(퀴즈 글자 가운데 위 기준)와 안의 글자, 튀어나오는 때(0~1). */
+const BUBBLES = [
+  { x: -64, y: -78, glyph: '?', at: 0.08 },
+  { x: 0, y: -104, glyph: '!', at: 0.22 },
+  { x: 64, y: -78, glyph: '✓', at: 0.36 },
+];
+const BUBBLE_POP = 0.08;
+const BUBBLES_OUT = [0.84, 0.94];
+
+function QuizBubbles() {
+  const progress = useLoop(QUIZ_CYCLE_MS);
+  return (
+    <View style={styles.quiz}>
+      {BUBBLES.map((bubble) => (
+        <Bubble key={bubble.glyph} progress={progress} {...bubble} />
+      ))}
+      <Text style={styles.quizWord}>퀴즈</Text>
+    </View>
+  );
+}
+
+function Bubble({
+  progress,
+  x,
+  y,
+  glyph,
+  at,
+}: {
+  progress: SharedValue<number>;
+  x: number;
+  y: number;
+  glyph: string;
+  at: number;
+}) {
+  const style = useAnimatedStyle(() => {
+    const p = progress.value;
+    // 톡 — 조금 넘치게 커졌다가 제 크기로.
+    const scale = interpolate(p, [at, at + BUBBLE_POP * 0.6, at + BUBBLE_POP], [0, 1.15, 1], 'clamp');
+    const fade = interpolate(p, BUBBLES_OUT, [1, 0], 'clamp');
+    return { opacity: p < at ? 0 : fade, transform: [{ translateX: x }, { translateY: y }, { scale }] };
+  });
+  return (
+    <Animated.View style={[styles.bubble, style]}>
+      <Text style={styles.bubbleGlyph}>{glyph}</Text>
+      <View style={styles.bubbleTail} />
+    </Animated.View>
   );
 }
 
@@ -112,11 +268,7 @@ const DASH_FROM = 7.5;
 const DASH_SPAN = 112.5 - DASH_FROM;
 
 function PageBreak() {
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withRepeat(withTiming(1, { duration: CYCLE_MS, easing: Easing.linear }), -1);
-  }, [progress]);
+  const progress = useLoop(CYCLE_MS);
 
   /** 점선 — 왼쪽에서부터 그어지는 것처럼 보이도록 감싼 틀의 폭을 늘린다. 붙을 때는 흐려진다. */
   const dashStyle = useAnimatedStyle(() => ({
@@ -148,7 +300,7 @@ function PageBreak() {
   const bottomStyle = useAnimatedStyle(() => ({ transform: [{ translateY: spread(1) }] }));
 
   return (
-    <View style={styles.pageBreak} accessibilityRole="image" accessibilityLabel="반으로 갈리는 종이">
+    <View style={styles.pageBreak}>
       {/* 움직임은 그림이 아니라 감싼 틀에 건다 — 안드로이드에서 그림에 건 변형이 덜 믿음직하다. */}
       <Animated.View style={[styles.top, topStyle]}>
         <Image source={require('@/assets/images/splash/page-break-top.png')} style={styles.fill} />
@@ -172,8 +324,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Ink.primary,
   },
-  body: {
+  pager: {
     flex: 1,
+  },
+  /** 한 장 — 화면 폭 하나. 그림은 남는 높이 한가운데, 글은 아래. */
+  body: {
+    height: '100%',
     justifyContent: 'flex-end',
     paddingHorizontal: Space[28],
   },
@@ -203,6 +359,23 @@ const styles = StyleSheet.create({
     letterSpacing: -1.6,
     color: Ink.onDark,
     textAlign: 'center',
+  },
+
+  dots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Space[8],
+    paddingBottom: Space[24],
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: Corner.pill,
+    backgroundColor: Ink.strong,
+  },
+  dotOn: {
+    backgroundColor: Ink.onDark,
   },
 
   footer: {
@@ -237,6 +410,85 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 17,
     color: Ink.onDark,
+  },
+
+  // 자명종 — 그림과 같은 크기의 틀에 울림 선 넷을 양옆 위아래로 둔다.
+  alarm: {
+    width: ART,
+    height: ART,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alarmWaves: {
+    ...StyleSheet.absoluteFill,
+  },
+  wave: {
+    position: 'absolute',
+    width: 14,
+    height: 4,
+    borderRadius: Corner.pill,
+    backgroundColor: Ink.onDark,
+  },
+  waveLeftTop: {
+    left: -18,
+    top: 34,
+    transform: [{ rotate: '-30deg' }],
+  },
+  waveLeftBottom: {
+    left: -20,
+    top: 52,
+  },
+  waveRightTop: {
+    right: -18,
+    top: 34,
+    transform: [{ rotate: '30deg' }],
+  },
+  waveRightBottom: {
+    right: -20,
+    top: 52,
+  },
+
+  // 퀴즈 — 글자 가운데에 말풍선 셋의 기준점을 둔다.
+  quiz: {
+    width: ART * 2,
+    height: ART,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  quizWord: {
+    fontFamily: Type.readingBold,
+    fontSize: 48,
+    lineHeight: 60,
+    letterSpacing: -1.92,
+    color: Ink.onDark,
+  },
+  /** 말풍선 — 글자 바로 위 가운데가 제자리이고, 거기서 저마다의 자리로 옮겨 앉는다. */
+  bubble: {
+    position: 'absolute',
+    bottom: 40,
+    alignSelf: 'center',
+    minWidth: 40,
+    height: 40,
+    paddingHorizontal: Space[12],
+    borderRadius: Corner.small,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Ink.onDark,
+  },
+  bubbleGlyph: {
+    fontFamily: Type.uiMedium,
+    fontSize: 18,
+    lineHeight: 22,
+    color: Ink.primary,
+  },
+  /** 꼬리 — 아래로 향한 작은 마름모의 반쪽이 말풍선 밑에 비어져 나온다. */
+  bubbleTail: {
+    position: 'absolute',
+    bottom: -4,
+    width: 10,
+    height: 10,
+    backgroundColor: Ink.onDark,
+    transform: [{ rotate: '45deg' }],
   },
 
   // 종이 그림 — 모든 자리는 원본 SVG(120×120)의 좌표다.

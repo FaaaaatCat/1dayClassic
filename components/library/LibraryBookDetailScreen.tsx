@@ -260,7 +260,7 @@ export default function LibraryBookDetailScreen() {
                 // 보여 줄 페이지가 아직 없다 — 책 상세의 미리보기와 같은 까닭이다(openPreview).
                 showToast('준비 중인 기능입니다');
               }}>
-              <Ionicons name="eye-outline" color={Ink.primary} size={20} />
+              <Ionicons name="eye-outline" color={Ink.onDark} size={20} />
               <Text style={styles.menuText}>미리보기</Text>
             </Pressable>
 
@@ -324,7 +324,7 @@ function Section({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Surface.canvas,
+    backgroundColor: Ink.primary,
   },
   /** 책 한 권이 놓이는 검은 띠 — 헤더와 이어져 한 덩어리로 보인다. */
   band: {
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     paddingVertical: Space[8],
     borderRadius: Corner.card,
-    backgroundColor: Surface.canvas,
+    backgroundColor: Ink.primary,
   },
   menuItem: {
     flexDirection: 'row',
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   menuText: {
     fontFamily: Type.ui,
     ...TypeScale.body,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   menuDelete: {
     color: Feedback.wrong,
@@ -409,14 +409,14 @@ const styles = StyleSheet.create({
   menuDivider: {
     height: StyleSheet.hairlineWidth,
     marginHorizontal: Space[20],
-    backgroundColor: Surface.plate,
+    backgroundColor: Ink.strong,
   },
 
   section: {
     paddingHorizontal: GUTTER,
     paddingVertical: Space[16],
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Surface.plate,
+    borderBottomColor: Ink.strong,
   },
   sectionLast: {
     borderBottomWidth: 0,
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: Type.uiMedium,
     ...TypeScale.bodySm,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   sectionBody: {
     flexDirection: 'row',
@@ -448,29 +448,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: Space[12],
     borderRadius: Corner.small,
     borderWidth: 1,
-    borderColor: Ink.muted,
+    borderColor: Ink.body,
   },
   sectionButtonText: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
   },
 
   value: {
     fontFamily: Type.uiMedium,
     fontSize: TypeScale.headingSm.fontSize,
     letterSpacing: TypeScale.headingSm.letterSpacing,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   note: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.muted,
+    color: Ink.body,
   },
   empty: {
     fontFamily: Type.ui,
     ...TypeScale.body,
-    color: Ink.muted,
+    color: Ink.body,
   },
 
   /**
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 6,
     borderRadius: 3,
-    backgroundColor: Surface.plate,
+    backgroundColor: Ink.strong,
     overflow: 'hidden',
   },
   barFill: {

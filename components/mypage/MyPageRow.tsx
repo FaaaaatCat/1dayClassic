@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import Chevron from '@/components/Chevron';
 import { MY_PAGE } from '@/components/mypage/MyPageShell';
-import { Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
+import { Ink, Space, Type, TypeScale } from '@/constants/theme';
 
 /**
  * 마이페이지의 줄 하나 — 아이콘·이름·지금 값·화살표.
@@ -37,7 +37,7 @@ export default function MyPageRow({
       accessibilityLabel={value ? `${label}, ${value}` : label}
       style={[styles.row, last && styles.rowLast]}
       onPress={onPress}>
-      {icon ? <Ionicons name={icon} color={Ink.primary} size={20} /> : null}
+      {icon ? <Ionicons name={icon} color={Ink.onDark} size={20} /> : null}
       <Text style={styles.label} numberOfLines={1}>
         {label}
       </Text>
@@ -46,7 +46,7 @@ export default function MyPageRow({
           {value}
         </Text>
       ) : null}
-      <Chevron direction="forward" color={Ink.muted} size={18} />
+      <Chevron direction="forward" color={Ink.body} size={18} />
     </Pressable>
   );
 }
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     minHeight: MY_PAGE.rowHeight,
     paddingHorizontal: MY_PAGE.gutter,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Surface.plate,
+    borderBottomColor: Ink.strong,
   },
   rowLast: {
     borderBottomWidth: 0,
@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: Type.ui,
     ...TypeScale.body,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   value: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.muted,
+    color: Ink.body,
   },
 });

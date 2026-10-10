@@ -45,7 +45,35 @@ const jobs = [];
 let F = {};
 const fallbacks = [];
 
-const hexOf = (tok) => (TOKEN[tok] ? TOKEN[tok][1] : tok);
+/**
+ * 다크 화면(알림·목차·마이페이지 계열) — 앱에서 라이트 토큰을 한 벌로 바꿔 끼운 그대로다.
+ * DARK가 켜진 동안 그리는 것은 이 표를 따라 색이 바뀐다. 판(프레임·도형)과 잉크(글·아이콘)는
+ * 표가 다르다 — 주황 버튼 위의 흰 글처럼 원래 어두운 곳 위에 있던 흰 글은 그대로 흰색이어야 한다.
+ * 이름 앞에 '!'를 붙인 토큰은 바꾸지 않는다(종이 견본처럼 색 자체를 보여 주는 자리).
+ */
+let DARK = false;
+const DARK_FILL = { eggshell: 'ink', taupe: '#272323', stone: 'graphite', ink: 'eggshell', graphite: 'stone', smoke: 'ash', ash: 'smoke' };
+const DARK_INK = { ink: 'eggshell', graphite: 'stone', smoke: 'ash', ash: 'smoke' };
+function tone(tok, ink) {
+  if (typeof tok !== 'string') return tok;
+  if (tok[0] === '!') return tok.slice(1);
+  if (!DARK) return tok;
+  return (ink ? DARK_INK : DARK_FILL)[tok] || tok;
+}
+/** 다크로 그리는 화면 — 그리는 동안만 DARK를 켠다. */
+const dark = (build) => () => {
+  DARK = true;
+  try {
+    return build();
+  } finally {
+    DARK = false;
+  }
+};
+
+const hexOf = (tok) => {
+  const key = typeof tok === 'string' && tok[0] === '!' ? tok.slice(1) : tok;
+  return TOKEN[key] ? TOKEN[key][1] : key;
+};
 const rgb = (hex) => ({
   r: parseInt(hex.slice(1, 3), 16) / 255,
   g: parseInt(hex.slice(3, 5), 16) / 255,
@@ -55,6 +83,7 @@ const solid = (tok, opacity) =>
   opacity === undefined ? { type: 'SOLID', color: rgb(hexOf(tok)) } : { type: 'SOLID', color: rgb(hexOf(tok)), opacity };
 
 function fill(node, tok, opacity) {
+  tok = tone(tok, node.type === 'TEXT');
   if (tok == null) node.fills = [];
   else if (STYLE[tok] && opacity === undefined) jobs.push(node.setFillStyleIdAsync(STYLE[tok]));
   else node.fills = [solid(tok, opacity)];
@@ -62,6 +91,7 @@ function fill(node, tok, opacity) {
 }
 
 function stroke(node, tok, weight, opacity) {
+  tok = tone(tok, false);
   if (STYLE[tok] && opacity === undefined) jobs.push(node.setStrokeStyleIdAsync(STYLE[tok]));
   else node.strokes = [solid(tok, opacity)];
   node.strokeWeight = weight;
@@ -207,7 +237,7 @@ function rect(name, w, h, tok, opacity) {
 function icon(name, size, tok) {
   const glyph = DATA.icons[name];
   const node = figma.createNodeFromSvg(
-    `<svg width="${size}" height="${size}" viewBox="0 0 ${glyph.w} ${glyph.h}" xmlns="http://www.w3.org/2000/svg"><path d="${glyph.d}" fill="${hexOf(tok)}"/></svg>`,
+    `<svg width="${size}" height="${size}" viewBox="0 0 ${glyph.w} ${glyph.h}" xmlns="http://www.w3.org/2000/svg"><path d="${glyph.d}" fill="${hexOf(tone(tok, true))}"/></svg>`,
   );
   node.name = `icon/${name}`;
   return node;
@@ -221,7 +251,7 @@ function chevron(size, tok, direction) {
   const far = direction === 'forward' ? s / 2 : w + s / 2;
   const near = direction === 'forward' ? w + s / 2 : s / 2;
   const node = figma.createNodeFromSvg(
-    `<svg width="${w + s}" height="${h + s}" viewBox="0 0 ${w + s} ${h + s}" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M${far} ${s / 2}L${near} ${(h + s) / 2}L${far} ${h + s / 2}" stroke="${hexOf(tok)}" stroke-width="${s}" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    `<svg width="${w + s}" height="${h + s}" viewBox="0 0 ${w + s} ${h + s}" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M${far} ${s / 2}L${near} ${(h + s) / 2}L${far} ${h + s / 2}" stroke="${hexOf(tone(tok, true))}" stroke-width="${s}" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   );
   node.name = direction === 'forward' ? 'icon/chevron-forward' : 'icon/chevron-back';
   return node;
@@ -623,7 +653,7 @@ function screen(name, tok) {
 function header(s, title, o = {}) {
   const tone = o.tone || 'light';
   const ink = tone === 'dark' ? 'eggshell' : 'ink';
-  const h = AL('HORIZONTAL', '헤더', { w: W, h: 60 + TOP, pt: TOP, px: 12, main: 'SPACE_BETWEEN', cross: 'CENTER', fill: { light: 'eggshell', paper: 'taupe', dark: 'ink' }[tone] });
+  const h = AL('HORIZONTAL', '헤더', { w: W, h: 60 + TOP, pt: TOP, px: 12, main: 'SPACE_BETWEEN', cross: 'CENTER', fill: { light: 'eggshell', paper: 'taupe', dark: '!ink' }[tone] });
   add(s, h, 'FILL', 'FIXED');
   const left = AL('HORIZONTAL', '뒤로', { w: 40, h: 40, main: 'CENTER', cross: 'CENTER' });
   left.appendChild(chevron(24, ink, 'back'));
@@ -655,9 +685,9 @@ function scrollBody(s, p) {
 }
 
 /** 마이페이지 계열의 껍데기 — components/mypage/MyPageShell. */
-function myPage(name, title) {
+function myPage(name, title, action) {
   const s = screen(name, 'eggshell');
-  header(s, title);
+  header(s, title, { action });
   return { s, body: scrollBody(s, { pt: 8 }) };
 }
 
@@ -705,7 +735,9 @@ const QUIZZES = DATA.lesson.quizzes;
 /** 틀린 것으로 가정한 문제(둘째)와 그때 고른 보기. */
 const WRONG_INDEX = 1;
 const WRONG_PICK = QUIZZES[WRONG_INDEX].answer === 1 ? 2 : 1;
-const DECK_PAGES = 1 + DATA.lesson.story.length + 1;
+/** 책 넘김 효과에서의 장 수와 첫 본문 장 — 앱의 장 나누기(lib/card-pages) 결과다(build.mjs). */
+const DECK_PAGES = DATA.reader.turn.length;
+const DESC_PAGE = DATA.reader.turn.findIndex((page) => page.kind === 'desc');
 
 // ── 홈·알람·목차 ───────────────────────────────────────────────────────────
 function buildHome() {
@@ -784,7 +816,8 @@ function buildAlarm() {
   const days = add(bottom, AL('HORIZONTAL', '요일', { main: 'SPACE_BETWEEN', cross: 'CENTER' }), 'FILL');
   for (const day of ['일', '월', '화', '수', '목', '금', '토']) {
     const d = AL('HORIZONTAL', day, { w: 32, h: 32, main: 'CENTER', cross: 'CENTER', fill: 'ink', r: 9999, stroke: ['ink', 1] });
-    d.appendChild(T(day, 'med', 16, 24, 'eggshell'));
+    // 다크에서는 고른 요일이 흰 원이 되고 글자가 검어진다.
+    d.appendChild(T(day, 'med', 16, 24, DARK ? '!ink' : 'eggshell'));
     days.appendChild(d);
   }
   const footer = add(s, AL('HORIZONTAL', '아래', { p: 8, pb: 8 + BOTTOM, fill: 'eggshell' }), 'FILL');
@@ -792,10 +825,44 @@ function buildAlarm() {
   return s;
 }
 
+/**
+ * 성적 현황 — components/toc/ScoreBoard. 목차 맨 위의 두 칸짜리 판(진행도·오답률).
+ * 목차가 다크라 이 판은 다크에서만 그려지는 것으로 보고 색을 못 박아 둔다('!').
+ */
+function scoreBoard(body) {
+  const slot = add(body, AL('VERTICAL', '성적 현황 자리', { px: 20, pt: 8 }), 'FILL');
+  const board = add(slot, AL('VERTICAL', '성적 현황', { gap: 16, p: 20, r: 20, fill: '!#272323' }), 'FILL');
+  board.appendChild(T('성적 현황', 'med', 16, null, '!eggshell', { ls: 0.16 }));
+  const cells = add(board, AL('HORIZONTAL', '두 칸', { gap: 16 }), 'FILL');
+  const right = QUIZZES.length - 1;
+  const wrong = QUIZZES.length - right;
+  const wrongRate = Math.round((wrong / QUIZZES.length) * 100);
+  const cellW = (W - 40 - 40 - 16 * 2 - HAIR) / 2;
+  const cell = (label, value, percent, barTok, note) => {
+    const c = AL('VERTICAL', label, { w: cellW, gap: 8 });
+    c.appendChild(T(label, 'reg', 13, 20, '!ash', { ls: 0.13 }));
+    const v = T(`${value}%`, 'light', 32, 38, '!eggshell');
+    const unitAt = String(value).length;
+    v.setRangeFontName(unitAt, unitAt + 1, F.reg);
+    v.setRangeFontSize(unitAt, unitAt + 1, 16);
+    v.setRangeFills(unitAt, unitAt + 1, [solid('ash')]);
+    c.appendChild(v);
+    const track = add(c, AL('HORIZONTAL', '막대', { h: 4, r: 2, clip: true, fill: '!graphite' }), 'FILL', 'FIXED');
+    track.appendChild(rect('채움', cellW * (percent / 100), 4, barTok));
+    c.appendChild(T(note, 'reg', 11, 17, '!smoke'));
+    return c;
+  };
+  cells.appendChild(cell('진행도', PERCENT, PERCENT, '!ember', `${READ_PAGES}p / ${DATA.totalPages}p`));
+  add(cells, rect('가름', HAIR, 10, '!graphite'), null, 'FILL');
+  cells.appendChild(cell('오답률', wrongRate, wrongRate, '!stone', `틀린 ${wrong}문제 / 푼 ${QUIZZES.length}문제`));
+  return board;
+}
+
 function buildToc() {
   const s = screen('목차', 'eggshell');
   header(s, '목차');
   const body = scrollBody(s, {});
+  scoreBoard(body);
   const sortRow = add(body, AL('HORIZONTAL', '정렬', { w: W, h: 40, px: 20, main: 'MAX', cross: 'CENTER' }), 'FILL', 'FIXED');
   const sort = AL('HORIZONTAL', '첫장부터', { gap: 4, py: 8, cross: 'CENTER' });
   sort.appendChild(icon('swap-vertical', 18, 'ink'));
@@ -841,22 +908,37 @@ const CARD_Y = TOP + (H - TOP - BOTTOM) / 2 - CARD_H / 2;
 /** 유튜브가 딸린 항목은 카드가 재생기(200)와 틈(12)만큼 짧다. */
 const SHORT_CARD_H = CARD_H - PLAYER_H - 12;
 
+/** 다크 종이(책 보기 설정) — 종이는 brown90, 글자는 밝은 종이색. */
+const DARK_PAPER = '#272323';
+
+/**
+ * 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 지나온 칸과 지금 칸을 채운다.
+ * 자동 넘김을 없애면서 칸이 시간에 맞춰 차오르지 않게 됐다.
+ */
+function pageBars(s, total, page) {
+  const bars = AL('HORIZONTAL', '진행 바', { w: W, h: 14, px: 12, gap: 4, cross: 'CENTER' });
+  abs(s, bars, 0, TOP);
+  for (let i = 0; i < total; i += 1) {
+    add(bars, AL('HORIZONTAL', i === page ? '칸(지금)' : '칸', { w: 10, h: 3, fill: i <= page ? WHITE : BROWN50, r: 1.5 }), 'FILL', 'FIXED');
+  }
+  return bars;
+}
+
+/** 본문 글 — 책 보기 설정의 '중간'(build.mjs의 DATA.reader.body). 문단 여럿은 빈 줄로 이어져 있다. */
+function bodyText(text, tok) {
+  const b = DATA.reader.body;
+  return T(text, 'serifR', b.fontSize, b.lineHeight, tok, { ls: b.letterSpacing });
+}
+
 /** 덱의 뼈대 — 위 진행 바, 계정 줄, 카드, 재생기, 아래 줄. page는 0부터. */
-function deck(name, page, kind) {
+function deck(name, page, kind, dark) {
   const s = figma.createFrame();
   s.name = name;
   s.resize(W, H);
   s.clipsContent = true;
   s.fills = [solid(BROWN100)];
 
-  const bars = AL('HORIZONTAL', '진행 바', { w: W, h: 14, px: 12, gap: 4, cross: 'CENTER' });
-  abs(s, bars, 0, TOP);
-  for (let i = 0; i < DECK_PAGES; i += 1) {
-    const one = add(bars, AL('HORIZONTAL', i === page ? '칸(지금)' : '칸', { w: 10, h: 3, fill: BROWN50, r: 1.5, clip: true }), 'FILL', 'FIXED');
-    if (i < page) add(one, rect('지나온 장', 10, 3, WHITE), 'FILL');
-    // 지금 칸은 시간에 맞춰 차오른다 — 반쯤 찬 순간으로 둔다.
-    if (i === page) one.appendChild(rect('차오르는 중', 4, 3, WHITE));
-  }
+  pageBars(s, DECK_PAGES, page);
 
   const head = AL('HORIZONTAL', '계정 줄', { w: W, h: 48, gap: 10, pl: 16, pr: 8, cross: 'CENTER' });
   abs(s, head, 0, TOP + 14);
@@ -874,7 +956,7 @@ function deck(name, page, kind) {
   close.appendChild(icon('close-outline', 24, WHITE));
   head.appendChild(close);
 
-  const card = AL('VERTICAL', `카드/${kind}`, { w: CARD_W, h: SHORT_CARD_H, gap: 16, px: 28, py: 32, main: 'CENTER', cross: 'CENTER', r: 20, clip: true, fill: kind === 'cover' ? SEL.design.paper : PAPER });
+  const card = AL('VERTICAL', `카드/${kind}`, { w: CARD_W, h: SHORT_CARD_H, gap: 16, px: 28, py: 32, main: 'CENTER', cross: 'CENTER', r: 20, clip: true, fill: kind === 'cover' ? SEL.design.paper : dark ? DARK_PAPER : PAPER });
   abs(s, card, 28, CARD_Y);
 
   // 붙박이 재생기 — 유튜브 약관이 정한 가장 작은 크기(200)다. 여기서는 자리만 잡는다.
@@ -888,7 +970,7 @@ function deck(name, page, kind) {
   footer.appendChild(T(`${page + 1} / ${DECK_PAGES}`, 'serifR', 13, null, BROWN50, { ls: -0.26 }));
   const icons = AL('HORIZONTAL', '버튼', { gap: 16, cross: 'CENTER' });
   footer.appendChild(icons);
-  for (const [label, glyph] of [['자동으로 읽기', 'headset'], ['감상 노트', 'create']]) {
+  for (const [label, glyph] of [['자동으로 읽기', 'headset']]) {
     const hit = AL('HORIZONTAL', label, { w: 36, h: 36, main: 'CENTER', cross: 'CENTER' });
     hit.appendChild(icon(glyph, 24, WHITE));
     icons.appendChild(hit);
@@ -910,9 +992,9 @@ function buildDeckCover() {
   return s;
 }
 
-function deckDesc(name) {
-  const { s, card } = deck(name, 1, 'desc');
-  add(card, T(DATA.lesson.story[0], 'serifR', 15, 26, BROWN100, { ls: -0.3 }), 'FILL');
+function deckDesc(name, dark) {
+  const { s, card } = deck(name, DESC_PAGE, 'desc', dark);
+  add(card, bodyText(DATA.reader.turn[DESC_PAGE].paragraph, dark ? PAPER : BROWN100), 'FILL');
   // 책갈피 — 카드 오른쪽 아래. 꽂아 둔 장이라 속을 채운 붉은 것이다.
   const mark = AL('HORIZONTAL', '책갈피(꽂음)', { w: 32, h: 32, main: 'CENTER', cross: 'CENTER' });
   mark.appendChild(icon('bookmark', 18, WRONG));
@@ -1308,16 +1390,18 @@ function buildMyPage() {
     strip.appendChild(circle);
   }
   myRow(group, { icon: 'sparkles-outline', label: '완독한 책', value: '0권' });
+  // 설정 셋 — 책 보기 > 배경음악 > TTS.
+  myRow(group, { icon: 'color-palette-outline', label: '책 보기 설정', value: '라이트 · 글자 중간' });
   myRow(group, { icon: 'musical-note-outline', label: '배경음악 설정', value: DATA.bgm[0].label });
-  myRow(group, { icon: 'color-palette-outline', label: '책 배경 설정', value: '기본', last: true });
+  myRow(group, { icon: 'mic-outline', label: 'TTS 설정', value: '여자 · 자동읽기 끔', last: true });
 
   const bannerSlot = add(body, AL('VERTICAL', '배너 자리', { pt: 16 }), 'FILL');
   const banner = add(bannerSlot, AL('HORIZONTAL', '프리미엄 배너', { gap: 12, px: 20, py: 20, cross: 'CENTER', fill: 'ember' }), 'FILL');
   add(banner, T('평생 광고 없이\n쾌적하게 독서하세요', 'med', 13, 20, 'eggshell', { ls: 0.13 }), 'FILL');
   banner.appendChild(button('프리미엄 멤버십 보기', '프리미엄 멤버십 보기', { h: 40, px: 16, r: 9999, fill: 'eggshell', size: 13, lh: 20, ls: 0.13, color: 'ink' }));
 
+  // 설정(미리보기 모음)은 개발 빌드에서만 보인다 — 출시 빌드 모습으로 그린다.
   const group2 = add(body, AL('VERTICAL', '묶음', { pt: 8 }), 'FILL');
-  myRow(group2, { label: '설정' });
   myRow(group2, { label: '권한 관리' });
   myRow(group2, { label: '계정 관리', last: true });
   return s;
@@ -1365,20 +1449,33 @@ function hint(parent, text, tok, pb) {
   add(slot, T(text, 'reg', 13, 20, tok, { ls: 0.13 }), 'FILL');
 }
 
+/**
+ * 줄 오른쪽의 '미리듣기' — components/mypage/SettingSection의 PreviewButton.
+ * 듣는 동안은 주황으로 채워지고 '멈춤'이 된다.
+ */
+function previewButton(playing) {
+  const b = AL('HORIZONTAL', playing ? '미리듣기(재생 중)' : '미리듣기', { h: 28, px: 12, gap: 4, cross: 'CENTER', r: 9999, fill: playing ? 'ember' : null, stroke: [playing ? 'ember' : 'stone', 1] });
+  b.appendChild(icon(playing ? 'pause' : 'play', 12, playing ? 'eggshell' : 'stone'));
+  b.appendChild(T(playing ? '멈춤' : '미리듣기', 'med', 11, 17, playing ? 'eggshell' : 'stone'));
+  return b;
+}
+
 function buildBgm() {
-  const { s, body } = myPage('배경음악 설정', '배경음악 설정');
-  hint(body, '오디오 듣기를 누르면 여기서 고른 음악이 낭독 아래에 깔립니다.', 'smoke', 16);
-  DATA.bgm.forEach((option, index) => pickRow(body, option.label, null, index === 0, index === DATA.bgm.length - 1));
+  const { s, body } = myPage('배경음악 설정', '배경음악 설정', headerTextColor('저장', 'ember'));
+  settingSection(body, {
+    title: '배경음악 설정',
+    icon: 'musical-note-outline',
+    picked: 0,
+    // 음원이 없는 '없음'에는 미리듣기가 없다. 둘째 곡을 듣고 있는 순간으로 그린다.
+    options: DATA.bgm.map((option, index) => [option.label, option.id === 'none' ? null : previewButton(index === 1)]),
+  }, 0);
   return s;
 }
 
-function buildBookTheme() {
-  const { s, body } = myPage('책 배경 설정', '책 배경 설정');
-  hint(body, '오늘의 공부를 읽을 때의 종이색입니다.', 'smoke', 16);
-  pickRow(body, '라이트', '밝은 종이 위에 검은 글씨', true, false);
-  pickRow(body, '다크', '어두운 종이 위에 흰 글씨', false, true);
-  const note = add(body, AL('VERTICAL', '알림', { px: 20, pt: 16 }), 'FILL');
-  add(note, T('아직 고른 값이 화면에 반영되지 않습니다.', 'reg', 11, 17, 'ash'), 'FILL');
+function buildTts() {
+  const { s, body } = myPage('TTS 설정', 'TTS 설정', headerTextColor('저장', 'ember'));
+  settingSection(body, { title: '보이스 설정', icon: 'mic-outline', picked: 0, options: [['여자', previewButton(false)], ['남자', previewButton(false)]] }, 0);
+  settingSection(body, { title: '자동읽기 설정', icon: 'headset-outline', picked: 1, options: [['켜기', null], ['끄기', null]] }, 1);
   return s;
 }
 
@@ -1417,12 +1514,12 @@ function buildReport(name) {
   const s = screen(name, 'eggshell');
   header(s, '리포트', { tone: 'dark', action: headerIcon('ellipsis-vertical') });
   const body = scrollBody(s, {});
-  const band = add(body, AL('HORIZONTAL', '책', { gap: 12, px: 20, pb: 24, cross: 'CENTER', fill: 'ink' }), 'FILL');
+  const band = add(body, AL('HORIZONTAL', '책', { gap: 12, px: 20, pb: 24, cross: 'CENTER', fill: '!ink' }), 'FILL');
   band.appendChild(cover(SEL.design, 56));
   const text = add(band, AL('VERTICAL', '글', { gap: 4 }), 'FILL');
   add(text, T(SEL.title, 'serif', 16, 24, 'eggshell'), 'FILL');
   add(text, T(SEL.author, 'reg', 13, 20, 'stone', { ls: 0.13 }), 'FILL');
-  band.appendChild(button('선택 중', '선택 중', { h: 40, px: 16, r: 9999, fill: 'graphite', size: 13, lh: 20, ls: 0.13, color: 'stone' }));
+  band.appendChild(button('선택 중', '선택 중', { h: 40, px: 16, r: 9999, fill: '!graphite', size: 13, lh: 20, ls: 0.13, color: 'stone' }));
 
   const section = (title, value, note, right, last) => {
     const box = add(body, AL('VERTICAL', title, { gap: 8, px: 20, py: 16 }), 'FILL');
@@ -1478,7 +1575,7 @@ function buildWrongQuizzes() {
     const answer = no === quiz.answer;
     const mine = no === WRONG_PICK && !answer;
     const tok = answer ? RIGHT : mine ? WRONG : null;
-    const box = add(choices, AL('HORIZONTAL', `${no}${answer ? ' (정답)' : mine ? ' (내 답)' : ''}`, { gap: 8, p: 12, r: 10, fill: answer ? RIGHT_BG : mine ? WRONG_BG : 'eggshell', stroke: [tok || 'stone', HAIR] }), 'FILL');
+    const box = add(choices, AL('HORIZONTAL', `${no}${answer ? ' (정답)' : mine ? ' (내 답)' : ''}`, { gap: 8, p: 12, r: 10, fill: DARK && tok ? '#272323' : answer ? RIGHT_BG : mine ? WRONG_BG : 'eggshell', stroke: [tok || 'stone', HAIR] }), 'FILL');
     box.appendChild(T(String(no), 'med', 13, 21, tok || 'graphite'));
     add(box, T(choice, 'reg', 13, 21, 'ink', { ls: 0.13 }), 'FILL');
     if (tok) box.appendChild(T(answer ? '정답' : '내 답', 'med', 12, 21, tok, { ls: 0.12 }));
@@ -1558,6 +1655,494 @@ function buildSettings() {
   return s;
 }
 
+// ── 첫 실행 — components/splash ─────────────────────────────────────────────
+/** 인트로의 종이 그림(carbon:page-break) — 시안의 SVG 경로 그대로. */
+const PAGE_BREAK_PATH = 'M7.5 67.5H22.5V75H7.5V67.5ZM97.5 67.5H112.5V75H97.5V67.5ZM90 82.5V105H30V82.5H22.5V105C22.5059 106.987 23.298 108.892 24.7033 110.297C26.1085 111.702 28.0127 112.494 30 112.5H90C91.9873 112.494 93.8915 111.702 95.2967 110.297C96.702 108.892 97.4941 106.987 97.5 105V82.5H90ZM30 60V15H60V37.5C60.0059 39.4873 60.798 41.3915 62.2033 42.7967C63.6085 44.202 65.5127 44.9941 67.5 45H90V60H97.5V37.5C97.5132 37.0072 97.4195 36.5173 97.2253 36.0642C97.0311 35.611 96.741 35.2053 96.375 34.875L70.125 8.625C69.7963 8.25699 69.3909 7.96553 68.9374 7.77116C68.4838 7.57679 67.9932 7.48423 67.5 7.5H30C28.0127 7.50594 26.1085 8.29802 24.7033 9.70326C23.298 11.1085 22.5059 13.0127 22.5 15V60H30ZM67.5 16.5L88.5 37.5H67.5V16.5ZM37.5 67.5H52.5V75H37.5V67.5ZM67.5 67.5H82.5V75H67.5V67.5Z';
+
+function pageBreakIcon(size, tok) {
+  const node = figma.createNodeFromSvg(
+    `<svg width="${size}" height="${size}" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><path d="${PAGE_BREAK_PATH}" fill="${hexOf(tok)}"/></svg>`,
+  );
+  node.name = 'carbon:page-break';
+  return node;
+}
+
+/** 질문 화면의 걸음 수 — SplashQuestion의 QUESTION_COUNT. */
+const QUESTION_COUNT = 6;
+
+/** 인트로 세 장 — SplashIntro의 SLIDES. 장마다 그림 하나와 한 줄. */
+const INTRO_SLIDES = [
+  { key: 'cut', lead: '좋은 책을 하루치로 잘라 드립니다' },
+  { key: 'alarm', lead: '까먹지 않게 매일 알람을 드려요' },
+  { key: 'quiz', lead: '퀴즈로 까먹지않게 복습까지 챙겨요.' },
+];
+
+/** 울리는 자명종 — 떨림이 가장 큰 순간이 아니라, 울림 선이 보이는 가만한 모습으로 그린다. */
+function alarmArt() {
+  const box = figma.createFrame();
+  box.name = '울리는 자명종';
+  box.resize(120, 120);
+  box.fills = [];
+  box.clipsContent = false;
+  box.appendChild(icon('alarm-outline', 120, 'eggshell'));
+  const waves = [
+    [-18, 34, -30],
+    [-20, 52, 0],
+    [120 + 18 - 14, 34, 30],
+    [120 + 20 - 14, 52, 0],
+  ];
+  for (const [x, y, angle] of waves) {
+    const w = rect('울림', 14, 4, 'eggshell');
+    w.cornerRadius = 2;
+    box.appendChild(w);
+    w.x = x;
+    w.y = y;
+    if (angle) w.rotation = -angle;
+  }
+  return box;
+}
+
+/** '퀴즈' 위로 떠오른 말풍선 셋(?, !, ✓) — 셋이 다 모인 순간. */
+function quizArt() {
+  const box = figma.createFrame();
+  box.name = '퀴즈 위로 떠오르는 말풍선';
+  box.resize(240, 120);
+  box.fills = [];
+  box.clipsContent = false;
+  const word = T('퀴즈', 'serif', 48, 60, 'eggshell', { ls: -1.92 });
+  box.appendChild(word);
+  word.x = (240 - word.width) / 2;
+  word.y = 120 - 60;
+  for (const [x, y, glyph] of [[-64, -78, '?'], [0, -104, '!'], [64, -78, '✓']]) {
+    const bubble = AL('HORIZONTAL', `말풍선 ${glyph}`, { h: 40, minW: 40, px: 12, main: 'CENTER', cross: 'CENTER', r: 10, fill: 'eggshell' });
+    let text;
+    try {
+      text = T(glyph, 'med', 18, 22, 'ink');
+    } catch (error) {
+      text = T('v', 'med', 18, 22, 'ink');
+    }
+    bubble.appendChild(text);
+    box.appendChild(bubble);
+    bubble.x = (240 - bubble.width) / 2 + x;
+    bubble.y = 120 - 40 - 40 + y;
+    const tail = rect('꼬리', 10, 10, 'eggshell');
+    box.appendChild(tail);
+    tail.rotation = 45;
+    tail.x = bubble.x + bubble.width / 2;
+    tail.y = bubble.y + 40 - 5 - 7;
+  }
+  return box;
+}
+
+/** 첫 화면 — SplashIntro. slide는 몇째 장인지(0부터). 첫 장의 그림은 애니메이션이 갈라 놓은 순간이다. */
+function buildIntro(name, slide) {
+  const index = slide || 0;
+  const last = index === INTRO_SLIDES.length - 1;
+  const s = screen(name || `첫 실행 — 인트로 ${index + 1}/${INTRO_SLIDES.length}`, 'ink');
+  add(s, AL('HORIZONTAL', '상태바', { w: W, h: TOP }), 'FILL', 'FIXED');
+  const body = add(s, AL('VERTICAL', '본문', { px: 28, main: 'MAX' }), 'FILL', 'FILL');
+  const art = add(body, AL('VERTICAL', '그림 자리', { main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FILL');
+  const key = INTRO_SLIDES[index].key;
+  art.appendChild(key === 'cut' ? pageBreakIcon(120, 'eggshell') : key === 'alarm' ? alarmArt() : quizArt());
+  const words = add(body, AL('VERTICAL', '글씨 자리', { gap: 8, py: 20, cross: 'CENTER' }), 'FILL');
+  words.appendChild(T(INTRO_SLIDES[index].lead, 'reg', 18, 24, 'ash', { ls: -0.36, align: 'CENTER' }));
+  words.appendChild(T('하루서점', 'serif', 40, 86, 'eggshell', { ls: -1.6, align: 'CENTER' }));
+  // 몇 장 중 몇째인지 — 점 셋.
+  const dots = add(s, AL('HORIZONTAL', '점', { gap: 8, pb: 24, main: 'CENTER', cross: 'CENTER' }), 'FILL');
+  INTRO_SLIDES.forEach((_, i) => {
+    const dot = figma.createEllipse();
+    dot.name = i === index ? '점(지금)' : '점';
+    dot.resize(6, 6);
+    fill(dot, i === index ? 'eggshell' : 'graphite');
+    dots.appendChild(dot);
+  });
+  const foot = add(s, AL('VERTICAL', '아래', { gap: 20, px: 20, pb: 36 + BOTTOM }), 'FILL');
+  const cta = last ? '하루서점 시작하기' : '다음';
+  add(foot, button(cta, cta, { h: 60, r: 9999, fill: 'ember', size: 16, lh: 24, color: 'eggshell' }), 'FILL');
+  const row = add(foot, AL('HORIZONTAL', '로그인 줄', { gap: 8, main: 'CENTER', cross: 'CENTER' }), 'FILL');
+  row.appendChild(T('이미 계정이 있나요?', 'reg', 11, 17, 'ash'));
+  row.appendChild(T('로그인하기', 'med', 11, 17, 'eggshell'));
+  return s;
+}
+
+/** 시작하기를 누르면 올라오는 가입 시트 — SplashLogin(데모용). */
+function buildIntroLogin() {
+  const s = buildIntro('첫 실행 — 인트로 + 가입 시트', INTRO_SLIDES.length - 1);
+  dim(s, 0.5);
+  const sheet = AL('VERTICAL', '가입 시트', { w: W, gap: 12, px: 20, pt: 32, pb: 36 + BOTTOM, fill: 'eggshell' });
+  sheet.topLeftRadius = 24;
+  sheet.topRightRadius = 24;
+  const head = add(sheet, AL('VERTICAL', '표제', { pb: 8 }), 'FILL');
+  add(head, T('하루를 여는 알람이\n한 쪽의 책이 되도록', 'serif', 22, 35.2, 'ink', { ls: -0.44, align: 'CENTER' }), 'FILL');
+  add(sheet, button('데모계정으로 계속하기', '데모계정으로 계속하기', { h: 52, r: 9999, gap: 8, fill: 'ember', size: 16, lh: 24, color: 'eggshell', icon: icon('person-circle-outline', 18, 'eggshell') }), 'FILL');
+  add(sheet, button('회원가입', '회원가입', { h: 52, r: 9999, fill: 'eggshell', stroke: [BROWN10, 1], size: 16, lh: 24, color: 'ink' }), 'FILL');
+  const terms = add(sheet, AL('VERTICAL', '약관', { pt: 8 }), 'FILL');
+  add(terms, T('회원가입 시 이용약관 및 개인정보처리방침에 동의합니다.', 'reg', 11, 17, 'ash', { align: 'CENTER' }), 'FILL');
+  abs(s, sheet, 0, 0);
+  sheet.y = H - sheet.height;
+  return s;
+}
+
+/**
+ * 질문 화면 넷의 껍데기 — SplashQuestion. 위 머리띠(뒤로·진행 줄), 물음, 본문, 다음 버튼.
+ * opts.left: 물음을 왼쪽에(질문 4). opts.padded: 본문 좌우 여백(기본 20).
+ */
+function question(name, step, title, hintText, opts) {
+  const o = opts || {};
+  const s = screen(name, 'taupe');
+  // 뒤로 버튼은 왼쪽으로 8 당겨 앉는다(marginLeft -8) — 머리띠 왼쪽 여백이 실제로는 20이다.
+  const head = add(s, AL('HORIZONTAL', '머리띠', { w: W, h: 60 + TOP, pt: TOP, pl: 20, pr: 28, gap: 8, cross: 'CENTER' }), 'FILL', 'FIXED');
+  const back = AL('HORIZONTAL', '뒤로', { w: 32, h: 32, main: 'CENTER', cross: 'CENTER' });
+  back.appendChild(chevron(22, 'ink', 'back'));
+  head.appendChild(back);
+  const trackW = W - 20 - 28 - 32 - 8;
+  const track = add(head, AL('HORIZONTAL', `진행 줄 ${step}/${QUESTION_COUNT}`, { h: 4, r: 4, fill: 'stone', clip: true }), 'FILL', 'FIXED');
+  track.appendChild(rect('채움', trackW * (step / QUESTION_COUNT), 4, 'ink'));
+
+  const left = !!o.left;
+  const block = add(s, AL('VERTICAL', '물음', { gap: 8, px: left ? 28 : 20, py: 48, cross: left ? 'MIN' : 'CENTER' }), 'FILL');
+  add(block, T(title, 'med', 22, 26, 'ink', { ls: -0.44, align: left ? 'LEFT' : 'CENTER' }), 'FILL');
+  if (hintText) add(block, T(hintText, 'med', 16, 24, 'smoke', { align: left ? 'LEFT' : 'CENTER' }), 'FILL');
+
+  const body = add(s, AL('VERTICAL', '본문', { px: o.padded === false ? 0 : 20, clip: true }), 'FILL', 'FILL');
+  const foot = add(s, AL('VERTICAL', '아래', { p: 8, pb: 8 + BOTTOM }), 'FILL');
+  const on = o.next !== false;
+  add(foot, button('다음', '다음', { h: 48, r: 9999, gap: 6, fill: on ? 'ember' : 'ash', size: 16, lh: 24, color: 'eggshell', after: chevron(14, 'eggshell', 'forward') }), 'FILL');
+  return { s, body };
+}
+
+/** 질문 1 — 분야. 셋을 고른 순간이다. */
+function buildQ1() {
+  const { s, body } = question('첫 실행 — 질문 1 분야', 1, '관심있는 책이 어떤 쪽인가요?', '최소 3개 이상의 분야를 골라주세요');
+  const grid = add(body, AL('HORIZONTAL', '격자', { gap: 12, gapY: 12, wrap: true }), 'FILL');
+  const chipW = (W - 40 - 12) / 2;
+  const picked = ['고전', '철학·사상', '음악·예술'];
+  for (const name of DATA.fieldNames) {
+    const on = picked.includes(name);
+    const chip = AL('HORIZONTAL', `${name}${on ? ' (고름)' : ''}`, { w: chipW, h: 52, px: 12, main: 'CENTER', cross: 'CENTER', r: 9999, fill: on ? 'ink' : 'eggshell', stroke: [on ? 'ink' : 'stone', 1] });
+    chip.appendChild(T(name, 'med', 16, 24, on ? 'eggshell' : 'smoke'));
+    grid.appendChild(chip);
+  }
+  return s;
+}
+
+/**
+ * 하나만 고르는 질문 — SplashChoice(독서 빈도·독서 목적). 알약이 줄마다 하나씩 화면 폭을 다 쓴다.
+ * 보기와 물음은 SplashFlow의 것 그대로다. 안내 문구는 앱이 둘 다 '얼마나 자주 읽는지 궁금해요'를 쓴다.
+ */
+function buildChoice(name, step, title, options, picked) {
+  const { s, body } = question(name, step, title, '얼마나 자주 읽는지 궁금해요');
+  const list = add(body, AL('VERTICAL', '보기', { gap: 12 }), 'FILL');
+  options.forEach((option, index) => {
+    const on = index === picked;
+    const chip = add(list, AL('HORIZONTAL', `${option}${on ? ' (고름)' : ''}`, { h: 52, px: 12, main: 'CENTER', cross: 'CENTER', r: 9999, fill: on ? 'ink' : 'eggshell', stroke: [on ? 'ink' : 'stone', 1] }), 'FILL', 'FIXED');
+    chip.appendChild(T(option, 'med', 16, 24, on ? 'eggshell' : 'smoke'));
+  });
+  return s;
+}
+const buildFrequency = () =>
+  buildChoice('첫 실행 — 질문 2 독서 빈도', 2, '평소 책을 얼마나 자주 읽으시나요?', ['거의 읽지 않아요', '한 달에 1~2권', '일주일에 1권', '일주일에 2권 이상', '매일 읽어요'], 2);
+const buildPurpose = () =>
+  buildChoice('첫 실행 — 질문 3 독서 목적', 3, '책을 읽는 목적이 무엇인가요?', ['새로운 지식 획득', '여가를 위한 재밌는 이야기 탐독', '마음 수양'], 0);
+
+/** 책 추천 중 — SplashLoading. 60% 찬 순간이다. */
+function buildLoading() {
+  const s = screen('첫 실행 — 책 추천 중', 'taupe');
+  const center = add(s, AL('VERTICAL', '가운데', { gap: 20, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FILL');
+  const SIZE = 160;
+  const done = 0.6;
+  const label = `${Math.round(done * 100)}%`;
+  const circle = figma.createFrame();
+  circle.name = '원';
+  circle.resize(SIZE, SIZE);
+  circle.cornerRadius = SIZE / 2;
+  circle.clipsContent = true;
+  circle.fills = [solid('stone')];
+  const below = T(label, 'med', 32, 38, 'ink');
+  abs(circle, below, (SIZE - below.width) / 2, (SIZE - 38) / 2);
+  const filled = figma.createFrame();
+  filled.name = '차오른 자리';
+  filled.resize(SIZE, SIZE * done);
+  filled.clipsContent = true;
+  filled.fills = [solid('ember')];
+  abs(circle, filled, 0, SIZE * (1 - done));
+  const above = T(label, 'med', 32, 38, 'eggshell');
+  abs(filled, above, (SIZE - above.width) / 2, (SIZE - 38) / 2 - SIZE * (1 - done));
+  center.appendChild(circle);
+  center.appendChild(T('책 추천하는 중 …', 'med', 16, 24, 'ink'));
+  return s;
+}
+
+/** 질문 2 — 첫 권. 카드는 물음 바로 아래에 붙고, 첫 카드를 고른 순간이다. */
+function buildQ2() {
+  const { s, body } = question('첫 실행 — 질문 4 첫 권', 4, '처음 읽을 책 1권을 선택해주세요', '고른 관심분야에서 가장 인기있는 책입니다.', { padded: false });
+  const row = add(body, AL('HORIZONTAL', '책 카드', { w: W, gap: 12, pl: (W - 205) / 2, clip: true }), 'FIXED');
+  DATA.splashBooks.forEach((book, index) => {
+    const on = index === 0;
+    const card = AL('VERTICAL', `책 카드/${book.title}${on ? ' (고름)' : ''}`, { w: 205, h: 280, gap: 8, p: 20, cross: 'CENTER', r: 20, fill: 'eggshell', stroke: [on ? 'ember' : 'stone', 2] });
+    row.appendChild(card);
+    const box = add(card, AL('VERTICAL', '표지 자리', { pb: 8, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FILL');
+    box.appendChild(cover(book.design, 120));
+    add(card, T(book.title, 'med', 16, 24, 'ink', { align: 'CENTER' }), 'FILL');
+    card.appendChild(T(book.author, 'reg', 13, 18, 'ash'));
+  });
+  return s;
+}
+
+/** 질문 3 — 알림. 시각은 물음 바로 아래, 카드는 맨 아래. */
+function buildQ3() {
+  const { s, body } = question('첫 실행 — 질문 5 알림', 5, '매일 알림을 드릴까요?', '매일 책 한쪽의 내용으로 아침을 시작해보세요');
+  body.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  body.paddingBottom = 8;
+  add(body, clock({}), 'FILL');
+  const card = add(body, AL('VERTICAL', '카드', { r: 20, fill: 'eggshell', stroke: ['stone', 1], clip: true }), 'FILL');
+  const use = add(card, AL('HORIZONTAL', '알림 사용하기', { px: 20, py: 16, main: 'SPACE_BETWEEN', cross: 'CENTER' }), 'FILL');
+  edge(use, 'stone', 1, 'bottom');
+  use.appendChild(T('알림 사용하기', 'med', 13, 20, 'ink', { ls: 0.13 }));
+  use.appendChild(toggle(true, 'ember'));
+  const listen = add(card, AL('HORIZONTAL', '알림 미리듣기', { px: 20, py: 16, main: 'SPACE_BETWEEN', cross: 'CENTER' }), 'FILL');
+  listen.appendChild(T('알림 미리듣기(30초)', 'med', 13, 20, 'ink', { ls: 0.13 }));
+  listen.appendChild(icon('play', 20, 'smoke'));
+  return s;
+}
+
+/** 질문 4 — 권한. 물음은 왼쪽, 셋 다 켜진 채로 시작한다. */
+function buildQ4() {
+  const { s, body } = question('첫 실행 — 질문 6 권한', 6, '꼭 필요한 몇가지 권한을 승인해주세요', null, { left: true, padded: false });
+  const rows = [
+    ['알림', '알림기능을 위해 필요해요'],
+    ['정확한 알람', '없으면 몇 분씩 밀릴 수 있습니다.'],
+    ['전체 화면 알림', '잠금화면 위에 알람을 띄워야 해요.'],
+  ];
+  for (const [label, text] of rows) {
+    const row = add(body, AL('HORIZONTAL', label, { gap: 16, px: 28, py: 20, cross: 'CENTER' }), 'FILL');
+    edge(row, 'stone', 1, 'bottom');
+    const col = add(row, AL('VERTICAL', '글', { gap: 4 }), 'FILL');
+    add(col, T(label, 'med', 16, 24, 'ink'), 'FILL');
+    add(col, T(text, 'reg', 13, 20, 'ash', { ls: 0.13 }), 'FILL');
+    row.appendChild(toggle(true, 'ember'));
+  }
+  return s;
+}
+
+/** 첫 실행을 마치면 홈 위로 올라오는 환영 창 — WelcomeSheet. */
+function buildWelcome() {
+  const s = buildHome();
+  s.name = '첫 실행 — 홈 + 환영 창';
+  dim(s, 0.55);
+  const sheetH = Math.round(H * 0.57);
+  const sheet = AL('VERTICAL', '환영 창', { w: W, h: sheetH, px: 8, pb: 8 + BOTTOM, cross: 'CENTER', clip: true });
+  sheet.fills = [solid('ink'), solid('eggshell', 0.1)];
+  sheet.topLeftRadius = 20;
+  sheet.topRightRadius = 20;
+  abs(s, sheet, 0, H - sheetH);
+  const gripSlot = AL('VERTICAL', '손잡이 자리', { pt: 12 });
+  const grip = rect('손잡이', 40, 4, 'graphite');
+  grip.cornerRadius = 2;
+  gripSlot.appendChild(grip);
+  sheet.appendChild(gripSlot);
+  const body = add(sheet, AL('VERTICAL', '본문', { gap: 16, px: 20, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FILL');
+  body.appendChild(T('준비가 끝났어요', 'med', 13, 20, 'ember', { ls: 0.13 }));
+  const badge = AL('HORIZONTAL', '배지', { w: 96, h: 96, r: 9999, fill: 'ember', main: 'CENTER', cross: 'CENTER' });
+  const count = AL('HORIZONTAL', '10화', { gap: 2, cross: 'MAX' });
+  count.appendChild(T('10', 'light', 44, 52, 'eggshell'));
+  count.appendChild(T('화', 'med', 16, 34, 'eggshell'));
+  badge.appendChild(count);
+  body.appendChild(badge);
+  const lines = T('회원님께는\n10화 무료보기를 제공합니다', 'med', 22, 35.2, 'eggshell', { ls: -0.44, align: 'CENTER' });
+  const markFrom = lines.characters.indexOf('10화 무료보기');
+  lines.setRangeFills(markFrom, markFrom + '10화 무료보기'.length, [solid('ember')]);
+  add(body, lines, 'FILL');
+  add(body, T('내일 아침, 알람이 첫 화를 열어 드릴게요.', 'reg', 13, 20, 'ash', { ls: 0.13, align: 'CENTER' }), 'FILL');
+  add(sheet, button('지금 바로 확인하기', '지금 바로 확인하기', { h: 48, r: 9999, fill: 'ember', size: 16, lh: 24, color: 'eggshell' }), 'FILL');
+  return s;
+}
+
+// ── 읽기 — 카드로 보기 · 스크롤 보기 (CardDeckDetail의 단출한 크롬) ─────────────
+/** 단출한 위 줄 — 왼쪽 뒤로, 오른쪽 자동으로 읽기(감상 노트는 화면에서 잠시 뺐다). 스크롤 보기는 밑에 가는 선. */
+function simpleHeader(s, y, ink, rule) {
+  const h = AL('HORIZONTAL', '위 줄', { w: W, h: 48, px: 12, main: 'SPACE_BETWEEN', cross: 'CENTER' });
+  abs(s, h, 0, y);
+  if (rule) edge(h, 'ash', HAIR, 'bottom');
+  const back = AL('HORIZONTAL', '뒤로', { w: 40, h: 40, main: 'CENTER', cross: 'CENTER' });
+  back.appendChild(chevron(24, ink, 'back'));
+  h.appendChild(back);
+  const icons = AL('HORIZONTAL', '버튼', { gap: 16, cross: 'CENTER' });
+  h.appendChild(icons);
+  for (const [label, glyph] of [['자동으로 읽기', 'headset']]) {
+    const hit = AL('HORIZONTAL', label, { w: 36, h: 36, main: 'CENTER', cross: 'CENTER' });
+    hit.appendChild(icon(glyph, 24, ink));
+    icons.appendChild(hit);
+  }
+  return h;
+}
+
+/** 유튜브 재생기 자리 — 약관이 정한 가장 작은 높이(200). */
+function playerSlot(width) {
+  const player = AL('VERTICAL', '유튜브 재생기 자리', { w: width, h: PLAYER_H, gap: 8, main: 'CENTER', cross: 'CENTER', fill: '#333333', r: 12 });
+  player.appendChild(icon('logo-youtube', 40, WHITE));
+  player.appendChild(T(`youtube.com/watch?v=${DATA.lesson.youtubeId}`, 'reg', 11, 17, 'ash'));
+  return player;
+}
+
+function buildCardMode() {
+  const pages = DATA.reader.card;
+  const index = pages.findIndex((page) => page.kind === 'desc');
+  const s = figma.createFrame();
+  s.name = '읽기 — 카드로 보기';
+  s.resize(W, H);
+  s.clipsContent = true;
+  s.fills = [solid(BROWN100)];
+  pageBars(s, pages.length, index);
+  simpleHeader(s, TOP + 14, WHITE, false);
+  // 카드는 헤더 바로 아래부터 화면 끝 16 위까지 — 재생기(200)와 틈(8)만큼 짧다.
+  const top = TOP + 62;
+  const cardW = W - 32;
+  const full = H - TOP - BOTTOM - 62 - 16;
+  const cardH = full - PLAYER_H - 8;
+  const card = AL('VERTICAL', '카드/desc', { w: cardW, h: cardH, px: 28, py: 32, main: 'CENTER', cross: 'CENTER', r: 20, clip: true, fill: PAPER });
+  abs(s, card, 16, top);
+  add(card, bodyText(pages[index].paragraph, BROWN100), 'FILL');
+  const mark = AL('HORIZONTAL', '책갈피(꽂음)', { w: 32, h: 32, main: 'CENTER', cross: 'CENTER' });
+  mark.appendChild(icon('bookmark', 18, WRONG));
+  abs(s, mark, 16 + cardW - 20 - 32, top + cardH - 20 - 32);
+  abs(s, playerSlot(cardW), 16, top + cardH + 8);
+  return s;
+}
+
+/**
+ * 스크롤 보기. video가 참이면 유튜브가 있는 화 — 상태바부터 위 줄까지 검고, 그 바로 아래에
+ * 재생기가 화면 폭을 다 쓰고 붙박인다(높이 200, 모서리 없음). 없으면 종이색 위 줄에 가는 선.
+ */
+function buildScrollMode(video) {
+  const pages = DATA.reader.scroll;
+  const s = figma.createFrame();
+  s.name = video ? '읽기 — 스크롤 보기 (유튜브 있음)' : '읽기 — 스크롤 보기 (유튜브 없음)';
+  s.resize(W, H);
+  s.clipsContent = true;
+  s.fills = [solid(PAPER)];
+  if (video) {
+    abs(s, rect('상태바', W, TOP, '!ink'), 0, 0);
+    const head = simpleHeader(s, TOP, WHITE, false);
+    fill(head, '!ink');
+    const player = playerSlot(W);
+    player.cornerRadius = 0;
+    abs(s, player, 0, TOP + 48);
+  } else {
+    simpleHeader(s, TOP, BROWN100, true);
+  }
+  const column = AL('VERTICAL', '글', { w: W, px: 16, pt: 4, gap: 26 });
+  abs(s, column, 0, TOP + 48 + (video ? PLAYER_H : 0));
+  // 표지 덩이 — 스크롤 보기에서도 표지 장의 글이 맨 위에 선다(높이 260으로 못 박음).
+  const coverBlock = add(column, AL('VERTICAL', '표지 덩이', { h: 260, gap: 16, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FIXED');
+  const symbol = add(coverBlock, AL('VERTICAL', '마크 자리', { h: 72, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FIXED');
+  symbol.appendChild(coverMark(SEL.design.mark, 36, SEL.design.ink));
+  const chip = AL('HORIZONTAL', '책 이름', { px: 8, py: 4, r: 4, fill: '#F2E8DA' });
+  chip.appendChild(T(SEL.store.title, 'serif', 13, null, '#8B6C42', { ls: -0.26 }));
+  coverBlock.appendChild(chip);
+  add(coverBlock, T(DATA.lesson.title, 'serif', 24, 34, BROWN100, { ls: -0.48, align: 'CENTER' }), 'FILL');
+  add(coverBlock, T(DATA.lesson.subtitle, 'serifR', 16, 26, BROWN50, { ls: -0.32, align: 'CENTER' }), 'FILL');
+  for (const page of pages) {
+    if (page.kind === 'desc') add(column, bodyText(page.paragraph, BROWN100), 'FILL');
+  }
+  return s;
+}
+
+// ── 마이페이지 — 저장 버튼이 붙은 설정 화면 ───────────────────────────────────
+/** 헤더 오른쪽의 글자 버튼 — 색을 따로 준다(저장은 포인트 색). */
+const headerTextColor = (label, tok) => () => {
+  const slot = AL('HORIZONTAL', label, { h: 40, px: 8, main: 'CENTER', cross: 'CENTER' });
+  slot.appendChild(T(label, 'med', 15, 24, tok, { ls: 0.15 }));
+  return slot;
+};
+
+/** 책 보기 설정의 선택지 오른쪽 그림. */
+function themeHint(hint) {
+  if (hint.swatch) {
+    const [paper, ink, edgeLine] = hint.swatch;
+    const box = AL('HORIZONTAL', '그림', { w: 28, h: 28, r: 6, main: 'CENTER', cross: 'CENTER', fill: paper });
+    if (edgeLine) stroke(box, 'ash', HAIR);
+    box.appendChild(T('A', 'med', 14, null, ink));
+    return box;
+  }
+  const box = AL('HORIZONTAL', '그림', { w: 28, h: 28, main: 'CENTER', cross: 'CENTER' });
+  if (hint.glyph) box.appendChild(T('A', 'med', hint.glyph, hint.glyph * 1.2, 'graphite'));
+  else box.appendChild(icon(hint.icon, 20, 'graphite'));
+  return box;
+}
+
+/** 선택 표시 — 빈 원, 고르면 주황 원에 흰 체크. */
+function radio(on) {
+  const r = AL('HORIZONTAL', on ? '선택(고름)' : '선택', { w: 20, h: 20, r: 9999, main: 'CENTER', cross: 'CENTER', fill: on ? 'ember' : null });
+  if (on) r.appendChild(icon('checkmark', 14, 'eggshell'));
+  else stroke(r, 'ash', 1.5);
+  return r;
+}
+
+function buildBookTheme() {
+  const { s, body } = myPage('책 보기 설정', '책 보기 설정', headerTextColor('저장', 'ember'));
+  const sections = [
+    // 견본은 그 배경의 종이색·글자색 자체라 다크에서도 바꾸지 않는다('!'). 어두운 판 위라 둘 다 가는 테를 두른다.
+    { title: '책 배경 설정', icon: 'color-palette-outline', picked: 0, options: [['라이트', { swatch: ['!eggshell', '!ink', true] }], ['다크', { swatch: ['!ink', '!eggshell', true] }]] },
+    { title: '책 넘기기 설정', icon: 'book-outline', picked: 0, options: [['책 넘김 효과', { icon: 'book-outline' }], ['카드로 보기', { icon: 'albums-outline' }], ['스크롤 보기', { icon: 'swap-vertical' }]] },
+    { title: '폰트 크기 설정', icon: 'text-outline', picked: 1, options: [['작게', { glyph: 15 }], ['중간', { glyph: 17 }], ['크게', { glyph: 22 }]] },
+  ];
+  sections.forEach((section, sectionIndex) => {
+    settingSection(body, Object.assign({}, section, { options: section.options.map(([label, hint]) => [label, themeHint(hint)]) }), sectionIndex);
+  });
+  return s;
+}
+
+/**
+ * 하나만 고르는 설정 한 구역 — components/mypage/SettingSection. 책 보기·배경음악·TTS 설정이 같이 쓴다.
+ * options는 [이름, 오른쪽에 놓을 것(없으면 null)]. 마이페이지 안이라 다크(DARK)로 그린다.
+ */
+function settingSection(body, section, sectionIndex) {
+  const block = add(body, AL('VERTICAL', section.title, { px: 20, gap: 12, pt: sectionIndex > 0 ? 32 : 0 }), 'FILL');
+  const head = add(block, AL('HORIZONTAL', '제목 줄', { gap: 8, cross: 'CENTER' }), 'FILL');
+  const circle = AL('HORIZONTAL', '그림', { w: 32, h: 32, r: 9999, main: 'CENTER', cross: 'CENTER', fill: 'taupe' });
+  circle.appendChild(icon(section.icon, 18, 'graphite'));
+  head.appendChild(circle);
+  head.appendChild(T(section.title, 'med', 16, null, 'ink', { ls: 0.16 }));
+  const panel = add(block, AL('VERTICAL', '판', { r: 10, fill: 'taupe', clip: true }), 'FILL');
+  section.options.forEach(([label, right], index) => {
+    const on = index === section.picked;
+    const row = add(panel, AL('HORIZONTAL', `${label}${on ? ' (고름)' : ''}`, { gap: 12, px: 16, minH: 56, cross: 'CENTER' }), 'FILL');
+    if (index < section.options.length - 1) edge(row, 'stone', HAIR, 'bottom');
+    row.appendChild(radio(on));
+    add(row, T(label, on ? 'med' : 'reg', 15, 24, on ? 'ink' : 'smoke', { ls: 0.15 }), 'FILL');
+    if (right) row.appendChild(right);
+  });
+  return block;
+}
+
+/** 서점 외 전체 — 메뉴의 '서점 빼고 전부 내보내기'. 설정(미리보기 모음)은 출시 빌드에서 숨기므로 뺀다. */
+const INTRO_SCREENS = INTRO_SLIDES.map((_, i) => () => buildIntro(null, i));
+const SPLASH_SCREENS = [...INTRO_SCREENS, buildIntroLogin, buildQ1, buildFrequency, buildPurpose, buildLoading, buildQ2, buildQ3, buildQ4];
+/** 마이페이지 계열 — 전부 다크다. 책 보기 > 배경음악 > TTS 순서. */
+const MYPAGE_SCREENS = [buildMyPage, buildPlanned, buildFinished, buildBookTheme, buildBgm, buildTts, buildPermissions, buildAccount, () => buildReport('리포트'), buildReportMenu, buildWrongQuizzes, buildBookmarks, buildNotes].map(dark);
+const SCROLL_SCREENS = [() => buildScrollMode(true), () => buildScrollMode(false)];
+
+const ALL_BUT_STORE_GROUPS = [
+  ['첫 실행', [...SPLASH_SCREENS, buildWelcome]],
+  ['홈 · 알람 · 목차', [buildHome, dark(buildAlarm), dark(buildToc)]],
+  // 감상 노트 창은 버튼을 화면에서 잠시 뺀 동안 들어갈 길이 없어 그리지 않는다.
+  ['읽기 — 책 넘김 효과', [buildDeckCover, () => deckDesc('읽기 — 본문 장'), buildDeckOutro, () => deckDesc('읽기 — 본문 장 (다크)', true)]],
+  ['읽기 — 카드로 보기 · 스크롤 보기', [buildCardMode, ...SCROLL_SCREENS]],
+  ['퀴즈 · 리포트 · 구매', [() => buildQuiz('퀴즈 — 고르기 전', 0, null), () => buildQuiz('퀴즈 — 틀렸을 때', WRONG_INDEX, WRONG_PICK), buildStudyReport, buildPurchase]],
+  ['마이페이지', MYPAGE_SCREENS],
+];
+
+/** 지난번 내보낸 뒤로 바뀐 화면만 — 메뉴의 '바뀐 화면만 내보내기'. */
+const UPDATED_GROUPS = [
+  ['첫 실행 — 인트로 세 장 · 질문 여섯', SPLASH_SCREENS],
+  ['다크 — 알림 · 목차(성적 현황)', [dark(buildAlarm), dark(buildToc)]],
+  ['다크 — 마이페이지 (TTS 설정 추가, 배경음악 미리듣기)', MYPAGE_SCREENS],
+  ['읽기 — 감상 노트 버튼 뺌 · 스크롤 보기', [buildDeckCover, () => deckDesc('읽기 — 본문 장'), buildCardMode, ...SCROLL_SCREENS]],
+];
+const UPDATED_SECTION_NAME = '앱 구현 — 바뀐 화면 (코드에서 내보냄)';
+const ALL_BUT_STORE_SECTION_NAME = '앱 구현 — 서점 외 전체 (코드에서 내보냄)';
+
 // ── 내보내기 ───────────────────────────────────────────────────────────────
 const BOOKSTORE_SCREENS = [
   buildStoreHome,
@@ -1567,9 +2152,8 @@ const BOOKSTORE_SCREENS = [
   buildBookDetail,
 ];
 const GROUPS = [
-  ['홈 · 읽기', [buildHome, buildAlarm, buildToc, buildDeckCover, () => deckDesc('읽기 — 본문 장'), buildDeckOutro, buildNoteSheet, () => buildQuiz('퀴즈 — 고르기 전', 0, null), () => buildQuiz('퀴즈 — 틀렸을 때', WRONG_INDEX, WRONG_PICK), buildStudyReport, buildPurchase]],
+  ...ALL_BUT_STORE_GROUPS,
   ['하루 서점', BOOKSTORE_SCREENS],
-  ['마이페이지', [buildMyPage, buildPlanned, buildFinished, buildBgm, buildBookTheme, buildPermissions, buildAccount, () => buildReport('리포트'), buildReportMenu, buildWrongQuizzes, buildBookmarks, buildNotes, buildSettings]],
 ];
 
 const SECTION_NAME = '앱 구현 — 홈·서점·마이페이지 (코드에서 내보냄)';
@@ -1693,7 +2277,11 @@ const run =
     ? refont()
     : figma.command === 'bookstore'
       ? exportScreens(BOOKSTORE_GROUPS, BOOKSTORE_SECTION_NAME)
-      : exportScreens(GROUPS, SECTION_NAME);
+      : figma.command === 'all-but-store'
+        ? exportScreens(ALL_BUT_STORE_GROUPS, ALL_BUT_STORE_SECTION_NAME)
+        : figma.command === 'updated'
+          ? exportScreens(UPDATED_GROUPS, UPDATED_SECTION_NAME)
+          : exportScreens(GROUPS, SECTION_NAME);
 run.catch((error) => {
   console.error(error);
   figma.closePlugin(`멈췄습니다: ${error && error.message ? error.message : error}`);

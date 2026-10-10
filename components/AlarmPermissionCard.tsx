@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   hint: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
     paddingHorizontal: MY_PAGE.gutter,
     paddingBottom: Space[16],
   },
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: MY_PAGE.gutter,
     paddingVertical: Space[12],
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Surface.plate,
+    borderBottomColor: Ink.strong,
   },
   /** 마지막 줄 — 목록이 끝나는 자리라 선을 긋지 않는다. */
   rowLast: {
@@ -183,29 +183,29 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontFamily: Type.ui,
     ...TypeScale.body,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   rowHint: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.muted,
+    color: Ink.body,
   },
   toggle: {
     width: 44,
     height: 24,
     borderRadius: Corner.pill,
     padding: 3,
-    backgroundColor: Surface.plate,
+    backgroundColor: Ink.strong,
     justifyContent: 'center',
   },
   toggleOn: {
-    backgroundColor: Ink.strong,
+    backgroundColor: Surface.plate,
   },
   knob: {
     width: 18,
     height: 18,
     borderRadius: Corner.pill,
-    backgroundColor: Surface.canvas,
+    backgroundColor: Ink.primary,
   },
   knobOn: {
     transform: [{ translateX: 20 }],

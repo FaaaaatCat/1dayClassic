@@ -6,7 +6,19 @@ import * as Speech from 'expo-speech';
  *
  * 못 고르면 undefined를 준다 — 그때는 엔진 기본 목소리로 말한다.
  */
-export async function pickKoreanVoice(): Promise<string | undefined> {
+/**
+ * 남녀 목소리를 가르는 단서. 기기 TTS는 목소리에 성별을 적어 주지 않아서 이름으로 짐작한다.
+ *
+ * 구글 TTS의 한국어 목소리는 ism·kob가 여자, koc·kod가 남자다(ko-kr-x-kob-local 꼴). 이름에
+ * female/male이 들어간 엔진도 있다. 어느 단서에도 안 걸리면(삼성 TTS 등) 고를 수 없으므로
+ * 성별과 상관없는 기본 목소리로 읽는다.
+ */
+const VOICE_HINTS: Record<'female' | 'male', RegExp> = {
+  female: /(-ism-|-kob-|female|woman|여)/i,
+  male: /(-koc-|-kod-|(^|[^e])male|man\b|남)/i,
+};
+
+export async function pickKoreanVoice(gender?: 'female' | 'male'): Promise<string | undefined> {
   try {
     const voices = await Speech.getAvailableVoicesAsync();
     const korean = voices.filter((v) => {
@@ -15,6 +27,16 @@ export async function pickKoreanVoice(): Promise<string | undefined> {
       return lang === 'ko' || lang?.startsWith('ko-');
     });
     if (korean.length === 0) return undefined;
+
+    if (gender) {
+      const hint = VOICE_HINTS[gender];
+      const matched = korean.filter((v) => hint.test(`${v.identifier} ${v.name}`));
+      const best =
+        matched.find((v) => v.quality === Speech.VoiceQuality.Enhanced) ??
+        matched.find((v) => !v.identifier.includes('network')) ??
+        matched[0];
+      if (best) return best.identifier;
+    }
 
     const preferred =
       korean.find((v) => v.quality === Speech.VoiceQuality.Enhanced) ??

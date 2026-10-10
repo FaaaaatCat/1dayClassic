@@ -6,7 +6,7 @@ import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
 import PlannedStrip from '@/components/mypage/PlannedStrip';
 import { useShelfBooks } from '@/components/mypage/useShelfBooks';
 import ScaleButton from '@/components/ScaleButton';
-import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
+import { Corner, Ink, Space, Spark, Type, TypeScale } from '@/constants/theme';
 import { useBgm } from '@/context/BgmContext';
 import { useReaderSettings } from '@/context/ReaderSettingsContext';
 import { findBgm } from '@/lib/bgm';
@@ -66,6 +66,13 @@ export default function MyPageScreen() {
           value={`${finished.length}권`}
           onPress={() => router.push('/library/finished')}
         />
+        {/* 설정 셋 — 책 보기 > 배경음악 > TTS. */}
+        <MyPageRow
+          icon="color-palette-outline"
+          label="책 보기 설정"
+          value={readerSummary}
+          onPress={() => router.push('/library/book-theme')}
+        />
         <MyPageRow
           icon="musical-note-outline"
           label="배경음악 설정"
@@ -73,10 +80,10 @@ export default function MyPageScreen() {
           onPress={() => router.push('/library/bgm')}
         />
         <MyPageRow
-          icon="color-palette-outline"
-          label="책 보기 설정"
-          value={readerSummary}
-          onPress={() => router.push('/library/book-theme')}
+          icon="mic-outline"
+          label="TTS 설정"
+          value={`${settings.voice === 'male' ? '남자' : '여자'} · 자동읽기 ${settings.autoRead === 'on' ? '켬' : '끔'}`}
+          onPress={() => router.push('/library/tts')}
           last
         />
       </MyPageGroup>
@@ -121,11 +128,11 @@ const styles = StyleSheet.create({
     height: 40,
     paddingHorizontal: Space[16],
     borderRadius: Corner.pill,
-    backgroundColor: Surface.canvas,
+    backgroundColor: Ink.primary,
   },
   bannerButtonText: {
     fontFamily: Type.uiMedium,
     ...TypeScale.bodySm,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
 });

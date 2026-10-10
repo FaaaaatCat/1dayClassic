@@ -1,76 +1,107 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import SplashQuestion from '@/components/splash/SplashQuestion';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
-import type { AlarmPermissionKind } from '@/modules/alarm-clock';
+import {
+  getPermissionStatus,
+  requestAlarmPermission,
+  type AlarmPermissionKind,
+  type AlarmPermissionStatus,
+} from '@/modules/alarm-clock';
 
 interface PermissionRow {
   kind: AlarmPermissionKind;
   label: string;
-  /** 없으면 무슨 일이 생기는지 — 켜야 할 이유를 한 줄로. */
   hint: string;
 }
 
-/**
- * 물어볼 셋. 마이페이지의 권한 관리와 같은 항목이다(components/AlarmPermissionCard).
- * 순서도 같다 — 위쪽이 없으면 알람 자체가 성립하지 않고, 아래로 갈수록 덜 깨어난다.
- */
 const ROWS: PermissionRow[] = [
   { kind: 'notifications', label: '알림', hint: '알림기능을 위해 필요해요' },
   { kind: 'exactAlarm', label: '정확한 알람', hint: '없으면 몇 분씩 밀릴 수 있습니다.' },
   { kind: 'fullScreenIntent', label: '전체 화면 알림', hint: '잠금화면 위에 알람을 띄워야 해요.' },
 ];
 
+const ALL_ON: AlarmPermissionStatus = { notifications: true, exactAlarm: true, fullScreenIntent: true };
+
 /**
- * 질문 4 — 권한.
+ * 질문 6 — 알람에 꼭 필요한 권한 셋.
  *
- * 셋 다 켜진 채로 시작한다. 알람 앱에서 이 셋은 고르는 것이 아니라 다 있어야 하는 것이고,
- * 켜 두면 그냥 넘겨도 알람이 제대로 울리는 자리에 가 닿는다. 다음 버튼도 처음부터 눌린다.
+ * 토글은 기기의 실제 상태를 그대로 보여 준다. 예전에는 셋 다 켜진 채로 시작하는 '부탁 목록'
+ * 이었고, '다음'을 누르면 셋을 한꺼번에 요청했다. 그러다 보니 두 가지가 어긋났다.
+ *  - 화면은 켜져 있는데 실제로는 꺼진 권한이 있었다. 전체 화면 알림은 Android 14부터
+ *    스토어의 알람 앱이 아니면 처음부터 꺼져 있다 — 토글이 켜져 보인 것은 부탁일 뿐이었다.
+ *  - 정확한 알람·전체 화면 알림은 팝업이 없고 설정 화면을 여는 것이 전부라, 한꺼번에 열리면
+ *    설정 화면이 겹쳐 뜨고 그 사이 앱은 홈으로 넘어가 버렸다. 정확한 알람은 이 앱이 알람
+ *    앱으로 신고해 둬서(USE_EXACT_ALARM) 늘 켜져 있는데도 그 설정 화면이 열려, 끌 수도 없는
+ *    토글만 보였다.
  *
- * 이 화면은 시스템 팝업을 직접 띄우지 않는다. 켜 달라고 한 것들을 다음 버튼과 함께
- * 위로 올려 줄 뿐이고, 실제로 묻는 일은 부르는 쪽이 맡는다 — 그래야 진짜 온보딩은 묻고
- * 미리보기는 묻지 않을 수 있다(app/onboarding.tsx와 app/splash-preview.tsx).
+ * 그래서 이제는 꺼진 줄을 누를 때 그 권한 하나만 묻는다. 설정 화면에 다녀오면(앱이 다시
+ * 앞으로 오면) 상태를 다시 읽어 토글을 고친다. '다음'은 묻지 않고 넘어간다 — 빠진 권한은
+ * 마이페이지 > 권한 관리에서 언제든 켤 수 있다.
+ *
+ * 미리보기(askPermissions=false)에서는 기기에 묻지 않고 토글만 켜고 끈다.
  */
 export default function SplashPermissions({
   onNext,
   onBack,
+  askPermissions = true,
 }: {
-  /** 켜 달라고 한 권한들을 함께 올린다. 부르는 쪽이 이것으로 시스템에 묻는다. */
-  onNext: (kinds: AlarmPermissionKind[]) => void;
+  onNext: () => void;
   onBack: () => void;
+  askPermissions?: boolean;
 }) {
-  /**
-   * 처음에는 셋 다 켜져 있다.
-   *
-   * 여기 담긴 것은 기기의 실제 권한 상태가 아니라 '켜 달라고 한 것'이다. 첫 실행에는
-   * 아직 아무 권한도 없고, 묻는 일은 다음 버튼을 누른 뒤에 한꺼번에 일어난다.
-   */
-  const [granted, setGranted] = useState<AlarmPermissionKind[]>(() => ROWS.map((row) => row.kind));
+  const [status, setStatus] = useState<AlarmPermissionStatus | null>(
+    askPermissions ? null : ALL_ON,
+  );
 
-  const toggle = (kind: AlarmPermissionKind) =>
-    setGranted((prev) => (prev.includes(kind) ? prev.filter((k) => k !== kind) : [...prev, kind]));
+  const refresh = useCallback(() => {
+    getPermissionStatus()
+      .then(setStatus)
+      .catch((error) => console.warn('[splash] 권한 상태 확인 실패:', error));
+  }, []);
+
+  useEffect(() => {
+    if (!askPermissions) return;
+    refresh();
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
+    return () => subscription.remove();
+  }, [askPermissions, refresh]);
+
+  const press = (kind: AlarmPermissionKind) => {
+    if (!askPermissions) {
+      setStatus((prev) => (prev ? { ...prev, [kind]: !prev[kind] } : prev));
+      return;
+    }
+    // 이미 켜진 권한은 앱이 끌 수 없다(끄는 것은 기기 설정의 몫) — 꺼진 것만 묻는다.
+    if (status?.[kind]) return;
+    requestAlarmPermission(kind)
+      .then(refresh)
+      .catch((error) => console.warn(`[splash] ${kind} 권한 요청 실패:`, error));
+  };
 
   return (
     <SplashQuestion
-      step={4}
+      step={6}
       title="꼭 필요한 몇가지 권한을 승인해주세요"
       canGoNext
-      onNext={() => onNext(granted)}
+      onNext={onNext}
       onBack={onBack}
       padded={false}
       titleAlign="left">
       <View>
         {ROWS.map((row) => {
-          const on = granted.includes(row.kind);
+          const on = status?.[row.kind] ?? false;
           return (
             <Pressable
               key={row.kind}
               accessibilityRole="switch"
               accessibilityState={{ checked: on }}
-              accessibilityLabel={`${row.label} 권한`}
+              accessibilityLabel={`${row.label} 권한${on ? ', 허용됨' : ', 눌러서 허용하기'}`}
               style={styles.row}
-              onPress={() => toggle(row.kind)}>
+              onPress={() => press(row.kind)}>
               <View style={styles.rowText}>
                 <Text style={styles.rowLabel}>{row.label}</Text>
                 <Text style={styles.rowHint}>{row.hint}</Text>
@@ -88,10 +119,6 @@ export default function SplashPermissions({
 }
 
 const styles = StyleSheet.create({
-  /**
-   * 줄 — 카드에 담지 않고 화면 폭을 다 쓰는 목록이다. 나누는 것은 아래 선 하나뿐이라
-   * 셋이 하나의 목록으로 읽힌다.
-   */
   row: {
     flexDirection: 'row',
     alignItems: 'center',

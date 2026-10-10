@@ -7,6 +7,7 @@ import * as Speech from "expo-speech";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useBgm } from "@/context/BgmContext";
+import { useReaderSettings } from "@/context/ReaderSettingsContext";
 import { resolveMediaUrl } from "@/lib/firebase";
 import { MEDIA_HEADERS } from "@/lib/lessons";
 import { buildNarrationUnits } from "@/lib/narration";
@@ -92,10 +93,16 @@ export function useAudioPlayer() {
       interruptionMode: "duckOthers",
     });
 
-    pickKoreanVoice().then((voice) => {
+  }, []);
+
+  // TTS 설정에서 고른 목소리 — 바뀌면 다음 문장부터 그 목소리로 읽는다.
+  const { settings: readerSettings } = useReaderSettings();
+  const gender = readerSettings.voice;
+  useEffect(() => {
+    pickKoreanVoice(gender).then((voice) => {
       voiceRef.current = voice;
     });
-  }, []);
+  }, [gender]);
 
   /** 진행 중인 흐름(타이머·페이드·TTS)을 전부 무효화한다. 음악은 건드리지 않는다. */
   const cancelFlow = useCallback(() => {

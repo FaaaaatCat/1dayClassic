@@ -183,6 +183,11 @@ const ENTER_DURATION = 840;
 /** 글이 올라오기 시작하는 높이(dp). 눈에 걸리지 않을 만큼만 든다. */
 const ENTER_RISE = 14;
 /**
+ * 감상 노트 버튼을 보일지. 지금은 화면에서만 잠시 뺐다 — 노트 기능(NoteSheet·저장·마이페이지의
+ * 노트 모음)은 그대로 살아 있으니 true로 돌리면 다시 나온다.
+ */
+const SHOW_NOTES = false;
+/**
  * 감상 노트 줄 간격(dp). 줄노트 바탕의 줄 간격이자 글자 줄높이다 — 두 값이 여기 하나
  * 에서 나와야 글이 줄 위에 앉는다(NoteBlock 주석 참고).
  */
@@ -658,6 +663,8 @@ export default function CardDeckDetail({
    * 늘 앉아 있다 — 여닫는 버튼은 없다.
    */
   const hasMusic = !!cover.listenId;
+  /** 유튜브가 있는 스크롤 보기 — 위 줄이 검어지고 그 아래에 재생기가 붙는다. */
+  const scrollVideo = scrollMode && hasMusic;
   const fullCardH = instantTurn ? simpleFullH : CARD_H;
   const cardH = hasMusic
     ? fullCardH - (instantTurn ? PLAYER_H + SIMPLE_PLAYER_GAP : PLAYER_BLOCK)
@@ -701,6 +708,9 @@ export default function CardDeckDetail({
   // 위 초기화가 낭독을 세우려면 낭독이 필요한데, 그 값은 렌더마다 새로 만들어진다.
   const narrationRef = useRef(narration);
   narrationRef.current = narration;
+  /** 자동읽기(TTS 설정) — 켜 두면 화면이 열리자마자 낭독을 시작한다. 실제로 읽는 화면에만 건다. */
+  const autoReadRef = useRef(false);
+  autoReadRef.current = trackProgress && readerSettings.autoRead === 'on';
 
   useFocusEffect(
     useCallback(() => {
@@ -718,6 +728,16 @@ export default function CardDeckDetail({
       setQuizOpen(false);
       setReaderOpen(false);
       narrationRef.current?.stop();
+
+      // 자동읽기 — 위에서 처음으로 되돌린 다음 판에 시작한다(같은 판에 걸면 바로 위의 stop이
+      // 막 건 낭독을 도로 세운다).
+      if (autoReadRef.current) {
+        const timer = setTimeout(() => {
+          setReaderOpen(true);
+          narrationRef.current?.restart();
+        }, 0);
+        return () => clearTimeout(timer);
+      }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
@@ -791,18 +811,20 @@ export default function CardDeckDetail({
                 <Ionicons name="headset" color={color} size={24} />
               </ScaleButton>
             )}
-            <ScaleButton
-              accessibilityLabel={noteCount > 0 ? `감상 노트 ${noteCount}개` : '감상 노트'}
-              style={styles[hit]}
-              onPress={() => setNoteOpen(true)}>
-              <Ionicons name="create" color={color} size={24} />
-              {/* 남긴 노트 수 — 창을 열지 않고도 몇 개 적었는지 보인다. */}
-              {noteCount > 0 ? (
-                <View style={styles.noteBadge}>
-                  <Text style={styles.noteBadgeText}>{noteCount}</Text>
-                </View>
-              ) : null}
-            </ScaleButton>
+            {SHOW_NOTES ? (
+              <ScaleButton
+                accessibilityLabel={noteCount > 0 ? `감상 노트 ${noteCount}개` : '감상 노트'}
+                style={styles[hit]}
+                onPress={() => setNoteOpen(true)}>
+                <Ionicons name="create" color={color} size={24} />
+                {/* 남긴 노트 수 — 창을 열지 않고도 몇 개 적었는지 보인다. */}
+                {noteCount > 0 ? (
+                  <View style={styles.noteBadge}>
+                    <Text style={styles.noteBadgeText}>{noteCount}</Text>
+                  </View>
+                ) : null}
+              </ScaleButton>
+            ) : null}
     </>
   );
 
@@ -812,9 +834,10 @@ export default function CardDeckDetail({
     <View style={[styles.screen, scrollMode && { backgroundColor: palette.paper }]}>
       {/* 어두운 화면이라 상태바도 검게, 시계는 희게. */}
       {/* 스크롤 보기는 화면 전체가 종이라 상태바도 종이색으로 잇는다. */}
+      {/* 재생기가 있는 스크롤 보기는 위 줄이 검어 상태바도 검게 둔다(기본값). */}
       <StatusBarTint
         tint={
-          scrollMode
+          scrollMode && !scrollVideo
             ? {
                 color: palette.paper,
                 icons: readerSettings.background === 'dark' ? 'light' : 'dark',
@@ -826,7 +849,7 @@ export default function CardDeckDetail({
       {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니다.
           세이프에어리어를 스크린의 padding으로 주지 않는 건, 절대 배치된 덱·아래 줄이
           그 padding을 타지 않아서다(그러면 아래 줄이 내비게이션 바에 깔린다). */}
-      <View style={{ height: insets.top }} />
+      <View style={[{ height: insets.top }, scrollVideo && styles.scrollVideoTop]} />
       {/* 섞어쓰기 미리보기는 바가 없다. 바가 차지하던 높이는 남겨 둔다 — 덱의 자리가
           그 높이를 셈에 넣고 있어서다. */}
       {/* 스크롤 보기도 몇 장째인지 셀 장이 없어 바를 빼고 높이만 남긴다. */}
@@ -839,16 +862,20 @@ export default function CardDeckDetail({
       {/* 계정 줄 — 표지·책 이름·날짜, 그리고 닫기.
           잠금 위 알람에서는 닫기를 그리지 않는다 — 유일한 출구를 막아야 한다. */}
       {simpleChrome ? (
-        <View style={[styles.simpleHeader, scrollMode && styles.simpleHeaderRule]}>
+        <View
+          style={[
+            styles.simpleHeader,
+            scrollMode && (scrollVideo ? styles.scrollVideoTop : styles.simpleHeaderRule),
+          ]}>
           {lockFlow ? (
             <View style={styles.simpleBack} />
           ) : (
             <ScaleButton accessibilityLabel="닫기" style={styles.simpleBack} onPress={onClose}>
-              <Chevron size={24} color={scrollMode ? palette.ink : Colors.white} />
+              <Chevron size={24} color={scrollMode && !scrollVideo ? palette.ink : Colors.white} />
             </ScaleButton>
           )}
           <View style={styles.footerIcons}>
-            {readerButtons(scrollMode ? palette.ink : Colors.white, 'simpleHit')}
+            {readerButtons(scrollMode && !scrollVideo ? palette.ink : Colors.white, 'simpleHit')}
           </View>
         </View>
       ) : (
@@ -874,6 +901,12 @@ export default function CardDeckDetail({
       </View>
       )}
 
+      {/* 스크롤 보기의 재생기 — 위 줄 바로 아래에 화면 폭을 다 쓰고 붙박인다. 글만 그 아래에서
+          흐른다 — 음악을 들으며 읽는 화면이라 재생기가 글과 함께 밀려 올라가지 않는다. */}
+      {scrollVideo && cover.listenId ? (
+        <MusicPlayer videoId={cover.listenId} paused={readerOpen} width={SCREEN_W} square />
+      ) : null}
+
       {/* 스크롤 보기 — 화면 전체가 종이다. 카드 없이, 모든 장을 위에서 아래로 잇는다. */}
       {scrollMode ? (
         <ScrollView
@@ -881,8 +914,7 @@ export default function CardDeckDetail({
           style={styles.scrollPage}
           contentContainerStyle={[
             styles.scrollBody,
-            // 재생기가 아래에 떠 있으면 마지막 글이 그 위로 올라올 만큼 더 내려 준다.
-            { paddingBottom: insets.bottom + 16 + (hasMusic ? PLAYER_H + 16 : 0) },
+            { paddingBottom: insets.bottom + 16 },
           ]}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={32}
@@ -1002,18 +1034,15 @@ export default function CardDeckDetail({
             장을 넘겨도 언마운트되지 않는다(그러면 음악이 끊긴다).
             낭독을 켜면 세운다 — 배경음악과 목소리 위에 유튜브까지 얹히면 아무것도
             들리지 않는다. */}
-        {cover.listenId ? (
+        {/* 스크롤 보기의 재생기는 덱이 아니라 위 줄 아래에 있다. */}
+        {cover.listenId && !scrollMode ? (
           <View
-            style={
-              scrollMode
-                ? [styles.musicFloat, { width: cardW, bottom: 16 }]
-                : [
-                    styles.musicSlot,
-                    { left: (SCREEN_W - cardW) / 2, width: cardW },
-                    // 넘김효과 없음 — 카드 아래 8만큼 띄워 붙인다.
-                    cardTop !== null && { top: cardTop + cardH + SIMPLE_PLAYER_GAP, marginTop: 0 },
-                  ]
-            }>
+            style={[
+              styles.musicSlot,
+              { left: (SCREEN_W - cardW) / 2, width: cardW },
+              // 넘김효과 없음 — 카드 아래 8만큼 띄워 붙인다.
+              cardTop !== null && { top: cardTop + cardH + SIMPLE_PLAYER_GAP, marginTop: 0 },
+            ]}>
             <MusicPlayer videoId={cover.listenId} paused={readerOpen} width={cardW} />
           </View>
         ) : null}
@@ -2484,11 +2513,9 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     gap: BODY_LINE_HEIGHT,
   },
-  /** 스크롤 보기의 재생기 — 글 위에 떠서 화면 아래에 붙는다. */
-  musicFloat: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 102,
+  /** 재생기가 있는 스크롤 보기의 위 줄 — 재생기와 이어지게 검다. */
+  scrollVideoTop: {
+    backgroundColor: Ink.primary,
   },
   /** 표지 덩이 — 표지 장은 제 자리를 채우며 가운데에 앉는 짜임이라 높이를 정해 준다. */
   scrollCover: {

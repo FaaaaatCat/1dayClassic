@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
 import { useWrongQuizzes, type WrongQuiz } from '@/components/mypage/useWrongQuizzes';
 import LessonQuizModal from '@/components/quiz/LessonQuizModal';
-import { Corner, Feedback, Ink, Space, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { Corner, Feedback, Ink, Space, Surface, Type, TypeScale, trackBody, Colors } from '@/constants/theme';
 import { isDatedBook } from '@/lib/books';
 import { BOOKSTORE_BOOKS } from '@/lib/bookstore';
 
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   count: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
   },
   empty: {
     gap: Space[4],
@@ -158,12 +158,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: Type.uiMedium,
     ...TypeScale.subheading,
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   emptyNote: {
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
-    color: Ink.body,
+    color: Ink.muted,
   },
 
   /** 문제 한 장 — 테두리 없이 한 단 올라온 종이다(Surface.card). */
@@ -171,22 +171,22 @@ const styles = StyleSheet.create({
     gap: Space[8],
     padding: Space[20],
     borderRadius: Corner.card,
-    backgroundColor: Surface.card,
+    backgroundColor: Colors.brown90,
   },
   cardWhere: {
     fontFamily: Type.uiMedium,
     ...TypeScale.bodySm,
-    color: Ink.strong,
+    color: Surface.plate,
   },
   cardNo: {
     fontFamily: Type.ui,
     ...TypeScale.caption,
-    color: Ink.muted,
+    color: Ink.body,
   },
   question: {
     fontFamily: Type.uiMedium,
     ...TypeScale.body,
-    color: Ink.primary,
+    color: Ink.onDark,
     paddingTop: Space[4],
   },
 
@@ -203,22 +203,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: Space[12],
     borderRadius: Corner.small,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Surface.plate,
-    backgroundColor: Surface.canvas,
+    borderColor: Ink.strong,
+    backgroundColor: Ink.primary,
   },
   choiceRight: {
     borderColor: Feedback.right,
-    backgroundColor: Feedback.rightSurface,
+    backgroundColor: Colors.brown90,
   },
   choiceWrong: {
     borderColor: Feedback.wrong,
-    backgroundColor: Feedback.wrongSurface,
+    backgroundColor: Colors.brown90,
   },
   choiceNo: {
     fontFamily: Type.uiMedium,
     fontSize: 13,
     lineHeight: 21,
-    color: Ink.strong,
+    color: Surface.plate,
   },
   choiceText: {
     flex: 1,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 21,
     letterSpacing: trackBody(13),
-    color: Ink.primary,
+    color: Ink.onDark,
   },
   /** '정답'·'내 답' 꼬리표 — 색을 못 가려도 어느 줄이 무엇인지 읽히게 한다. */
   tag: {
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     gap: Space[4],
     padding: Space[16],
     borderRadius: Corner.small,
-    backgroundColor: Surface.plate,
+    backgroundColor: Ink.strong,
     marginTop: Space[4],
   },
   explanationLabel: {
@@ -262,6 +262,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 22,
     letterSpacing: trackBody(13),
-    color: Ink.body,
+    color: Ink.muted,
   },
 });

@@ -22,23 +22,25 @@ export default function TabLayout() {
         header: () => <AppHeader title={TITLES[route.name] ?? ''} />,
         sceneStyle: { backgroundColor: Surface.canvas },
       })}>
-      <Tabs.Screen name="index" options={{ title: '오늘의 공부', headerShown: false }} />
-      <Tabs.Screen name="today" options={{ headerShown: false, href: null }} />
+      {/* 홈과 읽기 화면은 그 위로 다른 화면이 덮고 들어오는 자리라 제자리에 가만히 있는다. */}
+      <Tabs.Screen name="index" options={{ title: '오늘의 공부', headerShown: false, ...STAY_UNDER }} />
+      <Tabs.Screen name="today" options={{ headerShown: false, href: null, ...STAY_UNDER }} />
       {/* 목차 — 홈에서 떼어낸 화면이라 홈과 마찬가지로 제 헤더를 그린다. */}
-      <Tabs.Screen name="toc" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="alarm-detail" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen name="toc" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="alarm-detail" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
       {/* 마이페이지와 그 안의 화면들 — 홈의 사람 버튼으로 들어온다. 저마다 제 헤더를
           그리므로 공용 헤더를 끈다. */}
-      <Tabs.Screen name="library" options={{ headerShown: false }} />
-      <Tabs.Screen name="library/planned" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="library/finished" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="library/bgm" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="library/book-theme" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="library/permissions" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="library/wrong-quizzes" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="library/bookmarks" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="library/notes" options={{ headerShown: false, href: null }} />
-      <Tabs.Screen name="library/account" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen name="library" options={{ headerShown: false, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/planned" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/finished" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/bgm" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/book-theme" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/tts" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/permissions" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/wrong-quizzes" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/bookmarks" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/notes" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
+      <Tabs.Screen name="library/account" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
       {/* 서점은 타이틀이 스크롤을 따라 올라가야 해서 공용 헤더를 쓰지 않고 화면이 직접 그린다. */}
       <Tabs.Screen
         name="bookstore"
@@ -54,7 +56,7 @@ export default function TabLayout() {
             : {}),
         })}
       />
-      <Tabs.Screen name="library/book/[id]" options={{ headerShown: false, href: null }} />
+      <Tabs.Screen name="library/book/[id]" options={{ headerShown: false, href: null, ...SLIDE_IN }} />
       <Tabs.Screen name="settings" options={{ title: '설정' }} />
     </Tabs>
   );
@@ -68,6 +70,14 @@ const TITLES: Record<string, string> = {
 };
 
 /**
+ * ── 오른쪽에서 덮으며 들어오는 화면들 ──
+ *
+ * 홈에서 여는 알림·목차·마이페이지, 마이페이지 안의 화면들, 서점에서 연 책 상세가 오른쪽에서
+ * 들어와 앞 화면을 덮는다(SLIDE_IN). 덮이는 쪽(홈·읽기 화면·서점·마이페이지)은 제자리에
+ * 가만히 있는다 — 홈과 읽기 화면·서점은 STAY_UNDER로, 마이페이지는 제 SLIDE_IN이 물러날 때
+ * 움직이지 않으므로 그대로 덮이는 바닥이 된다. 방향은 등록 순서가 정하므로, 덮고 들어오는
+ * 화면은 덮이는 화면보다 뒤에 등록되어 있어야 한다.
+ *
  * ── 서점 → 책 상세의 넘어가는 모양 ──
  *
  * 서점에서 책을 열면 상세가 오른쪽에서 들어와 서점 위를 덮는다. 서점 안의 페이지들

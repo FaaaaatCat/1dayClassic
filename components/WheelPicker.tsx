@@ -30,6 +30,8 @@ interface WheelPickerProps {
   width?: number;
   /** 가장 큰 표제라 서체가 다르다 — 시·분은 가늘게, 오전/오후는 그보다 조금 굵게. */
   weight?: 'light' | 'medium';
+  /** 어두운 바탕(알림 설정) — 고른 줄은 희게, 나머지는 한 단 더 물러나게. */
+  dark?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ export default function WheelPicker({
   onChange,
   width = 64,
   weight = 'light',
+  dark = false,
 }: WheelPickerProps) {
   const scrollRef = useRef<ScrollView>(null);
   const isInternalScroll = useRef(false);
@@ -80,7 +83,8 @@ export default function WheelPicker({
               style={[
                 styles.itemText,
                 weight === 'medium' && styles.itemTextMedium,
-                index === selectedIndex && styles.itemTextSelected,
+                dark && styles.itemTextDark,
+                index === selectedIndex && (dark ? styles.itemTextSelectedDark : styles.itemTextSelected),
               ]}
               numberOfLines={1}>
               {item}
@@ -120,5 +124,11 @@ const styles = StyleSheet.create({
   /** 고른 줄만 검다. 나머지는 물러나 있어 어디를 골랐는지 색으로 읽힌다. */
   itemTextSelected: {
     color: Ink.primary,
+  },
+  itemTextDark: {
+    color: Ink.body,
+  },
+  itemTextSelectedDark: {
+    color: Ink.onDark,
   },
 });

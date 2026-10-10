@@ -44,8 +44,11 @@ export default function MusicPlayer({
   videoId,
   paused,
   width = CARD_W,
+  square = false,
 }: {
   videoId: string;
+  /** 모서리를 깎지 않는다 — 화면 폭을 다 쓰는 자리(스크롤 보기)에서. */
+  square?: boolean;
   /** 재생기의 폭. 기본은 카드 폭 — 카드 덱이 아닌 화면은 제 폭을 넘긴다. */
   width?: number;
   /** 밖에서 세워야 할 때(낭독을 켠 동안). 소리가 둘이 되면 아무것도 안 들린다. */
@@ -66,14 +69,14 @@ export default function MusicPlayer({
 
   if (!YoutubePlayer) {
     return (
-      <View style={styles.player}>
+      <View style={[styles.player, square && styles.square]}>
         <Text style={styles.absent}>{'앱을 다시 설치해야\n여기서 음악이 재생됩니다.'}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.player}>
+    <View style={[styles.player, square && styles.square]}>
       <YoutubePlayer
         videoId={videoId}
         height={PLAYER_H}
@@ -103,6 +106,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'center',
     backgroundColor: '#000000',
+  },
+  square: {
+    borderRadius: 0,
   },
   web: {
     backgroundColor: '#000000',

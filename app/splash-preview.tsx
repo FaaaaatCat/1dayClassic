@@ -43,7 +43,7 @@ export default function SplashPreviewScreen() {
 
   return (
     <View style={styles.screen}>
-      {done ? <SplashHome onDone={close} /> : <SplashFlow onFinish={() => setDone(true)} />}
+      {done ? <SplashHome onDone={close} /> : <SplashFlow askPermissions={false} onFinish={() => setDone(true)} />}
     </View>
   );
 }

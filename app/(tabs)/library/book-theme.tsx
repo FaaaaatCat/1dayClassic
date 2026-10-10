@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
+import MyPageShell from '@/components/mypage/MyPageShell';
+import SettingSection from '@/components/mypage/SettingSection';
 import { HeaderTextButton } from '@/components/ScreenHeader';
-import { Corner, Ink, Space, Spark, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import { Ink, Spark, Surface, Type } from '@/constants/theme';
 import { useReaderSettings, type ReaderSettings } from '@/context/ReaderSettingsContext';
 import { useToast } from '@/context/ToastContext';
 
@@ -16,21 +17,15 @@ import { useToast } from '@/context/ToastContext';
  * - icon: Ionicons 그림 하나.
  */
 type OptionHint =
-  | { kind: 'swatch'; paper: string; ink: string; edge?: boolean }
+  | { kind: 'swatch'; paper: string; ink: string }
   | { kind: 'glyph'; size: number }
   | { kind: 'icon'; name: React.ComponentProps<typeof Ionicons>['name'] };
 
-interface Option {
-  id: string;
-  label: string;
-  hint: OptionHint;
-}
-
 interface Section {
-  id: keyof ReaderSettings;
+  id: 'background' | 'turn' | 'fontSize';
   title: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
-  options: Option[];
+  options: { id: string; label: string; hint: OptionHint }[];
 }
 
 /** 고를 수 있는 것들. 처음 값은 ReaderSettingsContext의 DEFAULT_READER_SETTINGS다. */
@@ -40,8 +35,8 @@ const SECTIONS: Section[] = [
     title: '책 배경 설정',
     icon: 'color-palette-outline',
     options: [
-      // 라이트는 흰 판이 바탕(줄의 판)에 묻히지 않게 가는 테를 두른다.
-      { id: 'light', label: '라이트', hint: { kind: 'swatch', paper: Surface.canvas, ink: Ink.primary, edge: true } },
+      // 그 배경의 종이색과 글자색 — 읽기 화면의 라이트·다크 종이를 그대로 보여 준다.
+      { id: 'light', label: '라이트', hint: { kind: 'swatch', paper: Surface.canvas, ink: Ink.primary } },
       { id: 'dark', label: '다크', hint: { kind: 'swatch', paper: Ink.primary, ink: Surface.canvas } },
     ],
   },
@@ -70,9 +65,8 @@ const SECTIONS: Section[] = [
 /**
  * 책 보기 설정 — 배경·넘기기·글자 크기, 세 가지를 고르고 '저장'으로 확정한다(ReaderSettingsContext).
  *
- * 셋 다 오늘의 공부 화면에 바로 반영된다.
- *
- * 구역마다 머리에 그림 하나와 이름을 두고, 고르는 줄들은 한 단 올라온 판 위에 모은다.
+ * 셋 다 오늘의 공부 화면에 바로 반영된다. 구역의 모양은 배경음악·TTS 설정과 같은 것을
+ * 쓴다(SettingSection).
  */
 export default function BookThemeScreen() {
   const router = useRouter();
@@ -104,37 +98,20 @@ export default function BookThemeScreen() {
     <MyPageShell
       title="책 보기 설정"
       action={<HeaderTextButton label="저장" color={Spark.ember} onPress={save} />}>
-      {SECTIONS.map((section, sectionIndex) => (
-        <View key={section.id} style={[styles.section, sectionIndex > 0 && styles.sectionGap]}>
-          <View style={styles.sectionHead}>
-            <View style={styles.sectionIcon}>
-              <Ionicons name={section.icon} size={18} color={Ink.strong} />
-            </View>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-          </View>
-
-          <View style={styles.panel}>
-            {section.options.map((option, index) => {
-              const on = option.id === draft[section.id];
-              return (
-                <Pressable
-                  key={option.id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
-                  accessibilityLabel={`${section.title} ${option.label}`}
-                  style={[styles.row, index === section.options.length - 1 && styles.rowLast]}
-                  onPress={() => setDraft((prev) => ({ ...prev, [section.id]: option.id }))}>
-                  {/* 고른 것은 왼쪽에 주황 원과 흰 체크, 아닌 것은 빈 원. */}
-                  <View style={[styles.radio, on && styles.radioOn]}>
-                    {on && <Ionicons name="checkmark" color={Surface.canvas} size={14} />}
-                  </View>
-                  <Text style={[styles.label, on && styles.labelPicked]}>{option.label}</Text>
-                  <OptionHintView hint={option.hint} />
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+      {SECTIONS.map((section, index) => (
+        <SettingSection
+          key={section.id}
+          first={index === 0}
+          title={section.title}
+          icon={section.icon}
+          picked={draft[section.id]}
+          onPick={(id) => setDraft((prev) => ({ ...prev, [section.id]: id }))}
+          options={section.options.map((option) => ({
+            id: option.id,
+            label: option.label,
+            right: <OptionHintView hint={option.hint} />,
+          }))}
+        />
       ))}
     </MyPageShell>
   );
@@ -144,7 +121,7 @@ export default function BookThemeScreen() {
 function OptionHintView({ hint }: { hint: OptionHint }) {
   if (hint.kind === 'swatch') {
     return (
-      <View style={[styles.swatch, { backgroundColor: hint.paper }, hint.edge && styles.swatchEdge]}>
+      <View style={[styles.swatch, { backgroundColor: hint.paper }]}>
         <Text style={[styles.swatchA, { color: hint.ink }]}>A</Text>
       </View>
     );
@@ -158,77 +135,12 @@ function OptionHintView({ hint }: { hint: OptionHint }) {
   }
   return (
     <View style={styles.hint}>
-      <Ionicons name={hint.name} size={20} color={Ink.strong} />
+      <Ionicons name={hint.name} size={20} color={Surface.plate} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
-    paddingHorizontal: MY_PAGE.gutter,
-    gap: Space[12],
-  },
-  sectionGap: {
-    marginTop: Space[32],
-  },
-  sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space[8],
-  },
-  /** 구역 이름 앞의 그림 — 서점 분야 바로가기와 같은 결의 둥근 판. */
-  sectionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: Corner.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Surface.card,
-  },
-  sectionTitle: {
-    fontFamily: Type.uiMedium,
-    fontSize: 16,
-    letterSpacing: trackBody(16),
-    color: Ink.primary,
-  },
-  /** 고르는 줄들을 모은 판 — 테두리 없이 한 단 올라온 자리. */
-  panel: {
-    borderRadius: Corner.small,
-    backgroundColor: Surface.card,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space[12],
-    minHeight: MY_PAGE.rowHeight,
-    paddingHorizontal: Space[16],
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Surface.plate,
-  },
-  rowLast: {
-    borderBottomWidth: 0,
-  },
-  label: {
-    flex: 1,
-    fontFamily: Type.ui,
-    ...TypeScale.body,
-    color: Ink.body,
-  },
-  /** 선택 표시 — 빈 원, 고르면 주황 원에 흰 체크. */
-  radio: {
-    width: 20,
-    height: 20,
-    borderRadius: Corner.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: Ink.muted,
-  },
-  radioOn: {
-    borderWidth: 0,
-    backgroundColor: Spark.ember,
-  },
   /** 설명 그림이 서는 자리 — 그림마다 크기가 달라도 같은 폭을 차지한다. */
   hint: {
     width: 28,
@@ -236,16 +148,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  /** 종이 견본 — 어두운 판 위에서 검은 견본도 보이게 가는 테를 두른다. */
   swatch: {
     width: 28,
     height: 28,
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  swatchEdge: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Ink.muted,
+    borderColor: Ink.body,
   },
   swatchA: {
     fontFamily: Type.uiMedium,
@@ -253,10 +164,6 @@ const styles = StyleSheet.create({
   },
   glyph: {
     fontFamily: Type.uiMedium,
-    color: Ink.strong,
-  },
-  labelPicked: {
-    fontFamily: Type.uiMedium,
-    color: Ink.primary,
+    color: Surface.plate,
   },
 });

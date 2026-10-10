@@ -6,8 +6,8 @@ import Chevron from '@/components/Chevron';
 import ScaleButton from '@/components/ScaleButton';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
 
-/** 질문은 넷이다 — 위 진행 줄이 몇 번째인지 말한다. */
-export const QUESTION_COUNT = 4;
+/** 질문은 여섯이다(분야·빈도·목적·첫 권·알림·권한) — 위 진행 줄이 몇 번째인지 말한다. */
+export const QUESTION_COUNT = 6;
 
 /** 상태바 아래로 머리띠가 갖는 높이. 공용 헤더(ScreenHeader)와 같은 값이다. */
 const HEADER_H = 60;
@@ -19,10 +19,10 @@ const HEADER_H = 60;
 export const BODY_GUTTER = Space[20];
 
 /**
- * 질문 화면 넷이 함께 쓰는 껍데기.
+ * 질문 화면 여섯이 함께 쓰는 껍데기.
  *
  * 위는 뒤로가기와 진행 줄, 가운데는 물음과 그 아래 고를 것들, 아래는 다음 버튼이다.
- * 넷이 같은 자리에 같은 크기로 서야 넘길 때 화면이 흔들리지 않는다.
+ * 여섯이 같은 자리에 같은 크기로 서야 넘길 때 화면이 흔들리지 않는다.
  *
  * 다음 버튼은 고르기 전에는 회색(ash)이고 눌리지 않는다 — 시안 그대로다.
  */
