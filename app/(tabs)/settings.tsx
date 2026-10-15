@@ -85,6 +85,24 @@ export default function SettingsScreen() {
       </Animated.View>
 
       {/*
+        디자인 확인용. 홈의 읽기 버튼에 붙일 전환을 먼저 여기서 본다. 홈에 붙이면 지울 것.
+      */}
+      <Animated.View entering={FadeIn.duration(700).delay(470)} style={styles.card}>
+        <Text style={styles.sectionTitle}>책 펼침 전환 미리보기</Text>
+        <Text style={styles.sectionHint}>
+          홈의 읽기 버튼을 눌렀을 때 책이 열리고 빛이 화면을 채운 뒤 오늘의 공부가 떠오르는
+          전환입니다. 홈과 똑같이 보이지만 읽기 버튼만 동작합니다. 오늘의 공부의 ✕를 누르면 닫힌
+          책으로 돌아와 다시 볼 수 있고, 기기의 뒤로가기로 닫습니다.
+        </Text>
+        <ScaleButton
+          accessibilityLabel="책 펼침 전환 미리보기 열기"
+          style={styles.testButton}
+          onPress={() => router.push('/book-opening-preview')}>
+          <Text style={styles.testButtonLabel}>전환 보기</Text>
+        </ScaleButton>
+      </Animated.View>
+
+      {/*
         디자인 확인용. 오늘의 공부 상세를 카드뉴스로 바꿀지 판단하려고 넘김 동작만 먼저 만든
         데모라, 실제 학습 데이터와는 연결돼 있지 않다. 방향이 정해지면 이 카드를 지울 것.
       */}

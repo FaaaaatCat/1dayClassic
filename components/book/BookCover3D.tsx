@@ -17,7 +17,7 @@ import type { CoverDesign } from '@/types';
  */
 
 /** 책을 돌린 각도. 10°는 차이가 안 느껴지고 42°는 제목이 눌린다. */
-const ANGLE = 26;
+export const ANGLE = 26;
 
 /**
  * 책 두께 — 표지 폭의 22%.
@@ -25,10 +25,10 @@ const ANGLE = 26;
  * 실제 책은 10% 남짓이지만 그 비율로는 화면에서 책등이 거의 안 보인다. 과장하는 게 맞다.
  * 26°로 돌리면 이 두께가 화면에서는 폭의 8% 남짓으로 줄어든다(sin 26° = 0.44에 원근까지).
  */
-const THICKNESS = 0.22;
+export const THICKNESS = 0.22;
 
 /** 원근 거리. 더 멀면 각도 차이가 안 보이고, 더 가까우면 왜곡이 과해진다. */
-const PERSPECTIVE = 850;
+export const PERSPECTIVE = 850;
 
 /** 책등에 글자를 넣을 수 있는 최소 폭. 이보다 좁으면 획이 뭉쳐 얼룩으로만 보인다. */
 const SPINE_TEXT_MIN = 8;
@@ -134,14 +134,15 @@ export default function BookCover3D({ design, width, radius = 2, style }: BookCo
  * 어두운 표지(채근담)는 이 그늘 덕분에 평면일 때보다 오히려 낫다 — 검은 배경과의 경계가
  * 그늘로 살아난다.
  */
-function Spine({
+export function Spine({
   design,
   width,
   geometry,
 }: {
   design: CoverDesign;
   width: number;
-  geometry: ReturnType<typeof cover3dGeometry>;
+  /** 펼쳐지는 책(BookOpening)도 이 책등을 빌려 쓴다 — 그쪽은 축이 달라 치수만 넘긴다. */
+  geometry: { spineW: number; spineH: number };
 }) {
   const { spineW, spineH } = geometry;
   const size = spineW * 0.72;
