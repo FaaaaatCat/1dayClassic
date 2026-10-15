@@ -90,15 +90,25 @@ export default function SettingsScreen() {
       <Animated.View entering={FadeIn.duration(700).delay(470)} style={styles.card}>
         <Text style={styles.sectionTitle}>책 펼침 전환 미리보기</Text>
         <Text style={styles.sectionHint}>
-          홈의 읽기 버튼을 눌렀을 때 책이 열리고 빛이 화면을 채운 뒤 오늘의 공부가 떠오르는
-          전환입니다. 홈과 똑같이 보이지만 읽기 버튼만 동작합니다. 오늘의 공부의 ✕를 누르면 닫힌
-          책으로 돌아와 다시 볼 수 있고, 기기의 뒤로가기로 닫습니다.
+          홈의 읽기 버튼부터 오늘의 학습 완료까지 한 번에 봅니다 — 책이 열리며 빛이 화면을
+          채우고, 첫페이지장, 본문, 오늘의 퀴즈, 학습 완료 순서입니다. 홈과 똑같이 보이지만 읽기
+          버튼만 동작하고, 아무것도 저장하지 않습니다. 어느 단계에서든 닫으면 닫힌 책으로 돌아와
+          다시 볼 수 있고, 닫힌 책에서 기기의 뒤로가기로 나갑니다.
+          {'\n\n'}
+          <Text style={styles.strong}>펼침없이 전환 보기</Text>도 홈에서 시작하지만, 읽기를 누르면
+          책이 열리고 빛이 차는 부분을 건너뛰고 첫페이지장이 바로 떠오릅니다.
         </Text>
         <ScaleButton
           accessibilityLabel="책 펼침 전환 미리보기 열기"
           style={styles.testButton}
           onPress={() => router.push('/book-opening-preview')}>
           <Text style={styles.testButtonLabel}>전환 보기</Text>
+        </ScaleButton>
+        <ScaleButton
+          accessibilityLabel="책 펼침 없이 전환 미리보기 열기"
+          style={[styles.testButton, styles.testButtonSecond]}
+          onPress={() => router.push('/book-opening-preview?skip=1')}>
+          <Text style={styles.testButtonLabel}>펼침없이 전환 보기</Text>
         </ScaleButton>
       </Animated.View>
 

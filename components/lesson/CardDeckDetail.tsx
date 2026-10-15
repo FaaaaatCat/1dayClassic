@@ -236,7 +236,25 @@ interface Props {
    * '읽는 장'(해설 본문)은 종이 카드 그대로 둔다. 설정의 미리보기에서만 켠다.
    */
   mixed?: boolean;
+  /** 책 설정과 상관없이 스크롤 보기로 연다 — 책 펼침 전환 미리보기가 쓴다. */
+  forceScroll?: boolean;
+  /**
+   * 끝까지 내리면 아래에서 올라오는 '읽기 완료하고 퀴즈 풀기' 버튼(스크롤 보기 전용).
+   * 주면 맺음 장 대신 이 버튼이 오늘의 공부를 맺는다. progress는 버튼에 적는 읽기 진행(%)이다.
+   */
+  finishCta?: { progress: number; onPress: () => void };
+  /**
+   * 상태바 색을 이 화면이 맡을지. 기본은 맡는다. 책 펼침 전환 미리보기는 첫페이지장 밑에
+   * 본문을 미리 만들어 두는데, 그동안 상태바가 종이색으로 바뀌지 않도록 보일 때까지 끈다.
+   */
+  statusTint?: boolean;
 }
+
+/** 끝까지 내렸을 때 아래에 남기는 빈자리 — 떠 있는 퀴즈 버튼이 마지막 글을 덮지 않게(피그마 시안). */
+const FINISH_ENDING_H = 400;
+/** 퀴즈 버튼이 아래에서 올라오는 거리와 시간. */
+const FINISH_RISE = 120;
+const FINISH_MS = 320;
 
 /** 섞어 쓰는 형식에서, 사진이 없는 항목의 표지 장에 까는 그림 — 그림전체배경 시안의 것. */
 const FALLBACK_COVER = require('@/assets/images/preview/backdrop-piano.jpg');
@@ -314,6 +332,9 @@ export default function CardDeckDetail({
   onClose,
   trackProgress = true,
   mixed = false,
+  forceScroll = false,
+  finishCta,
+  statusTint = true,
 }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -339,7 +360,9 @@ export default function CardDeckDetail({
    * 스크롤 보기(책 설정) — 장을 넘기지 않고 글 전체를 한 장의 종이 위에서 세로로 내려 읽는다.
    * 위 진행 바도, 좌우 탭 넘김도 없다. 넘기기 설정과 같은 까닭으로 실제로 읽는 화면에만 건다.
    */
-  const scrollMode = trackProgress && readerSettings.turn === 'scroll';
+  const scrollMode = forceScroll || (trackProgress && readerSettings.turn === 'scroll');
+  /** 맺음 장 대신 떠 있는 퀴즈 버튼이 공부를 맺는가 — 스크롤 보기에서만 뜻이 있다. */
+  const ctaMode = scrollMode && !!finishCta;
   /**
    * 넘김효과 없음·스크롤 보기는 크롬이 단출하다(피그마 시안) — 위 줄은 뒤로 가기와 버튼 둘
    * (자동으로 읽기·감상 노트)뿐이고, 계정 줄(표지·책 이름·날짜)과 아래 줄이 없다.
@@ -365,7 +388,8 @@ export default function CardDeckDetail({
     const list = lesson.quizzes ?? (lesson.quiz ? [lesson.quiz] : []);
     // 스크롤 보기는 장 크기가 없으니 문단을 나누지 않는다 — 한 문단이 한 덩이로 이어진다.
     const built = buildCardPages(bookLesson, {
-      hasQuiz: list.length > 0,
+      // 떠 있는 퀴즈 버튼이 맺음 장을 대신하면 맺음 장을 두지 않는다.
+      hasQuiz: list.length > 0 && !ctaMode,
       body,
       cardW,
       cardH: instantTurn ? simpleFullH : CARD_H,
@@ -380,7 +404,7 @@ export default function CardDeckDetail({
       narrationSteps: buildCardNarration(built, { cover: coverInfo, epigraph: epi }),
       quizzes: list,
     };
-  }, [bookLesson, bookName, lesson, body, cardW, scrollMode, instantTurn, simpleFullH]);
+  }, [bookLesson, bookName, lesson, body, cardW, scrollMode, instantTurn, simpleFullH, ctaMode]);
 
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -681,6 +705,22 @@ export default function CardDeckDetail({
   const blockY = useRef<number[]>([]);
   /** 스크롤 보기에서 끝까지 내려왔는가 — 장으로 읽을 때 마지막 장에 닿은 것과 같은 뜻이다. */
   const [scrolledToEnd, setScrolledToEnd] = useState(false);
+  /**
+   * 지금 끝에 닿아 있는가 — 퀴즈 버튼(finishCta)이 이것을 따라 오르내린다. scrolledToEnd는 한 번
+   * 닿으면 그대로 남는 기록이고, 이것은 다시 올리면 풀린다.
+   */
+  const [atEnd, setAtEnd] = useState(false);
+  const finishLift = useSharedValue(0);
+  useEffect(() => {
+    finishLift.value = withTiming(atEnd ? 1 : 0, {
+      duration: FINISH_MS,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [atEnd, finishLift]);
+  const finishStyle = useAnimatedStyle(() => ({
+    opacity: finishLift.value,
+    transform: [{ translateY: (1 - finishLift.value) * FINISH_RISE }],
+  }));
   /** 스크롤 보기에서 낭독이 다음 덩이로 넘어가면 그 덩이가 보이도록 내려 준다. */
   const scrollToBlock = (index: number) => {
     setBarPage(index);
@@ -723,6 +763,7 @@ export default function CardDeckDetail({
       scrollRef.current?.scrollTo({ x: 0, animated: false });
       readerScrollRef.current?.scrollTo({ y: 0, animated: false });
       setScrolledToEnd(false);
+      setAtEnd(false);
 
       setNoteOpen(false);
       setQuizOpen(false);
@@ -835,16 +876,18 @@ export default function CardDeckDetail({
       {/* 어두운 화면이라 상태바도 검게, 시계는 희게. */}
       {/* 스크롤 보기는 화면 전체가 종이라 상태바도 종이색으로 잇는다. */}
       {/* 재생기가 있는 스크롤 보기는 위 줄이 검어 상태바도 검게 둔다(기본값). */}
-      <StatusBarTint
-        tint={
-          scrollMode && !scrollVideo
-            ? {
-                color: palette.paper,
-                icons: readerSettings.background === 'dark' ? 'light' : 'dark',
-              }
-            : undefined
-        }
-      />
+      {statusTint ? (
+        <StatusBarTint
+          tint={
+            scrollMode && !scrollVideo
+              ? {
+                  color: palette.paper,
+                  icons: readerSettings.background === 'dark' ? 'light' : 'dark',
+                }
+              : undefined
+          }
+        />
+      ) : null}
 
       {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니다.
           세이프에어리어를 스크린의 padding으로 주지 않는 건, 절대 배치된 덱·아래 줄이
@@ -919,11 +962,10 @@ export default function CardDeckDetail({
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={32}
           onScroll={(event) => {
-            if (scrolledToEnd) return;
             const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-            if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 24) {
-              setScrolledToEnd(true);
-            }
+            const end = layoutMeasurement.height + contentOffset.y >= contentSize.height - 24;
+            if (end !== atEnd) setAtEnd(end);
+            if (end && !scrolledToEnd) setScrolledToEnd(true);
           }}>
           {pages.map((p, index) => (
             <View
@@ -949,7 +991,32 @@ export default function CardDeckDetail({
               />
             </View>
           ))}
+          {/* 떠 있는 퀴즈 버튼 몫의 빈자리 — 마지막 글이 버튼 밑에 깔리지 않는다. */}
+          {ctaMode ? <View style={{ height: FINISH_ENDING_H }} /> : null}
         </ScrollView>
+      ) : null}
+
+      {/* 끝까지 내리면 아래에서 올라오는 퀴즈 버튼. 다시 올리면 아래로 사라진다. */}
+      {ctaMode && finishCta ? (
+        <Animated.View
+          pointerEvents={atEnd ? 'box-none' : 'none'}
+          style={[styles.finishWrap, { bottom: insets.bottom + 20 }, finishStyle]}>
+          <ScaleButton
+            accessibilityLabel="읽기 완료하고 퀴즈 풀기"
+            style={styles.finishPill}
+            onPress={finishCta.onPress}>
+            <View style={styles.finishTexts}>
+              <View style={styles.finishProgressRow}>
+                <Text style={styles.finishProgressLabel}>읽기 진행</Text>
+                <Text style={styles.finishProgressValue}>{`${finishCta.progress}%`}</Text>
+              </View>
+              <Text style={styles.finishTitle}>읽기 완료하고 퀴즈 풀기</Text>
+            </View>
+            <View style={styles.finishArrow}>
+              <Chevron direction="forward" size={26} color={Ink.onDark} />
+            </View>
+          </ScaleButton>
+        </Animated.View>
       ) : null}
 
       {/* 제스처 층 — 페이지마다 좌/중/우 3등분 탭 영역만 있다(가운데는 무동작).
@@ -1557,6 +1624,68 @@ function VerseIllustration({ illustration }: { illustration: Illustration }) {
  * 흡수되면서 갈래가 사라졌다 — 마크는 언제나 View로 그리는 도형이라 글꼴을 타지 않는다.
  * (높은음자리표가 서체에 없어 두부로 나오던 문제도 함께 없어졌다.)
  */
+/**
+ * 표지 장의 글 묶음 — 출판사 마크, 책 이름 칩, 표제, 부제.
+ *
+ * 카드 덱의 표지 장과 책 펼침 전환의 첫페이지장(components/reading/ReadingIntro)이 함께 쓴다.
+ * reveal을 주면 네 줄이 차례로 떠오른다 — 0이면 다 숨고, 1이면 마크까지, 4면 전부다.
+ * 줄마다 그 앞 줄이 다 뜬 뒤에 뜨는 게 아니라 0.5씩 겹쳐 올라온다.
+ */
+export function CoverHeading({
+  cover,
+  onDark,
+  hasMusic = false,
+  reveal,
+}: {
+  cover: CardCover;
+  onDark: boolean;
+  hasMusic?: boolean;
+  reveal?: SharedValue<number>;
+}) {
+  const markStyle = useRevealStyle(reveal, 0);
+  const chipStyle = useRevealStyle(reveal, 1);
+  const titleStyle = useRevealStyle(reveal, 2);
+  const subtitleStyle = useRevealStyle(reveal, 3);
+
+  return (
+    <View style={styles.coverMain} pointerEvents="none">
+      {/* 그 책의 출판사 마크 — 표지와 같은 잉크로 그린다. 사진 위에서는 흰색이라야
+          어느 사진에서도 보인다. 유튜브가 딸린 항목은 카드가 짧아 작게 앉힌다. */}
+      <Animated.View
+        style={[styles.coverSymbolBox, hasMusic && styles.coverSymbolBoxSmall, markStyle]}>
+        <CoverMark
+          kind={cover.design.mark}
+          size={hasMusic ? SYMBOL_BOX_H_SMALL * 0.5 : SYMBOL_BOX_H * 0.5}
+          color={onDark ? Colors.white : cover.design.ink}
+        />
+      </Animated.View>
+      <Animated.View style={[styles.labelChip, onDark && styles.labelChipOnDark, chipStyle]}>
+        <Text style={[styles.labelText, onDark && styles.coverTextOnDark]}>{cover.bookName}</Text>
+      </Animated.View>
+      {/* 표제는 책마다 뽑는 곳이 달라 getLessonHeading이 정해 준다 — 곡명·한자·라틴어
+          원문이 모두 여기로 들어온다(lib/card-pages). */}
+      <Animated.Text style={[styles.title, onDark && styles.coverTextOnDark, titleStyle]}>
+        {cover.title}
+      </Animated.Text>
+      {cover.subtitle ? (
+        <Animated.Text
+          style={[styles.coverSubtitle, onDark && styles.coverTextOnDark, subtitleStyle]}>
+          {cover.subtitle}
+        </Animated.Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** reveal이 order를 지나며 0→1로 떠오른다(살짝 아래에서). reveal이 없으면 늘 보인다. */
+function useRevealStyle(reveal: SharedValue<number> | undefined, order: number) {
+  return useAnimatedStyle(() => {
+    if (!reveal) return { opacity: 1, transform: [{ translateY: 0 }] };
+    const t = interpolate(reveal.value, [order, order + 1], [0, 1], Extrapolation.CLAMP);
+    return { opacity: t, transform: [{ translateY: (1 - t) * 8 }] };
+  });
+}
+
 function CardContent({
   kind,
   paragraph,
@@ -1603,31 +1732,7 @@ function CardContent({
   if (kind === 'cover') {
     return (
       <View style={styles.coverBlock} pointerEvents="box-none">
-        <View style={styles.coverMain} pointerEvents="none">
-          {/* 그 책의 출판사 마크 — 표지와 같은 잉크로 그린다. 사진 위에서는 흰색이라야
-              어느 사진에서도 보인다. 유튜브가 딸린 항목은 카드가 짧아 작게 앉힌다. */}
-          <View style={[styles.coverSymbolBox, hasMusic && styles.coverSymbolBoxSmall]}>
-            <CoverMark
-              kind={cover.design.mark}
-              size={hasMusic ? SYMBOL_BOX_H_SMALL * 0.5 : SYMBOL_BOX_H * 0.5}
-              color={onDark ? Colors.white : cover.design.ink}
-            />
-          </View>
-          <View style={[styles.labelChip, onDark && styles.labelChipOnDark]}>
-            <Text style={[styles.labelText, onDark && styles.coverTextOnDark]}>
-              {cover.bookName}
-            </Text>
-          </View>
-          {/* 표제는 책마다 뽑는 곳이 달라 getLessonHeading이 정해 준다 — 곡명·한자·라틴어
-              원문이 모두 여기로 들어온다(lib/card-pages). */}
-          <Text style={[styles.title, onDark && styles.coverTextOnDark]}>{cover.title}</Text>
-          {cover.subtitle ? (
-            <Text style={[styles.coverSubtitle, onDark && styles.coverTextOnDark]}>
-              {cover.subtitle}
-            </Text>
-          ) : null}
-        </View>
-
+        <CoverHeading cover={cover} onDark={onDark} hasMusic={hasMusic} />
       </View>
     );
   }
@@ -2520,6 +2625,60 @@ const styles = StyleSheet.create({
   /** 표지 덩이 — 표지 장은 제 자리를 채우며 가운데에 앉는 짜임이라 높이를 정해 준다. */
   scrollCover: {
     height: 260,
+  },
+  /** 떠 있는 퀴즈 버튼(피그마 시안 — 검은 알약에 주황 동그라미 화살표). */
+  finishWrap: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+  },
+  finishPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 80,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: Corner.pill,
+    backgroundColor: Ink.primary,
+  },
+  finishTexts: {
+    flex: 1,
+    gap: 2,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+  finishProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  finishProgressLabel: {
+    fontFamily: Type.ui,
+    fontSize: 14,
+    lineHeight: 24,
+    color: Ink.onDark,
+  },
+  /** 시안은 SemiBold지만 앱에 실린 굵기가 Medium까지라 Medium으로 둔다. */
+  finishProgressValue: {
+    fontFamily: Type.uiMedium,
+    fontSize: 14,
+    lineHeight: 24,
+    color: Ink.onDark,
+  },
+  finishTitle: {
+    fontFamily: Type.uiMedium,
+    fontSize: 18,
+    lineHeight: 24,
+    color: Ink.onDark,
+  },
+  finishArrow: {
+    width: 40,
+    height: 40,
+    borderRadius: Corner.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Spark.ember,
   },
 
   /** 화면 맨 위 — 가로를 다 쓰고, 장 수만큼 나눠 갖는다. */

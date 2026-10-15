@@ -18,7 +18,7 @@ import { Corner, Ink, Surface, Type, trackBody } from '@/constants/theme';
  * 서재 상세의 독서 기록도 지금은 전부 0으로 박혀 있다(LibraryBookDetailScreen).
  * 공부 기록이 실제로 쌓이기 시작하면 그 값을 여기로 넘겨받아 지운다.
  */
-const STREAK_DAYS = 7;
+export const STREAK_DAYS = 7;
 
 /** 숫자가 촤르르 올라가는 시간. 끝에서 느려져 멎는 맛이 나도록 뒤를 눌러 뒀다. */
 const COUNT_MS = 1100;
