@@ -110,6 +110,20 @@ export default function SettingsScreen() {
           onPress={() => router.push('/book-opening-preview?skip=1')}>
           <Text style={styles.testButtonLabel}>펼침없이 전환 보기</Text>
         </ScaleButton>
+        {/* 유튜브가 없는 화로 같은 흐름을 본다 — 명심보감. 고른 책은 바꾸지 않는다. */}
+        <Text style={[styles.sectionHint, styles.subHint]}>유튜브 없는 화 — 명심보감</Text>
+        <ScaleButton
+          accessibilityLabel="명심보감으로 책 펼침 전환 미리보기 열기"
+          style={[styles.testButton, styles.testButtonSecond]}
+          onPress={() => router.push('/book-opening-preview?book=quote')}>
+          <Text style={styles.testButtonLabel}>전환 보기</Text>
+        </ScaleButton>
+        <ScaleButton
+          accessibilityLabel="명심보감으로 책 펼침 없이 전환 미리보기 열기"
+          style={[styles.testButton, styles.testButtonSecond]}
+          onPress={() => router.push('/book-opening-preview?book=quote&skip=1')}>
+          <Text style={styles.testButtonLabel}>펼침없이 전환 보기</Text>
+        </ScaleButton>
       </Animated.View>
 
       {/*
@@ -272,6 +286,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     letterSpacing: trackBody(15),
     color: Surface.canvas,
+  },
+  /** 버튼 무리 사이의 작은 소제목. */
+  subHint: {
+    marginTop: Space[16],
   },
   /** 같은 무게의 버튼이 둘일 때 둘째 — 사이를 좁힌다. */
   testButtonSecond: {

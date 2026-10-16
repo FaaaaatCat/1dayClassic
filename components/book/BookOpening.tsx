@@ -58,12 +58,32 @@ const FLAT_DEG = 0;
  * 펴기가 끝나기 조금 전부터 열리고, 표지가 반쯤 열렸을 때 빛이 차오르고, 다 열리기 조금 전부터
  * 다가온다 — 단계가 겹쳐야 '펴고, 열고, 커지는' 세 토막이 아니라 한 동작으로 읽힌다.
  */
-export const OPENING_MS = 2100;
-const TILT = [0, 0.17] as const;
-const OPEN = [0.14, 0.62] as const;
-const GLOW = [0.25, 0.58] as const;
-const ZOOM = [0.5, 1] as const;
-const VEIL = [0.7, 1] as const;
+export const OPENING_MS = 2600;
+const TILT = [0, 0.14] as const;
+const OPEN = [0.15, 0.64] as const;
+const ZOOM = [0.56, 1] as const;
+const VEIL = [0.74, 1] as const;
+
+/**
+ * 표지가 열리는 모양 — OPEN 구간 안의 시간(0~1)을 '열린 정도'(0~1)로 바꾸는 네 토막.
+ *
+ * 처음엔 한 곡선(inOut cubic)으로 열었는데, 처음부터 끝까지 고르게 미끄러져 기계가 여는 문처럼
+ * 보였다. 사람이 책을 열 때는 힘이 고르지 않다.
+ *
+ *  1. 들기   — 엄지가 표지 끝을 걸어 살짝 들어 올린다. 느리고 조금만(7%).
+ *  2. 넘기기 — 밀어 올린다. 빠르게 시작해 세로(50%)에 가까울수록 힘이 빠진다.
+ *  3. 떨어짐 — 세로를 넘으면 표지 무게로 넘어간다. 느리게 시작해 점점 빨라진다.
+ *  4. 닿음   — 바닥에 닿아 아주 조금(2.5%) 튀었다가 눕는다.
+ *
+ * 2와 3의 이음매에서 속도가 0이 되지 않게 베지에로 잡았다 — 0이 되면 세로에서 멈칫한다.
+ */
+const OPEN_SEGMENTS = [0, 0.2, 0.52, 0.84, 1] as const;
+const LIFT_TO = 0.07;
+const BOUNCE = 0.025;
+// 들기는 천천히 시작해 끝에서 손끝에 힘이 붙는다 — 끝 속도가 0이면 넘기기와의 이음매에서 멈칫한다.
+const liftEase = Easing.bezierFn(0.42, 0, 0.58, 0.6);
+const pushEase = Easing.bezierFn(0.25, 0.6, 0.55, 0.85);
+const fallEase = Easing.bezierFn(0.45, 0.15, 0.75, 0.4);
 /**
  * 속지가 켜지는 구간 — 누르기 전엔 꺼 둔다.
  *
@@ -76,16 +96,17 @@ const PAGE_LIT = [0, 0.14] as const;
 /** 다가올 때 커지는 배율 — 속지가 화면 높이를 넘을 만큼. 그 뒤는 장막이 덮는다. */
 const ZOOM_TO = 6;
 
-/** 따뜻한 노란빛 — 지정 팔레트의 --yellow(#FEB836)를 흰 바탕에 묽게 푼 것. */
-const LIGHT = Colors.yellow;
+/** 따뜻한 노란빛 — 지정 팔레트의 --yellow(#FEB836, Colors.yellow)를 투명도로 묽게 푼 것. */
 const lightAlpha = (alpha: number) => `rgba(254,184,54,${alpha})`;
 
 /**
  * 빛나는 면 — 속지와 면지가 같은 빛을 쓴다. edge는 빛의 중심이 놓일 가로 자리로, 늘 접힘선 쪽 변이다
  * (속지는 0%, 면지는 180° 뒤집혀 있어 100%가 접힘선 쪽이다).
  */
+// 처음엔 가운데 35%·가장자리 100% 노랑이었는데, 펼쳤을 때 빛이 탁했다. 가운데를 거의 흰빛(15%)으로,
+// 가장자리도 85%로 묽혀 면 전체가 더 밝게 빛난다.
 const pageLight = (edge: string) =>
-  `radial-gradient(ellipse farthest-corner at ${edge} 45%, ${lightAlpha(0.35)} 0%, ${lightAlpha(0.6)} 55%, ${LIGHT} 100%)`;
+  `radial-gradient(ellipse farthest-corner at ${edge} 45%, ${lightAlpha(0.15)} 0%, ${lightAlpha(0.45)} 55%, ${lightAlpha(0.85)} 100%)`;
 
 /** 원근 배율 — z가 클수록(눈에 가까울수록) 커진다. BookCover3D와 같은 식. */
 function scaleAt(z: number): number {
@@ -130,10 +151,21 @@ function tiltAt(progress: number) {
   return interpolate(ease(phase(progress, TILT)), [0, 1], [ANGLE, FLAT_DEG]);
 }
 
+/** 지금 표지가 열린 정도(0~1) — OPEN_SEGMENTS 주석의 네 토막. */
+function openAt(progress: number) {
+  'worklet';
+  const t = phase(progress, OPEN);
+  const [, a, b, c] = OPEN_SEGMENTS;
+  if (t <= a) return LIFT_TO * liftEase(t / a);
+  if (t <= b) return LIFT_TO + (0.5 - LIFT_TO) * pushEase((t - a) / (b - a));
+  if (t <= c) return 0.5 + 0.5 * fallEase((t - b) / (c - b));
+  return 1 - BOUNCE * Math.sin(Math.PI * ((t - c) / (1 - c)));
+}
+
 /** 지금 표지가 화면에서 이루는 각 — 기울기에서 열린 만큼을 뺀다. */
 function coverAngleAt(progress: number) {
   'worklet';
-  return tiltAt(progress) - OPEN_DEG * ease(phase(progress, OPEN));
+  return tiltAt(progress) - OPEN_DEG * openAt(progress);
 }
 
 interface BookOpeningProps {
@@ -151,7 +183,9 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
   const stageW = rest.spineW + rest.rightX;
   /** 칠해지는 범위의 한가운데(무대 왼쪽에서). 펴는 동안 이 점을 제자리에 둔다. */
   const restCenter = foldX + (rest.rightX - rest.spineW) / 2;
-  const glowSize = width * 2.8;
+  const glowSize = width * 3.4;
+  /** 펼친 책 한가운데의 흰 빛망울 — 책 폭의 1.6배. */
+  const bloomSize = width * 1.6;
 
   /** 속지 — 책과 함께 펴지고, 열리지는 않는다. */
   const pageStyle = useAnimatedStyle(() => ({
@@ -191,13 +225,34 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
     opacity: coverAngleAt(progress.value) > -90 ? 0 : 1,
   }));
 
-  /** 열리는 표지에 빛이 비친다 — 안쪽 빛을 받아 표지도, 드러난 면지도 노랗게 물든다. */
-  const coverWashStyle = useAnimatedStyle(() => ({
-    opacity: 0.45 * phase(progress.value, OPEN),
+  /**
+   * 표지 바깥 면의 그늘 — 세워질수록 어두워진다. 빛은 책 안(속지)에서 나오므로 바깥 면은 빛을
+   * 등진다. 예전엔 바깥 면도 노랗게 물들였는데, 그러면 표지가 돌아도 밝기가 그대로라 종이가 아니라
+   * 판자가 도는 것 같았다.
+   */
+  const frontShadeStyle = useAnimatedStyle(() => ({
+    opacity: 0.45 * Math.min(1, openAt(progress.value) / 0.5),
+  }));
+  /** 안쪽 면(면지)의 그늘 — 세로를 막 넘었을 땐 어둡고, 누우며 속지의 빛을 받아 밝아진다. */
+  const insideShadeStyle = useAnimatedStyle(() => ({
+    opacity: 0.45 * Math.max(0, 1 - (openAt(progress.value) - 0.5) / 0.5),
   }));
 
+  /**
+   * 책 뒤로 번지는 빛 — 표지가 다 넘어가 누울 즈음(75%)부터 퍼진다.
+   *
+   * 처음엔 표지가 들리는 순간부터 켰는데, 덜 열린 책 뒤로 빛이 둘러 보여 어색했다. 빛은 펼쳐진
+   * 책에서 나오는 것이라 펼쳐질 때까지 기다린다. 그전까지는 드러나는 속지 자체가 빛이다.
+   */
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: phase(progress.value, GLOW),
+    opacity: interpolate(openAt(progress.value), [0.75, 1], [0, 1], Extrapolation.CLAMP),
+  }));
+  /**
+   * 흰 빛망울 — 책이 다 펼쳐질 즈음 접힘선 위에서 흰빛이 피어난다. 노란 빛(glow)은 책 뒤에 깔려
+   * 가장자리로만 비쳐서, 펼친 면 위가 밝아지는 느낌은 이것이 맡는다.
+   */
+  const bloomStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(openAt(progress.value), [0.8, 1], [0, 1], Extrapolation.CLAMP),
   }));
 
   /**
@@ -215,12 +270,23 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
      * 표지가 열리는 만큼 오른쪽으로 표지 반 폭을 민다 — 다 열리면 접힘선이 한가운데 오는
      * 펼친 두 쪽이 된다. 밀지 않으면 왼쪽으로 눕는 표지가 화면 밖으로 나간다.
      */
-    const spread = (ease(phase(progress.value, OPEN)) * width) / 2;
+    const spread = (Math.min(1, openAt(progress.value)) * width) / 2;
     const shift = restCenter - (foldX + (now.rightX - now.spineW) / 2) + spread;
     const focus = foldX + shift - stageW / 2;
     const zoom = interpolate(easeIn(phase(progress.value, ZOOM)), [0, 1], [1, ZOOM_TO]);
+    /**
+     * 표지가 바닥에 닿는 순간 책이 아주 살짝(1.2%) 눌렸다 돌아온다 — 툭 하고 닿는 무게.
+     * 닿음 토막(OPEN_SEGMENTS의 마지막)에서만 일어난다.
+     */
+    const t = phase(progress.value, OPEN);
+    const land = OPEN_SEGMENTS[3];
+    const thud = t > land ? 0.012 * Math.sin(Math.PI * ((t - land) / (1 - land))) : 0;
     return {
-      transform: [{ translateX: focus }, { scale: zoom }, { translateX: shift - focus }],
+      transform: [
+        { translateX: focus },
+        { scale: zoom * (1 - thud) },
+        { translateX: shift - focus },
+      ],
     };
   });
 
@@ -258,7 +324,7 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
         <View style={{ position: 'absolute', left: width, top: 0, width, height }}>
           <Animated.View style={[StyleSheet.absoluteFill, styles.face, frontStyle]}>
             <BookCover design={design} width={width} clip={false} />
-            <Animated.View style={[StyleSheet.absoluteFill, styles.wash, coverWashStyle]} />
+            <Animated.View style={[StyleSheet.absoluteFill, styles.shade, frontShadeStyle]} />
           </Animated.View>
           {/* 안쪽 면(면지) — 표지가 90°를 넘어가면 이쪽이 보인다. */}
           {/*
@@ -267,9 +333,25 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
             이 면은 미리 180° 뒤집혀 있어 경첩이 어느 각에 있든 늘 뒷면으로 판정돼 숨는다 —
             실제로 표지가 90°를 넘자 통째로 사라졌다. 앞뒤 전환은 insideStyle의 opacity가 맡는다.
           */}
-          <Animated.View style={[StyleSheet.absoluteFill, styles.inside, insideStyle]} />
+          <Animated.View style={[StyleSheet.absoluteFill, styles.inside, insideStyle]}>
+            <Animated.View style={[StyleSheet.absoluteFill, styles.shade, insideShadeStyle]} />
+          </Animated.View>
         </View>
       </Animated.View>
+
+      {/* 펼친 책 한가운데의 흰 빛망울 — 표지와 속지 위에 얹힌다. */}
+      <Animated.View
+        style={[
+          styles.bloom,
+          {
+            width: bloomSize,
+            height: bloomSize,
+            left: foldX - bloomSize / 2,
+            top: height / 2 - bloomSize / 2,
+          },
+          bloomStyle,
+        ]}
+      />
     </Animated.View>
   );
 }
@@ -307,7 +389,13 @@ export function veilAt(progress: number) {
 const styles = StyleSheet.create({
   glow: {
     position: 'absolute',
-    experimental_backgroundImage: `radial-gradient(circle closest-side, ${lightAlpha(0.95)} 0%, ${lightAlpha(0.45)} 40%, ${lightAlpha(0)} 100%)`,
+    experimental_backgroundImage: `radial-gradient(circle closest-side, ${lightAlpha(1)} 0%, ${lightAlpha(0.7)} 45%, ${lightAlpha(0)} 100%)`,
+  },
+  /** 흰 빛망울 — 가운데가 거의 흰빛이고 바깥으로 사라진다. */
+  bloom: {
+    position: 'absolute',
+    experimental_backgroundImage:
+      'radial-gradient(circle closest-side, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.45) 45%, rgba(255,255,255,0) 100%)',
   },
   hinge: {
     position: 'absolute',
@@ -331,8 +419,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     experimental_backgroundImage: pageLight('0%'),
   },
-  wash: {
-    backgroundColor: LIGHT,
+  /** 면에 지는 그늘 — 각도에 따라 opacity만 바뀐다. */
+  shade: {
+    backgroundColor: Colors.brown100,
   },
   face: {
     backfaceVisibility: 'hidden',

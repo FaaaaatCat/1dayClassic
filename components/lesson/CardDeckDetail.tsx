@@ -1,7 +1,15 @@
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   BackHandler,
   Dimensions,
@@ -15,13 +23,11 @@ import {
   useWindowDimensions,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  type StyleProp,
-  type TextStyle,
-} from 'react-native';
+} from "react-native";
 import Animated, {
-  cancelAnimation,
   Easing,
   Extrapolation,
+  cancelAnimation,
   interpolate,
   runOnJS,
   useAnimatedRef,
@@ -32,37 +38,39 @@ import Animated, {
   withSequence,
   withTiming,
   type SharedValue,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import QuizSolver, { quizModalStyles } from '@/components/preview/QuizSolver';
-import Chevron from '@/components/Chevron';
-import NoteSheet from '@/components/lesson/NoteSheet';
-import SpokenText from '@/components/lesson/SpokenText';
-import ScaleButton from '@/components/ScaleButton';
+import BookCoverArt from "@/components/book/BookCoverArt";
+import CoverMark from "@/components/book/CoverMark";
+import Chevron from "@/components/Chevron";
+import BookPurchaseNotice from "@/components/lesson/BookPurchaseNotice";
+import MusicPlayer from "@/components/lesson/MusicPlayer";
+import NoteSheet from "@/components/lesson/NoteSheet";
+import SpokenText from "@/components/lesson/SpokenText";
+import LessonCoverImage from "@/components/LessonCoverImage";
+import QuizSolver, { quizModalStyles } from "@/components/preview/QuizSolver";
+import ScaleButton from "@/components/ScaleButton";
+import { StatusBarTint } from "@/components/StatusBarTint";
+import StudyReport from "@/components/StudyReport";
 import {
-  useCardNarration,
-  type NarrationStep,
-  type SpokenRange,
-} from '@/hooks/useCardNarration';
-import BookPurchaseNotice from '@/components/lesson/BookPurchaseNotice';
-import MusicPlayer from '@/components/lesson/MusicPlayer';
-import BookCoverArt from '@/components/book/BookCoverArt';
-import CoverMark from '@/components/book/CoverMark';
-import LessonCoverImage from '@/components/LessonCoverImage';
-import { StatusBarTint } from '@/components/StatusBarTint';
-import StudyReport from '@/components/StudyReport';
-import { useBookmarks } from '@/context/BookmarkContext';
-import { useNotes } from '@/context/NotesContext';
-import { useQuiz } from '@/context/QuizContext';
-import { useReadingCursor } from '@/context/ReadingCursorContext';
-import { useReaderSettings } from '@/context/ReaderSettingsContext';
-import { useAlarmLockFlow } from '@/modules/alarm-clock';
+  Colors,
+  Corner,
+  Fonts,
+  Ink,
+  Spark,
+  Type,
+  TypeScale,
+  tracking,
+} from "@/constants/theme";
+import { useBookmarks } from "@/context/BookmarkContext";
+import { useNotes } from "@/context/NotesContext";
+import { useQuiz } from "@/context/QuizContext";
+import { useReaderSettings } from "@/context/ReaderSettingsContext";
+import { useReadingCursor } from "@/context/ReadingCursorContext";
+import { useCardNarration, type SpokenRange } from "@/hooks/useCardNarration";
+import { getBookName, isDatedBook, type BookLesson } from "@/lib/books";
 import {
-  buildCardNarration,
-  buildCardPages,
-  getCardCover,
-  getLessonEpigraph,
   BODY_FONT_SIZE,
   BODY_LINE_HEIGHT,
   BODY_PADDING_X,
@@ -70,22 +78,29 @@ import {
   CARD_H,
   CARD_W,
   CARD_W_WIDE,
-  SIMPLE_CARD_TOP,
-  simpleCardHeight,
   PLAYER_BLOCK,
   PLAYER_H,
+  SIMPLE_CARD_TOP,
+  buildCardNarration,
+  buildCardPages,
+  getCardCover,
+  getLessonEpigraph,
+  simpleCardHeight,
   type CardCover,
   type CardEpigraph,
   type CardPageKind,
-} from '@/lib/card-pages';
-import { splitVerse } from '@/lib/narration';
-import { getBookName, isDatedBook, type BookLesson } from '@/lib/books';
-import { getCoverPlan } from '@/lib/cover';
-import { getCatalogBookByBookId, type CatalogBook } from '@/lib/catalog';
-import type { BookId, DailyLesson, Illustration } from '@/types';
-import { openBookDetail } from '@/lib/preview-nav';
-import { getFreeLessonCount, getLockedLessonCount, getNextLesson } from '@/lib/progress';
-import { Colors, Corner, Fonts, Ink, Spark, Type, TypeScale, tracking } from '@/constants/theme';
+} from "@/lib/card-pages";
+import { getCatalogBookByBookId, type CatalogBook } from "@/lib/catalog";
+import { getCoverPlan } from "@/lib/cover";
+import { splitVerse } from "@/lib/narration";
+import { openBookDetail } from "@/lib/preview-nav";
+import {
+  getFreeLessonCount,
+  getLockedLessonCount,
+  getNextLesson,
+} from "@/lib/progress";
+import { useAlarmLockFlow } from "@/modules/alarm-clock";
+import type { BookId, DailyLesson, Illustration } from "@/types";
 
 /**
  * 오늘의 공부 상세 — 좌우로 넘겨 읽는 카드 형식.
@@ -119,7 +134,7 @@ import { Colors, Corner, Fonts, Ink, Spark, Type, TypeScale, tracking } from '@/
  * 새 라이브러리 없이 이미 쓰던 reanimated만 쓴다.
  */
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const { width: SCREEN_W } = Dimensions.get("window");
 
 /** 한 장 넘기는 데 필요한 스와이프 거리 — 페이지 스냅 단위와 같다. */
 const PAGE_W = SCREEN_W;
@@ -220,7 +235,7 @@ const FOOTER_H = 56;
 
 // 표지는 클래식의 '음악 듣기' 때문에 들어 있다. 그 버튼이 없는 책에서는 카드 안이 전부
 // box-none이라 손가락이 그대로 아래 제스처 층으로 내려가고, 탭 넘김은 그대로다.
-const INTERACTIVE_KINDS: CardPageKind[] = ['cover', 'outro'];
+const INTERACTIVE_KINDS: CardPageKind[] = ["cover", "outro"];
 
 interface Props {
   bookLesson: BookLesson;
@@ -250,14 +265,35 @@ interface Props {
   statusTint?: boolean;
 }
 
-/** 끝까지 내렸을 때 아래에 남기는 빈자리 — 떠 있는 퀴즈 버튼이 마지막 글을 덮지 않게(피그마 시안). */
-const FINISH_ENDING_H = 400;
+/** 스크롤 보기의 재생기를 접고 펴는 시간. */
+const FOLD_MS = 280;
+
 /** 퀴즈 버튼이 아래에서 올라오는 거리와 시간. */
 const FINISH_RISE = 120;
 const FINISH_MS = 320;
+/** 퀴즈 버튼이 차지하는 몫 — 높이 80 + 아래 띄움 20. */
+const FINISH_BUTTON_ZONE = 100;
+/** 마지막 줄과 버튼 사이에 두는 숨. 없으면 글 바로 밑에 버튼이 붙어 답답했다. */
+const FINISH_BREATH = 100;
+/**
+ * 글이 끝난 자리에서 이만큼 더 내려야 퀴즈 버튼이 뜬다 — 버튼 몫에 숨을 더한 만큼.
+ * 이만큼 내려오면 마지막 줄과 버튼 사이가 FINISH_BREATH만큼 벌어진다. 예전엔 아래 빈자리(400)까지
+ * 다 내려야 떠서 글이 끝나고도 한참을 더 내려야 했다.
+ */
+const FINISH_SHOW_AFTER = FINISH_BUTTON_ZONE + FINISH_BREATH;
+/** 스크롤 보기의 맨 아래 여백(세이프에어리어 위에 더 두는 몫) — contentContainerStyle과 같은 값. */
+const SCROLL_BOTTOM_PAD = 16;
+/**
+ * 글 아래 빈자리 — 퀴즈 버튼이 뜨는 자리가 곧 스크롤의 끝이 되도록 맞춘다.
+ *
+ * 시안은 400이었는데, 그러면 버튼이 뜬 뒤에도 300 남짓 더 내려가 빈 종이만 보였다. 버튼이
+ * 뜨는 자리(글 끝 + FINISH_SHOW_AFTER + 세이프에어리어)에서 스크롤이 멎도록, 맨 아래 여백을
+ * 뺀 만큼만 둔다. 그래서 버튼이 뜨면 더는 내려가지 않고, 마지막 줄은 버튼 바로 위에 선다.
+ */
+const FINISH_ENDING_H = FINISH_SHOW_AFTER - SCROLL_BOTTOM_PAD;
 
 /** 섞어 쓰는 형식에서, 사진이 없는 항목의 표지 장에 까는 그림 — 그림전체배경 시안의 것. */
-const FALLBACK_COVER = require('@/assets/images/preview/backdrop-piano.jpg');
+const FALLBACK_COVER = require("@/assets/images/preview/backdrop-piano.jpg");
 
 /**
  * 책 배경(책 설정)에 따른 종이와 글자의 색. 팔레트(Colors·Ink)에 있는 색만 쓴다.
@@ -285,7 +321,7 @@ interface ReaderPalette {
   solidInk: string;
 }
 
-const READER_PALETTES: Record<'light' | 'dark', ReaderPalette> = {
+const READER_PALETTES: Record<"light" | "dark", ReaderPalette> = {
   light: {
     paper: Colors.bg,
     back: [Colors.beige10, Colors.bg],
@@ -311,7 +347,9 @@ const READER_PALETTES: Record<'light' | 'dark', ReaderPalette> = {
 };
 
 /** 덱 안의 카드들이 지금 종이색을 읽는 통로 — 카드마다 props로 내려보내지 않으려고 둔다. */
-const ReaderPaletteContext = createContext<ReaderPalette>(READER_PALETTES.light);
+const ReaderPaletteContext = createContext<ReaderPalette>(
+  READER_PALETTES.light,
+);
 /**
  * 지금 카드의 자리 — 카드 자리를 셈하는 곳들(경첩·책갈피)이 읽는다.
  * top이 null이면 예전처럼 덱 한가운데에 놓이고, 수가 있으면 덱 위에서 그만큼 내려와 놓인다
@@ -322,7 +360,11 @@ interface CardFrame {
   top: number | null;
   height: number;
 }
-const CardFrameContext = createContext<CardFrame>({ width: CARD_W, top: null, height: CARD_H });
+const CardFrameContext = createContext<CardFrame>({
+  width: CARD_W,
+  top: null,
+  height: CARD_H,
+});
 
 /** 넘김효과 없음에서 카드와 그 아래 재생기 사이 틈(피그마 시안). */
 const SIMPLE_PLAYER_GAP = 8;
@@ -355,12 +397,13 @@ export default function CardDeckDetail({
    * 실제로 읽는 화면(trackProgress)에만 건다. 미리보기들은 제 넘김 모양을 보여 주려고
    * 연 화면이라 설정과 상관없이 접히며 넘어간다.
    */
-  const instantTurn = trackProgress && readerSettings.turn === 'none';
+  const instantTurn = trackProgress && readerSettings.turn === "none";
   /**
    * 스크롤 보기(책 설정) — 장을 넘기지 않고 글 전체를 한 장의 종이 위에서 세로로 내려 읽는다.
    * 위 진행 바도, 좌우 탭 넘김도 없다. 넘기기 설정과 같은 까닭으로 실제로 읽는 화면에만 건다.
    */
-  const scrollMode = forceScroll || (trackProgress && readerSettings.turn === 'scroll');
+  const scrollMode =
+    forceScroll || (trackProgress && readerSettings.turn === "scroll");
   /** 맺음 장 대신 떠 있는 퀴즈 버튼이 공부를 맺는가 — 스크롤 보기에서만 뜻이 있다. */
   const ctaMode = scrollMode && !!finishCta;
   /**
@@ -373,7 +416,8 @@ export default function CardDeckDetail({
   /** 넘김효과 없음의 카드 높이 — 헤더 아래부터 화면 끝 여백까지를 다 쓴다. */
   const simpleFullH = simpleCardHeight(windowH, safeArea.top, safeArea.bottom);
   /** 책 배경 — 넘기기와 같은 까닭으로 실제로 읽는 화면에만 건다. */
-  const palette = READER_PALETTES[trackProgress ? readerSettings.background : 'light'];
+  const palette =
+    READER_PALETTES[trackProgress ? readerSettings.background : "light"];
   /**
    * 넘김효과 없음이면 카드가 넓어진다 — 왼쪽에 넘어간 장이 걸칠 자리가 필요 없어서다.
    * 폭이 바뀌면 한 줄에 담기는 글이 달라지므로 장 나누기에도 같은 폭을 넘긴다.
@@ -401,11 +445,23 @@ export default function CardDeckDetail({
       pages: built,
       cover: coverInfo,
       epigraph: epi,
-      narrationSteps: buildCardNarration(built, { cover: coverInfo, epigraph: epi }),
+      narrationSteps: buildCardNarration(built, {
+        cover: coverInfo,
+        epigraph: epi,
+      }),
       quizzes: list,
     };
-  }, [bookLesson, bookName, lesson, body, cardW, scrollMode, instantTurn, simpleFullH, ctaMode]);
-
+  }, [
+    bookLesson,
+    bookName,
+    lesson,
+    body,
+    cardW,
+    scrollMode,
+    instantTurn,
+    simpleFullH,
+    ctaMode,
+  ]);
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   // rawX: 실제 스크롤 위치(매 프레임 그대로). flipX: 카드가 실제로 읽는 값 —
@@ -445,7 +501,7 @@ export default function CardDeckDetail({
    */
   const { isMarked, toggle: toggleBookmark } = useBookmarks();
   /** 책갈피 토스트 — 켰는지 껐는지에 따라 문구가 다르다(Toast의 at 주석 참고). */
-  const [markToast, setMarkToast] = useState({ at: 0, text: '' });
+  const [markToast, setMarkToast] = useState({ at: 0, text: "" });
 
   /**
    * 이 화를 끝냈다고 적을 자리 — 홈의 읽기 버튼이 다음에 어디를 열지 정한다.
@@ -458,7 +514,9 @@ export default function CardDeckDetail({
     const saved = toggleBookmark(lesson.id, index, bookLesson.book);
     setMarkToast({
       at: Date.now(),
-      text: saved ? '이 페이지를 북마크에 저장했습니다.' : '북마크를 해지했습니다.',
+      text: saved
+        ? "이 페이지를 북마크에 저장했습니다."
+        : "북마크를 해지했습니다.",
     });
   };
   /** 감상 노트 팝업이 열려 있는지. */
@@ -504,22 +562,32 @@ export default function CardDeckDetail({
    */
   const { coverPhoto, coverFallback, coverPaper, coverDark } = useMemo(() => {
     const plan = getCoverPlan(lesson, bookLesson.book);
-    const photo = plan.kind === 'image' || plan.kind === 'unsplash';
+    const photo = plan.kind === "image" || plan.kind === "unsplash";
     // 섞어 쓰는 형식의 표지 장은 언제나 그림 위에 선다 — 골라 둔 사진이 없으면 대신할 그림을 깐다.
     const fallback = mixed && !photo;
     return {
       coverPhoto: photo,
       coverFallback: fallback,
-      coverPaper: plan.kind === 'design' && !fallback ? plan.design.paper : undefined,
-      coverDark: photo || fallback || (plan.kind === 'design' && plan.design.dark === true),
+      coverPaper:
+        plan.kind === "design" && !fallback ? plan.design.paper : undefined,
+      coverDark:
+        photo ||
+        fallback ||
+        (plan.kind === "design" && plan.design.dark === true),
     };
   }, [lesson, bookLesson.book, mixed]);
 
   /** 잠긴 화 수 — 구매 안내가 '아직 잠긴 n편이 남아 있어요'로 말한다. */
-  const lockedCount = useMemo(() => getLockedLessonCount(bookLesson.book), [bookLesson.book]);
+  const lockedCount = useMemo(
+    () => getLockedLessonCount(bookLesson.book),
+    [bookLesson.book],
+  );
 
   /** 무료로 열린 화 수 — 책 분량의 10분의 1이라 권마다 다르다(lib/progress). */
-  const freeCount = useMemo(() => getFreeLessonCount(bookLesson.book), [bookLesson.book]);
+  const freeCount = useMemo(
+    () => getFreeLessonCount(bookLesson.book),
+    [bookLesson.book],
+  );
 
   /** 이 항목의 다음 화 — 없으면 undefined(이 책의 마지막 화다). */
   const nextLesson = useMemo(
@@ -534,7 +602,7 @@ export default function CardDeckDetail({
     const next = nextLesson;
     if (!next) {
       setReportOpen(false);
-      router.replace('/');
+      router.replace("/");
       return;
     }
     if (next.locked) {
@@ -543,7 +611,7 @@ export default function CardDeckDetail({
     }
     setReportOpen(false);
     router.replace({
-      pathname: '/today',
+      pathname: "/today",
       params: { bookId: bookLesson.book, lessonId: next.lessonId },
     });
   };
@@ -595,11 +663,15 @@ export default function CardDeckDetail({
       return;
     }
     gliding.value = true;
-    flipX.value = withTiming(next * PAGE_W, { duration: TURN_DURATION }, (finished) => {
-      // 도중에 다른 넘김이 끼어들면 finished가 false로 온다 — 그때는 그 넘김이
-      // 자기 몫을 정리하도록 두고 여기서는 아무것도 하지 않는다.
-      if (finished) runOnJS(commitTurn)(next);
-    });
+    flipX.value = withTiming(
+      next * PAGE_W,
+      { duration: TURN_DURATION },
+      (finished) => {
+        // 도중에 다른 넘김이 끼어들면 finished가 false로 온다 — 그때는 그 넘김이
+        // 자기 몫을 정리하도록 두고 여기서는 아무것도 하지 않는다.
+        if (finished) runOnJS(commitTurn)(next);
+      },
+    );
   };
 
   /** 회전이 끝난 뒤 — 하단 버튼이 읽는 페이지 번호만 맞춰 둔다. */
@@ -675,12 +747,31 @@ export default function CardDeckDetail({
   const lockFlow = useAlarmLockFlow();
   useEffect(() => {
     if (!lockFlow) return;
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => true,
+    );
     return () => subscription.remove();
   }, [lockFlow]);
 
   /** 헤드폰 버튼이 펼쳐져 조작 아이콘을 드러내고 있는지. */
   const [readerOpen, setReaderOpen] = useState(false);
+  /**
+   * 스크롤 보기의 재생기를 접었는가. 접으면 재생기의 높이만 0으로 줄이고 웹뷰는 그대로 둔다 —
+   * 다시 펼 때 영상을 처음부터 다시 불러오지 않는다. 접힌 동안은 소리도 세운다. 보이지 않는
+   * 재생기에서 소리만 나게 하는 것은 유튜브 약관(재생기를 가리지 말 것)에 걸린다.
+   */
+  const [playerFolded, setPlayerFolded] = useState(false);
+  const fold = useSharedValue(0);
+  useEffect(() => {
+    fold.value = withTiming(playerFolded ? 1 : 0, {
+      duration: FOLD_MS,
+      easing: Easing.inOut(Easing.cubic),
+    });
+  }, [playerFolded, fold]);
+  const foldStyle = useAnimatedStyle(() => ({
+    height: (1 - fold.value) * PLAYER_H,
+  }));
 
   /**
    * 유튜브가 딸린 항목인가. 딸렸으면 카드가 재생기 몫만큼 짧아지고, 그 자리에 재생기가
@@ -710,6 +801,30 @@ export default function CardDeckDetail({
    * 닿으면 그대로 남는 기록이고, 이것은 다시 올리면 풀린다.
    */
   const [atEnd, setAtEnd] = useState(false);
+  /** 글이 끝나는 높이(스크롤 안에서) — 퀴즈 버튼 아래 빈자리의 onLayout이 적는다. 모르면 0. */
+  const textEndY = useRef(0);
+  /**
+   * 끝에 닿았는지 잰다 — 스크롤할 때, 손을 뗄 때, 관성이 멎을 때 모두.
+   *
+   * 퀴즈 버튼이 있으면 '글이 끝난 자리 + 버튼 몫'을 지났는지로 본다(FINISH_SHOW_AFTER).
+   * 없으면 예전처럼 맨 아래에 닿았는지로 본다.
+   *
+   * 값은 이전 값과 견주어 바꾸는 꼴(setAtEnd(prev => …))로 적는다. 렌더 때 붙잡아 둔 atEnd와
+   * 견주면 빠르게 오르내릴 때 낡은 값과 비교해 바뀐 것을 놓쳤다 — 조금 올렸다 다시 내리면
+   * 버튼이 다시 뜨지 않던 것이 그것이다.
+   */
+  const checkScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const seen = contentOffset.y + layoutMeasurement.height;
+    const end =
+      ctaMode && textEndY.current > 0
+        ? // 스크롤의 끝과 버튼이 뜨는 자리가 같다(FINISH_ENDING_H) — 소수점 반올림으로 끝에 닿고도
+          // 1~2 모자라는 일이 없게 조금 넉넉히 본다.
+          seen >= textEndY.current + FINISH_SHOW_AFTER + insets.bottom - 2
+        : seen >= contentSize.height - 24;
+    setAtEnd((prev) => (prev === end ? prev : end));
+    if (end) setScrolledToEnd(true);
+  };
   const finishLift = useSharedValue(0);
   useEffect(() => {
     finishLift.value = withTiming(atEnd ? 1 : 0, {
@@ -725,7 +840,11 @@ export default function CardDeckDetail({
   const scrollToBlock = (index: number) => {
     setBarPage(index);
     const y = blockY.current[index];
-    if (y !== undefined) readerScrollRef.current?.scrollTo({ y: Math.max(0, y - 16), animated: true });
+    if (y !== undefined)
+      readerScrollRef.current?.scrollTo({
+        y: Math.max(0, y - 16),
+        animated: true,
+      });
   };
 
   const narration = useCardNarration({
@@ -750,7 +869,7 @@ export default function CardDeckDetail({
   narrationRef.current = narration;
   /** 자동읽기(TTS 설정) — 켜 두면 화면이 열리자마자 낭독을 시작한다. 실제로 읽는 화면에만 건다. */
   const autoReadRef = useRef(false);
-  autoReadRef.current = trackProgress && readerSettings.autoRead === 'on';
+  autoReadRef.current = trackProgress && readerSettings.autoRead === "on";
 
   useFocusEffect(
     useCallback(() => {
@@ -783,7 +902,6 @@ export default function CardDeckDetail({
     }, []),
   );
 
-
   const last = barPage === pages.length - 1;
 
   /**
@@ -802,7 +920,8 @@ export default function CardDeckDetail({
    * 정해진 순간(startTurn)이면 충분하다. 반쯤 끌었다 놓아 되돌아온 경우는 그 자리로
    * 넘어가기로 정해진 적이 없으니 여기 걸리지 않는다.
    */
-  const lessonDone = trackProgress && (isQuizDone(lesson.id) || last || scrolledToEnd);
+  const lessonDone =
+    trackProgress && (isQuizDone(lesson.id) || last || scrolledToEnd);
   useEffect(() => {
     if (lessonDone) markCompleted(bookLesson.book, lesson.id);
   }, [lessonDone, markCompleted, bookLesson.book, lesson.id]);
@@ -811,246 +930,358 @@ export default function CardDeckDetail({
    * 자동으로 읽기·감상 노트 버튼 — 보통은 아래 줄에, 단출한 크롬에서는 위 줄에 놓인다.
    * 자동으로 읽기를 펼치면 재생·처음부터·닫기로 바뀐다.
    */
-  const readerButtons = (color: string, hit: 'footerHit' | 'simpleHit') => (
+  const readerButtons = (color: string, hit: "footerHit" | "simpleHit") => (
     <>
-            {readerOpen ? (
-              <>
-                <ScaleButton
-                  accessibilityLabel={narration.playing ? '읽기 멈추기' : '읽기 재생'}
-                  style={styles[hit]}
-                  onPress={narration.toggle}>
-                  <Ionicons
-                    name={narration.playing ? 'pause' : 'play'}
-                    color={color}
-                    size={24}
-                  />
-                </ScaleButton>
-                <ScaleButton
-                  accessibilityLabel="처음부터 다시 듣기"
-                  style={styles[hit]}
-                  onPress={narration.restart}>
-                  <Ionicons name="refresh" color={color} size={24} />
-                </ScaleButton>
-                <ScaleButton
-                  accessibilityLabel="자동으로 읽기 닫기"
-                  style={styles[hit]}
-                  onPress={() => {
-                    setReaderOpen(false);
-                    narration.stop();
-                  }}>
-                  <Ionicons name="close-outline" color={color} size={24} />
-                </ScaleButton>
-              </>
-            ) : (
-              <ScaleButton
-                accessibilityLabel="자동으로 읽기"
-                style={styles[hit]}
-                onPress={() => {
-                  setReaderOpen(true);
-                  narration.restart();
-                }}>
-                <Ionicons name="headset" color={color} size={24} />
-              </ScaleButton>
-            )}
-            {SHOW_NOTES ? (
-              <ScaleButton
-                accessibilityLabel={noteCount > 0 ? `감상 노트 ${noteCount}개` : '감상 노트'}
-                style={styles[hit]}
-                onPress={() => setNoteOpen(true)}>
-                <Ionicons name="create" color={color} size={24} />
-                {/* 남긴 노트 수 — 창을 열지 않고도 몇 개 적었는지 보인다. */}
-                {noteCount > 0 ? (
-                  <View style={styles.noteBadge}>
-                    <Text style={styles.noteBadgeText}>{noteCount}</Text>
-                  </View>
-                ) : null}
-              </ScaleButton>
-            ) : null}
+      {readerOpen ? (
+        <>
+          <ScaleButton
+            accessibilityLabel={narration.playing ? "읽기 멈추기" : "읽기 재생"}
+            style={styles[hit]}
+            onPress={narration.toggle}
+          >
+            <Ionicons
+              name={narration.playing ? "pause" : "play"}
+              color={color}
+              size={24}
+            />
+          </ScaleButton>
+          <ScaleButton
+            accessibilityLabel="처음부터 다시 듣기"
+            style={styles[hit]}
+            onPress={narration.restart}
+          >
+            <Ionicons name="refresh" color={color} size={24} />
+          </ScaleButton>
+          <ScaleButton
+            accessibilityLabel="자동으로 읽기 닫기"
+            style={styles[hit]}
+            onPress={() => {
+              setReaderOpen(false);
+              narration.stop();
+            }}
+          >
+            <Ionicons name="close-outline" color={color} size={24} />
+          </ScaleButton>
+        </>
+      ) : (
+        <ScaleButton
+          accessibilityLabel="자동으로 읽기"
+          style={styles[hit]}
+          onPress={() => {
+            setReaderOpen(true);
+            narration.restart();
+          }}
+        >
+          <Ionicons name="headset" color={color} size={24} />
+        </ScaleButton>
+      )}
+      {SHOW_NOTES ? (
+        <ScaleButton
+          accessibilityLabel={
+            noteCount > 0 ? `감상 노트 ${noteCount}개` : "감상 노트"
+          }
+          style={styles[hit]}
+          onPress={() => setNoteOpen(true)}
+        >
+          <Ionicons name="create" color={color} size={24} />
+          {/* 남긴 노트 수 — 창을 열지 않고도 몇 개 적었는지 보인다. */}
+          {noteCount > 0 ? (
+            <View style={styles.noteBadge}>
+              <Text style={styles.noteBadgeText}>{noteCount}</Text>
+            </View>
+          ) : null}
+        </ScaleButton>
+      ) : null}
     </>
   );
 
   return (
     <ReaderPaletteContext.Provider value={palette}>
-    <CardFrameContext.Provider value={cardFrame}>
-    <View style={[styles.screen, scrollMode && { backgroundColor: palette.paper }]}>
-      {/* 어두운 화면이라 상태바도 검게, 시계는 희게. */}
-      {/* 스크롤 보기는 화면 전체가 종이라 상태바도 종이색으로 잇는다. */}
-      {/* 재생기가 있는 스크롤 보기는 위 줄이 검어 상태바도 검게 둔다(기본값). */}
-      {statusTint ? (
-        <StatusBarTint
-          tint={
-            scrollMode && !scrollVideo
-              ? {
-                  color: palette.paper,
-                  icons: readerSettings.background === 'dark' ? 'light' : 'dark',
-                }
-              : undefined
-          }
-        />
-      ) : null}
-
-      {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니다.
-          세이프에어리어를 스크린의 padding으로 주지 않는 건, 절대 배치된 덱·아래 줄이
-          그 padding을 타지 않아서다(그러면 아래 줄이 내비게이션 바에 깔린다). */}
-      <View style={[{ height: insets.top }, scrollVideo && styles.scrollVideoTop]} />
-      {/* 섞어쓰기 미리보기는 바가 없다. 바가 차지하던 높이는 남겨 둔다 — 덱의 자리가
-          그 높이를 셈에 넣고 있어서다. */}
-      {/* 스크롤 보기도 몇 장째인지 셀 장이 없어 바를 빼고 높이만 남긴다. */}
-      {scrollMode ? null : mixed ? (
-        <View style={styles.barsSpacer} />
-      ) : (
-        <PageBars page={barPage} total={pages.length} />
-      )}
-
-      {/* 계정 줄 — 표지·책 이름·날짜, 그리고 닫기.
-          잠금 위 알람에서는 닫기를 그리지 않는다 — 유일한 출구를 막아야 한다. */}
-      {simpleChrome ? (
+      <CardFrameContext.Provider value={cardFrame}>
         <View
           style={[
-            styles.simpleHeader,
-            scrollMode && (scrollVideo ? styles.scrollVideoTop : styles.simpleHeaderRule),
-          ]}>
-          {lockFlow ? (
-            <View style={styles.simpleBack} />
-          ) : (
-            <ScaleButton accessibilityLabel="닫기" style={styles.simpleBack} onPress={onClose}>
-              <Chevron size={24} color={scrollMode && !scrollVideo ? palette.ink : Colors.white} />
-            </ScaleButton>
-          )}
-          <View style={styles.footerIcons}>
-            {readerButtons(scrollMode && !scrollVideo ? palette.ink : Colors.white, 'simpleHit')}
-          </View>
-        </View>
-      ) : (
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          {catalogBook ? (
-            <BookCoverArt
-              bookId={catalogBook.bookId}
-              coverImage={catalogBook.coverImage}
-              coverDesign={catalogBook.coverDesign}
-              width={AVATAR}
+            styles.screen,
+            scrollMode && { backgroundColor: palette.paper },
+          ]}
+        >
+          {/* 어두운 화면이라 상태바도 검게, 시계는 희게. */}
+          {/* 스크롤 보기는 화면 전체가 종이라 상태바도 종이색으로 잇는다. */}
+          {/* 재생기가 있는 스크롤 보기는 위 줄이 검어 상태바도 검게 둔다(기본값). */}
+          {statusTint ? (
+            <StatusBarTint
+              tint={
+                scrollMode && !scrollVideo
+                  ? {
+                      color: palette.paper,
+                      icons:
+                        readerSettings.background === "dark" ? "light" : "dark",
+                    }
+                  : undefined
+              }
             />
           ) : null}
-        </View>
-        <Text style={styles.account}>{bookName}</Text>
-        {dated && lesson.date ? <Text style={styles.when}>{lesson.date}</Text> : null}
-        <View style={styles.headerSpacer} />
-        {!lockFlow && (
-          <ScaleButton accessibilityLabel="닫기" style={styles.headerClose} onPress={onClose}>
-            <Ionicons name="close-outline" color={Colors.white} size={24} />
-          </ScaleButton>
-        )}
-      </View>
-      )}
 
-      {/* 스크롤 보기의 재생기 — 위 줄 바로 아래에 화면 폭을 다 쓰고 붙박인다. 글만 그 아래에서
-          흐른다 — 음악을 들으며 읽는 화면이라 재생기가 글과 함께 밀려 올라가지 않는다. */}
-      {scrollVideo && cover.listenId ? (
-        <MusicPlayer videoId={cover.listenId} paused={readerOpen} width={SCREEN_W} square />
-      ) : null}
+          {/* 위 진행 바 — 몇 장 중 몇 번째인지만 말한다. 시간이 차는 게 아니다.
+          세이프에어리어를 스크린의 padding으로 주지 않는 건, 절대 배치된 덱·아래 줄이
+          그 padding을 타지 않아서다(그러면 아래 줄이 내비게이션 바에 깔린다). */}
+          <View
+            style={[
+              { height: insets.top },
+              scrollVideo && styles.scrollVideoTop,
+            ]}
+          />
+          {/* 섞어쓰기 미리보기는 바가 없다. 바가 차지하던 높이는 남겨 둔다 — 덱의 자리가
+          그 높이를 셈에 넣고 있어서다. */}
+          {/* 스크롤 보기도 몇 장째인지 셀 장이 없어 바를 빼고 높이만 남긴다. */}
+          {scrollMode ? null : mixed ? (
+            <View style={styles.barsSpacer} />
+          ) : (
+            <PageBars page={barPage} total={pages.length} />
+          )}
 
-      {/* 스크롤 보기 — 화면 전체가 종이다. 카드 없이, 모든 장을 위에서 아래로 잇는다. */}
-      {scrollMode ? (
-        <ScrollView
-          ref={readerScrollRef}
-          style={styles.scrollPage}
-          contentContainerStyle={[
-            styles.scrollBody,
-            { paddingBottom: insets.bottom + 16 },
-          ]}
-          showsVerticalScrollIndicator={false}
-          scrollEventThrottle={32}
-          onScroll={(event) => {
-            const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-            const end = layoutMeasurement.height + contentOffset.y >= contentSize.height - 24;
-            if (end !== atEnd) setAtEnd(end);
-            if (end && !scrolledToEnd) setScrolledToEnd(true);
-          }}>
-          {pages.map((p, index) => (
+          {/* 계정 줄 — 표지·책 이름·날짜, 그리고 닫기.
+          잠금 위 알람에서는 닫기를 그리지 않는다 — 유일한 출구를 막아야 한다. */}
+          {simpleChrome ? (
             <View
-              key={index}
-              style={p.kind === 'cover' ? styles.scrollCover : undefined}
-              onLayout={(event) => {
-                blockY.current[index] = event.nativeEvent.layout.y;
-              }}>
-              <CardContent
-                kind={p.kind}
-                paragraph={p.paragraph}
-                illustration={p.illustration}
-                verseOnDark={false}
-                spoken={narration.spoken?.page === index ? narration.spoken : null}
-                cover={cover}
-                epigraph={epigraph}
-                catalogBook={catalogBook}
-                onOpenQuiz={() => setQuizOpen(true)}
-                onNext={openNext}
-                isLastLesson={!nextLesson}
-                onDark={false}
-                hasMusic={hasMusic}
-              />
-            </View>
-          ))}
-          {/* 떠 있는 퀴즈 버튼 몫의 빈자리 — 마지막 글이 버튼 밑에 깔리지 않는다. */}
-          {ctaMode ? <View style={{ height: FINISH_ENDING_H }} /> : null}
-        </ScrollView>
-      ) : null}
-
-      {/* 끝까지 내리면 아래에서 올라오는 퀴즈 버튼. 다시 올리면 아래로 사라진다. */}
-      {ctaMode && finishCta ? (
-        <Animated.View
-          pointerEvents={atEnd ? 'box-none' : 'none'}
-          style={[styles.finishWrap, { bottom: insets.bottom + 20 }, finishStyle]}>
-          <ScaleButton
-            accessibilityLabel="읽기 완료하고 퀴즈 풀기"
-            style={styles.finishPill}
-            onPress={finishCta.onPress}>
-            <View style={styles.finishTexts}>
-              <View style={styles.finishProgressRow}>
-                <Text style={styles.finishProgressLabel}>읽기 진행</Text>
-                <Text style={styles.finishProgressValue}>{`${finishCta.progress}%`}</Text>
+              style={[
+                styles.simpleHeader,
+                scrollMode &&
+                  (scrollVideo
+                    ? styles.scrollVideoTop
+                    : styles.simpleHeaderRule),
+              ]}
+            >
+              {lockFlow ? (
+                <View style={styles.simpleBack} />
+              ) : (
+                <ScaleButton
+                  accessibilityLabel="닫기"
+                  style={styles.simpleBack}
+                  onPress={onClose}
+                >
+                  <Chevron
+                    size={24}
+                    color={
+                      scrollMode && !scrollVideo ? palette.ink : Colors.white
+                    }
+                  />
+                </ScaleButton>
+              )}
+              <View style={styles.footerIcons}>
+                {readerButtons(
+                  scrollMode && !scrollVideo ? palette.ink : Colors.white,
+                  "simpleHit",
+                )}
               </View>
-              <Text style={styles.finishTitle}>읽기 완료하고 퀴즈 풀기</Text>
             </View>
-            <View style={styles.finishArrow}>
-              <Chevron direction="forward" size={26} color={Ink.onDark} />
+          ) : (
+            <View style={styles.header}>
+              <View style={styles.avatar}>
+                {catalogBook ? (
+                  <BookCoverArt
+                    bookId={catalogBook.bookId}
+                    coverImage={catalogBook.coverImage}
+                    coverDesign={catalogBook.coverDesign}
+                    width={AVATAR}
+                  />
+                ) : null}
+              </View>
+              <Text style={styles.account}>{bookName}</Text>
+              {dated && lesson.date ? (
+                <Text style={styles.when}>{lesson.date}</Text>
+              ) : null}
+              <View style={styles.headerSpacer} />
+              {!lockFlow && (
+                <ScaleButton
+                  accessibilityLabel="닫기"
+                  style={styles.headerClose}
+                  onPress={onClose}
+                >
+                  <Ionicons
+                    name="close-outline"
+                    color={Colors.white}
+                    size={24}
+                  />
+                </ScaleButton>
+              )}
             </View>
-          </ScaleButton>
-        </Animated.View>
-      ) : null}
+          )}
 
-      {/* 제스처 층 — 페이지마다 좌/중/우 3등분 탭 영역만 있다(가운데는 무동작).
+          {/* 스크롤 보기의 재생기 — 위 줄 바로 아래에 화면 폭을 다 쓰고 붙박인다. 글만 그 아래에서
+          흐른다 — 음악을 들으며 읽는 화면이라 재생기가 글과 함께 밀려 올라가지 않는다. */}
+          {scrollVideo && cover.listenId ? (
+            <>
+              <Animated.View style={[styles.foldBox, foldStyle]}>
+                <MusicPlayer
+                  videoId={cover.listenId}
+                  paused={readerOpen || playerFolded}
+                  width={SCREEN_W}
+                  square
+                />
+              </Animated.View>
+              {/* 재생기 밑의 접기·펼치기 — 위 줄과 같은 검은 띠 한가운데에 놓인다. */}
+              <View style={styles.foldBar}>
+                <ScaleButton
+                  accessibilityLabel={
+                    playerFolded ? "음악 펼치기" : "음악 접기"
+                  }
+                  style={styles.foldButton}
+                  onPress={() => setPlayerFolded((v) => !v)}
+                >
+                  {/*
+                꺾쇠는 글리프가 아니라 손으로 그린 Chevron(‹)을 90° 돌려 쓴다. Ionicons는 글자라
+                안드로이드의 글꼴 위아래 여백(includeFontPadding)이 붙어, 낮은 띠 안에서 가운데로
+                정렬해도 그림이 아래로 쏠려 보였다. Chevron은 그린 만큼만 자리를 차지해 정확히
+                가운데에 앉는다. ‹를 시계 방향으로 90° 돌리면 ⌃(접기), 반대로 돌리면 ⌄(펼치기).
+              */}
+                  {/* 정중앙보다 2 위로 — 꺾쇠는 아래가 열린 모양이라 가운데에 두면 처져 보인다. */}
+                  <View
+                    style={{
+                      transform: [
+                        { translateY: -2 },
+                        { rotate: playerFolded ? "-90deg" : "90deg" },
+                      ],
+                    }}
+                  >
+                    <Chevron size={16} color={Ink.muted} />
+                  </View>
+                </ScaleButton>
+              </View>
+            </>
+          ) : null}
+
+          {/* 스크롤 보기 — 화면 전체가 종이다. 카드 없이, 모든 장을 위에서 아래로 잇는다. */}
+          {scrollMode ? (
+            <ScrollView
+              ref={readerScrollRef}
+              style={styles.scrollPage}
+              contentContainerStyle={[
+                styles.scrollBody,
+                // 재생기 밑에서는 위 여백 없이 글이 재생기에 바로 붙는다.
+                scrollVideo && styles.scrollBodyUnderVideo,
+                { paddingBottom: insets.bottom + SCROLL_BOTTOM_PAD },
+              ]}
+              showsVerticalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onScroll={checkScrollEnd}
+              // 빠르게 튕겨 내리면 마지막 onScroll이 멎은 자리보다 앞에서 끝나는 일이 있다.
+              // 손을 뗀 때와 관성이 멎은 때 한 번 더 재서, 멎은 자리로 끝을 판정한다.
+              onScrollEndDrag={checkScrollEnd}
+              onMomentumScrollEnd={checkScrollEnd}
+            >
+              {pages.map((p, index) => (
+                <View
+                  key={index}
+                  // 재생기 밑에서는 표지 덩이가 260 칸 한가운데에 뜨지 않고 제 높이만 쓴다 —
+                  // 가운데에 앉으면 위로 30 남짓 빈 종이가 생겨 재생기와 글 사이가 벌어졌다.
+                  style={
+                    p.kind === "cover" && !scrollVideo
+                      ? styles.scrollCover
+                      : undefined
+                  }
+                  onLayout={(event) => {
+                    blockY.current[index] = event.nativeEvent.layout.y;
+                  }}
+                >
+                  <CardContent
+                    kind={p.kind}
+                    paragraph={p.paragraph}
+                    illustration={p.illustration}
+                    verseOnDark={false}
+                    spoken={
+                      narration.spoken?.page === index ? narration.spoken : null
+                    }
+                    cover={cover}
+                    epigraph={epigraph}
+                    catalogBook={catalogBook}
+                    onOpenQuiz={() => setQuizOpen(true)}
+                    onNext={openNext}
+                    isLastLesson={!nextLesson}
+                    onDark={false}
+                    hasMusic={hasMusic}
+                    coverTight={scrollVideo}
+                  />
+                </View>
+              ))}
+              {/* 떠 있는 퀴즈 버튼 몫의 빈자리 — 마지막 글이 버튼 밑에 깔리지 않는다. */}
+              {/* 이 빈자리가 시작하는 높이가 곧 '글이 끝나는 자리'다 — 퀴즈 버튼이 이것을 잰다. */}
+              {ctaMode ? (
+                <View
+                  style={{ height: FINISH_ENDING_H }}
+                  onLayout={(event) => {
+                    textEndY.current = event.nativeEvent.layout.y;
+                  }}
+                />
+              ) : null}
+            </ScrollView>
+          ) : null}
+
+          {/* 끝까지 내리면 아래에서 올라오는 퀴즈 버튼. 다시 올리면 아래로 사라진다. */}
+          {ctaMode && finishCta ? (
+            <Animated.View
+              pointerEvents={atEnd ? "box-none" : "none"}
+              style={[
+                styles.finishWrap,
+                { bottom: insets.bottom + 20 },
+                finishStyle,
+              ]}
+            >
+              <ScaleButton
+                accessibilityLabel="읽기 완료하고 퀴즈 풀기"
+                style={styles.finishPill}
+                onPress={finishCta.onPress}
+              >
+                <View style={styles.finishTexts}>
+                  <View style={styles.finishProgressRow}>
+                    <Text style={styles.finishProgressLabel}>읽기 진행</Text>
+                    <Text
+                      style={styles.finishProgressValue}
+                    >{`${finishCta.progress}%`}</Text>
+                  </View>
+                  <Text style={styles.finishTitle}>
+                    읽기 완료하고 퀴즈 풀기
+                  </Text>
+                </View>
+                <View style={styles.finishArrow}>
+                  <Chevron direction="forward" size={26} color={Ink.onDark} />
+                </View>
+              </ScaleButton>
+            </Animated.View>
+          ) : null}
+
+          {/* 제스처 층 — 페이지마다 좌/중/우 3등분 탭 영역만 있다(가운데는 무동작).
           스크롤 보기에는 넘길 장이 없어 두지 않는다 — 두면 세로 스크롤을 가로챈다. */}
-      {scrollMode ? null : (
-      <Animated.ScrollView
-        ref={scrollRef}
-        style={styles.gestureLayer}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={scrollHandler}
-        onMomentumScrollEnd={onSettle}
-        scrollEventThrottle={16}>
-        {pages.map((_, index) => (
-          <View key={index} style={styles.gesturePage}>
-            <Pressable
-              accessibilityLabel="이전 장"
-              style={styles.tapZone}
-              onPress={() => goBy(-1)}
-            />
-            {/* 가운데는 아무 일도 하지 않는다. */}
-            <View style={styles.tapZone} />
-            <Pressable
-              accessibilityLabel="다음 장"
-              style={styles.tapZone}
-              onPress={() => goBy(1)}
-            />
-          </View>
-        ))}
-      </Animated.ScrollView>
-      )}
+          {scrollMode ? null : (
+            <Animated.ScrollView
+              ref={scrollRef}
+              style={styles.gestureLayer}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={scrollHandler}
+              onMomentumScrollEnd={onSettle}
+              scrollEventThrottle={16}
+            >
+              {pages.map((_, index) => (
+                <View key={index} style={styles.gesturePage}>
+                  <Pressable
+                    accessibilityLabel="이전 장"
+                    style={styles.tapZone}
+                    onPress={() => goBy(-1)}
+                  />
+                  {/* 가운데는 아무 일도 하지 않는다. */}
+                  <View style={styles.tapZone} />
+                  <Pressable
+                    accessibilityLabel="다음 장"
+                    style={styles.tapZone}
+                    onPress={() => goBy(1)}
+                  />
+                </View>
+              ))}
+            </Animated.ScrollView>
+          )}
 
-      {/* 카드층 — 제스처 층보다 뒤에 둬야 감상 노트가 손가락을 받는다. 제스처 층은
+          {/* 카드층 — 제스처 층보다 뒤에 둬야 감상 노트가 손가락을 받는다. 제스처 층은
           제 영역 안의 터치를 다 가져가므로 그 아래에 있으면 입력칸까지 닿지 않는다.
           box-none이라 카드 자체는 터치를 잡지 않고, 지금 펼쳐진 장의 입력칸·버튼만
           잡는다 — 나머지 자리의 스와이프·탭은 그대로 아래 제스처 층으로 내려간다.
@@ -1060,172 +1291,208 @@ export default function CardDeckDetail({
           쌓임 순서는 인덱스 역순으로 한 번 박아 두고 다시는 건드리지 않는다. 어느
           순간에도 실제로 그려지는 건 두 장뿐이라, 앞장이 뒷장 위에만 있으면 그걸로
           끝이다 — DeckCard 주석 참고. */}
-      <View
-        style={[styles.deck, { top: insets.top, bottom: insets.bottom }]}
-        pointerEvents="box-none">
-        {/* 넘김효과 없음이면 넘어간 장이 왼쪽에 쌓이지 않는다 — 그 자리에 카드가 넓어진다. */}
-        {instantTurn || scrollMode ? null : <LeftEdge flipX={flipX} cardH={cardH} />}
+          <View
+            style={[styles.deck, { top: insets.top, bottom: insets.bottom }]}
+            pointerEvents="box-none"
+          >
+            {/* 넘김효과 없음이면 넘어간 장이 왼쪽에 쌓이지 않는다 — 그 자리에 카드가 넓어진다. */}
+            {instantTurn || scrollMode ? null : (
+              <LeftEdge flipX={flipX} cardH={cardH} />
+            )}
 
-        {!scrollMode && pages.map((p, index) => (
-          <DeckCard
-            key={index}
-            index={index}
-            kind={p.kind}
-            paragraph={p.paragraph}
-            illustration={p.illustration}
-            flipX={flipX}
-            enter={enter}
-            cardH={cardH}
-            total={pages.length}
-            interactive={INTERACTIVE_KINDS.includes(p.kind) && page === index}
-            spoken={narration.spoken?.page === index ? narration.spoken : null}
-            cover={cover}
-            epigraph={epigraph}
-            catalogBook={catalogBook}
-            onOpenQuiz={() => setQuizOpen(true)}
-            onNext={openNext}
-            isLastLesson={!nextLesson}
-            lesson={lesson}
-            bookId={bookLesson.book}
-            coverPhoto={coverPhoto}
-            coverFallback={coverFallback}
-            mixed={mixed}
-            coverPaper={coverPaper}
-            coverDark={coverDark}
-            hasMusic={hasMusic}
-          />
-        ))}
-        {instantTurn || scrollMode ? null : <FoldShade cardH={cardH} />}
+            {!scrollMode &&
+              pages.map((p, index) => (
+                <DeckCard
+                  key={index}
+                  index={index}
+                  kind={p.kind}
+                  paragraph={p.paragraph}
+                  illustration={p.illustration}
+                  flipX={flipX}
+                  enter={enter}
+                  cardH={cardH}
+                  total={pages.length}
+                  interactive={
+                    INTERACTIVE_KINDS.includes(p.kind) && page === index
+                  }
+                  spoken={
+                    narration.spoken?.page === index ? narration.spoken : null
+                  }
+                  cover={cover}
+                  epigraph={epigraph}
+                  catalogBook={catalogBook}
+                  onOpenQuiz={() => setQuizOpen(true)}
+                  onNext={openNext}
+                  isLastLesson={!nextLesson}
+                  lesson={lesson}
+                  bookId={bookLesson.book}
+                  coverPhoto={coverPhoto}
+                  coverFallback={coverFallback}
+                  mixed={mixed}
+                  coverPaper={coverPaper}
+                  coverDark={coverDark}
+                  hasMusic={hasMusic}
+                />
+              ))}
+            {instantTurn || scrollMode ? null : <FoldShade cardH={cardH} />}
 
-        {/* 붙박이 재생기 — 카드가 내준 자리에 앉는다. 카드 '안'이 아니라 덱 위에 있어야
+            {/* 붙박이 재생기 — 카드가 내준 자리에 앉는다. 카드 '안'이 아니라 덱 위에 있어야
             장을 넘겨도 언마운트되지 않는다(그러면 음악이 끊긴다).
             낭독을 켜면 세운다 — 배경음악과 목소리 위에 유튜브까지 얹히면 아무것도
             들리지 않는다. */}
-        {/* 스크롤 보기의 재생기는 덱이 아니라 위 줄 아래에 있다. */}
-        {cover.listenId && !scrollMode ? (
-          <View
-            style={[
-              styles.musicSlot,
-              { left: (SCREEN_W - cardW) / 2, width: cardW },
-              // 넘김효과 없음 — 카드 아래 8만큼 띄워 붙인다.
-              cardTop !== null && { top: cardTop + cardH + SIMPLE_PLAYER_GAP, marginTop: 0 },
-            ]}>
-            <MusicPlayer videoId={cover.listenId} paused={readerOpen} width={cardW} />
-          </View>
-        ) : null}
-        {/* 책갈피는 카드 '안'이 아니라 덱 위에 얹는다. 카드 안에 넣으면 그 장이 손가락을
+            {/* 스크롤 보기의 재생기는 덱이 아니라 위 줄 아래에 있다. */}
+            {cover.listenId && !scrollMode ? (
+              <View
+                style={[
+                  styles.musicSlot,
+                  { left: (SCREEN_W - cardW) / 2, width: cardW },
+                  // 넘김효과 없음 — 카드 아래 8만큼 띄워 붙인다.
+                  cardTop !== null && {
+                    top: cardTop + cardH + SIMPLE_PLAYER_GAP,
+                    marginTop: 0,
+                  },
+                ]}
+              >
+                <MusicPlayer
+                  videoId={cover.listenId}
+                  paused={readerOpen}
+                  width={cardW}
+                />
+              </View>
+            ) : null}
+            {/* 책갈피는 카드 '안'이 아니라 덱 위에 얹는다. 카드 안에 넣으면 그 장이 손가락을
             받게 되어 본문의 탭 넘김이 막힌다. 덱의 마지막 자식이자 zIndex가 가장 높아
             카드 위에 그려진다 — 다른 크롬(닫기·점·하단 버튼)은 죄다 카드 바깥이라
             이 층 다툼이 없었지만, 이것은 카드 사각형 안에 앉는 첫 버튼이다. */}
-        <DescBookmark
-          hasMusic={hasMusic}
-          // 책갈피는 장마다 꽂는 것이라 장이 없는 스크롤 보기에서는 띄우지 않는다.
-          active={!scrollMode && pages[page]?.kind === 'desc'}
-          saved={isMarked(lesson.id, page)}
-          onToggle={() => toggleMark(page)}
-        />
-      </View>
+            <DescBookmark
+              hasMusic={hasMusic}
+              // 책갈피는 장마다 꽂는 것이라 장이 없는 스크롤 보기에서는 띄우지 않는다.
+              active={!scrollMode && pages[page]?.kind === "desc"}
+              saved={isMarked(lesson.id, page)}
+              onToggle={() => toggleMark(page)}
+            />
+          </View>
 
-      {/* 아래 줄 — 몇 장째인지와 버튼 둘. 책갈피는 여기가 아니라 카드 오른쪽 아래에 있다.
+          {/* 아래 줄 — 몇 장째인지와 버튼 둘. 책갈피는 여기가 아니라 카드 오른쪽 아래에 있다.
           단출한 크롬(넘김효과 없음·스크롤 보기)에서는 버튼이 위 줄로 올라가 이 줄이 없다. */}
-      {simpleChrome ? null : (
-      <View style={[styles.footer, { bottom: insets.bottom + 8 }]}>
-        <View style={styles.footerLeft}>
-          {scrollMode ? null : (
-            <Text style={styles.footerHint}>{`${barPage + 1} / ${pages.length}`}</Text>
+          {simpleChrome ? null : (
+            <View style={[styles.footer, { bottom: insets.bottom + 8 }]}>
+              <View style={styles.footerLeft}>
+                {scrollMode ? null : (
+                  <Text
+                    style={styles.footerHint}
+                  >{`${barPage + 1} / ${pages.length}`}</Text>
+                )}
+              </View>
+              <View style={styles.footerIcons}>
+                {readerButtons(Colors.white, "footerHit")}
+              </View>
+            </View>
           )}
-        </View>
-        <View style={styles.footerIcons}>
-          {readerButtons(Colors.white, 'footerHit')}
-        </View>
-      </View>
-      )}
 
-      {/* 책갈피 토스트 — 하단 줄 위에 뜬다. */}
-      <Toast bottom={simpleChrome ? insets.bottom + 24 : insets.bottom + 8 + FOOTER_H + 12} at={markToast.at} text={markToast.text} />
-
-      {/**
-        * 감상 노트 — 읽던 장을 그대로 두고 그 위를 덮으며 아래에서 올라온다.
-        * 창 안의 일은 전부 NoteSheet가 맡는다(그쪽 주석 참고).
-        */}
-      <NoteSheet lessonId={lesson.id} visible={noteOpen} onClose={closeNote} />
-
-      {/**
-        * 퀴즈 — 맺음 장의 버튼으로 전체 화면에 뜬다. 감상 노트 팝업과 같은 틀이다.
-        *
-        * 위 한 줄(제목과 닫기)은 QuizSolver가 공용 헤더로 그린다. 제목이 문제마다 달라
-        * 여기서는 알 수 없기도 하고, 두 팝업의 위 줄이 같은 물건이어야 하기 때문이다.
-        * 여기가 대는 것은 아래 세이프에어리어뿐이다 — 위쪽은 헤더가 맡는다.
-        */}
-      <Modal visible={quizOpen} animationType="fade" onRequestClose={closeQuiz}>
-        <View
-          style={[
-            quizModalStyles.screen,
-            { paddingBottom: insets.bottom + 24 },
-          ]}>
-          <QuizSolver
-            quizzes={quizzes}
-            target={{ lessonId: lesson.id, bookId: bookLesson.book }}
-            onClose={closeQuiz}
-            onFinish={finishStudy}
+          {/* 책갈피 토스트 — 하단 줄 위에 뜬다. */}
+          <Toast
+            bottom={
+              simpleChrome
+                ? insets.bottom + 24
+                : insets.bottom + 8 + FOOTER_H + 12
+            }
+            at={markToast.at}
+            text={markToast.text}
           />
-        </View>
-      </Modal>
 
-      {/*
+          {/**
+           * 감상 노트 — 읽던 장을 그대로 두고 그 위를 덮으며 아래에서 올라온다.
+           * 창 안의 일은 전부 NoteSheet가 맡는다(그쪽 주석 참고).
+           */}
+          <NoteSheet
+            lessonId={lesson.id}
+            visible={noteOpen}
+            onClose={closeNote}
+          />
+
+          {/**
+           * 퀴즈 — 맺음 장의 버튼으로 전체 화면에 뜬다. 감상 노트 팝업과 같은 틀이다.
+           *
+           * 위 한 줄(제목과 닫기)은 QuizSolver가 공용 헤더로 그린다. 제목이 문제마다 달라
+           * 여기서는 알 수 없기도 하고, 두 팝업의 위 줄이 같은 물건이어야 하기 때문이다.
+           * 여기가 대는 것은 아래 세이프에어리어뿐이다 — 위쪽은 헤더가 맡는다.
+           */}
+          <Modal
+            visible={quizOpen}
+            animationType="fade"
+            onRequestClose={closeQuiz}
+          >
+            <View
+              style={[
+                quizModalStyles.screen,
+                { paddingBottom: insets.bottom + 24 },
+              ]}
+            >
+              <QuizSolver
+                quizzes={quizzes}
+                target={{ lessonId: lesson.id, bookId: bookLesson.book }}
+                onClose={closeQuiz}
+                onFinish={finishStudy}
+              />
+            </View>
+          </Modal>
+
+          {/*
         구매 안내가 리포트 없이 뜨는 경우 — 맺음 장의 '다음 화 읽기'로 들어왔을 때다.
         리포트가 떠 있을 때는 그 Modal 안에 얹는다(아래) — 네이티브 Modal은 무엇 위에나
         떠서, 여기 그린 층은 리포트에 가려 보이지 않기 때문이다. 그래서 자리만 둘이고
         그리는 것은 하나다.
       */}
-      {purchaseOpen && !reportOpen && (
-        <BookPurchaseNotice
-          book={catalogBook}
-          freeCount={freeCount}
-          lockedCount={lockedCount}
-          onBuy={goToBookDetail}
-          onClose={() => setPurchaseOpen(false)}
-        />
-      )}
+          {purchaseOpen && !reportOpen && (
+            <BookPurchaseNotice
+              book={catalogBook}
+              freeCount={freeCount}
+              lockedCount={lockedCount}
+              onBuy={goToBookDetail}
+              onClose={() => setPurchaseOpen(false)}
+            />
+          )}
 
-      {/**
-        * 오늘의 공부 리포트 — 마치기를 누르면 뜨는 검은 화면.
-        *
-        * 아래 버튼은 '다음 화 읽기'다(openNext). 다음 화가 잠겨 있으면 그 위에 구매
-        * 안내가 한 겹 얹힌다 — 이 화면이 이미 Modal 안이라 Modal을 또 쓰지 않는다.
-        * 뒤로가기(onRequestClose)는 일부러 비워 두지 않았다 — 물러나면 읽던 자리로 돌아간다.
-        */}
-      {/* statusBarTranslucent — 이것이 없으면 상태바 자리에 앱의 밝은 바탕이 남아
+          {/**
+           * 오늘의 공부 리포트 — 마치기를 누르면 뜨는 검은 화면.
+           *
+           * 아래 버튼은 '다음 화 읽기'다(openNext). 다음 화가 잠겨 있으면 그 위에 구매
+           * 안내가 한 겹 얹힌다 — 이 화면이 이미 Modal 안이라 Modal을 또 쓰지 않는다.
+           * 뒤로가기(onRequestClose)는 일부러 비워 두지 않았다 — 물러나면 읽던 자리로 돌아간다.
+           */}
+          {/* statusBarTranslucent — 이것이 없으면 상태바 자리에 앱의 밝은 바탕이 남아
           검은 화면 위쪽에 띠로 보인다. 안쪽 여백은 insets.top으로 이미 잡아 뒀다. */}
-      <Modal
-        visible={reportOpen}
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => {
-          // 구매 안내가 떠 있으면 그것부터 닫는다 — 뒤로가기가 두 겹을 한 번에 걷지 않게.
-          if (purchaseOpen) {
-            setPurchaseOpen(false);
-            return;
-          }
-          setReportOpen(false);
-        }}>
-        <StudyReport
-          date={dated ? (lesson.date ?? todayLabel()) : todayLabel()}
-          bookTitle={bookName}
-          onNext={openNext}
-        />
-        {purchaseOpen && (
-          <BookPurchaseNotice
-            book={catalogBook}
-            freeCount={freeCount}
-            lockedCount={lockedCount}
-            onBuy={goToBookDetail}
-            onClose={() => setPurchaseOpen(false)}
-          />
-        )}
-      </Modal>
-    </View>
-    </CardFrameContext.Provider>
+          <Modal
+            visible={reportOpen}
+            animationType="fade"
+            statusBarTranslucent
+            onRequestClose={() => {
+              // 구매 안내가 떠 있으면 그것부터 닫는다 — 뒤로가기가 두 겹을 한 번에 걷지 않게.
+              if (purchaseOpen) {
+                setPurchaseOpen(false);
+                return;
+              }
+              setReportOpen(false);
+            }}
+          >
+            <StudyReport
+              date={dated ? (lesson.date ?? todayLabel()) : todayLabel()}
+              bookTitle={bookName}
+              onNext={openNext}
+            />
+            {purchaseOpen && (
+              <BookPurchaseNotice
+                book={catalogBook}
+                freeCount={freeCount}
+                lockedCount={lockedCount}
+                onBuy={goToBookDetail}
+                onClose={() => setPurchaseOpen(false)}
+              />
+            )}
+          </Modal>
+        </View>
+      </CardFrameContext.Provider>
     </ReaderPaletteContext.Provider>
   );
 }
@@ -1248,7 +1515,7 @@ function FoldShade({ cardH }: { cardH: number }) {
   return (
     <View style={[styles.foldShade, { height: cardH }]} pointerEvents="none">
       <LinearGradient
-        colors={['rgba(3,3,3,0)', 'rgba(3,3,3,0.22)']}
+        colors={["rgba(3,3,3,0)", "rgba(3,3,3,0.22)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={StyleSheet.absoluteFill}
@@ -1269,7 +1536,13 @@ function FoldShade({ cardH }: { cardH: number }) {
  * 그 종이는 180도에 이를 즈음 이미 그림자가 걷혀 있고(SHADOW_FADE_*) 이 빈 종이도
  * 그림자가 없으므로, 교대하는 순간 화면에서 달라지는 것이 없다.
  */
-function LeftEdge({ flipX, cardH }: { flipX: SharedValue<number>; cardH: number }) {
+function LeftEdge({
+  flipX,
+  cardH,
+}: {
+  flipX: SharedValue<number>;
+  cardH: number;
+}) {
   const palette = useContext(ReaderPaletteContext);
   const style = useAnimatedStyle(() => ({
     opacity: interpolate(
@@ -1282,7 +1555,8 @@ function LeftEdge({ flipX, cardH }: { flipX: SharedValue<number>; cardH: number 
   return (
     <Animated.View
       style={[styles.hinge, styles.leftEdgeHinge, { height: cardH }, style]}
-      pointerEvents="none">
+      pointerEvents="none"
+    >
       <View style={[styles.card, { backgroundColor: palette.paper }]}>
         {/* 넘어간 종이의 뒷면과 똑같이 쌓는다 — 경첩이 180도 돌아간 만큼 여기서 다시
             180도를 되돌려야 결이 같은 방향으로 눕는다. 이 되돌림을 빠뜨렸더니 교대
@@ -1396,7 +1670,7 @@ function DeckCard({
    * 젖혀지는 중인 한 장만 그 사이를 오가고, 밑장은 0으로 평평하게 눕는다.
    */
   const turnProgress = (p: number) => {
-    'worklet';
+    "worklet";
     if (p <= -1) return 1;
     if (p > 0) return 0;
     return interpolate(-p, [LIFT_FRACTION, 1], [0, 1], Extrapolation.CLAMP);
@@ -1412,7 +1686,7 @@ function DeckCard({
    * 중간 각도에서 종이가 통째로 앞으로 떠오르며 책등에서 떨어진다.
    */
   const rotateAtSpine = (angleDeg: number) => {
-    'worklet';
+    "worklet";
     return [{ perspective: PERSPECTIVE }, { rotateY: `${angleDeg}deg` }];
   };
 
@@ -1431,7 +1705,12 @@ function DeckCard({
    */
   const bodyStyle = useAnimatedStyle(() => {
     const p = index - flipX.value / PAGE_W;
-    const shown = interpolate(p, [CONTENT_IN_TO, CONTENT_IN_FROM], [1, 0], Extrapolation.CLAMP);
+    const shown = interpolate(
+      p,
+      [CONTENT_IN_TO, CONTENT_IN_FROM],
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
     const entering = index === 0 ? enter.value : 1;
     return {
       opacity: shown * entering,
@@ -1444,7 +1723,8 @@ function DeckCard({
   /** 구절 장의 삽화를 못 받아 왔는가 — 그러면 종이 카드로 되돌아간다. */
   const [backdropFailed, setBackdropFailed] = useState(false);
   /** 섞어 쓰는 형식의 구절 장 — 삽화를 카드 가득 깐다. */
-  const verseBackdrop = mixed && kind === 'desc' && !!illustration && !backdropFailed;
+  const verseBackdrop =
+    mixed && kind === "desc" && !!illustration && !backdropFailed;
 
   const frontStyle = useAnimatedStyle(() => {
     const p = index - flipX.value / PAGE_W;
@@ -1475,14 +1755,19 @@ function DeckCard({
       ]}
       // 손가락은 이 장이 지금 펼쳐져 있을 때만 받는다 — 안 그러면 보이지도 않는 장의
       // 입력칸이 다른 페이지에서 스와이프를 가로챈다.
-      pointerEvents={interactive ? 'box-none' : 'none'}>
+      pointerEvents={interactive ? "box-none" : "none"}
+    >
       {/* 이 아래로는 진짜 눌러야 할 것(감상 노트 입력칸, 구매 버튼)만 손가락을 가져가야
           한다. RN에서는 핸들러가 없는 평범한 View도 auto면 제 영역의 터치를 그대로
           가져가므로, 카드부터 본문까지 box-none으로 뚫어 둔다. 안 그러면 카드 위를
           탭했을 때 페이지가 넘어가지 않는다. */}
       <View
-        style={[styles.card, { left: cardW, width: cardW, backgroundColor: palette.paper }]}
-        pointerEvents="box-none">
+        style={[
+          styles.card,
+          { left: cardW, width: cardW, backgroundColor: palette.paper },
+        ]}
+        pointerEvents="box-none"
+      >
         <Animated.View
           // 구매 안내 장만 종이를 한 단계 어둡게 — 넘김 흐름 안에서 성격이 다른 장이라
           // 바탕으로 구분한다. brown100을 10%로 덮은 것과 같은 색이라(계산: #E1DED6)
@@ -1491,13 +1776,16 @@ function DeckCard({
             styles.cardFace,
             { backgroundColor: palette.paper },
             // 표지 장은 그 책의 종이색 위에 앉는다 — 어느 책을 폈는지 첫 장에서 알아본다.
-            kind === 'cover' && coverPaper ? { backgroundColor: coverPaper } : null,
+            kind === "cover" && coverPaper
+              ? { backgroundColor: coverPaper }
+              : null,
             frontStyle,
           ]}
-          pointerEvents="box-none">
+          pointerEvents="box-none"
+        >
           {/* 표지 장의 배경 사진 — 카드가 overflow를 감추므로 모서리에 맞춰 잘린다.
               그 위에 검정 30%를 깔아 흰 글자가 설 자리를 만든다. */}
-          {kind === 'cover' && coverPhoto ? (
+          {kind === "cover" && coverPhoto ? (
             <>
               <LessonCoverImage
                 lesson={lesson}
@@ -1508,7 +1796,7 @@ function DeckCard({
               <View style={styles.coverScrim} pointerEvents="none" />
             </>
           ) : null}
-          {kind === 'cover' && coverFallback ? (
+          {kind === "cover" && coverFallback ? (
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
               <Image
                 source={FALLBACK_COVER}
@@ -1533,7 +1821,10 @@ function DeckCard({
               <View style={styles.verseScrim} />
             </View>
           ) : null}
-          <Animated.View style={[styles.cardBody, bodyStyle]} pointerEvents="box-none">
+          <Animated.View
+            style={[styles.cardBody, bodyStyle]}
+            pointerEvents="box-none"
+          >
             <CardContent
               kind={kind}
               paragraph={paragraph}
@@ -1550,9 +1841,12 @@ function DeckCard({
               hasMusic={hasMusic}
             />
           </Animated.View>
-          <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
+          <Animated.View
+            style={[StyleSheet.absoluteFill, shadeStyle]}
+            pointerEvents="none"
+          >
             <LinearGradient
-              colors={['rgba(3,3,3,0.85)', 'rgba(3,3,3,0)']}
+              colors={["rgba(3,3,3,0.85)", "rgba(3,3,3,0)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFill}
@@ -1566,7 +1860,8 @@ function DeckCard({
           style={[styles.cardFace, styles.cardBack, backStyle]}
           // 장식용 면이다. 카드를 통째로 덮으면서 앞면보다 뒤에 그려지는 탓에, 손가락이
           // 앞면(감상 노트 입력칸)까지 내려가지 못하고 여기서 걸린다.
-          pointerEvents="none">
+          pointerEvents="none"
+        >
           <LinearGradient
             colors={palette.back}
             start={{ x: 0, y: 0 }}
@@ -1575,9 +1870,12 @@ function DeckCard({
           />
           {/* 뒷면도 같은 그늘을 쓰되, 이 면은 제자리에서 180도 뒤집혀 있으니 방향도
               뒤집는다 — 그래야 앞면과 똑같이 책등 쪽이 짙게 보인다. */}
-          <Animated.View style={[StyleSheet.absoluteFill, shadeStyle]} pointerEvents="none">
+          <Animated.View
+            style={[StyleSheet.absoluteFill, shadeStyle]}
+            pointerEvents="none"
+          >
             <LinearGradient
-              colors={['rgba(3,3,3,0)', 'rgba(3,3,3,0.85)']}
+              colors={["rgba(3,3,3,0)", "rgba(3,3,3,0.85)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFill}
@@ -1612,7 +1910,10 @@ function VerseIllustration({ illustration }: { illustration: Illustration }) {
       source={{ uri: illustration.url }}
       style={[
         styles.descIllustration,
-        { width: illustration.width * scale, height: illustration.height * scale },
+        {
+          width: illustration.width * scale,
+          height: illustration.height * scale,
+        },
       ]}
       onError={() => setFailed(true)}
     />
@@ -1636,11 +1937,14 @@ export function CoverHeading({
   onDark,
   hasMusic = false,
   reveal,
+  tight = false,
 }: {
   cover: CardCover;
   onDark: boolean;
   hasMusic?: boolean;
   reveal?: SharedValue<number>;
+  /** 남는 높이를 채워 가운데 앉지 않고, 제 높이만 쓴다(재생기 밑 스크롤 보기). */
+  tight?: boolean;
 }) {
   const markStyle = useRevealStyle(reveal, 0);
   const chipStyle = useRevealStyle(reveal, 1);
@@ -1648,28 +1952,47 @@ export function CoverHeading({
   const subtitleStyle = useRevealStyle(reveal, 3);
 
   return (
-    <View style={styles.coverMain} pointerEvents="none">
+    <View
+      style={[styles.coverMain, tight && styles.coverMainTight]}
+      pointerEvents="none"
+    >
       {/* 그 책의 출판사 마크 — 표지와 같은 잉크로 그린다. 사진 위에서는 흰색이라야
           어느 사진에서도 보인다. 유튜브가 딸린 항목은 카드가 짧아 작게 앉힌다. */}
       <Animated.View
-        style={[styles.coverSymbolBox, hasMusic && styles.coverSymbolBoxSmall, markStyle]}>
+        style={[
+          styles.coverSymbolBox,
+          hasMusic && styles.coverSymbolBoxSmall,
+          markStyle,
+        ]}
+      >
         <CoverMark
           kind={cover.design.mark}
           size={hasMusic ? SYMBOL_BOX_H_SMALL * 0.5 : SYMBOL_BOX_H * 0.5}
           color={onDark ? Colors.white : cover.design.ink}
         />
       </Animated.View>
-      <Animated.View style={[styles.labelChip, onDark && styles.labelChipOnDark, chipStyle]}>
-        <Text style={[styles.labelText, onDark && styles.coverTextOnDark]}>{cover.bookName}</Text>
+      <Animated.View
+        style={[styles.labelChip, onDark && styles.labelChipOnDark, chipStyle]}
+      >
+        <Text style={[styles.labelText, onDark && styles.coverTextOnDark]}>
+          {cover.bookName}
+        </Text>
       </Animated.View>
       {/* 표제는 책마다 뽑는 곳이 달라 getLessonHeading이 정해 준다 — 곡명·한자·라틴어
           원문이 모두 여기로 들어온다(lib/card-pages). */}
-      <Animated.Text style={[styles.title, onDark && styles.coverTextOnDark, titleStyle]}>
+      <Animated.Text
+        style={[styles.title, onDark && styles.coverTextOnDark, titleStyle]}
+      >
         {cover.title}
       </Animated.Text>
       {cover.subtitle ? (
         <Animated.Text
-          style={[styles.coverSubtitle, onDark && styles.coverTextOnDark, subtitleStyle]}>
+          style={[
+            styles.coverSubtitle,
+            onDark && styles.coverTextOnDark,
+            subtitleStyle,
+          ]}
+        >
           {cover.subtitle}
         </Animated.Text>
       ) : null}
@@ -1678,10 +2001,18 @@ export function CoverHeading({
 }
 
 /** reveal이 order를 지나며 0→1로 떠오른다(살짝 아래에서). reveal이 없으면 늘 보인다. */
-function useRevealStyle(reveal: SharedValue<number> | undefined, order: number) {
+function useRevealStyle(
+  reveal: SharedValue<number> | undefined,
+  order: number,
+) {
   return useAnimatedStyle(() => {
     if (!reveal) return { opacity: 1, transform: [{ translateY: 0 }] };
-    const t = interpolate(reveal.value, [order, order + 1], [0, 1], Extrapolation.CLAMP);
+    const t = interpolate(
+      reveal.value,
+      [order, order + 1],
+      [0, 1],
+      Extrapolation.CLAMP,
+    );
     return { opacity: t, transform: [{ translateY: (1 - t) * 8 }] };
   });
 }
@@ -1700,6 +2031,7 @@ function CardContent({
   isLastLesson,
   onDark,
   hasMusic,
+  coverTight = false,
 }: {
   kind: CardPageKind;
   paragraph?: string;
@@ -1722,6 +2054,8 @@ function CardContent({
   onDark: boolean;
   /** 유튜브가 딸린 항목인가 — 카드가 짧아 마크를 작게 앉힌다. */
   hasMusic: boolean;
+  /** 표지 덩이를 제 높이만 쓰게 — 재생기 밑 스크롤 보기에서 재생기에 바짝 붙인다. */
+  coverTight?: boolean;
 }) {
   // 본문 글자 크기는 책 설정을 따른다. 구절 장은 그 장의 주인공이라 제 크기를 지킨다.
   const { body } = useReaderSettings();
@@ -1729,24 +2063,41 @@ function CardContent({
   const palette = useContext(ReaderPaletteContext);
   const ink = { color: palette.ink };
 
-  if (kind === 'cover') {
+  if (kind === "cover") {
     return (
-      <View style={styles.coverBlock} pointerEvents="box-none">
-        <CoverHeading cover={cover} onDark={onDark} hasMusic={hasMusic} />
+      <View
+        style={coverTight ? styles.coverBlockTight : styles.coverBlock}
+        pointerEvents="box-none"
+      >
+        <CoverHeading
+          cover={cover}
+          onDark={onDark}
+          hasMusic={hasMusic}
+          tight={coverTight}
+        />
       </View>
     );
   }
 
-  if (kind === 'quote') {
+  if (kind === "quote") {
     return (
       <View style={[styles.quoteBlock, { borderLeftColor: palette.rule }]}>
-        <SpokenText text={epigraph?.text ?? ''} style={[styles.quoteText, ink]} highlightStyle={styles.spokenWord} spoken={spoken} />
-        {epigraph?.by ? <Text style={[styles.quoteSource, { color: palette.muted }]}>{epigraph.by}</Text> : null}
+        <SpokenText
+          text={epigraph?.text ?? ""}
+          style={[styles.quoteText, ink]}
+          highlightStyle={styles.spokenWord}
+          spoken={spoken}
+        />
+        {epigraph?.by ? (
+          <Text style={[styles.quoteSource, { color: palette.muted }]}>
+            {epigraph.by}
+          </Text>
+        ) : null}
       </View>
     );
   }
 
-  if (kind === 'desc') {
+  if (kind === "desc") {
     // 삽화가 얹힌 구절 장은 원문과 한글을 따로 그린다 — 크기가 다르고, 한 덩이로 그리면
     // 둘 사이가 빈 줄 하나만큼 벌어진다.
     const verse = illustration && paragraph ? splitVerse(paragraph) : undefined;
@@ -1755,16 +2106,29 @@ function CardContent({
       const koreanAt = paragraph.length - verse.korean.length;
       const koreanSpoken =
         spoken && spoken.start >= koreanAt
-          ? { ...spoken, start: spoken.start - koreanAt, end: spoken.end - koreanAt }
+          ? {
+              ...spoken,
+              start: spoken.start - koreanAt,
+              end: spoken.end - koreanAt,
+            }
           : null;
       return (
         <View style={styles.descBlock}>
-          {verseOnDark ? null : <VerseIllustration illustration={illustration} />}
+          {verseOnDark ? null : (
+            <VerseIllustration illustration={illustration} />
+          )}
           <SpokenText
             text={verse.original}
-            style={[styles.descText, ink, styles.verseText, verseOnDark && styles.coverTextOnDark]}
+            style={[
+              styles.descText,
+              ink,
+              styles.verseText,
+              verseOnDark && styles.coverTextOnDark,
+            ]}
             highlightStyle={styles.spokenWord}
-            spoken={spoken && spoken.start < verse.original.length ? spoken : null}
+            spoken={
+              spoken && spoken.start < verse.original.length ? spoken : null
+            }
           />
           <SpokenText
             text={verse.korean}
@@ -1784,7 +2148,7 @@ function CardContent({
     return (
       <View style={styles.descBlock}>
         <SpokenText
-          text={paragraph ?? ''}
+          text={paragraph ?? ""}
           style={[styles.descText, body, ink]}
           highlightStyle={styles.spokenWord}
           spoken={spoken}
@@ -1793,14 +2157,18 @@ function CardContent({
     );
   }
 
-  if (kind === 'outro') {
-    return <OutroBlock onOpenQuiz={onOpenQuiz} onNext={onNext} isLastLesson={isLastLesson} />;
+  if (kind === "outro") {
+    return (
+      <OutroBlock
+        onOpenQuiz={onOpenQuiz}
+        onNext={onNext}
+        isLastLesson={isLastLesson}
+      />
+    );
   }
 
   return null;
 }
-
-
 
 /**
  * 맺음 장 — 오늘의 이야기가 끝났다고 알리고, 퀴즈와 다음 화로 가는 길 둘을 내놓는다.
@@ -1819,7 +2187,10 @@ function OutroBlock({
     <View style={styles.buyBlock} pointerEvents="box-none">
       {/* 눌러야 할 것은 아래 버튼뿐이다. 나머지는 터치를 흘려보내야 카드 위를 탭했을 때
           그대로 페이지가 넘어간다 — 안 그러면 여기서 걸려 아무 일도 일어나지 않는다. */}
-      <Text style={[styles.buyLead, { color: palette.ink }]} pointerEvents="none">
+      <Text
+        style={[styles.buyLead, { color: palette.ink }]}
+        pointerEvents="none"
+      >
         {"오늘의 이야기는\n여기까지입니다."}
       </Text>
 
@@ -1827,10 +2198,15 @@ function OutroBlock({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="퀴즈 풀기"
-          style={[styles.outroQuizButton, { borderColor: palette.outlineBorder }]}
+          style={[
+            styles.outroQuizButton,
+            { borderColor: palette.outlineBorder },
+          ]}
           onPress={onOpenQuiz}
         >
-          <Text style={[styles.outroQuizText, { color: palette.outlineInk }]}>퀴즈 풀기</Text>
+          <Text style={[styles.outroQuizText, { color: palette.outlineInk }]}>
+            퀴즈 풀기
+          </Text>
         </Pressable>
 
         {/* 마지막 화에는 갈 다음이 없다 — 주황으로 이어 가라고 하는 대신 끝났다고 말한다. */}
@@ -1838,10 +2214,15 @@ function OutroBlock({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="마지막 페이지입니다. 홈으로 가기"
-            style={[styles.outroEndButton, { backgroundColor: palette.solidBg }]}
+            style={[
+              styles.outroEndButton,
+              { backgroundColor: palette.solidBg },
+            ]}
             onPress={onNext}
           >
-            <Text style={[styles.outroEndText, { color: palette.solidInk }]}>마지막 페이지입니다</Text>
+            <Text style={[styles.outroEndText, { color: palette.solidInk }]}>
+              마지막 페이지입니다
+            </Text>
           </Pressable>
         ) : (
           <Pressable
@@ -1859,7 +2240,6 @@ function OutroBlock({
   );
 }
 
-
 /** 기록한 날짜 표시 — 실제 저장은 없으니 누른 시각을 그대로 쓴다. */
 function todayLabel() {
   const now = new Date();
@@ -1873,7 +2253,15 @@ function todayLabel() {
  * 뜬다(불리언이면 true→true라 리액트가 갱신을 건너뛴다). 0은 아직 한 번도 안 띄운
  * 상태라 입장하자마자 뜨는 일이 없다.
  */
-function Toast({ bottom, at, text }: { bottom: number; at: number; text: string }) {
+function Toast({
+  bottom,
+  at,
+  text,
+}: {
+  bottom: number;
+  at: number;
+  text: string;
+}) {
   const shown = useSharedValue(0);
 
   useEffect(() => {
@@ -1893,12 +2281,14 @@ function Toast({ bottom, at, text }: { bottom: number; at: number; text: string 
   }));
 
   return (
-    <Animated.View style={[styles.toast, { bottom }, style]} pointerEvents="none">
+    <Animated.View
+      style={[styles.toast, { bottom }, style]}
+      pointerEvents="none"
+    >
       <Text style={styles.toastText}>{text}</Text>
     </Animated.View>
   );
 }
-
 
 // ── 버튼 · 인디케이터 ──────────────────────────────────────────────────────
 
@@ -1943,14 +2333,16 @@ function DescBookmark({
         styles.descBookmark,
         { left: (SCREEN_W + frame.width) / 2 - 24 - 32 },
         simple ?? (hasMusic && styles.descBookmarkWithMusic),
-      ]}>
+      ]}
+    >
       <ScaleButton
-        accessibilityLabel={saved ? '북마크 해지' : '북마크'}
+        accessibilityLabel={saved ? "북마크 해지" : "북마크"}
         style={styles.descBookmarkHit}
-        onPress={onToggle}>
+        onPress={onToggle}
+      >
         {/* 꽂아 둔 장은 속을 채운 책갈피로 바꾼다 — Ionicons는 채움과 테두리가 짝이다. */}
         <Ionicons
-          name={saved ? 'bookmark' : 'bookmark-outline'}
+          name={saved ? "bookmark" : "bookmark-outline"}
           color={saved ? Colors.red100 : Colors.brown50}
           size={18}
         />
@@ -1981,7 +2373,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brown100,
   },
   gestureLayer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -1991,8 +2383,8 @@ const styles = StyleSheet.create({
   // 맞춰 줄어들어 아래에 배경이 비치고, 내용이 길어져도 세로 스크롤이 걸리지 않는다.
   gesturePage: {
     width: PAGE_W,
-    height: '100%',
-    flexDirection: 'row',
+    height: "100%",
+    flexDirection: "row",
   },
   // 화면을 가로로 3등분한 탭 영역. 페이지 안에 두어야 스와이프는 그대로 바깥
   // ScrollView가 받고, 탭만 여기서 걸린다.
@@ -2003,13 +2395,13 @@ const styles = StyleSheet.create({
   // 닫기 버튼
   // 카드
   deck: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   /**
    * 경첩 — 종이를 젖히는 회전은 카드가 아니라 이 뷰가 맡는다.
@@ -2026,9 +2418,9 @@ const styles = StyleSheet.create({
    *  뷰의 transform에는 이동을 섞지 않는다.)
    */
   hinge: {
-    position: 'absolute',
+    position: "absolute",
     left: (SCREEN_W - CARD_W) / 2 - CARD_W,
-    top: '50%',
+    top: "50%",
     marginTop: -CARD_H / 2,
     width: CARD_W * 2,
     height: CARD_H,
@@ -2036,10 +2428,10 @@ const styles = StyleSheet.create({
   /** 다 넘어간 종이가 눕는 자리 — 경첩을 180도 돌려 둔 것과 같다. */
   leftEdgeHinge: {
     zIndex: 0,
-    transform: [{ rotateY: '180deg' }],
+    transform: [{ rotateY: "180deg" }],
   },
   card: {
-    position: 'absolute',
+    position: "absolute",
     // 경첩의 오른쪽 절반 — 카드의 왼쪽 모서리가 경첩의 중심선(=책등)에 맞물린다.
     left: CARD_W,
     top: 0,
@@ -2049,14 +2441,14 @@ const styles = StyleSheet.create({
     width: CARD_W,
     borderRadius: 20,
     backgroundColor: Colors.bg,
-    overflow: 'hidden',
+    overflow: "hidden",
     // 그림자는 여기 두지 않는다 — 종이에 지는 그림자는 FoldShade 하나뿐이다(그 주석 참고).
   },
   /** 책등 왼쪽에 붙는 골 그늘. 카드보다 위에 둬야 아래에 무엇이 오든 똑같이 어두워진다. */
   foldShade: {
-    position: 'absolute',
+    position: "absolute",
     left: (SCREEN_W - CARD_W) / 2 - FOLD_SHADE_W,
-    top: '50%',
+    top: "50%",
     marginTop: -CARD_H / 2,
     width: FOLD_SHADE_W,
     height: CARD_H,
@@ -2065,23 +2457,23 @@ const styles = StyleSheet.create({
   // 앞면·뒷면 공용 — 카드를 꽉 채우고 뒷면이 보일 차례가 아니면 숨는다.
   // backfaceVisibility는 opacity 토글의 이중 안전장치(안드로이드 일부 버전 대비).
   cardFace: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backfaceVisibility: 'hidden',
+    backfaceVisibility: "hidden",
     backgroundColor: Colors.bg,
   },
   cardBack: {
     // 부모가 -180도까지 돌아가므로, 그 안에서 180도를 다시 돌려 두면 다 넘어갔을
     // 때 뒷면 내용이 거울상이 아니라 똑바로 보인다.
-    transform: [{ rotateY: '180deg' }],
+    transform: [{ rotateY: "180deg" }],
   },
   cardBody: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 16,
     paddingHorizontal: BODY_PADDING_X,
     paddingVertical: BODY_PADDING_Y,
@@ -2089,17 +2481,24 @@ const styles = StyleSheet.create({
   /** 표지 장 전체 — 가운데 묶음이 남는 높이를 갖고, 버튼은 맨 아래에 선다. */
   coverBlock: {
     flex: 1,
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
+  },
+  /** 제 높이만 쓰는 표지 덩이 — flex를 걸면 높이를 정하지 않은 부모 안에서 0으로 접힌다. */
+  coverBlockTight: {
+    alignSelf: "stretch",
+  },
+  coverMainTight: {
+    flex: 0,
   },
   coverMain: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 16,
   },
   /** 표지의 '음악 듣기' — 가로를 글자에 맞춰 가운데 세운다. */
   coverListenButton: {
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingHorizontal: 28,
   },
   /**
@@ -2109,10 +2508,10 @@ const styles = StyleSheet.create({
    * contain으로 이 안에 맞춰 들어오고(잘리지 않는다), 글자는 가운데 선다.
    */
   coverSymbolBox: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     height: SYMBOL_BOX_H,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   /** 재생기가 있는 항목의 표식 — 카드가 짧아진 만큼 자리를 덜 쓴다. */
   coverSymbolBoxSmall: {
@@ -2131,9 +2530,9 @@ const styles = StyleSheet.create({
     color: Colors.beige100,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
   },
   no: {
@@ -2157,25 +2556,25 @@ const styles = StyleSheet.create({
    */
   /** 카드 면을 가득 덮는 그림. */
   backdropImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   /** 구절 장의 삽화 위 덮개 — 판화는 종이가 밝아 표지 사진(30%)보다 짙게 덮는다. */
   verseScrim: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
   coverScrim: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
   /**
    * 사진 위의 글자 — 순백이다.
@@ -2188,7 +2587,7 @@ const styles = StyleSheet.create({
   },
   /** 어두운 바탕 위의 책 이름 칩 — 베이지 바탕 대신 흰빛을 옅게 깐다. */
   labelChipOnDark: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
   /** 표제 아래 한 줄 — 작곡가·훈음·뜻처럼 책마다 다른 것이 들어온다. */
   coverSubtitle: {
@@ -2202,7 +2601,7 @@ const styles = StyleSheet.create({
 
   // 인용 카드 — 왼쪽에 굵은 세로줄을 두고 글을 왼쪽으로 붙인다.
   quoteBlock: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     gap: 16,
     paddingLeft: 16,
     borderLeftWidth: 3,
@@ -2229,9 +2628,9 @@ const styles = StyleSheet.create({
    * justifyContent가 그 덩어리를 세로 가운데에 놓는다.
    */
   buyBlock: {
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignSelf: "stretch",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 16,
   },
   buyLead: {
@@ -2239,13 +2638,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     letterSpacing: tracking(14),
-    textAlign: 'center',
+    textAlign: "center",
     color: Colors.brown100,
   },
   /** 맺음 장의 버튼 둘 — 퀴즈로 가는 길과 다음 화로 가는 길이 나란히 선다. */
   outroButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   /** 퀴즈 풀기 — 마이페이지의 '틀린 문제 보러가기'와 같은 얼굴이다. */
@@ -2255,8 +2654,8 @@ const styles = StyleSheet.create({
     borderRadius: Corner.small,
     borderWidth: 1,
     borderColor: Ink.muted,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   outroQuizText: {
     fontFamily: Type.ui,
@@ -2265,9 +2664,9 @@ const styles = StyleSheet.create({
   },
   /** 다음 화 읽기 — 이 장에서 이어 갈 일이라 포인트 컬러가 여기 붙는다. */
   outroNextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 4,
     height: 36,
     paddingHorizontal: 12,
@@ -2281,8 +2680,8 @@ const styles = StyleSheet.create({
   },
   /** 마지막 화 — 이어 갈 곳이 없으니 주황이 아니라 검정이다. 눌리면 홈으로 간다. */
   outroEndButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     height: 36,
     paddingHorizontal: 12,
     borderRadius: Corner.small,
@@ -2295,13 +2694,13 @@ const styles = StyleSheet.create({
   },
   /** 화면 아래 토스트. 카드·버튼보다 위에 뜬다. */
   toast: {
-    position: 'absolute',
+    position: "absolute",
     left: 28,
     right: 28,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: Colors.brown90,
     zIndex: 10,
   },
@@ -2336,9 +2735,9 @@ const styles = StyleSheet.create({
   },
   /** 제목과 닫기 버튼이 나란히 서는 줄 — 높이는 닫기 버튼에 맞춘다. */
   quizHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     height: 41,
   },
   /** 문제 한 장이 들어갈 자리 — 남는 높이를 다 차지하고 아래에 버튼이 붙는다. */
@@ -2376,8 +2775,8 @@ const styles = StyleSheet.create({
   /** 구매 안내 장의 두 번째 버튼 — 가격 버튼 아래에 같은 폭으로 선다. */
   /** 번호와 보기를 한 줄에 — 보기가 두 줄로 넘어가도 번호는 첫 줄에 붙어 있게 한다. */
   quizChoice: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 8,
   },
   quizChoiceNo: {
@@ -2433,10 +2832,10 @@ const styles = StyleSheet.create({
 
   // 본문 카드 — 문단 하나를 카드 한 장에 꽉 채운다(다른 카드처럼 alignSelf: stretch).
   descBlock: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
   },
   descIllustration: {
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: 24,
   },
   /**
@@ -2452,8 +2851,8 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -PLAYER_BLOCK }],
   },
   descBookmark: {
-    position: 'absolute',
-    top: '50%',
+    position: "absolute",
+    top: "50%",
     marginTop: CARD_H / 2 - BODY_PADDING_Y - 32,
     left: (SCREEN_W - CARD_W) / 2 + CARD_W - 24 - 32,
     // 덱 안에서 가장 위 — 골 그늘(FoldShade)의 100보다 높다.
@@ -2483,7 +2882,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 32,
     letterSpacing: tracking(20),
-    textAlign: 'center',
+    textAlign: "center",
   },
   /** 원문 아래의 한글 — 한 단계 작게, 원문에 바짝 붙여서. */
   verseKorean: {
@@ -2495,19 +2894,19 @@ const styles = StyleSheet.create({
 
   // 아래 줄 — 몇 장째인지와 버튼 둘. 동그라미 없이 맨 아이콘만 놓는다.
   footer: {
-    position: 'absolute',
+    position: "absolute",
     left: 20,
     right: 20,
     bottom: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     height: FOOTER_H,
     zIndex: 3,
   },
   footerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   footerHint: {
@@ -2517,8 +2916,8 @@ const styles = StyleSheet.create({
     color: Colors.brown50,
   },
   footerIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
   },
   footerHit: {
@@ -2533,15 +2932,15 @@ const styles = StyleSheet.create({
    * 글자가 잘리지 않게 폭은 최소값만 주고 좌우로 늘어나게 한다.
    */
   noteBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -2,
     right: -4,
     minWidth: 16,
     height: 16,
     paddingHorizontal: 4,
     borderRadius: Corner.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: Colors.red100,
   },
   noteBadgeText: {
@@ -2575,9 +2974,9 @@ const styles = StyleSheet.create({
    * 같은 자리라, 카드와 재생기를 합치면 원래 카드 높이 그대로다.
    */
   musicSlot: {
-    position: 'absolute',
+    position: "absolute",
     left: (SCREEN_W - CARD_W) / 2,
-    top: '50%',
+    top: "50%",
     marginTop: CARD_H / 2 - PLAYER_H,
     width: CARD_W,
     zIndex: 102,
@@ -2585,9 +2984,9 @@ const styles = StyleSheet.create({
 
   /** 단출한 크롬의 위 줄 — 왼쪽에 뒤로 가기, 오른쪽에 버튼 둘(피그마 시안). */
   simpleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     height: HEADER_H,
     paddingHorizontal: 12,
     zIndex: 3,
@@ -2600,14 +2999,14 @@ const styles = StyleSheet.create({
   simpleBack: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   simpleHit: {
     width: 36,
     height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   /** 스크롤 보기의 글 — 화면 폭을 다 쓰고 좌우 16만 남긴다. 문단 사이는 빈 줄 하나. */
   scrollPage: {
@@ -2626,15 +3025,42 @@ const styles = StyleSheet.create({
   scrollCover: {
     height: 260,
   },
+  scrollBodyUnderVideo: {
+    paddingTop: 0,
+  },
+  /** 접히는 재생기 — 높이가 줄면 아래를 잘라 낸다. */
+  foldBox: {
+    overflow: "hidden",
+    backgroundColor: Ink.primary,
+  },
+  /** 접기 띠 — 위 줄·재생기와 이어지는 검은 띠. 재생기 페이지가 아래에 남기는 검은 줄과도 이어진다. */
+  foldBar: {
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    backgroundColor: Ink.primary,
+  },
+  foldButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 14,
+    paddingHorizontal: 8,
+  },
+  foldText: {
+    fontFamily: Type.uiMedium,
+    fontSize: 13,
+    color: Ink.muted,
+  },
   /** 떠 있는 퀴즈 버튼(피그마 시안 — 검은 알약에 주황 동그라미 화살표). */
   finishWrap: {
-    position: 'absolute',
+    position: "absolute",
     left: 16,
     right: 16,
   },
   finishPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     height: 80,
     paddingHorizontal: 20,
@@ -2649,15 +3075,17 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   finishProgressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
+  /** '읽기 진행' — 퍼센트보다 한 단계 작고 옅게(70%). 퍼센트가 먼저 읽혀야 한다. */
   finishProgressLabel: {
     fontFamily: Type.ui,
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 24,
     color: Ink.onDark,
+    opacity: 0.7,
   },
   /** 시안은 SemiBold지만 앱에 실린 굵기가 Medium까지라 Medium으로 둔다. */
   finishProgressValue: {
@@ -2676,8 +3104,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Corner.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: Spark.ember,
   },
 
@@ -2686,8 +3114,8 @@ const styles = StyleSheet.create({
     height: BARS_H,
   },
   bars: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: BAR_GAP,
     height: BARS_H,
     paddingHorizontal: BAR_PAD,
@@ -2698,7 +3126,7 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 1.5,
     backgroundColor: Colors.brown50,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   barFilled: {
     height: 3,
@@ -2708,8 +3136,8 @@ const styles = StyleSheet.create({
 
   // 계정 줄 — 인스타의 윗줄 자리에 표지·책 이름·날짜·닫기를 놓는다.
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     height: HEADER_H,
     paddingLeft: 16,
@@ -2721,10 +3149,10 @@ const styles = StyleSheet.create({
     height: AVATAR,
     borderRadius: AVATAR / 2,
     backgroundColor: Colors.brown50,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     // 표지는 원보다 세로로 길다 — 넘치는 위아래를 원이 잘라 낸다.
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   account: {
     fontFamily: Fonts.semiBold,

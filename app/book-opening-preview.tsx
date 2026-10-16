@@ -32,6 +32,7 @@ import { getBookLesson, getBookName } from '@/lib/books';
 import { getCatalogBookByBookId, getCatalogBooks, type CatalogBook } from '@/lib/catalog';
 import { getCoverDesign } from '@/lib/coverDesign';
 import { getReadingProgress, getReadPlan } from '@/lib/progress';
+import type { BookId } from '@/types';
 
 // ── 타임라인 ─────────────────────────────────────────────────────────────
 /** 화면을 다 덮은 노란빛이 흰빛으로 바래는 시간과, 다 바랜 뒤 숨 고르는 시간. */
@@ -75,19 +76,25 @@ type Stage = 'book' | 'intro' | 'body' | 'quiz' | 'done';
 export default function BookOpeningPreviewScreen() {
   const router = useRouter();
   /** 펼침 없이 보기 — 읽기를 누르면 책을 펴지 않고 곧장 첫페이지장으로. */
-  const skipOpening = useLocalSearchParams<{ skip?: string }>().skip === '1';
+  const params = useLocalSearchParams<{ skip?: string; book?: string }>();
+  const skipOpening = params.skip === '1';
   const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
   const { alarm } = useAlarm();
   const { selectedBookId } = useBookSelection();
+  /**
+   * 어느 책으로 볼지 — 보통은 지금 고른 책이고, ?book=으로 다른 책을 지목할 수 있다.
+   * 설정의 '유튜브 없는 화' 버튼이 명심보감(quote)을 지목한다. 고른 책은 바꾸지 않는다.
+   */
+  const bookId = (params.book as BookId | undefined) ?? selectedBookId;
   const { isDone } = useQuiz();
   const { cursorOf } = useReadingCursor();
 
-  const book = getCatalogBookByBookId(selectedBookId);
-  const design = book?.coverDesign ?? getCoverDesign(selectedBookId);
-  const readingProgress = getReadingProgress(selectedBookId, isDone);
-  const plan = getReadPlan(selectedBookId, cursorOf(selectedBookId));
-  const bookLesson = getBookLesson(selectedBookId, plan?.lessonId);
+  const book = getCatalogBookByBookId(bookId);
+  const design = book?.coverDesign ?? getCoverDesign(bookId);
+  const readingProgress = getReadingProgress(bookId, isDone);
+  const plan = getReadPlan(bookId, cursorOf(bookId));
+  const bookLesson = getBookLesson(bookId, plan?.lessonId);
   const quizzes = bookLesson
     ? (bookLesson.lesson.quizzes ?? (bookLesson.lesson.quiz ? [bookLesson.lesson.quiz] : []))
     : [];
@@ -125,9 +132,17 @@ export default function BookOpeningPreviewScreen() {
   const whiten = useSharedValue(0);
   const remain = useSharedValue(1);
   const veil = useDerivedValue(() => veilAt(progress.value) * remain.value);
-  /** 첫페이지장의 글(0~4)과, 본문으로 넘어갈 때 첫페이지장이 남은 정도(1→0). */
+  /**
+   * 첫페이지장의 글(0~4)과, 첫페이지장이 보이는 정도.
+   *
+   * 보이는 정도의 쉬는 값이 둘로 갈린다(INTRO_REST). 보통은 1 — 빛 장막 밑에서 첫페이지장이
+   * 처음부터 다 보여야 한다. 펼침 없이 보기는 0 — 홈 위로 0에서 떠올라야 하는데, 쉬는 값이 1이면
+   * 첫페이지장이 붙는 첫 프레임에 '0으로'가 아직 UI 스레드에 닿지 않아 다 보이는 채로 한 번
+   * 그려졌다. 화면 전체가 한 번 번쩍이던 깜빡임이 그것이다.
+   */
+  const introRest = skipOpening ? 0 : 1;
   const introText = useSharedValue(0);
-  const introLeft = useSharedValue(1);
+  const introLeft = useSharedValue(introRest);
   /** 퀴즈가 들어온 정도 — 0이면 오른쪽 밖, 1이면 제자리. */
   const quizIn = useSharedValue(0);
 
@@ -146,7 +161,7 @@ export default function BookOpeningPreviewScreen() {
     whiten.set(0);
     remain.set(1);
     introText.set(0);
-    introLeft.set(1);
+    introLeft.set(introRest);
     quizIn.set(0);
     setIntroShown(false);
     setBodyReady(false);
@@ -231,7 +246,7 @@ export default function BookOpeningPreviewScreen() {
     if (skipOpening) {
       setStage('intro');
       setIntroShown(true);
-      introLeft.set(0);
+      // 쉬는 값이 이미 0이라 여기서 0으로 내리지 않는다(introRest 주석 참고).
       introLeft.set(
         withTiming(1, { duration: INTRO_REVEAL_MS, easing: Easing.inOut(Easing.quad) }, (finished) => {
           if (finished) runOnJS(showIntroText)();
@@ -256,7 +271,7 @@ export default function BookOpeningPreviewScreen() {
 
   /** 8. 다 풀면 학습 완료 — 다음에 만나 볼 책은 지금 읽는 책이 아닌 서점 책 하나. */
   const finishQuiz = () => {
-    const others = getCatalogBooks().filter((b) => b.bookId !== selectedBookId);
+    const others = getCatalogBooks().filter((b) => b.bookId !== bookId);
     setRecommend(others[Math.floor(Math.random() * others.length)]);
     setStage('done');
   };
@@ -282,7 +297,7 @@ export default function BookOpeningPreviewScreen() {
           <StatusBarTint />
           <HomeLayout
             cover={<BookOpening design={design} width={COVER_W} progress={progress} />}
-            title={book?.title ?? getBookName(selectedBookId)}
+            title={book?.title ?? getBookName(bookId)}
             author={book?.author}
             alarm={alarm}
             readPages={readingProgress.readPages}
@@ -294,17 +309,30 @@ export default function BookOpeningPreviewScreen() {
         </>
       ) : null}
 
-      {/* 5·6. 본문 — 첫페이지장이 걷히기 전부터 밑에 깔려 있다. */}
+      {/*
+        5·6. 본문 — 첫페이지장이 걷히기 전부터 밑에 깔려 있다.
+
+        화면 가득 따로 띄우고(absoluteFill), 첫페이지장이 보이는 동안은 투명하게 숨긴다.
+        흐름 안에 두면 펼침 없이 보기에서 아직 남아 있는 홈과 높이를 나눠 가져 본문이 화면
+        아래쪽 절반에 서고, 그 위 줄(꺾쇠·자동으로 읽기)이 zIndex로 떠올라 첫페이지장 글 밑에
+        비쳤다. 숨겨 두어도 만드는 일(장 나누기·재생기 로딩)은 그대로 미리 끝난다.
+        collapsable={false} — 이 감싸개가 납작하게 지워지면 안의 zIndex가 다시 밖으로 샌다.
+      */}
       {showBody && bookLesson ? (
-        <CardDeckDetail
-          bookLesson={bookLesson}
-          onClose={reset}
-          trackProgress={false}
-          forceScroll
-          finishCta={{ progress: readPercent, onPress: openQuiz }}
-          // 첫페이지장 밑에 미리 만들어 둔 동안은 상태바를 건드리지 않는다.
-          statusTint={stage !== 'intro'}
-        />
+        <View
+          collapsable={false}
+          style={[StyleSheet.absoluteFill, stage === 'intro' && styles.hidden]}
+          pointerEvents={stage === 'intro' ? 'none' : 'auto'}>
+          <CardDeckDetail
+            bookLesson={bookLesson}
+            onClose={reset}
+            trackProgress={false}
+            forceScroll
+            finishCta={{ progress: readPercent, onPress: openQuiz }}
+            // 첫페이지장 밑에 미리 만들어 둔 동안은 상태바를 건드리지 않는다.
+            statusTint={stage !== 'intro'}
+          />
+        </View>
       ) : null}
 
       {/* 3·4. 첫페이지장. */}
@@ -351,5 +379,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Ink.primary,
+  },
+  /** 미리 만들어 둔 본문 — 첫페이지장이 걷힐 때까지 보이지 않는다. */
+  hidden: {
+    opacity: 0,
   },
 });
