@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
+import Toggle from '@/components/Toggle';
 import SplashQuestion from '@/components/splash/SplashQuestion';
 import WheelPicker from '@/components/WheelPicker';
 import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
@@ -97,12 +98,11 @@ export default function SplashAlarm({
         <View style={styles.card}>
           <View style={[styles.row, styles.rowDivider]}>
             <Text style={styles.rowLabel}>알림 사용하기</Text>
-            <ScaleButton
+            <Toggle
               accessibilityLabel={enabled ? '알림 끄기' : '알림 켜기'}
-              style={[styles.toggle, enabled && styles.toggleOn]}
-              onPress={() => setEnabled((v) => !v)}>
-              <View style={[styles.knob, enabled && styles.knobOn]} />
-            </ScaleButton>
+              value={enabled}
+              onChange={setEnabled}
+            />
           </View>
 
           <Pressable
@@ -253,28 +253,6 @@ const styles = StyleSheet.create({
     color: Ink.primary,
   },
 
-  /** 켜고 끄는 스위치 — 알람 편집 화면의 것과 같은 치수다. */
-  toggle: {
-    width: 44,
-    height: 24,
-    borderRadius: Corner.pill,
-    padding: 3,
-    backgroundColor: Surface.plate,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  toggleOn: {
-    backgroundColor: Spark.ember,
-  },
-  knob: {
-    width: 18,
-    height: 18,
-    borderRadius: Corner.pill,
-    backgroundColor: Surface.canvas,
-  },
-  knobOn: {
-    transform: [{ translateX: 20 }],
-  },
 
   dim: {
     flex: 1,

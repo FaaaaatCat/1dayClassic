@@ -3,8 +3,8 @@ import { useCallback, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useStackBack } from '@/components/mypage/useStackBack';
 import ScreenHeader from '@/components/ScreenHeader';
-import { StatusBarTint } from '@/components/StatusBarTint';
 import { Ink, Space } from '@/constants/theme';
 
 /**
@@ -17,7 +17,7 @@ import { Ink, Space } from '@/constants/theme';
 export default function MyPageShell({
   title,
   children,
-  back = '/library',
+  back,
   /** 헤더 오른쪽에 놓을 것 — 대개 없다. */
   action,
   /** 아래에 붙박이로 둘 것(계정 관리의 버튼처럼). 스크롤을 따라오지 않는다. */
@@ -25,12 +25,16 @@ export default function MyPageShell({
 }: {
   title: string;
   children: React.ReactNode;
-  /** 뒤로 갈 곳. 기본은 마이페이지다(자세한 것은 ScreenHeader의 back 주석). */
-  back?: string;
+  /**
+   * 뒤로. 주지 않으면 마이페이지 묶음(스택)에서 한 장을 걷는다 — 걷을 것이 없으면 마이페이지로.
+   * 문자열이면 그 경로로 옮긴다(마이페이지 맨 아래가 홈('/')으로 나갈 때). 함수면 그것을 부른다.
+   */
+  back?: string | (() => void);
   action?: React.ReactNode;
   footer?: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const stackBack = useStackBack('/library');
 
   /**
    * 다시 들어올 때는 맨 위에서 시작한다.
@@ -49,9 +53,9 @@ export default function MyPageShell({
   // 위 세이프에어리어는 헤더가 맡는다 — 여기서 또 대면 제목만 그만큼 내려앉는다.
   return (
     <View style={styles.screen}>
-      {/* 마이페이지와 그 안의 화면들은 다크다 — 상태바도 검게, 헤더도 검은 띠로. */}
-      <StatusBarTint />
-      <ScreenHeader title={title} back={back} action={action} tone="dark" />
+      {/* 마이페이지와 그 안의 화면들은 다크다 — 헤더는 검은 띠로. 상태바를 검게 두는 것은 묶음
+          전체가 한 번에 맡는다(app/(tabs)/library/_layout). */}
+      <ScreenHeader title={title} back={back ?? stackBack} action={action} tone="dark" />
 
       <ScrollView
         ref={scrollRef}

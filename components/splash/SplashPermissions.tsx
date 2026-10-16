@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import SplashQuestion from '@/components/splash/SplashQuestion';
-import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
+import Toggle from '@/components/Toggle';
+import { Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
 import {
   getPermissionStatus,
   requestAlarmPermission,
@@ -106,10 +107,8 @@ export default function SplashPermissions({
                 <Text style={styles.rowLabel}>{row.label}</Text>
                 <Text style={styles.rowHint}>{row.hint}</Text>
               </View>
-              {/* 홈·알람의 토글과 같은 모양 — 같은 뜻의 것은 같게 보여야 한다. */}
-              <View style={[styles.toggle, on && styles.toggleOn]}>
-                <View style={[styles.knob, on && styles.knobOn]} />
-              </View>
+              {/* 앱의 다른 토글과 같은 것(components/Toggle) — 누름은 줄 전체가 받는다. */}
+              <Toggle value={on} />
             </Pressable>
           );
         })}
@@ -144,25 +143,4 @@ const styles = StyleSheet.create({
     color: Ink.muted,
   },
 
-  toggle: {
-    width: 44,
-    height: 24,
-    borderRadius: Corner.pill,
-    padding: 3,
-    backgroundColor: Surface.plate,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  toggleOn: {
-    backgroundColor: Spark.ember,
-  },
-  knob: {
-    width: 18,
-    height: 18,
-    borderRadius: Corner.pill,
-    backgroundColor: Surface.canvas,
-  },
-  knobOn: {
-    transform: [{ translateX: 20 }],
-  },
 });

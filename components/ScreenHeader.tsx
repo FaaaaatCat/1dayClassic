@@ -37,7 +37,8 @@ export default function ScreenHeader({
    * 없으면 화살표를 그리지 않는다(자리는 그대로 비워 둔다).
    *
    * router.back()이 기본이 아닌 건 이 앱의 화면들이 대개 Tabs의 형제라서다 — 형제로
-   * 옮기는 것은 스택에 쌓이지 않아, back()은 그 앞에 남아 있던 것으로 튄다.
+   * 옮기는 것은 스택에 쌓이지 않아, back()은 그 앞에 남아 있던 것으로 튄다. 마이페이지 묶음만은
+   * 제 스택이 있어서 그 안의 화면들은 함수(useStackBack)를 넘겨 한 장을 걷는다.
    */
   back?: string | (() => void);
   /** 오른쪽 자리 — HeaderIconButton이나 HeaderTextButton 하나. */

@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
+import Toggle from '@/components/Toggle';
 import ScreenHeader from '@/components/ScreenHeader';
 import { StatusBarTint } from '@/components/StatusBarTint';
 import WheelPicker from '@/components/WheelPicker';
@@ -133,12 +134,11 @@ export default function AlarmDetailScreen({ onClose }: { onClose?: () => void } 
             <Text style={styles.cardTitle}>알람</Text>
             <View style={styles.switchRow}>
               <Text style={styles.cardValue}>{enabled ? '알림 사용 중' : '알림 꺼짐'}</Text>
-              <ScaleButton
+              <Toggle
                 accessibilityLabel={enabled ? '알람 끄기' : '알람 켜기'}
-                style={[styles.toggle, enabled && styles.toggleOn]}
-                onPress={() => setEnabled((v) => !v)}>
-                <View style={[styles.knob, enabled && styles.knobOn]} />
-              </ScaleButton>
+                value={enabled}
+                onChange={setEnabled}
+              />
             </View>
           </View>
 
@@ -229,28 +229,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  /** 켜고 끄는 스위치 — 권한 카드의 것과 같은 치수다. */
-  toggle: {
-    width: 44,
-    height: 24,
-    borderRadius: Corner.pill,
-    padding: 3,
-    backgroundColor: Ink.strong,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  toggleOn: {
-    backgroundColor: Spark.ember,
-  },
-  knob: {
-    width: 18,
-    height: 18,
-    borderRadius: Corner.pill,
-    backgroundColor: Ink.primary,
-  },
-  knobOn: {
-    transform: [{ translateX: 20 }],
   },
 
   daysRow: {

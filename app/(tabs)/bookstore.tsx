@@ -12,6 +12,7 @@ import { Ink, Surface, Type, trackBody } from '@/constants/theme';
 import { useBookSelection } from "@/context/BookSelectionContext";
 import { getCatalogBooks, type CatalogBook } from "@/lib/catalog";
 import { getBookCoverPlan } from "@/lib/cover";
+import { SLIDE_MS } from "@/lib/slideTransition";
 import { isReadableBook } from "@/lib/bookstore";
 import { fieldsOf } from "@/lib/tags";
 
@@ -57,8 +58,10 @@ function toRows(entries: Entry[]): Entry[][] {
   return rows;
 }
 
-/** 새 페이지가 오른쪽에서 들어와 앞 페이지를 덮는다. 닫을 때는 오른쪽으로 걷힌다. */
-const SLIDE_MS = 300;
+/**
+ * 새 페이지가 오른쪽에서 들어와 앞 페이지를 덮는다. 닫을 때는 오른쪽으로 걷힌다.
+ * 시간은 앱의 다른 오른쪽 전환과 같다(lib/slideTransition).
+ */
 const enterFromRight = SlideInRight.duration(SLIDE_MS).easing(Easing.out(Easing.cubic));
 const exitToRight = SlideOutRight.duration(SLIDE_MS).easing(Easing.out(Easing.cubic));
 

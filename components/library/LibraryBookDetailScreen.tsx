@@ -7,8 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BookCoverArt from '@/components/book/BookCoverArt';
 import BookPreviewModal from '@/components/BookPreviewModal';
 import ScreenHeader, { HeaderIconButton } from '@/components/ScreenHeader';
-import { StatusBarTint } from '@/components/StatusBarTint';
 import { formatReadDate, useBookStats } from '@/components/mypage/useBookStats';
+import { useStackBack } from '@/components/mypage/useStackBack';
 import ScaleButton from '@/components/ScaleButton';
 import { Corner, Feedback, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
 import { useBookSelection } from '@/context/BookSelectionContext';
@@ -66,8 +66,8 @@ export default function LibraryBookDetailScreen() {
    * 그 밖의 값을 넣으면 /library/<그 값>이라는 없는 경로가 만들어져 '찾을 수 없는 화면'이
    * 뜬다. 마이페이지에서 들어올 때 'library'를 넣어 실제로 그랬다 — 여기는 비워 둔다.
    */
-  const goBack = () =>
-    router.replace((from === 'home' ? '/' : from ? `/library/${from}` : '/library') as never);
+  const stackBack = useStackBack(from ? `/library/${from}` : '/library');
+  const goBack = () => (from === 'home' ? router.replace('/') : stackBack());
 
   if (!catalogBook) return null;
 
@@ -82,6 +82,8 @@ export default function LibraryBookDetailScreen() {
     }
     selectBook(studyBook.id);
     showToast(`이제 이 책을 읽습니다 · ${studyBook.title}`);
+    // 골랐으면 곧장 홈으로 — 홈이 이제 이 책을 들고 있다.
+    router.replace('/');
   };
 
   const removeBook = () => {
@@ -129,12 +131,12 @@ export default function LibraryBookDetailScreen() {
   return (
     <>
       <View style={styles.screen}>
-        {/* 위가 검은 띠라 상태바도 검게 둔다 — 띠가 화면 속으로 이어져 보인다. */}
-        <StatusBarTint />
+        {/* 위가 검은 띠라 상태바도 검다 — 마이페이지 묶음이 맡는다(app/(tabs)/library/_layout). */}
 
         {/* 검은 띠가 상태바 뒤까지 이어져야 하므로 세이프에어리어도 헤더가 맡는다. */}
+        {/* 지금 읽는 책만 '리포트'다 — 그 밖의 책은 들어온 목록의 이름을 단다. */}
         <ScreenHeader
-          title="리포트"
+          title={reading ? '리포트' : from === 'finished' ? '완독한 책' : '읽을 예정인 책'}
           back={goBack}
           tone="dark"
           action={

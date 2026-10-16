@@ -1,6 +1,7 @@
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
+import Toggle from '@/components/Toggle';
+import { Ink, Space, Type, TypeScale } from '@/constants/theme';
 
 interface SettingRowProps {
   label: string;
@@ -22,14 +23,7 @@ export default function SettingRow({
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       {switchValue !== undefined ? (
-        <Switch
-          value={switchValue}
-          onValueChange={onSwitchChange}
-          trackColor={{ true: Ink.strong, false: Surface.plate }}
-          thumbColor={Surface.card}
-          // react-native-web은 thumbColor 대신 activeThumbColor를 읽는다
-          {...({ activeThumbColor: Surface.card } as object)}
-        />
+        <Toggle value={switchValue} onChange={onSwitchChange ?? (() => {})} />
       ) : (
         <Text style={styles.value}>{value}</Text>
       )}

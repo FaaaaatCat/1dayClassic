@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import MyPageShell from '@/components/mypage/MyPageShell';
-import SettingSection from '@/components/mypage/SettingSection';
+import { useStackBack } from '@/components/mypage/useStackBack';
+import SettingSection, { SettingToggle } from '@/components/mypage/SettingSection';
 import { HeaderTextButton } from '@/components/ScreenHeader';
 import { Ink, Spark, Surface, Type } from '@/constants/theme';
 import { useReaderSettings, type ReaderSettings } from '@/context/ReaderSettingsContext';
@@ -22,13 +23,19 @@ type OptionHint =
   | { kind: 'icon'; name: React.ComponentProps<typeof Ionicons>['name'] };
 
 interface Section {
-  id: 'background' | 'turn' | 'fontSize';
+  id: 'background' | 'fontSize';
   title: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
   options: { id: string; label: string; hint: OptionHint }[];
 }
 
-/** 고를 수 있는 것들. 처음 값은 ReaderSettingsContext의 DEFAULT_READER_SETTINGS다. */
+/**
+ * 고를 수 있는 것들. 처음 값은 ReaderSettingsContext의 DEFAULT_READER_SETTINGS다.
+ *
+ * '책 넘기기 설정'은 통째로 걷어냈다 — 오늘의 공부 본문은 이제 늘 스크롤 보기라 고를 것이 없다
+ * (ReaderSettingsContext의 ReaderPageTurn 주석). 책 오픈 효과는 켜고 끄기뿐이라 이 목록이 아닌
+ * 스위치(SettingToggle)로 아래에 따로 둔다.
+ */
 const SECTIONS: Section[] = [
   {
     id: 'background',
@@ -38,16 +45,6 @@ const SECTIONS: Section[] = [
       // 그 배경의 종이색과 글자색 — 읽기 화면의 라이트·다크 종이를 그대로 보여 준다.
       { id: 'light', label: '라이트', hint: { kind: 'swatch', paper: Surface.canvas, ink: Ink.primary } },
       { id: 'dark', label: '다크', hint: { kind: 'swatch', paper: Ink.primary, ink: Surface.canvas } },
-    ],
-  },
-  {
-    id: 'turn',
-    title: '책 넘기기 설정',
-    icon: 'book-outline',
-    options: [
-      { id: 'bookmark', label: '책 넘김 효과', hint: { kind: 'icon', name: 'book-outline' } },
-      { id: 'none', label: '카드로 보기', hint: { kind: 'icon', name: 'albums-outline' } },
-      { id: 'scroll', label: '스크롤 보기', hint: { kind: 'icon', name: 'swap-vertical' } },
     ],
   },
   {
@@ -63,21 +60,20 @@ const SECTIONS: Section[] = [
 ];
 
 /**
- * 책 보기 설정 — 배경·넘기기·글자 크기, 세 가지를 고르고 '저장'으로 확정한다(ReaderSettingsContext).
+ * 책 보기 설정 — 배경·글자 크기·책 오픈 효과를 고르고 '저장'으로 확정한다(ReaderSettingsContext).
  *
- * 셋 다 오늘의 공부 화면에 바로 반영된다. 구역의 모양은 배경음악·TTS 설정과 같은 것을
+ * 배경·글자 크기는 오늘의 공부 화면에, 책 오픈 효과는 홈의 읽기 버튼에 반영된다. 구역의 모양은 배경음악·TTS 설정과 같은 것을
  * 쓴다(SettingSection).
  */
 export default function BookThemeScreen() {
-  const router = useRouter();
+  const goBack = useStackBack('/library');
   const { showToast } = useToast();
   const { settings, update } = useReaderSettings();
 
   /**
    * 고르는 동안의 값 — 오른쪽 위 '저장'을 눌러야 실제 설정이 된다.
    *
-   * 이 화면은 Tabs의 형제라 떠나도 사라지지 않으므로, 들어올 때마다 저장된 값에서 다시
-   * 시작한다. 저장하지 않고 나간 것은 없던 일이 된다.
+   * 들어올 때마다 저장된 값에서 다시 시작한다. 저장하지 않고 나간 것은 없던 일이 된다.
    */
   const [draft, setDraft] = useState<ReaderSettings>(settings);
   useFocusEffect(
@@ -91,7 +87,8 @@ export default function BookThemeScreen() {
       if (draft[key] !== settings[key]) update(key, draft[key] as never);
     });
     showToast('책 보기 설정을 저장했습니다');
-    router.replace('/library');
+    // 저장했으면 마이페이지로 — 스택에서 이 한 장을 걷는다.
+    goBack();
   };
 
   return (
@@ -113,6 +110,15 @@ export default function BookThemeScreen() {
           }))}
         />
       ))}
+      {/* 홈의 읽기 버튼을 눌렀을 때 책이 펼쳐지는 장면을 지날지(ReaderSettingsContext의 ReaderBookOpen). */}
+      <SettingToggle
+        title="책 오픈 효과"
+        icon="sparkles-outline"
+        label="책이 열리는 모션"
+        right={<OptionHintView hint={{ kind: 'icon', name: 'book-outline' }} />}
+        value={draft.bookOpen === 'on'}
+        onChange={(on) => setDraft((prev) => ({ ...prev, bookOpen: on ? 'on' : 'off' }))}
+      />
     </MyPageShell>
   );
 }

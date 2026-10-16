@@ -3,6 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import MyPageShell, { MY_PAGE } from '@/components/mypage/MyPageShell';
+import { useStackBack } from '@/components/mypage/useStackBack';
 import { useNoteList, type NoteEntry } from '@/components/mypage/useNoteList';
 import ScaleButton from '@/components/ScaleButton';
 import { Corner, Ink, Space, Surface, Type, TypeScale, Colors } from '@/constants/theme';
@@ -53,9 +54,9 @@ export default function NotesScreen() {
     ]);
   };
 
-  // 들어온 자리(리포트)로 돌려보낸다. 그 화면도 제가 어디서 왔는지(from)를 들고 있어야
-  // 한 단계 더 뒤로 갈 수 있으므로 그대로 실어 보낸다.
-  const back = id ? `/library/book/${id}${from ? `?from=${from}` : ''}` : '/library';
+  // 뒤로 — 스택에서 한 장을 걷어 들어온 자리(서재 책 상세)로 돌아간다. 걷을 것이 없을 때만 아래
+  // 경로로 간다. 그 상세도 제가 어디서 왔는지(from)를 들고 있어야 한 단계 더 뒤로 갈 수 있다.
+  const back = useStackBack(id ? `/library/book/${id}${from ? `?from=${from}` : ''}` : '/library');
 
   return (
     <MyPageShell title="독서 노트" back={back}>

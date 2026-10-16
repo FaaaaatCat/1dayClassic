@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState, StyleSheet, Text, View } from 'react-native';
 
 import ScaleButton from '@/components/ScaleButton';
+import Toggle from '@/components/Toggle';
 import { MY_PAGE } from '@/components/mypage/MyPageShell';
-import { Corner, Feedback, Ink, Space, Surface, Type, TypeScale } from '@/constants/theme';
+import { Corner, Feedback, Ink, Space, Type, TypeScale } from '@/constants/theme';
 import {
   getPermissionStatus,
   hasAllAlarmPermissions,
@@ -109,10 +110,8 @@ export default function AlarmPermissionCard() {
                   <Text style={styles.rowLabel}>{row.label}</Text>
                   <Text style={styles.rowHint}>{row.hint}</Text>
                 </View>
-                {/* 홈의 알람 토글과 같은 모양 — 같은 뜻의 컨트롤은 같게 보여야 한다. */}
-                <View style={[styles.toggle, granted && styles.toggleOn]}>
-                  <View style={[styles.knob, granted && styles.knobOn]} />
-                </View>
+                {/* 앱의 다른 토글과 같은 것(components/Toggle) — 누름은 줄 전체가 받는다. */}
+                <Toggle value={granted} />
               </View>
             </ScaleButton>
           );
@@ -189,25 +188,5 @@ const styles = StyleSheet.create({
     fontFamily: Type.ui,
     ...TypeScale.bodySm,
     color: Ink.body,
-  },
-  toggle: {
-    width: 44,
-    height: 24,
-    borderRadius: Corner.pill,
-    padding: 3,
-    backgroundColor: Ink.strong,
-    justifyContent: 'center',
-  },
-  toggleOn: {
-    backgroundColor: Surface.plate,
-  },
-  knob: {
-    width: 18,
-    height: 18,
-    borderRadius: Corner.pill,
-    backgroundColor: Ink.primary,
-  },
-  knobOn: {
-    transform: [{ translateX: 20 }],
   },
 });

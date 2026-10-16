@@ -1,8 +1,9 @@
 import * as Speech from 'expo-speech';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
 import MyPageShell from '@/components/mypage/MyPageShell';
+import { useStackBack } from '@/components/mypage/useStackBack';
 import SettingSection, { PreviewButton } from '@/components/mypage/SettingSection';
 import { HeaderTextButton } from '@/components/ScreenHeader';
 import { Spark } from '@/constants/theme';
@@ -37,7 +38,7 @@ const AUTO_READ: { id: ReaderAutoRead; label: string }[] = [
  * 고른 것은 오른쪽 위 '저장'을 눌러야 실제 설정이 된다.
  */
 export default function TtsScreen() {
-  const router = useRouter();
+  const goBack = useStackBack('/library');
   const { showToast } = useToast();
   const { settings, update } = useReaderSettings();
 
@@ -79,7 +80,8 @@ export default function TtsScreen() {
     if (voice !== settings.voice) update('voice', voice);
     if (autoRead !== settings.autoRead) update('autoRead', autoRead);
     showToast('TTS 설정을 저장했습니다');
-    router.replace('/library');
+    // 저장했으면 마이페이지로 — 스택에서 이 한 장을 걷는다.
+    goBack();
   };
 
   return (

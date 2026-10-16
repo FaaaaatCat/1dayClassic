@@ -1,8 +1,9 @@
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 
 import MyPageShell from '@/components/mypage/MyPageShell';
+import { useStackBack } from '@/components/mypage/useStackBack';
 import SettingSection, { PreviewButton } from '@/components/mypage/SettingSection';
 import { HeaderTextButton } from '@/components/ScreenHeader';
 import { Spark } from '@/constants/theme';
@@ -24,13 +25,13 @@ const PREVIEW_MS = 15000;
  * 고른 것은 오른쪽 위 '저장'을 눌러야 실제 설정이 된다(책 보기 설정과 같이).
  */
 export default function BgmScreen() {
-  const router = useRouter();
+  const goBack = useStackBack('/library');
   const { showToast } = useToast();
   const { bgmId, select } = useBgm();
 
   /**
-   * 고르는 동안의 값. 이 화면은 Tabs의 형제라 떠나도 사라지지 않으므로, 들어올 때마다
-   * 저장된 값에서 다시 시작한다 — 저장하지 않고 나간 것은 없던 일이 된다.
+   * 고르는 동안의 값. 들어올 때마다 저장된 값에서 다시 시작한다 — 저장하지 않고 나간 것은
+   * 없던 일이 된다.
    */
   const [draft, setDraft] = useState<BgmId>(bgmId);
 
@@ -40,7 +41,11 @@ export default function BgmScreen() {
   const [previewing, setPreviewing] = useState<BgmId | null>(null);
 
   const stopPreview = useCallback(() => {
-    player.pause();
+    // 스택에서 걷혀 화면이 사라질 때는 useAudioPlayer가 플레이어를 먼저 풀어 버린다 — 그 뒤에
+    // 부르는 pause는 '이미 풀린 객체'라며 던진다. 풀렸으면 이미 멈춘 것이니 넘어간다.
+    try {
+      player.pause();
+    } catch {}
     setPreviewing(null);
   }, [player]);
 
@@ -82,7 +87,8 @@ export default function BgmScreen() {
     stopPreview();
     if (draft !== bgmId) select(draft);
     showToast('배경음악 설정을 저장했습니다');
-    router.replace('/library');
+    // 저장했으면 마이페이지로 — 스택에서 이 한 장을 걷는다.
+    goBack();
   };
 
   return (

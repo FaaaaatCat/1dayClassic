@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Colors, Corner, Ink, Space, Spark, Surface, Type, TypeScale, trackBody } from '@/constants/theme';
+import Toggle from '@/components/Toggle';
 
 export interface SettingOption {
   id: string;
@@ -12,6 +13,7 @@ export interface SettingOption {
 
 /**
  * 하나만 고르는 설정 한 구역 — 책 보기 설정·배경음악 설정·TTS 설정이 함께 쓴다.
+ * 켜고 끄기만 하는 설정은 아래 SettingToggle을 쓴다.
  *
  * 머리에 둥근 판의 그림과 이름, 그 아래 한 단 올라온 판 위에 고르는 줄들. 고른 줄은 왼쪽에
  * 주황 원과 흰 체크, 아닌 줄은 빈 원이다. 고른 값은 부르는 쪽이 들고 있다 — 이 구역은 그리고
@@ -63,6 +65,59 @@ export default function SettingSection({
             </Pressable>
           );
         })}
+      </View>
+    </View>
+  );
+}
+
+/**
+ * 켜고 끄기만 하는 설정 한 구역 — 머리와 판은 SettingSection과 같고, 판 위에 줄이 하나 선다.
+ * 그 줄의 왼쪽은 고르는 원 대신 스위치, 가운데는 무엇을 켜는지 적은 글, 오른쪽은 설명 그림이다.
+ * 고를 것이 둘(켜기·끄기)뿐인 설정을 줄 두 개로 펼치지 않으려는 것이다. 값은 부르는 쪽이 들고
+ * 있다(저장은 각 화면의 '저장' 버튼이 한다).
+ */
+export function SettingToggle({
+  title,
+  icon,
+  label,
+  right,
+  value,
+  onChange,
+  first = false,
+}: {
+  title: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  /** 줄의 글 — 켜면 무엇이 되는지. */
+  label: string;
+  /** 줄 오른쪽에 놓을 설명 그림. */
+  right?: React.ReactNode;
+  value: boolean;
+  onChange: (value: boolean) => void;
+  /** 화면의 첫 구역이면 위 여백을 두지 않는다. */
+  first?: boolean;
+}) {
+  return (
+    <View style={[styles.section, !first && styles.sectionGap]}>
+      <View style={styles.head}>
+        <View style={styles.headIcon}>
+          <Ionicons name={icon} size={18} color={Surface.plate} />
+        </View>
+        <Text style={styles.title}>{title}</Text>
+      </View>
+
+      <View style={styles.panel}>
+        {/* 줄 어디를 눌러도 스위치가 바뀐다 — 고르는 줄들과 같은 손맛. */}
+        <Pressable
+          accessibilityRole="switch"
+          accessibilityState={{ checked: value }}
+          accessibilityLabel={`${title} ${label}`}
+          style={[styles.row, styles.rowLast]}
+          onPress={() => onChange(!value)}>
+          <Toggle value={value} onChange={onChange} />
+          {/* 글은 켜고 꺼도 늘 연하게 — 켜졌는지는 스위치가 말한다. */}
+          <Text style={styles.label}>{label}</Text>
+          {right}
+        </Pressable>
       </View>
     </View>
   );
