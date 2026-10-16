@@ -72,6 +72,7 @@ function entry(book) {
     fields: fieldsOf(book.tags),
     readable: book.bookId !== null && READABLE.includes(book.bookId),
     design: book.bookId ? COVER_DESIGNS[book.bookId] : book.coverDesign,
+    promo: book.promo ?? null,
   };
 }
 const byBookId = (bookId) => entry(catalog.find((b) => b.bookId === bookId));
@@ -121,6 +122,7 @@ const ICON_NAMES = [
   'musical-note-outline', 'color-palette-outline', 'add', 'sync', 'ellipsis-vertical', 'eye-outline',
   'trash-outline', 'headset', 'create', 'bookmark-outline', 'bookmark', 'play', 'pause', 'arrow-up',
   'logo-youtube', 'albums-outline', 'text-outline', 'person-circle-outline', 'chevron-forward', 'alarm-outline', 'mic-outline', 'headset-outline',
+  'arrow-forward',
 ];
 function loadIcons(names) {
   const base = 'node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons';
@@ -346,6 +348,21 @@ const SPLASH_BOOKS = BOOKSTORE.filter((book) => READABLE.includes(book.id))
   .slice(0, 5)
   .map((book) => ({ title: book.title, author: book.author, design: COVER_DESIGNS[book.id] }));
 
+// ── 오늘의 독서 흐름(components/reading) ───────────────────────────────────
+/** 독서 완료의 인용문 — 맨 앞 것 하나로 가정한다(앱은 무작위로 고른다, lib/quotes). */
+const quotes = readJson('data/reading-quotes.json');
+const firstQuote = quotes.quotes[0];
+const QUOTE = { ko: firstQuote.ko, work: quotes.books[String(firstQuote.gutenbergId)].work };
+/** 연속 독서 일수 — StudyReport의 자리 값(STREAK_DAYS). */
+const STREAK_DAYS = Number(read('components/StudyReport.tsx').match(/STREAK_DAYS = (\d+)/)?.[1]);
+if (!STREAK_DAYS) throw new Error('components/StudyReport.tsx의 STREAK_DAYS를 찾지 못했습니다');
+/** 다음 책 권유 — 읽을 수 있는 책 가운데 지금 읽는 책이 아닌 첫 권으로 가정한다(앱은 무작위). */
+const NEXT_BOOK = readableBooks.find((b) => b.bookId !== SELECTED);
+/** 첫 실행 고침본의 분야 — components/splash-draft/SplashFields의 FIELDS. */
+const draftFieldsSource = read('components/splash-draft/SplashFields.tsx');
+const DRAFT_FIELDS = [...draftFieldsSource.slice(draftFieldsSource.indexOf('const FIELDS')).split('] as const')[0].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+if (DRAFT_FIELDS.length === 0) throw new Error('components/splash-draft/SplashFields.tsx의 FIELDS를 찾지 못했습니다');
+
 const DATA = {
   /** 화면에 날짜가 필요한 자리(공부 리포트·마지막으로 읽은 날)에 쓴다 — 만든 날이다. */
   today: `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`,
@@ -377,6 +394,10 @@ const DATA = {
   reader: READER,
   splashBooks: SPLASH_BOOKS,
   fieldNames: FIELD_NAMES,
+  quote: QUOTE,
+  streakDays: STREAK_DAYS,
+  nextBook: NEXT_BOOK,
+  draftFields: DRAFT_FIELDS,
   icons: loadIcons(ICON_NAMES),
 };
 

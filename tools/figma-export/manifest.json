@@ -18,7 +18,7 @@
       "command": "updated"
     },
     {
-      "name": "나머지 화면 내보내기",
+      "name": "전부 내보내기 (서점 포함)",
       "command": "export"
     },
     {

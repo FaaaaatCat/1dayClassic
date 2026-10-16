@@ -266,14 +266,26 @@ function button(name, label, p) {
   return b;
 }
 
-/** 켜고 끄는 스위치. 켜진 색은 화면마다 다르다(주황·graphite). */
-function toggle(on, onTok) {
-  const t = AL('HORIZONTAL', on ? '토글/켜짐' : '토글/꺼짐', { w: 44, h: 24, px: 3, main: on ? 'MAX' : 'MIN', cross: 'CENTER', fill: on ? onTok : 'stone', r: 9999 });
+/**
+ * 켜고 끄는 스위치 — components/Toggle. 앱의 모든 토글이 이 하나다(안드로이드 Switch).
+ * 켜면 주황, 끄면 graphite, 손잡이는 eggshell. 다크·라이트 어디서나 같은 색이라 '!'로 못 박는다.
+ * 치수는 안드로이드 Switch의 것(트랙 36×14, 손잡이 20)이다.
+ */
+function toggle(on) {
+  const t = figma.createFrame();
+  t.name = on ? '토글/켜짐' : '토글/꺼짐';
+  t.resize(36, 20);
+  t.fills = [];
+  t.clipsContent = false;
+  const track = rect('트랙', 36, 14, on ? '!ember' : '!graphite');
+  track.cornerRadius = 7;
+  abs(t, track, 0, 3);
   const knob = figma.createEllipse();
   knob.name = '손잡이';
-  knob.resize(18, 18);
-  fill(knob, 'eggshell');
-  t.appendChild(knob);
+  knob.resize(20, 20);
+  fill(knob, '!eggshell');
+  knob.effects = [{ type: 'DROP_SHADOW', color: { r: 0, g: 0, b: 0, a: 0.3 }, offset: { x: 0, y: 1 }, radius: 3, spread: 0, visible: true, blendMode: 'NORMAL' }];
+  abs(t, knob, on ? 16 : 0, 0);
   return t;
 }
 
@@ -1510,16 +1522,25 @@ function buildAccount() {
 }
 
 /** 리포트 — components/library/LibraryBookDetailScreen. */
-function buildReport(name) {
+/**
+ * 서재 책 상세 — components/library/LibraryBookDetailScreen. 머리 이름은 지금 읽는 책만 '리포트'이고,
+ * 그 밖의 책은 들어온 목록의 이름('읽을 예정인 책'·'완독한 책')을 단다. 그때 오른쪽 버튼은 '이 책 읽기'.
+ */
+function buildReport(name, o = {}) {
+  const book = o.book || SEL;
   const s = screen(name, 'eggshell');
-  header(s, '리포트', { tone: 'dark', action: headerIcon('ellipsis-vertical') });
+  header(s, o.title || '리포트', { tone: 'dark', action: headerIcon('ellipsis-vertical') });
   const body = scrollBody(s, {});
   const band = add(body, AL('HORIZONTAL', '책', { gap: 12, px: 20, pb: 24, cross: 'CENTER', fill: '!ink' }), 'FILL');
-  band.appendChild(cover(SEL.design, 56));
+  band.appendChild(cover(book.design, 56));
   const text = add(band, AL('VERTICAL', '글', { gap: 4 }), 'FILL');
-  add(text, T(SEL.title, 'serif', 16, 24, 'eggshell'), 'FILL');
-  add(text, T(SEL.author, 'reg', 13, 20, 'stone', { ls: 0.13 }), 'FILL');
-  band.appendChild(button('선택 중', '선택 중', { h: 40, px: 16, r: 9999, fill: '!graphite', size: 13, lh: 20, ls: 0.13, color: 'stone' }));
+  add(text, T(book.title, 'serif', 16, 24, 'eggshell'), 'FILL');
+  add(text, T(book.author, 'reg', 13, 20, 'stone', { ls: 0.13 }), 'FILL');
+  band.appendChild(
+    o.title
+      ? button('이 책 읽기', '이 책 읽기', { h: 40, px: 16, gap: 4, r: 9999, fill: '!ember', size: 13, lh: 20, ls: 0.13, color: '!eggshell', icon: icon('sync', 16, '!eggshell') })
+      : button('선택 중', '선택 중', { h: 40, px: 16, r: 9999, fill: '!graphite', size: 13, lh: 20, ls: 0.13, color: 'stone' }),
+  );
 
   const section = (title, value, note, right, last) => {
     const box = add(body, AL('VERTICAL', title, { gap: 8, px: 20, py: 16 }), 'FILL');
@@ -1667,6 +1688,38 @@ function pageBreakIcon(size, tok) {
   return node;
 }
 
+/**
+ * 첫 실행 고침본(components/splash-draft) — 설정의 미리보기만 쓰는 판이다. DRAFT가 켜진 동안
+ * 그리는 첫 실행 화면은 고침본의 치수·문구를 따른다: 인트로 버튼 고정('하루서점 시작하기'),
+ * 퀴즈 그림은 아이콘, 물음 자리를 위로, 아래 버튼 56·둘레 20, 시안의 열네 분야, 밝은 환영 창.
+ */
+let DRAFT = false;
+const draft = (build) => () => {
+  DRAFT = true;
+  try {
+    return build();
+  } finally {
+    DRAFT = false;
+  }
+};
+/** 퀴즈 아이콘(hugeicons quiz-03) — 시안의 SVG 경로 그대로. 108칸 틀에 앉힌다(assets/images/splash/quiz.png와 같은 자리). */
+const QUIZ_ICON_PATHS = [
+  ['M21.518 10.25C14.516 10.4615 10.3445 11.24 7.45551 14.129C3.50001 18.089 3.50001 24.4565 3.50001 37.196V66.473C3.50001 79.217 3.50001 85.5845 7.45551 89.5445C11.4065 93.5 17.774 93.5 30.5 93.5H53C65.7305 93.5 72.0935 93.5 76.0445 89.54C80.0045 85.5845 80.0045 79.217 80.0045 66.473V37.196C80.0045 24.461 80.0045 18.089 76.0445 14.129C73.16 11.24 68.984 10.4615 61.982 10.25', ''],
+  ['M21.5 11.375C21.5 7.028 25.028 3.5 29.375 3.5H54.125C56.2136 3.5 58.2166 4.32969 59.6935 5.80653C61.1703 7.28338 62 9.28642 62 11.375C62 13.4636 61.1703 15.4666 59.6935 16.9435C58.2166 18.4203 56.2136 19.25 54.125 19.25H29.375C27.2864 19.25 25.2834 18.4203 23.8065 16.9435C22.3297 15.4666 21.5 13.4636 21.5 11.375Z', ' stroke-linejoin="round"'],
+  ['M17.018 39.5H35.018', ' stroke-linecap="round"'],
+  ['M48.518 44C48.518 44 50.768 44 53.018 48.5C53.018 48.5 60.164 37.25 66.518 35', ' stroke-linecap="round" stroke-linejoin="round"'],
+  ['M17.018 66.5H35.018', ' stroke-linecap="round"'],
+  ['M48.518 71C48.518 71 50.768 71 53.018 75.5C53.018 75.5 60.164 64.25 66.518 62', ' stroke-linecap="round" stroke-linejoin="round"'],
+];
+function quizIcon(tok) {
+  const paths = QUIZ_ICON_PATHS.map(([d, extra]) => `<path d="${d}" stroke-width="7" stroke="${hexOf(tok)}"${extra}/>`).join('');
+  const node = figma.createNodeFromSvg(
+    `<svg width="108" height="108" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><g transform="translate(12.24 5.5)">${paths}</g></svg>`,
+  );
+  node.name = 'hugeicons:quiz-03';
+  return node;
+}
+
 /** 질문 화면의 걸음 수 — SplashQuestion의 QUESTION_COUNT. */
 const QUESTION_COUNT = 6;
 
@@ -1709,10 +1762,18 @@ function quizArt() {
   box.resize(240, 120);
   box.fills = [];
   box.clipsContent = false;
-  const word = T('퀴즈', 'serif', 48, 60, 'eggshell', { ls: -1.92 });
-  box.appendChild(word);
-  word.x = (240 - word.width) / 2;
-  word.y = 120 - 60;
+  if (DRAFT) {
+    // 고침본 — 글자 대신 아이콘이 틀 한가운데에 선다. 말풍선 자리는 같다.
+    const art = quizIcon('eggshell');
+    box.appendChild(art);
+    art.x = (240 - 108) / 2;
+    art.y = (120 - 108) / 2;
+  } else {
+    const word = T('퀴즈', 'serif', 48, 60, 'eggshell', { ls: -1.92 });
+    box.appendChild(word);
+    word.x = (240 - word.width) / 2;
+    word.y = 120 - 60;
+  }
   for (const [x, y, glyph] of [[-64, -78, '?'], [0, -104, '!'], [64, -78, '✓']]) {
     const bubble = AL('HORIZONTAL', `말풍선 ${glyph}`, { h: 40, minW: 40, px: 12, main: 'CENTER', cross: 'CENTER', r: 10, fill: 'eggshell' });
     let text;
@@ -1756,9 +1817,10 @@ function buildIntro(name, slide) {
     fill(dot, i === index ? 'eggshell' : 'graphite');
     dots.appendChild(dot);
   });
-  const foot = add(s, AL('VERTICAL', '아래', { gap: 20, px: 20, pb: 36 + BOTTOM }), 'FILL');
-  const cta = last ? '하루서점 시작하기' : '다음';
-  add(foot, button(cta, cta, { h: 60, r: 9999, fill: 'ember', size: 16, lh: 24, color: 'eggshell' }), 'FILL');
+  // 고침본은 버튼이 장과 상관없이 '하루서점 시작하기'로 고정이고, 56에 아래 20.
+  const foot = add(s, AL('VERTICAL', '아래', { gap: 20, px: 20, pb: (DRAFT ? 20 : 36) + BOTTOM }), 'FILL');
+  const cta = DRAFT || last ? '하루서점 시작하기' : '다음';
+  add(foot, button(cta, cta, { h: DRAFT ? 56 : 60, r: 9999, fill: 'ember', size: 16, lh: 24, color: 'eggshell' }), 'FILL');
   const row = add(foot, AL('HORIZONTAL', '로그인 줄', { gap: 8, main: 'CENTER', cross: 'CENTER' }), 'FILL');
   row.appendChild(T('이미 계정이 있나요?', 'reg', 11, 17, 'ash'));
   row.appendChild(T('로그인하기', 'med', 11, 17, 'eggshell'));
@@ -1774,8 +1836,8 @@ function buildIntroLogin() {
   sheet.topRightRadius = 24;
   const head = add(sheet, AL('VERTICAL', '표제', { pb: 8 }), 'FILL');
   add(head, T('하루를 여는 알람이\n한 쪽의 책이 되도록', 'serif', 22, 35.2, 'ink', { ls: -0.44, align: 'CENTER' }), 'FILL');
-  add(sheet, button('데모계정으로 계속하기', '데모계정으로 계속하기', { h: 52, r: 9999, gap: 8, fill: 'ember', size: 16, lh: 24, color: 'eggshell', icon: icon('person-circle-outline', 18, 'eggshell') }), 'FILL');
-  add(sheet, button('회원가입', '회원가입', { h: 52, r: 9999, fill: 'eggshell', stroke: [BROWN10, 1], size: 16, lh: 24, color: 'ink' }), 'FILL');
+  add(sheet, button('데모계정으로 계속하기', '데모계정으로 계속하기', { h: DRAFT ? 56 : 52, r: 9999, gap: 8, fill: 'ember', size: 16, lh: 24, color: 'eggshell', icon: icon('person-circle-outline', 18, 'eggshell') }), 'FILL');
+  add(sheet, button('회원가입', '회원가입', { h: DRAFT ? 56 : 52, r: 9999, fill: 'eggshell', stroke: [BROWN10, 1], size: 16, lh: 24, color: 'ink' }), 'FILL');
   const terms = add(sheet, AL('VERTICAL', '약관', { pt: 8 }), 'FILL');
   add(terms, T('회원가입 시 이용약관 및 개인정보처리방침에 동의합니다.', 'reg', 11, 17, 'ash', { align: 'CENTER' }), 'FILL');
   abs(s, sheet, 0, 0);
@@ -1800,24 +1862,29 @@ function question(name, step, title, hintText, opts) {
   track.appendChild(rect('채움', trackW * (step / QUESTION_COUNT), 4, 'ink'));
 
   const left = !!o.left;
-  const block = add(s, AL('VERTICAL', '물음', { gap: 8, px: left ? 28 : 20, py: 48, cross: left ? 'MIN' : 'CENTER' }), 'FILL');
+  // 고침본은 물음을 진행 줄 바로 아래로 올린다(위 16, 아래 40).
+  const block = add(s, AL('VERTICAL', '물음', { gap: 8, px: left ? 28 : 20, pt: DRAFT ? 16 : 48, pb: DRAFT ? 40 : 48, cross: left ? 'MIN' : 'CENTER' }), 'FILL');
   add(block, T(title, 'med', 22, 26, 'ink', { ls: -0.44, align: left ? 'LEFT' : 'CENTER' }), 'FILL');
   if (hintText) add(block, T(hintText, 'med', 16, 24, 'smoke', { align: left ? 'LEFT' : 'CENTER' }), 'FILL');
 
   const body = add(s, AL('VERTICAL', '본문', { px: o.padded === false ? 0 : 20, clip: true }), 'FILL', 'FILL');
-  const foot = add(s, AL('VERTICAL', '아래', { p: 8, pb: 8 + BOTTOM }), 'FILL');
+  const foot = add(s, AL('VERTICAL', '아래', DRAFT ? { p: 20, pb: 20 + BOTTOM } : { p: 8, pb: 8 + BOTTOM }), 'FILL');
   const on = o.next !== false;
-  add(foot, button('다음', '다음', { h: 48, r: 9999, gap: 6, fill: on ? 'ember' : 'ash', size: 16, lh: 24, color: 'eggshell', after: chevron(14, 'eggshell', 'forward') }), 'FILL');
+  add(foot, button('다음', '다음', { h: DRAFT ? 56 : 48, r: 9999, gap: 6, fill: on ? 'ember' : 'ash', size: 16, lh: 24, color: 'eggshell', after: chevron(14, 'eggshell', 'forward') }), 'FILL');
   return { s, body };
 }
 
 /** 질문 1 — 분야. 셋을 고른 순간이다. */
 function buildQ1() {
-  const { s, body } = question('첫 실행 — 질문 1 분야', 1, '관심있는 책이 어떤 쪽인가요?', '최소 3개 이상의 분야를 골라주세요');
+  const { s, body } = DRAFT
+    ? question('첫 실행 — 질문 1 분야', 1, '관심있는 분야가 무엇인가요?', '최소 3개 이상 선택지를 골라주세요')
+    : question('첫 실행 — 질문 1 분야', 1, '관심있는 책이 어떤 쪽인가요?', '최소 3개 이상의 분야를 골라주세요');
   const grid = add(body, AL('HORIZONTAL', '격자', { gap: 12, gapY: 12, wrap: true }), 'FILL');
   const chipW = (W - 40 - 12) / 2;
-  const picked = ['고전', '철학·사상', '음악·예술'];
-  for (const name of DATA.fieldNames) {
+  // 고침본은 시안의 열네 분야(components/splash-draft/SplashFields).
+  const names = DRAFT ? DATA.draftFields : DATA.fieldNames;
+  const picked = DRAFT ? names.slice(0, 3) : ['고전', '철학·사상', '음악·예술'];
+  for (const name of names) {
     const on = picked.includes(name);
     const chip = AL('HORIZONTAL', `${name}${on ? ' (고름)' : ''}`, { w: chipW, h: 52, px: 12, main: 'CENTER', cross: 'CENTER', r: 9999, fill: on ? 'ink' : 'eggshell', stroke: [on ? 'ink' : 'stone', 1] });
     chip.appendChild(T(name, 'med', 16, 24, on ? 'eggshell' : 'smoke'));
@@ -1831,7 +1898,9 @@ function buildQ1() {
  * 보기와 물음은 SplashFlow의 것 그대로다. 안내 문구는 앱이 둘 다 '얼마나 자주 읽는지 궁금해요'를 쓴다.
  */
 function buildChoice(name, step, title, options, picked) {
-  const { s, body } = question(name, step, title, '얼마나 자주 읽는지 궁금해요');
+  // 고침본은 독서 빈도(질문 2)의 안내 문구만 시안대로 바꿨다.
+  const hintText = DRAFT && step === 2 ? '알맞은 길이의 책을 추천해드릴게요' : '얼마나 자주 읽는지 궁금해요';
+  const { s, body } = question(name, step, title, hintText);
   const list = add(body, AL('VERTICAL', '보기', { gap: 12 }), 'FILL');
   options.forEach((option, index) => {
     const on = index === picked;
@@ -1931,17 +2000,18 @@ function buildWelcome() {
   s.name = '첫 실행 — 홈 + 환영 창';
   dim(s, 0.55);
   const sheetH = Math.round(H * 0.57);
-  const sheet = AL('VERTICAL', '환영 창', { w: W, h: sheetH, px: 8, pb: 8 + BOTTOM, cross: 'CENTER', clip: true });
-  sheet.fills = [solid('ink'), solid('eggshell', 0.1)];
-  sheet.topLeftRadius = 20;
-  sheet.topRightRadius = 20;
+  // 고침본은 가입 시트와 같은 밝은 창 — 둘레 20, 모서리 24, 버튼 56.
+  const sheet = AL('VERTICAL', '환영 창', { w: W, h: sheetH, px: DRAFT ? 20 : 8, pb: (DRAFT ? 20 : 8) + BOTTOM, cross: 'CENTER', clip: true });
+  sheet.fills = DRAFT ? [solid('eggshell')] : [solid('ink'), solid('eggshell', 0.1)];
+  sheet.topLeftRadius = DRAFT ? 24 : 20;
+  sheet.topRightRadius = DRAFT ? 24 : 20;
   abs(s, sheet, 0, H - sheetH);
   const gripSlot = AL('VERTICAL', '손잡이 자리', { pt: 12 });
-  const grip = rect('손잡이', 40, 4, 'graphite');
+  const grip = rect('손잡이', 40, 4, DRAFT ? 'stone' : 'graphite');
   grip.cornerRadius = 2;
   gripSlot.appendChild(grip);
   sheet.appendChild(gripSlot);
-  const body = add(sheet, AL('VERTICAL', '본문', { gap: 16, px: 20, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FILL');
+  const body = add(sheet, AL('VERTICAL', '본문', { gap: 16, px: DRAFT ? 0 : 20, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FILL');
   body.appendChild(T('준비가 끝났어요', 'med', 13, 20, 'ember', { ls: 0.13 }));
   const badge = AL('HORIZONTAL', '배지', { w: 96, h: 96, r: 9999, fill: 'ember', main: 'CENTER', cross: 'CENTER' });
   const count = AL('HORIZONTAL', '10화', { gap: 2, cross: 'MAX' });
@@ -1949,12 +2019,12 @@ function buildWelcome() {
   count.appendChild(T('화', 'med', 16, 34, 'eggshell'));
   badge.appendChild(count);
   body.appendChild(badge);
-  const lines = T('회원님께는\n10화 무료보기를 제공합니다', 'med', 22, 35.2, 'eggshell', { ls: -0.44, align: 'CENTER' });
+  const lines = T('회원님께는\n10화 무료보기를 제공합니다', 'med', 22, 35.2, DRAFT ? 'ink' : 'eggshell', { ls: -0.44, align: 'CENTER' });
   const markFrom = lines.characters.indexOf('10화 무료보기');
   lines.setRangeFills(markFrom, markFrom + '10화 무료보기'.length, [solid('ember')]);
   add(body, lines, 'FILL');
   add(body, T('내일 아침, 알람이 첫 화를 열어 드릴게요.', 'reg', 13, 20, 'ash', { ls: 0.13, align: 'CENTER' }), 'FILL');
-  add(sheet, button('지금 바로 확인하기', '지금 바로 확인하기', { h: 48, r: 9999, fill: 'ember', size: 16, lh: 24, color: 'eggshell' }), 'FILL');
+  add(sheet, button('지금 바로 확인하기', '지금 바로 확인하기', { h: DRAFT ? 56 : 48, r: 9999, fill: 'ember', size: 16, lh: 24, color: 'eggshell' }), 'FILL');
   return s;
 }
 
@@ -2014,6 +2084,9 @@ function buildCardMode() {
  * 스크롤 보기. video가 참이면 유튜브가 있는 화 — 상태바부터 위 줄까지 검고, 그 바로 아래에
  * 재생기가 화면 폭을 다 쓰고 붙박인다(높이 200, 모서리 없음). 없으면 종이색 위 줄에 가는 선.
  */
+/** 재생기 밑 접기 띠의 높이 — CardDeckDetail의 foldBar. */
+const FOLD_BAR_H = 28;
+
 function buildScrollMode(video) {
   const pages = DATA.reader.scroll;
   const s = figma.createFrame();
@@ -2028,11 +2101,17 @@ function buildScrollMode(video) {
     const player = playerSlot(W);
     player.cornerRadius = 0;
     abs(s, player, 0, TOP + 48);
+    // 재생기 밑의 접기 띠 — 위 줄과 같은 검정, 가운데에 위로 향한 꺾쇠(접기).
+    const bar = AL('HORIZONTAL', '접기 띠', { w: W, h: FOLD_BAR_H, main: 'CENTER', cross: 'CENTER', fill: '!ink' });
+    const caret = chevron(14, WHITE, 'back');
+    caret.rotation = -90;
+    bar.appendChild(caret);
+    abs(s, bar, 0, TOP + 48 + PLAYER_H);
   } else {
     simpleHeader(s, TOP, BROWN100, true);
   }
   const column = AL('VERTICAL', '글', { w: W, px: 16, pt: 4, gap: 26 });
-  abs(s, column, 0, TOP + 48 + (video ? PLAYER_H : 0));
+  abs(s, column, 0, TOP + 48 + (video ? PLAYER_H + FOLD_BAR_H : 0));
   // 표지 덩이 — 스크롤 보기에서도 표지 장의 글이 맨 위에 선다(높이 260으로 못 박음).
   const coverBlock = add(column, AL('VERTICAL', '표지 덩이', { h: 260, gap: 16, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FIXED');
   const symbol = add(coverBlock, AL('VERTICAL', '마크 자리', { h: 72, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FIXED');
@@ -2084,13 +2163,33 @@ function buildBookTheme() {
   const sections = [
     // 견본은 그 배경의 종이색·글자색 자체라 다크에서도 바꾸지 않는다('!'). 어두운 판 위라 둘 다 가는 테를 두른다.
     { title: '책 배경 설정', icon: 'color-palette-outline', picked: 0, options: [['라이트', { swatch: ['!eggshell', '!ink', true] }], ['다크', { swatch: ['!ink', '!eggshell', true] }]] },
-    { title: '책 넘기기 설정', icon: 'book-outline', picked: 0, options: [['책 넘김 효과', { icon: 'book-outline' }], ['카드로 보기', { icon: 'albums-outline' }], ['스크롤 보기', { icon: 'swap-vertical' }]] },
     { title: '폰트 크기 설정', icon: 'text-outline', picked: 1, options: [['작게', { glyph: 15 }], ['중간', { glyph: 17 }], ['크게', { glyph: 22 }]] },
   ];
   sections.forEach((section, sectionIndex) => {
     settingSection(body, Object.assign({}, section, { options: section.options.map(([label, hint]) => [label, themeHint(hint)]) }), sectionIndex);
   });
+  // '책 넘기기 설정'은 걷었다(본문은 늘 스크롤 보기). 책 오픈 효과는 켜고 끄기라 토글 줄 하나다.
+  toggleSection(body, { title: '책 오픈 효과', icon: 'sparkles-outline', label: '책이 열리는 모션', on: true, right: themeHint({ icon: 'book-outline' }) }, sections.length);
   return s;
+}
+
+/**
+ * 켜고 끄기만 하는 설정 한 구역 — components/mypage/SettingSection의 SettingToggle.
+ * 머리와 판은 settingSection과 같고, 판 위 한 줄의 왼쪽은 토글, 글은 켜고 꺼도 늘 연하다.
+ */
+function toggleSection(body, section, sectionIndex) {
+  const block = add(body, AL('VERTICAL', section.title, { px: 20, gap: 12, pt: sectionIndex > 0 ? 32 : 0 }), 'FILL');
+  const head = add(block, AL('HORIZONTAL', '제목 줄', { gap: 8, cross: 'CENTER' }), 'FILL');
+  const circle = AL('HORIZONTAL', '그림', { w: 32, h: 32, r: 9999, main: 'CENTER', cross: 'CENTER', fill: 'taupe' });
+  circle.appendChild(icon(section.icon, 18, 'graphite'));
+  head.appendChild(circle);
+  head.appendChild(T(section.title, 'med', 16, null, 'ink', { ls: 0.16 }));
+  const panel = add(block, AL('VERTICAL', '판', { r: 10, fill: 'taupe', clip: true }), 'FILL');
+  const row = add(panel, AL('HORIZONTAL', `${section.label}${section.on ? ' (켜짐)' : ''}`, { gap: 12, px: 16, minH: 56, cross: 'CENTER' }), 'FILL');
+  row.appendChild(toggle(section.on));
+  add(row, T(section.label, 'reg', 15, 24, 'smoke', { ls: 0.15 }), 'FILL');
+  if (section.right) row.appendChild(section.right);
+  return block;
 }
 
 /**
@@ -2116,31 +2215,329 @@ function settingSection(body, section, sectionIndex) {
   return block;
 }
 
+// ── 오늘의 독서 — components/reading(첫페이지장부터 광고까지) ─────────────────
+/** 화면 아래에서 올라오는 판 — 위 두 귀만 둥글다. 다 그린 뒤 settle로 바닥에 붙인다. */
+function bottomSheet(s, name, p) {
+  const sheet = AL('VERTICAL', name, Object.assign({ w: W }, p));
+  sheet.topLeftRadius = p.radius;
+  sheet.topRightRadius = p.radius;
+  abs(s, sheet, 0, 0);
+  return sheet;
+}
+const settle = (sheet) => {
+  sheet.y = H - sheet.height;
+};
+/** 글에 흘린 흰빛 — RN의 textShadow(흰 45%, 반경 24). */
+const GLOW = [{ type: 'DROP_SHADOW', color: { r: 1, g: 1, b: 1, a: 0.45 }, offset: { x: 0, y: 0 }, radius: 24, spread: 0, visible: true, blendMode: 'NORMAL' }];
+/** 표지 그림자 — 시안의 Elevation 3. */
+const LIFT = [
+  { type: 'DROP_SHADOW', color: { r: 0, g: 0, b: 0, a: 0.15 }, offset: { x: 0, y: 4 }, radius: 8, spread: 3, visible: true, blendMode: 'NORMAL' },
+  { type: 'DROP_SHADOW', color: { r: 0, g: 0, b: 0, a: 0.3 }, offset: { x: 0, y: 1 }, radius: 3, spread: 0, visible: true, blendMode: 'NORMAL' },
+];
+/** 이모지가 이 PC의 서체에 없으면 빼고 쓴다. */
+function emojiText(withEmoji, without, font, size, lh, tok, o) {
+  try {
+    return T(withEmoji, font, size, lh, tok, o);
+  } catch (error) {
+    return T(without, font, size, lh, tok, o);
+  }
+}
+/** 분야·쪽수 칩 줄 — 다음 책 권유·구매 안내가 같은 모양이다. */
+function metaChips(parent, book, chipFill, chipInk) {
+  const meta = add(parent, AL('HORIZONTAL', '분야·쪽수', { gap: 4, main: 'CENTER', wrap: true, gapY: 4 }), 'FILL');
+  for (const label of book.fields.slice(0, 3).concat(book.pages ? [book.pages] : [])) {
+    const chip = AL('HORIZONTAL', label, { px: 8, py: 4, fill: chipFill, r: 4 });
+    chip.appendChild(T(label, 'reg', 11, 17, chipInk));
+    meta.appendChild(chip);
+  }
+  return meta;
+}
+
+/** 첫페이지장 — components/reading/ReadingIntro. 그 화의 사진에 검정 50%, 가운데에 마크·책 이름·표제·부제. */
+function buildReadingIntro() {
+  const s = screen('오늘의 독서 — 첫페이지장', 'ink');
+  abs(s, rect('그 화의 사진 (앱에서는 그 화의 표지 사진)', W, H, '!graphite'), 0, 0);
+  dim(s, 0.5);
+  const body = AL('VERTICAL', '본문', { w: W, h: H, px: 28, pt: TOP + 32, pb: 32 + BOTTOM, gap: 16, main: 'CENTER', cross: 'CENTER' });
+  abs(s, body, 0, 0);
+  const symbol = add(body, AL('VERTICAL', '마크 자리', { h: 72, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FIXED');
+  symbol.appendChild(coverMark(SEL.design.mark, 36, WHITE));
+  const chip = AL('HORIZONTAL', '책 이름', { px: 8, py: 4, r: 4, fill: WHITE, fillOp: 0.2 });
+  chip.appendChild(T(SEL.store.title, 'serif', 13, null, WHITE, { ls: -0.26 }));
+  body.appendChild(chip);
+  add(body, T(DATA.lesson.title, 'serif', 24, 34, WHITE, { ls: -0.48, align: 'CENTER' }), 'FILL');
+  if (DATA.lesson.subtitle) add(body, T(DATA.lesson.subtitle, 'serifR', 16, 26, WHITE, { ls: -0.32, align: 'CENTER' }), 'FILL');
+  return s;
+}
+
+/**
+ * 본문을 끝까지 내린 순간 — 스크롤 보기(유튜브 있음)의 끝에 떠오르는 퀴즈 버튼(CardDeckDetail의 finishCta).
+ * 마지막 문단과 버튼 사이는 100(FINISH_BREATH)이다.
+ */
+function buildScrollEnd() {
+  const s = buildScrollMode(true);
+  s.name = '오늘의 독서 — 본문 끝 + 퀴즈 버튼';
+  const column = s.children.find((n) => n.name === '글');
+  const pillTop = H - BOTTOM - 20 - 80;
+  // 끝까지 내렸으므로 글의 끝이 버튼 위 100에 닿는다. 위로 넘친 것은 재생기 뒤로 가려진다.
+  const playerBottom = TOP + 48 + PLAYER_H + FOLD_BAR_H;
+  column.y = Math.min(playerBottom, pillTop - 100 - column.height);
+  // 위 줄·재생기·접기 띠를 글 위로 다시 올린다.
+  for (const name of ['상태바', '위 줄', '유튜브 재생기 자리', '접기 띠']) {
+    const node = s.children.find((n) => n.name === name);
+    if (node) s.appendChild(node);
+  }
+  const pill = AL('HORIZONTAL', '읽기 완료하고 퀴즈 풀기', { w: W - 32, h: 80, gap: 4, px: 20, py: 10, cross: 'CENTER', r: 9999, fill: '!ink' });
+  const texts = add(pill, AL('VERTICAL', '글', { gap: 2, px: 8, pb: 8 }), 'FILL');
+  const row = AL('HORIZONTAL', '읽기 진행', { gap: 4, cross: 'CENTER' });
+  texts.appendChild(row);
+  row.appendChild(T('읽기 진행', 'reg', 12, 24, WHITE, { op: 0.7 }));
+  row.appendChild(T('100%', 'med', 14, 24, WHITE));
+  texts.appendChild(T('읽기 완료하고 퀴즈 풀기', 'med', 18, 24, WHITE));
+  const arrow = AL('HORIZONTAL', '화살표', { w: 40, h: 40, r: 9999, main: 'CENTER', cross: 'CENTER', fill: '!ember' });
+  arrow.appendChild(chevron(26, WHITE, 'forward'));
+  pill.appendChild(arrow);
+  abs(s, pill, 16, pillTop);
+  return s;
+}
+
+/**
+ * 오늘의 퀴즈 — components/quiz/TodayQuiz(검은 화면). pick이 null이면 고르기 전이고, 고르면 아래에서
+ * 주황 판이 올라와 맞고 틀림과 해설을 알린다. 마지막 문제의 버튼은 '완료'.
+ */
+function buildTodayQuiz(name, index, pick) {
+  const quiz = QUIZZES[index];
+  const answered = pick != null;
+  const correct = pick === quiz.answer;
+  const last = index === QUIZZES.length - 1;
+  const s = screen(name, 'ink');
+  const head = add(s, AL('HORIZONTAL', '위 줄', { w: W, h: 60 + TOP, pt: TOP, px: 12, cross: 'CENTER' }), 'FILL', 'FIXED');
+  const back = AL('HORIZONTAL', '뒤로', { w: 40, h: 40, main: 'CENTER', cross: 'CENTER' });
+  back.appendChild(chevron(24, 'eggshell', 'back'));
+  head.appendChild(back);
+  const title = T('오늘의 퀴즈', 'med', 18, 25, 'eggshell', { align: 'CENTER' });
+  abs(head, title, 56, TOP + 17.5);
+  fixedWidth(title, W - 112);
+
+  const body = scrollBody(s, { gap: 16, px: 20, pb: 24 });
+  const box = add(body, AL('VERTICAL', '물음', { py: 20 }), 'FILL');
+  add(box, T(`Q. ${quiz.question}`, 'med', 20, 24, 'eggshell', { ls: 0.15, align: 'CENTER' }), 'FILL');
+  // 푼 만큼 주황 — 앞 문제는 다 풀었고, 이 문제는 골랐을 때만.
+  const dots = add(body, AL('HORIZONTAL', '진행 점', { gap: 8, main: 'CENTER' }), 'FILL');
+  QUIZZES.forEach((_, i) => {
+    const done = i < index || (i === index && answered);
+    const dot = figma.createEllipse();
+    dot.name = done ? '점(푼 것)' : '점';
+    dot.resize(6, 6);
+    fill(dot, done ? 'ember' : 'smoke');
+    dots.appendChild(dot);
+  });
+  const choices = add(body, AL('VERTICAL', '보기', { gap: 8 }), 'FILL');
+  quiz.choices.forEach((choice, i) => {
+    const no = i + 1;
+    const isAnswer = answered && no === quiz.answer;
+    const isMine = answered && no === pick && !correct;
+    const row = add(choices, AL('HORIZONTAL', `${no}${isAnswer ? ' (정답)' : isMine ? ' (내 답)' : ''}`, { gap: 8, p: 12, r: 10, cross: 'CENTER', fill: isAnswer ? 'ember' : isMine ? '#0447FF' : WHITE, fillOp: isAnswer || isMine ? undefined : 0.15 }), 'FILL');
+    row.appendChild(T(String(no), 'med', 13, 21, 'eggshell', { ls: 0.13 }));
+    add(row, T(choice, 'med', 13, 21, 'eggshell', { ls: 0.13 }), 'FILL');
+    if (isAnswer) row.appendChild(T('정답', 'med', 12, 21, 'eggshell'));
+    if (isMine) row.appendChild(T('내 답', 'med', 12, 21, 'eggshell'));
+  });
+
+  const label = last ? '완료' : '다음';
+  if (!answered) {
+    const foot = add(s, AL('VERTICAL', '아래', { p: 20, pb: 20 + BOTTOM }), 'FILL');
+    add(foot, button(label, label, { h: 52, r: 9999, fill: 'graphite', size: 16, lh: 24, color: 'smoke' }), 'FILL');
+    return s;
+  }
+  const sheet = bottomSheet(s, '맞고 틀림', { radius: 20, gap: 20, pt: 32, px: 20, pb: 20 + BOTTOM, fill: 'ember' });
+  const texts = add(sheet, AL('VERTICAL', '글', { gap: 8 }), 'FILL');
+  add(texts, T(correct ? '정답이에요!' : '아쉬워요...!', 'med', 20, 22, 'eggshell', { ls: 0.14 }), 'FILL');
+  add(texts, T(quiz.explanation, 'med', 14, 22, 'eggshell', { ls: 0.14 }), 'FILL');
+  add(sheet, button(label, label, { h: 52, r: 9999, fill: 'eggshell', size: 16, lh: 24, color: 'ink' }), 'FILL');
+  settle(sheet);
+  return s;
+}
+
+/**
+ * 오늘의 독서 완료 — components/reading/StudyComplete. 인용문과 출처, 퀴즈 정답 수, 연속 독서 칩,
+ * 아래 버튼 둘. 다 떠오른 뒤의 모습이다. 마지막 화면 '다음 화 읽기'가 '마지막 화 입니다'(눌리지 않음).
+ */
+function buildStudyComplete(name, isLast) {
+  const s = screen(name, 'ink');
+  s.itemSpacing = 32;
+  s.paddingLeft = 20;
+  s.paddingRight = 20;
+  s.paddingTop = TOP + 20;
+  s.paddingBottom = BOTTOM + 20;
+  const body = add(s, AL('VERTICAL', '본문', { gap: 32, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FILL');
+  const quote = add(body, AL('VERTICAL', '인용문', { gap: 8, px: 20, cross: 'CENTER' }), 'FILL');
+  add(quote, T(`“${DATA.quote.ko}”`, 'serif', 22, 34, 'eggshell', { ls: -0.44, align: 'CENTER' }), 'FILL');
+  add(quote, T(`『${DATA.quote.work}』`, 'med', 16, 24, 'ash', { align: 'CENTER' }), 'FILL');
+  const score = AL('VERTICAL', '오늘의 퀴즈 정답', { cross: 'CENTER' });
+  body.appendChild(score);
+  const row = AL('HORIZONTAL', '맞힌 수', { gap: 10, cross: 'CENTER' });
+  score.appendChild(row);
+  const right = QUIZZES.length - 1;
+  for (const [text, size, lh] of [[String(right), 64, 76], ['/', 40, 48], [String(QUIZZES.length), 64, 76]]) {
+    const t = T(text, 'med', size, lh, 'eggshell');
+    t.effects = GLOW;
+    row.appendChild(t);
+  }
+  score.appendChild(T('오늘의 퀴즈 정답', 'med', 18, 25, 'eggshell'));
+  const chip = AL('HORIZONTAL', '연속 독서', { px: 16, py: 8, r: 9999, fill: 'graphite' });
+  chip.appendChild(emojiText(`🔥 ${DATA.streakDays}일째 독서중`, `${DATA.streakDays}일째 독서중`, 'med', 14, null, 'eggshell', { ls: 0.14 }));
+  body.appendChild(chip);
+  const buttons = add(s, AL('VERTICAL', '아래', { gap: 16, cross: 'CENTER' }), 'FILL');
+  add(buttons, button('오늘 독서 완료하기', '오늘 독서 완료하기', { h: 56, r: 9999, fill: 'eggshell', size: 16, ls: 0.16, color: 'ink' }), 'FILL');
+  const next = AL('HORIZONTAL', isLast ? '마지막 화 입니다 (눌리지 않음)' : '다음 화 읽기', { py: 8 });
+  next.appendChild(T(isLast ? '마지막 화 입니다' : '다음 화 읽기', 'med', 14, null, isLast ? 'smoke' : 'ash', { ls: 0.14 }));
+  buttons.appendChild(next);
+  return s;
+}
+
+/** 구매 안내 — components/lesson/BookPurchaseNotice. 무료 편을 다 읽고 '다음 화 읽기'를 누르면 아래에서 올라온다. */
+function buildPurchaseSheet() {
+  const s = buildStudyComplete('오늘의 독서 — 구매 안내', false);
+  dim(s, 0.5);
+  const sheet = bottomSheet(s, '구매 안내', { radius: 24, pt: 20, px: 20, pb: 20 + BOTTOM, cross: 'CENTER', fill: 'eggshell' });
+  const closeRow = add(sheet, AL('HORIZONTAL', '닫기 줄', { main: 'MAX' }), 'FILL');
+  const close = AL('HORIZONTAL', '닫기', { w: 40, h: 40, main: 'CENTER', cross: 'CENTER' });
+  close.appendChild(icon('close-outline', 24, 'ink'));
+  closeRow.appendChild(close);
+  const body = add(sheet, AL('VERTICAL', '본문', { gap: 28, pb: 32, cross: 'CENTER' }), 'FILL');
+  const heading = add(body, AL('VERTICAL', '물음', { gap: 4 }), 'FILL');
+  add(heading, T('뒷 내용이 궁금하신가요?', 'serif', 22, 35.2, 'ink', { ls: -0.44, align: 'CENTER' }), 'FILL');
+  add(heading, T(`이 책에는 아직 잠긴 ${DATA.lockedCount}편이 남아 있어요`, 'reg', 13, 20, 'smoke', { ls: 0.13, align: 'CENTER' }), 'FILL');
+  const art = cover(SEL.design, 120, 4);
+  art.effects = LIFT;
+  body.appendChild(art);
+  const info = add(body, AL('VERTICAL', '책', { gap: 16, cross: 'CENTER' }), 'FILL');
+  const titles = add(info, AL('VERTICAL', '제목', { gap: 4, cross: 'CENTER' }), 'FILL');
+  add(titles, T(`『${SEL.title}』`, 'med', 16, 24, 'ink', { align: 'CENTER' }), 'FILL');
+  add(titles, T(SEL.author, 'reg', 13, 20, 'smoke', { ls: 0.13, align: 'CENTER' }), 'FILL');
+  metaChips(info, SEL, 'stone', 'ink');
+  const price = SEL.price ? `${SEL.price.toLocaleString('ko-KR')}원 · 책 구매하기` : '책 보러 가기';
+  add(sheet, button('구매하기', price, { h: 60, r: 9999, fill: 'ember', size: 18, lh: 25, color: 'eggshell' }), 'FILL');
+  settle(sheet);
+  return s;
+}
+
+/**
+ * 광고_다음책 — components/reading/NextBookAd. 바탕은 그 책 표지의 두 색(잉크 → 종이) 그라데이션에
+ * 검정 50%. 권하는 책은 읽을 수 있는 책 가운데 지금 읽는 책이 아닌 첫 권으로 가정했다(앱은 무작위).
+ */
+function buildNextBookAd() {
+  const book = DATA.nextBook;
+  const s = screen('오늘의 독서 — 다음 책 권유', 'ink');
+  const backdrop = rect('표지 두 색', W, H, book.design.ink);
+  backdrop.fills = [
+    {
+      type: 'GRADIENT_LINEAR',
+      gradientTransform: [[0, 1, 0], [-1, 0, 1]],
+      gradientStops: [
+        { position: 0, color: Object.assign(rgb(book.design.ink), { a: 1 }) },
+        { position: 1, color: Object.assign(rgb(book.design.paper), { a: 1 }) },
+      ],
+    },
+  ];
+  abs(s, backdrop, 0, 0);
+  dim(s, 0.5);
+  const content = AL('VERTICAL', '내용', { w: W, h: H, px: 20, pt: TOP + 20, pb: BOTTOM + 20 });
+  abs(s, content, 0, 0);
+  const body = add(content, AL('VERTICAL', '본문', { gap: 32, main: 'CENTER', cross: 'CENTER' }), 'FILL', 'FILL');
+  const heading = add(body, AL('VERTICAL', '권하는 말', { gap: 8, px: 20, cross: 'CENTER' }), 'FILL');
+  add(heading, T('다음에 이 책을 만나볼까요?', 'serif', 22, 34, 'eggshell', { ls: -0.44, align: 'CENTER' }), 'FILL');
+  if (book.promo) add(heading, T(book.promo, 'med', 16, 24, 'ash', { align: 'CENTER' }), 'FILL');
+  const art = cover(book.design, 120, 4);
+  art.effects = LIFT;
+  body.appendChild(art);
+  const info = add(body, AL('VERTICAL', '책', { gap: 16, cross: 'CENTER' }), 'FILL');
+  const titles = add(info, AL('VERTICAL', '제목', { gap: 4, cross: 'CENTER' }), 'FILL');
+  add(titles, T(`『${book.title}』`, 'med', 16, 24, 'eggshell', { align: 'CENTER' }), 'FILL');
+  add(titles, T(book.author, 'reg', 13, 20, 'eggshell', { ls: 0.13, align: 'CENTER' }), 'FILL');
+  metaChips(info, book, 'graphite', 'eggshell');
+  const buttons = add(content, AL('VERTICAL', '아래', { gap: 16 }), 'FILL');
+  add(buttons, button('내일은 이 책으로 읽을래요', '내일은 이 책으로 읽을래요', { h: 56, r: 9999, fill: 'eggshell', size: 16, ls: 0.16, color: 'ink' }), 'FILL');
+  add(buttons, button('아니오, 괜찮아요', '아니오, 괜찮아요', { h: 56, r: 9999, stroke: ['stone', 1], size: 16, ls: 0.16, color: 'eggshell' }), 'FILL');
+  return s;
+}
+
+/**
+ * 광고_구글애즈 — components/reading/GoogleAdScreen. 광고 자리는 예시 그림(assets/images/ads/sample-google-ad.png)이
+ * 서는 자리만 비워 둔다. ready가 거짓이면 10초를 세는 중(숫자만, 눌리지 않음), 참이면 '홈으로 돌아가기 →'.
+ */
+function buildGoogleAd(ready) {
+  const s = screen(ready ? '오늘의 독서 — 광고 (다 센 뒤)' : '오늘의 독서 — 광고 (세는 중)', 'ink');
+  const top = add(s, AL('VERTICAL', '위', { pt: TOP + 40, pb: 32, px: 20, cross: 'CENTER' }), 'FILL');
+  add(top, T('시청해 주신 광고는 더 좋은 앱을\n만드는 데 도움이 됩니다.', 'med', 20, 32, 'eggshell', { ls: -0.8, align: 'CENTER' }), 'FILL');
+  const ad = AL('VERTICAL', '광고 자리', { w: W, h: Math.round(W / (360 / 375)), gap: 8, main: 'CENTER', cross: 'CENTER', fill: '!stone' });
+  ad.appendChild(T('광고 (예시 그림 자리)', 'med', 14, 20, '!smoke'));
+  ad.appendChild(T('assets/images/ads/sample-google-ad.png', 'reg', 11, 17, '!ash'));
+  add(s, ad, 'FILL', 'FIXED');
+  const bottom = add(s, AL('VERTICAL', '아래', { gap: 16, pt: 20, px: 20, pb: 20 + BOTTOM, main: 'MAX', cross: 'CENTER' }), 'FILL', 'FILL');
+  add(
+    bottom,
+    button(ready ? '홈으로 돌아가기' : '10초 세는 중', ready ? '홈으로 돌아가기' : '10', { h: 56, r: 9999, gap: 6, fill: 'eggshell', size: 16, ls: 0.16, color: 'ink', after: ready ? icon('arrow-forward', 18, 'ink') : null }),
+    'FILL',
+  );
+  const remove = AL('HORIZONTAL', '광고 제거하기', { py: 8 });
+  remove.appendChild(T('광고 제거하기', 'med', 14, null, 'ember', { ls: 0.14 }));
+  bottom.appendChild(remove);
+  return s;
+}
+
 /** 서점 외 전체 — 메뉴의 '서점 빼고 전부 내보내기'. 설정(미리보기 모음)은 출시 빌드에서 숨기므로 뺀다. */
 const INTRO_SCREENS = INTRO_SLIDES.map((_, i) => () => buildIntro(null, i));
 const SPLASH_SCREENS = [...INTRO_SCREENS, buildIntroLogin, buildQ1, buildFrequency, buildPurpose, buildLoading, buildQ2, buildQ3, buildQ4];
 /** 마이페이지 계열 — 전부 다크다. 책 보기 > 배경음악 > TTS 순서. */
-const MYPAGE_SCREENS = [buildMyPage, buildPlanned, buildFinished, buildBookTheme, buildBgm, buildTts, buildPermissions, buildAccount, () => buildReport('리포트'), buildReportMenu, buildWrongQuizzes, buildBookmarks, buildNotes].map(dark);
+const buildPlannedReport = () => buildReport('서재 책 상세 — 읽을 예정인 책', { title: '읽을 예정인 책', book: DATA.shelf[0] });
+const MYPAGE_SCREENS = [buildMyPage, buildPlanned, buildFinished, buildBookTheme, buildBgm, buildTts, buildPermissions, buildAccount, () => buildReport('리포트'), buildPlannedReport, buildReportMenu, buildWrongQuizzes, buildBookmarks, buildNotes].map(dark);
+/** 첫 실행 고침본 — 설정의 미리보기가 쓰는 판(components/splash-draft). */
+const DRAFT_SPLASH_SCREENS = [...INTRO_SCREENS, buildIntroLogin, buildQ1, buildFrequency, buildPurpose, buildLoading, buildQ2, buildQ3, buildQ4, buildWelcome].map(draft);
+/** 오늘의 독서 — 홈의 읽기 버튼으로 책이 펼쳐진 뒤 지나는 차례(components/reading/ReadingFlow). */
+const LAST_QUIZ = QUIZZES.length - 1;
+const READING_SCREENS = [
+  buildReadingIntro,
+  () => {
+    const s = buildScrollMode(true);
+    s.name = '오늘의 독서 — 본문 (유튜브 있음)';
+    return s;
+  },
+  buildScrollEnd,
+  () => buildTodayQuiz('오늘의 퀴즈 — 고르기 전', 0, null),
+  () => buildTodayQuiz('오늘의 퀴즈 — 틀렸을 때', WRONG_INDEX, WRONG_PICK),
+  () => buildTodayQuiz('오늘의 퀴즈 — 마지막 문제 맞혔을 때', LAST_QUIZ, QUIZZES[LAST_QUIZ].answer),
+  () => buildStudyComplete('오늘의 독서 — 독서 완료', false),
+  () => buildStudyComplete('오늘의 독서 — 독서 완료 (마지막 화)', true),
+  buildPurchaseSheet,
+  buildNextBookAd,
+  () => buildGoogleAd(false),
+  () => buildGoogleAd(true),
+];
 const SCROLL_SCREENS = [() => buildScrollMode(true), () => buildScrollMode(false)];
 
+/**
+ * 지금 앱에 있는 화면 전부(서점 빼고). 책 넘김 효과·카드로 보기는 앱에서 걷어 내어 뺐다 —
+ * 본문은 이제 늘 스크롤 보기이고, 퀴즈·리포트·구매는 '오늘의 독서' 줄의 새 화면들이 대신한다.
+ */
 const ALL_BUT_STORE_GROUPS = [
-  ['첫 실행', [...SPLASH_SCREENS, buildWelcome]],
+  ['첫 실행 — 지금 앱', [...SPLASH_SCREENS, buildWelcome]],
+  ['첫 실행 — 고침본 (설정의 미리보기)', DRAFT_SPLASH_SCREENS],
   ['홈 · 알람 · 목차', [buildHome, dark(buildAlarm), dark(buildToc)]],
-  // 감상 노트 창은 버튼을 화면에서 잠시 뺀 동안 들어갈 길이 없어 그리지 않는다.
-  ['읽기 — 책 넘김 효과', [buildDeckCover, () => deckDesc('읽기 — 본문 장'), buildDeckOutro, () => deckDesc('읽기 — 본문 장 (다크)', true)]],
-  ['읽기 — 카드로 보기 · 스크롤 보기', [buildCardMode, ...SCROLL_SCREENS]],
-  ['퀴즈 · 리포트 · 구매', [() => buildQuiz('퀴즈 — 고르기 전', 0, null), () => buildQuiz('퀴즈 — 틀렸을 때', WRONG_INDEX, WRONG_PICK), buildStudyReport, buildPurchase]],
+  ['오늘의 독서 — 첫페이지장부터 광고까지', READING_SCREENS],
+  ['읽기 — 스크롤 보기 (유튜브 없음)', [() => buildScrollMode(false)]],
   ['마이페이지', MYPAGE_SCREENS],
 ];
 
-/** 지난번 내보낸 뒤로 바뀐 화면만 — 메뉴의 '바뀐 화면만 내보내기'. */
+/** 지난번(10월 10일) 내보낸 뒤로 바뀐 화면만 — 메뉴의 '바뀐 화면만 내보내기'. */
 const UPDATED_GROUPS = [
-  ['첫 실행 — 인트로 세 장 · 질문 여섯', SPLASH_SCREENS],
-  ['다크 — 알림 · 목차(성적 현황)', [dark(buildAlarm), dark(buildToc)]],
-  ['다크 — 마이페이지 (TTS 설정 추가, 배경음악 미리듣기)', MYPAGE_SCREENS],
-  ['읽기 — 감상 노트 버튼 뺌 · 스크롤 보기', [buildDeckCover, () => deckDesc('읽기 — 본문 장'), buildCardMode, ...SCROLL_SCREENS]],
+  ['오늘의 독서 — 첫페이지장부터 광고까지 (새 화면)', READING_SCREENS],
+  ['첫 실행 — 고침본 (설정의 미리보기)', DRAFT_SPLASH_SCREENS],
+  ['마이페이지 — 책 보기 설정 · 토글 · 서재 책 상세', [dark(buildBookTheme), dark(buildPermissions), dark(buildPlannedReport)]],
+  ['알람 — 토글', [dark(buildAlarm)]],
 ];
-const UPDATED_SECTION_NAME = '앱 구현 — 바뀐 화면 (코드에서 내보냄)';
+const UPDATED_SECTION_NAME = '앱 구현 — 바뀐 화면 10월 16일 (코드에서 내보냄)';
 const ALL_BUT_STORE_SECTION_NAME = '앱 구현 — 서점 외 전체 (코드에서 내보냄)';
 
 // ── 내보내기 ───────────────────────────────────────────────────────────────
@@ -2156,7 +2553,7 @@ const GROUPS = [
   ['하루 서점', BOOKSTORE_SCREENS],
 ];
 
-const SECTION_NAME = '앱 구현 — 홈·서점·마이페이지 (코드에서 내보냄)';
+const SECTION_NAME = '앱 구현 — 전체 화면 10월 16일 (코드에서 내보냄)';
 /** 하루 서점만 따로 내보낼 때(메뉴의 둘째 명령). */
 const BOOKSTORE_GROUPS = [['하루 서점', BOOKSTORE_SCREENS]];
 const BOOKSTORE_SECTION_NAME = '앱 구현 — 하루 서점 (코드에서 내보냄)';
