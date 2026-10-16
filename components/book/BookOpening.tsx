@@ -74,7 +74,7 @@ const FLAT_DEG = 0;
  *   펴기     550  ~ 1010
  *   열림     1010 ~ 2010   — 1초. 카메라가 천천히 다가감(DOLLY)
  *   멈춤     2010 ~ 2210   — 다 열린 책을 잠깐 보여 준다
- *   넘김     2210 ~ 3060   — 속지 넉 장
+ *   넘김     2210 ~ 3060   — 속지 여덟 장
  *   폭발     2930 ~ 3390
  *   다가옴   2980 ~ 4280   — 아주 천천히 다가오다 끝에서 확 빨라진다(rushEase)
  *   장막     3980 ~ 4280   — 0.3초 만에 화면을 덮는다
@@ -89,8 +89,8 @@ const OPEN_START = 1010;
 const OPEN_END = OPEN_START + OPEN_MS;
 /** 다 열린 뒤 멈추는 시간. */
 const HOLD_MS = 200;
-/** 속지 넉 장이 다 넘어가는 데 걸리는 시간(FLUTTER_* 로 셈한 값). */
-const FLUTTER_MS = 160 * 3 + 370;
+/** 속지가 다 넘어가는 데 걸리는 시간 — 장 수를 늘려도 이 길이는 그대로 둔다(FLUTTER_* 참고). */
+const FLUTTER_MS = 850;
 const FLASH_START = OPEN_END + HOLD_MS + FLUTTER_MS - 130;
 const ZOOM_START = FLASH_START + 50;
 /** 다가오는 시간. */
@@ -138,15 +138,18 @@ const fallEase = Easing.bezierFn(0.45, 0.15, 0.75, 0.4);
 const PAGE_LIT = TILT;
 
 /**
- * 넘어가는 속지 — 표지가 닿은 뒤 넉 장이 시간차로 촤르르 넘어간다.
- * 한 장은 FLUTTER_EACH 동안 넘어가고, 다음 장은 FLUTTER_GAP 뒤에 출발한다.
- * 바닥에 겹쳐 눕도록 조금씩 덜 넘긴다(179° → 176°).
+ * 넘어가는 속지 — 다 열리고 멈춘 뒤 여덟 장이 시간차로 좌라락 넘어간다.
+ *
+ * 처음엔 넉 장(한 장 0.37초, 간격 0.16초)이었는데, 같은 시간(FLUTTER_MS) 안에 여덟 장으로 늘렸다 —
+ * 한 장이 더 빨리(0.28초) 넘어가고 다음 장이 더 바짝(약 0.08초) 따라붙어 손가락으로 훑는 맛이 난다.
+ * 간격은 장 수와 전체 길이에서 셈한다. 바닥에 겹쳐 눕도록 장마다 조금씩 덜 넘긴다(179° → 172°).
  */
-const FLUTTER_COUNT = 4;
+const FLUTTER_COUNT = 8;
+const FLUTTER_EACH_MS = 280;
 /** 다 열리고 HOLD_MS 멈춘 뒤에 첫 장이 출발한다. */
 const FLUTTER_FROM = at(OPEN_END + HOLD_MS);
-const FLUTTER_EACH = at(370);
-const FLUTTER_GAP = at(160);
+const FLUTTER_EACH = at(FLUTTER_EACH_MS);
+const FLUTTER_GAP = at((FLUTTER_MS - FLUTTER_EACH_MS) / (FLUTTER_COUNT - 1));
 const flutterEase = Easing.bezierFn(0.45, 0.05, 0.4, 1);
 
 /** 예고에서 책이 떠오르는 높이와 커지는 정도. */
@@ -169,9 +172,10 @@ const ZOOM_TO = 10;
  * 처음엔 배율 자체에 ease in(cubic)을 걸었는데 '똑같이 다가온다'는 말을 들었다. 눈은 크기를
  * 비율로 느낀다 — 1→2배와 3→6배가 같은 만큼 커진 것으로 보인다. 그래서 배율에 곧장 곡선을 걸면
  * 앞에서 이미 빠르게 커진 것처럼 보이고 끝의 가속이 묻힌다. 배율의 로그(비율)에 곡선을 걸고,
- * 곡선도 4제곱으로 세게 눌러 앞 절반은 거의 기어 오고 마지막에 한꺼번에 몰아친다.
+ * 곡선도 세게 눌러 앞은 거의 기어 오고 마지막에 한꺼번에 몰아친다. 4제곱에서도 더 느리게
+ * 시작해 확 빨라지면 좋겠다고 해서 6제곱으로 올렸다 — 앞 70%의 시간 동안 1.3배도 안 커진다.
  */
-const rushEase = Easing.in(Easing.poly(4));
+const rushEase = Easing.in(Easing.poly(6));
 
 /** 폭발 때 한가운데 흰 빛이 커지는 배율. */
 const FLASH_GROW = 1.4;
