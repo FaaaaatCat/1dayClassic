@@ -73,11 +73,14 @@ class AlarmActivity : ComponentActivity() {
     )
 
     findViewById<Button>(R.id.button_snooze).setOnClickListener {
+      AlarmRingingService.isRinging = false
       startService(AlarmRingingService.snoozeIntent(this))
       finish()
     }
 
     findViewById<Button>(R.id.button_dismiss).setOnClickListener {
+      // 서비스보다 먼저 내린다 — 곧 열 오늘의 공부가 알람 화면으로 되돌아오지 않게(isRinging 주석 참고).
+      AlarmRingingService.isRinging = false
       startService(AlarmRingingService.dismissIntent(this))
       // 갤럭시 기본 알람과의 유일한 차이 — 끄면 오늘의 공부로 이동한다.
       // 잠겨 있으면 잠금 위에 그대로 띄운다(알라미와 같은 경험).

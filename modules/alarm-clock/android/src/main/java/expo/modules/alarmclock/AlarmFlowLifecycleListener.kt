@@ -21,7 +21,31 @@ class AlarmFlowLifecycleListener : ReactActivityLifecycleListener {
 
   override fun onCreate(activity: Activity?, savedInstanceState: Bundle?) {
     hostActivity = activity
-    activity?.let { enterIfLockFlow(it, it.intent) }
+    activity?.let {
+      enterIfLockFlow(it, it.intent)
+      showAlarmIfRinging(it)
+    }
+  }
+
+  /** 아이콘으로 다시 열거나 최근 앱에서 돌아온 경우 — 이미 떠 있던 앱은 onCreate 없이 여기로 온다. */
+  override fun onResume(activity: Activity?) {
+    activity?.let { showAlarmIfRinging(it) }
+  }
+
+  /**
+   * 알람이 울리는 동안 앱을 열면 홈이 아니라 알람 화면을 보여 준다.
+   *
+   * 알람 화면을 밀어 두고 앱을 열어도 끄기·스누즈를 누를 때까지는 알람 화면이 앞에 선다 —
+   * 소리가 나는데 그걸 끌 자리가 안 보이면 안 되기 때문이다. AlarmActivity는 singleInstance라
+   * 여러 번 불려도 하나뿐이다. 끄면 isRinging이 먼저 내려가므로 오늘의 공부는 그대로 열린다.
+   */
+  private fun showAlarmIfRinging(activity: Activity) {
+    if (!AlarmRingingService.isRinging) return
+    try {
+      activity.startActivity(AlarmActivity.fireIntent(activity))
+    } catch (e: Exception) {
+      android.util.Log.w("AlarmFlowLifecycle", "알람 화면을 띄우지 못했습니다", e)
+    }
   }
 
   override fun onNewIntent(intent: Intent?): Boolean {

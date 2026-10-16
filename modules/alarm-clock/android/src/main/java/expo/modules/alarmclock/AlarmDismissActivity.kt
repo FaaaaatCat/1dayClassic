@@ -16,6 +16,8 @@ class AlarmDismissActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    // 서비스보다 먼저 내린다 — 곧 열 오늘의 공부가 알람 화면으로 되돌아오지 않게(isRinging 주석 참고).
+    AlarmRingingService.isRinging = false
     startService(AlarmRingingService.dismissIntent(this))
     startActivity(MainActivityIntent.today(this, lockFlow = AlarmFlow.isDeviceLocked(this)))
     finish()

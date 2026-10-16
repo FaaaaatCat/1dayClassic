@@ -34,6 +34,16 @@ class AlarmRingingService : Service() {
     /** 어떤 이유로든 서비스가 정상 종료되지 못했을 때 배터리를 계속 소모하지 않도록 하는 안전장치. */
     private const val WAKELOCK_TIMEOUT_MS = 10L * 60L * 1000L
 
+    /**
+     * 지금 알람이 울리고 있는가 — 앱을 열었을 때 홈 대신 알람 화면으로 보내는 데 쓴다
+     * (AlarmFlowLifecycleListener).
+     *
+     * 끄기·스누즈를 누른 쪽에서 서비스에 인텐트를 보내기 '전에' 직접 내린다. 서비스가 그 인텐트를
+     * 받는 것은 비동기라, 끄기와 함께 연 오늘의 공부가 먼저 앞에 나서면 아직 울리는 줄 알고
+     * 알람 화면으로 되돌려 보내기 때문이다. 서비스도 멈출 때 한 번 더 내린다.
+     */
+    @Volatile var isRinging = false
+
     fun start(context: Context) {
       val intent = Intent(context, AlarmRingingService::class.java)
       context.startForegroundService(intent)
@@ -64,6 +74,7 @@ class AlarmRingingService : Service() {
       }
     }
 
+    isRinging = true
     acquireWakeLock()
     startForeground(NOTIFICATION_ID, buildNotification())
     startAlarmSound()
@@ -140,6 +151,7 @@ class AlarmRingingService : Service() {
   }
 
   private fun stopEverything() {
+    isRinging = false
     mediaPlayer?.let {
       try {
         if (it.isPlaying) it.stop()
