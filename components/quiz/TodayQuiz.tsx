@@ -9,8 +9,10 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Chevron from '@/components/Chevron';
+import type { QuizTarget } from '@/components/preview/QuizSolver';
 import ScaleButton from '@/components/ScaleButton';
 import { Corner, Ink, Spark, Type, trackBody } from '@/constants/theme';
+import { useQuiz } from '@/context/QuizContext';
 import type { Quiz } from '@/types';
 
 /** 해설 시트가 아래에서 올라오는 시간과 거리. */
@@ -24,22 +26,35 @@ const SHEET_RISE = 240;
  * 켜지며, 아래에서 주황 해설 시트가 올라온다. 맞혔으면 고른 보기가 곧 정답이라 주황 하나만 켜진다.
  * 위의 점들은 몇 문제를 풀었는지다 — 푼 문제만큼 주황이 된다.
  *
- * 지금은 책 펼침 전환 미리보기만 쓴다. 그래서 어디에도 적지 않는다 — 기록하는 퀴즈는 여전히
- * QuizSolver다. 이 디자인을 실제 앱에 들일 때 그쪽의 기록 코드를 이리 옮긴다.
+ * 오늘의 공부(ReadingFlow)가 쓴다. 고른 보기는 그 자리에서 QuizContext에 적힌다 — QuizSolver와
+ * 같은 기록이라 홈의 진행 줄·목차의 정답 칩·틀린 문제가 그대로 이어진다. target이 'preview'면
+ * (책 펼침 전환 미리보기) 아무 데도 적지 않는다. 풀다 만 것이 있으면 아직 안 푼 첫 문제부터 연다.
  */
 export default function TodayQuiz({
   quizzes,
+  target,
   onBack,
   onFinish,
 }: {
   quizzes: Quiz[];
+  /** 답을 어디에 적을지 — 'preview'면 적지 않는다(QuizSolver의 QuizTarget과 같다). */
+  target: QuizTarget;
   onBack: () => void;
   /** 마지막 문제의 '다음'을 누른 뒤 — 맞힌 수를 넘긴다. */
   onFinish: (correct: number) => void;
 }) {
   const insets = useSafeAreaInsets();
-  const [picked, setPicked] = useState<(number | null)[]>(() => quizzes.map(() => null));
-  const [page, setPage] = useState(0);
+  const { quizOf, answer } = useQuiz();
+  const saving = target !== 'preview';
+  const [picked, setPicked] = useState<(number | null)[]>(() => {
+    const saved = saving ? quizOf(target.lessonId) : undefined;
+    return quizzes.map((_, index) => saved?.answers[index]?.choice ?? null);
+  });
+  // 풀다 만 것이 있으면 아직 안 푼 첫 문제부터. 다 풀었으면 처음부터 다시 훑는다.
+  const [page, setPage] = useState(() => {
+    const first = picked.findIndex((choice) => choice === null);
+    return first === -1 ? 0 : first;
+  });
   const bodyRef = useRef<ScrollView>(null);
 
   const quiz = quizzes[page];
@@ -62,8 +77,16 @@ export default function TodayQuiz({
 
   if (!quiz) return null;
 
-  const choose = (choice: number) => {
+  const choose = (choice: 1 | 2 | 3 | 4) => {
     setPicked((prev) => prev.map((v, index) => (index === page ? choice : v)));
+    if (!saving) return;
+    answer(target.lessonId, {
+      bookId: target.bookId,
+      total: quizzes.length,
+      index: page,
+      choice,
+      correct: choice === quiz.answer,
+    });
   };
 
   const next = () => {
@@ -109,7 +132,8 @@ export default function TodayQuiz({
 
         <View style={styles.choices}>
           {quiz.choices.map((choice, i) => {
-            const no = i + 1;
+            // 보기는 늘 4개다(lib/quiz.ts가 개발 중에 검사한다).
+            const no = (i + 1) as 1 | 2 | 3 | 4;
             const isAnswer = answered && no === quiz.answer;
             const isMine = answered && no === pick && !correct;
             return (

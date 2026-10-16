@@ -188,6 +188,8 @@ for (const file of IMPRINT_FILES) {
         { title: '지은이', paragraphs: [row.bio] },
       ],
       tags: row.tags,
+      // 다음 책 광고(광고_다음책)에 붙는 짧은 홍보 문구 — 사람이 출판사별 json에 적는다.
+      ...(row.promo ? { promo: row.promo } : {}),
       pages: `${pages}쪽`,
       isbn: isbn(index),
       pubDate: pubDate(index),

@@ -45,6 +45,7 @@
     "check:quizzes": "node scripts/check-quizzes.mjs",
     "check:content": "node scripts/check-content.mjs",
     "check:tags": "node scripts/check-tags.mjs",
+    "check:quotes": "node scripts/check-quotes.mjs",
     "fetch:uupress": "node scripts/fetch-uupress.mjs",
     "start": "expo start",
     "android": "expo run:android",

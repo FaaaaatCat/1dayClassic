@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import LessonQuizModal from '@/components/quiz/LessonQuizModal';
+import { freshVisit } from '@/components/reading/ReadingFlow';
 import ScoreBoard from '@/components/toc/ScoreBoard';
 import Chevron from '@/components/Chevron';
 import ScaleButton from '@/components/ScaleButton';
@@ -94,7 +95,11 @@ export default function TocScreen() {
   const freeLessonIds = useMemo(() => getFreeLessonIds(selectedBookId), [selectedBookId]);
 
   const openLesson = (lessonId: string) => {
-    router.push({ pathname: '/today', params: { bookId: selectedBookId, lessonId } });
+    // t — 오늘의 공부가 첫표지부터 새로 서게 하는 값(app/(tabs)/today의 visitKey 주석).
+    router.push({
+      pathname: '/today',
+      params: { bookId: selectedBookId, lessonId, t: freshVisit() },
+    });
   };
 
   /**

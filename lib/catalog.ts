@@ -40,6 +40,12 @@ export interface CatalogBook {
   sections: CatalogSection[];
   /** 분야·시리즈 태그 — "고전", "하루시리즈" 등 */
   tags: string[];
+  /**
+   * 다음 책 광고(광고_다음책)에 붙는 짧은 홍보 문구. 사람이 출판사별 json(scripts/catalog/)에
+   * 적는다. MVP에서는 모든 책이 시안 문구('20대 여성 1위 선택지')를 같이 쓴다 — 우리가 가진
+   * 통계가 아니라서 정식 배포 전에 책마다 바꾼다. 비어 있으면 그 줄을 그리지 않는다.
+   */
+  promo?: string;
   pages: string;
   isbn: string;
   /** "2026-08-04" 꼴. 값이 없는 책은 빈 문자열. */

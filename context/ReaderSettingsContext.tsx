@@ -5,13 +5,25 @@ import { BODY_METRICS, type BodyFontSize, type BodyMetrics } from '@/lib/card-pa
 
 /** 책 배경. */
 export type ReaderBackground = 'light' | 'dark';
-/** 장 넘김 효과. scroll은 장을 넘기지 않고 글 전체를 세로로 쭉 내려 읽는다. */
+/**
+ * 장 넘김 효과. scroll은 장을 넘기지 않고 글 전체를 세로로 쭉 내려 읽는다.
+ *
+ * 오늘의 공부가 '책 펼침' 흐름(components/reading/ReadingFlow)으로 바뀌면서 본문은 늘 스크롤
+ * 보기다 — 책 보기 설정에서 '책 넘김 효과'·'카드로 보기'를 걷어냈다. 타입은 남겨 둔다. 예전에
+ * 저장된 값(bookmark·none)은 불러올 때 scroll로 바뀐다(parse).
+ */
 export type ReaderPageTurn = 'bookmark' | 'none' | 'scroll';
 
 /** 낭독 목소리. */
 export type ReaderVoice = 'female' | 'male';
 /** 자동읽기 — 켜면 오늘의 공부를 열자마자 낭독이 시작된다. */
 export type ReaderAutoRead = 'on' | 'off';
+/**
+ * 책 오픈 효과 — 켜면 홈의 읽기 버튼을 눌렀을 때 책이 펼쳐지는 장면(BookOpening)을 지나 첫표지가
+ * 나온다. 끄면 곧장 첫표지가 나온다. 홈의 읽기 버튼에만 걸린다 — 다음 화 읽기나 알람으로 들어올
+ * 때는 켜 두어도 나오지 않는다.
+ */
+export type ReaderBookOpen = 'on' | 'off';
 
 export interface ReaderSettings {
   background: ReaderBackground;
@@ -19,14 +31,16 @@ export interface ReaderSettings {
   fontSize: BodyFontSize;
   voice: ReaderVoice;
   autoRead: ReaderAutoRead;
+  bookOpen: ReaderBookOpen;
 }
 
 export const DEFAULT_READER_SETTINGS: ReaderSettings = {
   background: 'light',
-  turn: 'bookmark',
+  turn: 'scroll',
   fontSize: 'medium',
   voice: 'female',
   autoRead: 'off',
+  bookOpen: 'on',
 };
 
 interface ReaderSettingsContextValue {
@@ -49,10 +63,12 @@ function parse(raw: string | null): ReaderSettings {
     allowed.includes(value as T) ? (value as T) : fallback;
   return {
     background: pick(saved.background, ['light', 'dark'], DEFAULT_READER_SETTINGS.background),
-    turn: pick(saved.turn, ['bookmark', 'none', 'scroll'], DEFAULT_READER_SETTINGS.turn),
+    // 본문은 이제 늘 스크롤 보기다(ReaderPageTurn 주석) — 예전 값은 무엇이든 scroll로.
+    turn: 'scroll',
     fontSize: pick(saved.fontSize, ['small', 'medium', 'large'], DEFAULT_READER_SETTINGS.fontSize),
     voice: pick(saved.voice, ['female', 'male'], DEFAULT_READER_SETTINGS.voice),
     autoRead: pick(saved.autoRead, ['on', 'off'], DEFAULT_READER_SETTINGS.autoRead),
+    bookOpen: pick(saved.bookOpen, ['on', 'off'], DEFAULT_READER_SETTINGS.bookOpen),
   };
 }
 
