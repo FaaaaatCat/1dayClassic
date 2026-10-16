@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   Extrapolation,
@@ -21,6 +21,20 @@ import type { CoverDesign } from '@/types';
  * 언제 재생할지·다 밝아진 뒤 무엇을 열지는 부르는 화면이 정한다. 화면을 가득 덮는 빛의
  * 장막은 책 밖(화면 맨 위)에 깔려야 해서 LightVeil로 따로 둔다.
  *
+ * ── 다섯 막 ──
+ * 처음엔 '열고 → 다가오는' 두 동작이었는데 담백했다. 길어져도 좋으니 극적이게 — 영화처럼
+ * 예고·열림·넘김·폭발·빨려 듦의 다섯 막으로 짰다(시간은 OPENING_MS 아래 표).
+ *
+ *  1. 예고   — 책이 살짝 떠오르며 숨을 고른다. 빛은 아직 없다 — 앞마구리(표지 오른쪽 변) 틈으로
+ *              빛이 새게 해 봤는데, 열리기도 전에 빛이 보이는 게 어색해 걷어냈다.
+ *  2. 열림   — 정면으로 펴지고 표지가 손으로 넘기듯 열린다. 카메라가 아주 천천히 다가간다.
+ *  3. 넘김   — 표지가 닿으면 속지 몇 장이 촤르르 시간차로 넘어간다.
+ *
+ * 빛줄기(펼친 자리에서 사방으로 뻗는 빛)와 금빛 먼지(피어오르는 빛 알갱이)도 넣어 봤는데 둘 다
+ * 산만해서 걷어냈다. 이 장면의 화려함은 열림·넘김의 움직임과 빛의 세기로 낸다.
+ *  4. 폭발   — 다 넘어간 순간 한가운데의 흰 빛이 크게 터진다.
+ *  5. 빨려 듦 — 카메라가 확 다가가며 빛이 화면을 덮는다.
+ *
  * ── 축을 접힘선에 둔다 ──
  * BookCover3D는 앞표지를 '제 가운데'를 축으로 26° 돌린다. 그런데 표지를 열려면 접힘선
  * (앞표지 왼쪽 변)을 축으로 돌아야 하고, RN에서 rotateY의 축을 옮기는 방법은 안드로이드에서
@@ -28,7 +42,8 @@ import type { CoverDesign } from '@/types';
  * 경첩 뷰를 만들고 오른쪽 절반에만 표지를 담으면, 경첩의 중심선이 곧 접힘선이 된다.
  * 여기에 순수 rotateY만 건다. 책 전체를 이 축으로 다시 계산하므로(책등·속지·앞표지가
  * 모두 접힘선 기준) 세 조각이 서로 어긋나지 않는다. 대신 BookCover3D와는 원근의 중심이
- * 달라 같은 폭에서 4%쯤 작게 보인다 — 홈에 붙일 때 폭을 맞추면 된다.
+ * 달라 같은 폭에서 4%쯤 작게 보인다 — 홈에 붙일 때 폭을 맞추면 된다. 넘어가는 속지들도 같은
+ * 경첩을 쓴다.
  *
  * ── 먼저 평평하게 펴고, 활짝 연다 ──
  * 읽기를 누르면 26° 기울어 있던 책이 먼저 정면(0°)으로 돌아온다. 책등은 옆으로 돌아서며
@@ -53,16 +68,45 @@ export const OPEN_DEG = 180;
 const FLAT_DEG = 0;
 
 /**
- * 타임라인 — progress(0~1) 위의 구간들. 전체 길이는 부르는 화면이 정한다(OPENING_MS).
+ * 타임라인 — 밀리초로 적고 progress(0~1)로 바꿔 쓴다(at). 전체 길이는 OPENING_MS다.
  *
- * 펴기가 끝나기 조금 전부터 열리고, 표지가 반쯤 열렸을 때 빛이 차오르고, 다 열리기 조금 전부터
- * 다가온다 — 단계가 겹쳐야 '펴고, 열고, 커지는' 세 토막이 아니라 한 동작으로 읽힌다.
+ *   예고     0    ~ 600    — 책이 떠오른다
+ *   펴기     550  ~ 1010
+ *   열림     1010 ~ 2010   — 1초. 카메라가 천천히 다가감(DOLLY)
+ *   멈춤     2010 ~ 2210   — 다 열린 책을 잠깐 보여 준다
+ *   넘김     2210 ~ 3060   — 속지 넉 장
+ *   폭발     2930 ~ 3390
+ *   다가옴   2980 ~ 4280   — 아주 천천히 다가오다 끝에서 확 빨라진다(rushEase)
+ *   장막     3980 ~ 4280   — 0.3초 만에 화면을 덮는다
+ *
+ * 열림 뒤의 구간은 모두 열림이 끝나는 때(OPEN_END)에서 잰다 — 열림 길이를 바꾸면 뒤가 함께
+ * 밀리고 당겨진다. 막과 막이 조금씩 겹쳐야 다섯 토막이 아니라 한 장면으로 읽힌다. 다 열린 뒤의
+ * 멈춤만은 겹치지 않는다 — 펼친 책을 한 번 온전히 보여 주는 숨이다.
  */
-export const OPENING_MS = 2600;
-const TILT = [0, 0.14] as const;
-const OPEN = [0.15, 0.64] as const;
-const ZOOM = [0.56, 1] as const;
-const VEIL = [0.74, 1] as const;
+/** 표지가 열리는 시간 — 처음엔 1.57초였는데 늘어진다고 해서 1초로 줄였다. */
+const OPEN_MS = 1000;
+const OPEN_START = 1010;
+const OPEN_END = OPEN_START + OPEN_MS;
+/** 다 열린 뒤 멈추는 시간. */
+const HOLD_MS = 200;
+/** 속지 넉 장이 다 넘어가는 데 걸리는 시간(FLUTTER_* 로 셈한 값). */
+const FLUTTER_MS = 160 * 3 + 370;
+const FLASH_START = OPEN_END + HOLD_MS + FLUTTER_MS - 130;
+const ZOOM_START = FLASH_START + 50;
+/** 다가오는 시간. */
+const ZOOM_MS = 1300;
+export const OPENING_MS = ZOOM_START + ZOOM_MS;
+/** 밀리초를 progress(0~1)의 자리로. */
+const at = (ms: number) => ms / OPENING_MS;
+const PRELUDE = [at(0), at(600)] as const;
+const TILT = [at(550), at(OPEN_START)] as const;
+const OPEN = [at(OPEN_START), at(OPEN_END)] as const;
+const DOLLY = OPEN;
+const FLASH = [at(FLASH_START), at(FLASH_START + 460)] as const;
+const ZOOM = [at(ZOOM_START), at(OPENING_MS)] as const;
+/** 빛이 화면을 덮는 시간 — 0.3초. */
+const VEIL_MS = 300;
+const VEIL = [at(OPENING_MS - VEIL_MS), at(OPENING_MS)] as const;
 
 /**
  * 표지가 열리는 모양 — OPEN 구간 안의 시간(0~1)을 '열린 정도'(0~1)로 바꾸는 네 토막.
@@ -89,12 +133,48 @@ const fallEase = Easing.bezierFn(0.45, 0.15, 0.75, 0.4);
  *
  * 속지는 표지와 같은 자리·같은 크기지만, 원근으로 기운 두 면의 가장자리가 안티에일리어싱으로
  * 반 픽셀씩 어긋나 표지 둘레로 노란 테가 비쳤다(실기기 홈에서 확인). 그래서 쉬는 동안엔
- * 투명하게 두고, 누르면 펴는 동안 차올라 표지가 열리기 시작할 때(OPEN의 시작) 다 켜진다.
+ * 투명하게 두고, 펴는 동안 차올라 표지가 열리기 시작할 때(OPEN의 시작) 다 켜진다.
  */
-const PAGE_LIT = [0, 0.14] as const;
+const PAGE_LIT = TILT;
 
-/** 다가올 때 커지는 배율 — 속지가 화면 높이를 넘을 만큼. 그 뒤는 장막이 덮는다. */
-const ZOOM_TO = 6;
+/**
+ * 넘어가는 속지 — 표지가 닿은 뒤 넉 장이 시간차로 촤르르 넘어간다.
+ * 한 장은 FLUTTER_EACH 동안 넘어가고, 다음 장은 FLUTTER_GAP 뒤에 출발한다.
+ * 바닥에 겹쳐 눕도록 조금씩 덜 넘긴다(179° → 176°).
+ */
+const FLUTTER_COUNT = 4;
+/** 다 열리고 HOLD_MS 멈춘 뒤에 첫 장이 출발한다. */
+const FLUTTER_FROM = at(OPEN_END + HOLD_MS);
+const FLUTTER_EACH = at(370);
+const FLUTTER_GAP = at(160);
+const flutterEase = Easing.bezierFn(0.45, 0.05, 0.4, 1);
+
+/** 예고에서 책이 떠오르는 높이와 커지는 정도. */
+const HOVER_RISE = 8;
+const HOVER_GROW = 0.02;
+/**
+ * 다 펼쳤을 때 펼친 두 쪽이 화면 폭의 몇을 차지할지.
+ *
+ * 처음엔 열리는 동안 카메라가 1.12배로 다가가게 고정해 두었는데, 펼친 책(두 쪽 = 책 폭의 2배)이
+ * 화면 폭을 넘어 양 끝이 잘려 책으로 보이지 않았다. 그래서 배율을 고정하지 않고, 다 펼쳤을 때
+ * 두 쪽이 화면 폭의 90%가 되도록 화면 폭에서 거꾸로 셈한다(dollyTo). 화면이 좁으면 다가가는
+ * 대신 조금 물러나기도 한다.
+ */
+const SPREAD_OF_SCREEN = 0.9;
+/** 빨려 들 때 커지는 배율 — 화면을 한참 넘을 만큼. 끝의 '확' 빨려 드는 맛이 여기서 난다. */
+const ZOOM_TO = 10;
+/**
+ * 다가옴의 속도감 — 아주 천천히 다가오다 끝에서 확 빨라진다.
+ *
+ * 처음엔 배율 자체에 ease in(cubic)을 걸었는데 '똑같이 다가온다'는 말을 들었다. 눈은 크기를
+ * 비율로 느낀다 — 1→2배와 3→6배가 같은 만큼 커진 것으로 보인다. 그래서 배율에 곧장 곡선을 걸면
+ * 앞에서 이미 빠르게 커진 것처럼 보이고 끝의 가속이 묻힌다. 배율의 로그(비율)에 곡선을 걸고,
+ * 곡선도 4제곱으로 세게 눌러 앞 절반은 거의 기어 오고 마지막에 한꺼번에 몰아친다.
+ */
+const rushEase = Easing.in(Easing.poly(4));
+
+/** 폭발 때 한가운데 흰 빛이 커지는 배율. */
+const FLASH_GROW = 1.4;
 
 /** 따뜻한 노란빛 — 지정 팔레트의 --yellow(#FEB836, Colors.yellow)를 투명도로 묽게 푼 것. */
 const lightAlpha = (alpha: number) => `rgba(254,184,54,${alpha})`;
@@ -137,7 +217,7 @@ function tiltGeometry(tilt: number, width: number) {
 
 const ease = Easing.inOut(Easing.cubic);
 const veilEase = Easing.in(Easing.quad);
-const easeIn = Easing.in(Easing.cubic);
+const easeOut = Easing.out(Easing.cubic);
 
 /** progress를 구간 [from, to] 안의 0~1로 바꾼다. */
 function phase(progress: number, [from, to]: readonly [number, number]) {
@@ -168,6 +248,12 @@ function coverAngleAt(progress: number) {
   return tiltAt(progress) - OPEN_DEG * openAt(progress);
 }
 
+/** 폭발의 세기(0~1) — 한 번 터져 오른 뒤 내려오지 않는다. 그 뒤는 장막이 이어받는다. */
+function flashAt(progress: number) {
+  'worklet';
+  return easeOut(phase(progress, FLASH));
+}
+
 interface BookOpeningProps {
   design: CoverDesign;
   width: number;
@@ -186,6 +272,10 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
   const glowSize = width * 3.4;
   /** 펼친 책 한가운데의 흰 빛망울 — 책 폭의 1.6배. */
   const bloomSize = width * 1.6;
+  const hinge = { left: foldX - width, width: width * 2, height };
+  const { width: screenW } = useWindowDimensions();
+  /** 다 펼쳤을 때의 배율 — 두 쪽(책 폭 × 2, 예고에서 커진 만큼 포함)이 화면 폭의 90%가 되게. */
+  const dollyTo = (SPREAD_OF_SCREEN * screenW) / (2 * width * (1 + HOVER_GROW));
 
   /** 속지 — 책과 함께 펴지고, 열리지는 않는다. */
   const pageStyle = useAnimatedStyle(() => ({
@@ -239,52 +329,63 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
   }));
 
   /**
-   * 책 뒤로 번지는 빛 — 표지가 다 넘어가 누울 즈음(75%)부터 퍼진다.
+   * 책 뒤로 번지는 빛 — 표지가 다 넘어가 누울 즈음(75%)부터 퍼진다. 폭발 때 한 번 더 부푼다.
    *
    * 처음엔 표지가 들리는 순간부터 켰는데, 덜 열린 책 뒤로 빛이 둘러 보여 어색했다. 빛은 펼쳐진
    * 책에서 나오는 것이라 펼쳐질 때까지 기다린다. 그전까지는 드러나는 속지 자체가 빛이다.
    */
   const glowStyle = useAnimatedStyle(() => ({
     opacity: interpolate(openAt(progress.value), [0.75, 1], [0, 1], Extrapolation.CLAMP),
+    transform: [{ scale: 1 + 0.3 * flashAt(progress.value) }],
   }));
   /**
-   * 흰 빛망울 — 책이 다 펼쳐질 즈음 접힘선 위에서 흰빛이 피어난다. 노란 빛(glow)은 책 뒤에 깔려
-   * 가장자리로만 비쳐서, 펼친 면 위가 밝아지는 느낌은 이것이 맡는다.
+   * 흰 빛망울 — 책이 다 펼쳐질 즈음 접힘선 위에서 흰빛이 피어나고, 폭발 때 크게 터진다.
+   * 노란 빛(glow)은 책 뒤에 깔려 가장자리로만 비쳐서, 펼친 면 위가 밝아지는 느낌은 이것이 맡는다.
    */
-  const bloomStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(openAt(progress.value), [0.8, 1], [0, 1], Extrapolation.CLAMP),
-  }));
+  const bloomStyle = useAnimatedStyle(() => {
+    const flash = flashAt(progress.value);
+    const open = interpolate(openAt(progress.value), [0.8, 1], [0, 0.75], Extrapolation.CLAMP);
+    return {
+      opacity: Math.min(1, open + flash),
+      transform: [{ scale: 1 + FLASH_GROW * flash }],
+    };
+  });
 
   /**
-   * 펴는 동안 제자리 지키기와 다가오기 — 회전이 없는 바깥 뷰에만 건다. 이동과 확대를 섞어도
-   * 되는 건 이 뷰에 원근 회전이 없어서다(안드로이드의 행렬 분해 문제는 원근 회전과 이동이
-   * 한 뷰에 섞일 때 난다).
+   * 1막의 떠오름 + 2막의 천천히 다가감 + 5막의 빨려 듦, 그리고 펴는 동안 제자리 지키기 —
+   * 회전이 없는 바깥 뷰에만 건다. 이동과 확대를 섞어도 되는 건 이 뷰에 원근 회전이 없어서다
+   * (안드로이드의 행렬 분해 문제는 원근 회전과 이동이 한 뷰에 섞일 때 난다).
    *
    * 펴지면 앞표지가 오른쪽으로 넓어지고 책등이 사라져 책이 오른쪽으로 쏠려 보인다. 그만큼을
    * shift로 되돌려 칠해지는 범위의 한가운데를 제자리에 둔다. 그다음 펼친 책의 가운데(접힘선)를
    * 향해 커진다 — 양쪽 면이 똑같이 빛나므로 화면을 채우는 빛도 가운데에서 퍼진다.
    */
   const zoomStyle = useAnimatedStyle(() => {
-    const now = tiltGeometry(tiltAt(progress.value), width);
+    const t = progress.value;
+    const now = tiltGeometry(tiltAt(t), width);
     /**
      * 표지가 열리는 만큼 오른쪽으로 표지 반 폭을 민다 — 다 열리면 접힘선이 한가운데 오는
      * 펼친 두 쪽이 된다. 밀지 않으면 왼쪽으로 눕는 표지가 화면 밖으로 나간다.
      */
-    const spread = (Math.min(1, openAt(progress.value)) * width) / 2;
+    const spread = (Math.min(1, openAt(t)) * width) / 2;
     const shift = restCenter - (foldX + (now.rightX - now.spineW) / 2) + spread;
     const focus = foldX + shift - stageW / 2;
-    const zoom = interpolate(easeIn(phase(progress.value, ZOOM)), [0, 1], [1, ZOOM_TO]);
+    const hover = ease(phase(t, PRELUDE));
+    const dolly = 1 + (dollyTo - 1) * ease(phase(t, DOLLY));
+    const rush = Math.exp(Math.log(ZOOM_TO / dollyTo) * rushEase(phase(t, ZOOM)));
     /**
      * 표지가 바닥에 닿는 순간 책이 아주 살짝(1.2%) 눌렸다 돌아온다 — 툭 하고 닿는 무게.
      * 닿음 토막(OPEN_SEGMENTS의 마지막)에서만 일어난다.
      */
-    const t = phase(progress.value, OPEN);
+    const open = phase(t, OPEN);
     const land = OPEN_SEGMENTS[3];
-    const thud = t > land ? 0.012 * Math.sin(Math.PI * ((t - land) / (1 - land))) : 0;
+    const thud = open > land ? 0.012 * Math.sin(Math.PI * ((open - land) / (1 - land))) : 0;
+    const scale = (1 + HOVER_GROW * hover) * dolly * rush * (1 - thud);
     return {
       transform: [
+        { translateY: -HOVER_RISE * hover },
         { translateX: focus },
-        { scale: zoom * (1 - thud) },
+        { scale },
         { translateX: shift - focus },
       ],
     };
@@ -313,14 +414,12 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
       </Animated.View>
 
       {/* 속지 — 표지 밑에 늘 있고, 표지가 열리며 드러난다. 빛은 여기서 나온다. */}
-      <Animated.View
-        style={[styles.hinge, { left: foldX - width, width: width * 2, height }, pageStyle]}>
+      <Animated.View style={[styles.hinge, hinge, pageStyle]}>
         <View style={[styles.page, { left: width, width, height }]} />
       </Animated.View>
 
       {/* 앞표지 — 접힘선을 축으로 열린다. */}
-      <Animated.View
-        style={[styles.hinge, { left: foldX - width, width: width * 2, height }, coverStyle]}>
+      <Animated.View style={[styles.hinge, hinge, coverStyle]}>
         <View style={{ position: 'absolute', left: width, top: 0, width, height }}>
           <Animated.View style={[StyleSheet.absoluteFill, styles.face, frontStyle]}>
             <BookCover design={design} width={width} clip={false} />
@@ -339,7 +438,19 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
         </View>
       </Animated.View>
 
-      {/* 펼친 책 한가운데의 흰 빛망울 — 표지와 속지 위에 얹힌다. */}
+      {/* 3막 — 넘어가는 속지들. 나중에 넘어가는 장이 위에 눕도록 순서대로 그린다. */}
+      {Array.from({ length: FLUTTER_COUNT }, (_, index) => (
+        <FlutterPage
+          key={index}
+          index={index}
+          progress={progress}
+          width={width}
+          height={height}
+          hinge={hinge}
+        />
+      ))}
+
+      {/* 펼친 책 한가운데의 흰 빛망울 — 표지와 속지 위에 얹힌다. 4막에 크게 터진다. */}
       <Animated.View
         style={[
           styles.bloom,
@@ -356,6 +467,69 @@ export default function BookOpening({ design, width, progress }: BookOpeningProp
   );
 }
 
+/**
+ * 넘어가는 속지 한 장 — 표지와 같은 경첩에서 0°에서 왼쪽으로 넘어가 눕는다.
+ *
+ * 넘어가기 전에는 숨겨 둔다. 오른쪽에 쌓인 채로 보이면 그리는 순서가 늦은 장(위)이 먼저
+ * 넘어가는 장을 덮어, 들리는 장이 보이지 않는다. 밑의 속지와 똑같이 빛나므로 출발하는 순간
+ * 나타나도 티가 나지 않는다. 세로에 가까울수록 그늘이 져 종이가 돌아가는 것이 보인다.
+ */
+function FlutterPage({
+  index,
+  progress,
+  width,
+  height,
+  hinge,
+}: {
+  index: number;
+  progress: SharedValue<number>;
+  width: number;
+  height: number;
+  hinge: { left: number; width: number; height: number };
+}) {
+  const start = FLUTTER_FROM + FLUTTER_GAP * index;
+  const span = [start, start + FLUTTER_EACH] as const;
+  /** 바닥에 겹쳐 눕도록 장마다 조금씩 덜 넘긴다. */
+  const restDeg = 179 - index;
+
+  const turnStyle = useAnimatedStyle(() => {
+    const t = progress.value;
+    const turn = flutterEase(phase(t, span));
+    return {
+      opacity: t >= start ? 1 : 0,
+      transform: [{ perspective: PERSPECTIVE }, { rotateY: `${tiltAt(t) - restDeg * turn}deg` }],
+    };
+  });
+  const angleOf = (t: number) => {
+    'worklet';
+    return tiltAt(t) - restDeg * flutterEase(phase(t, span));
+  };
+  const frontStyle = useAnimatedStyle(() => ({
+    opacity: angleOf(progress.value) > -90 ? 1 : 0,
+  }));
+  const backStyle = useAnimatedStyle(() => ({
+    opacity: angleOf(progress.value) > -90 ? 0 : 1,
+  }));
+  /** 세로(90°)에서 가장 짙고 누우면 걷히는 그늘. */
+  const shadeStyle = useAnimatedStyle(() => ({
+    opacity: 0.3 * Math.abs(Math.sin((angleOf(progress.value) * Math.PI) / 180)),
+  }));
+
+  return (
+    <Animated.View style={[styles.hinge, hinge, turnStyle]}>
+      <View style={{ position: 'absolute', left: width, top: 0, width, height }}>
+        <Animated.View style={[StyleSheet.absoluteFill, styles.page, frontStyle]}>
+          <Animated.View style={[StyleSheet.absoluteFill, styles.shade, shadeStyle]} />
+        </Animated.View>
+        {/* 뒷면 — 면지와 같은 까닭으로 미리 뒤집어 두고 backfaceVisibility는 걸지 않는다. */}
+        <Animated.View style={[StyleSheet.absoluteFill, styles.inside, backStyle]}>
+          <Animated.View style={[StyleSheet.absoluteFill, styles.shade, shadeStyle]} />
+        </Animated.View>
+      </View>
+    </Animated.View>
+  );
+}
+
 interface LightVeilProps {
   /** 0~1 — 화면을 덮는 정도. 들어올 때는 progress를, 걷힐 때는 따로 준 값을 쓴다. */
   opacity: SharedValue<number>;
@@ -364,9 +538,13 @@ interface LightVeilProps {
 }
 
 /**
- * 빛의 장막 — 화면을 가득 덮는 노란빛. 다가온 책이 화면을 다 채우는 마지막 순간을 맡고,
- * 화면을 다 덮은 뒤에는 노란빛이 흰빛으로 바래고, 다음 화면이 그 뒤에서 천천히 드러나도록
- * 걷힌다. 흰빛으로 바래 두면 밝은 종이색 화면으로 넘어갈 때 노란 기가 남지 않는다.
+ * 빛의 장막 — 화면을 가득 덮는 흰빛. 다가온 책이 화면을 다 채우는 마지막 순간을 맡고,
+ * 다음 화면이 그 뒤에서 천천히 드러나도록 걷힌다.
+ *
+ * 처음엔 노란 장막이 덮은 뒤 흰빛으로 바랬다. 그런데 그 앞에 한가운데 흰 빛이 터지는 장면이
+ * 생기면서 빛이 노랑 → 하양(섬광) → 노랑(장막) → 하양(바램) 으로 두 번 오락가락했다. 장막을
+ * 처음부터 흰빛으로 두어 노랑(펼친 책) → 하양(섬광·장막) → 본문 한 번으로 흐르게 했다.
+ * whiten은 남겨 두었다 — 장막 위에 흰빛을 한 겹 더 얹는 값이라 지금은 보이는 차이가 없다.
  *
  * 화면 맨 위에 깔아야 하므로 책과 따로 둔다. 손가락은 받지 않는다.
  */
@@ -380,7 +558,7 @@ export function LightVeil({ opacity, whiten }: LightVeilProps) {
   );
 }
 
-/** progress(0~1)에서 장막이 덮는 정도를 꺼낸다 — 다가오기의 끝자락에 차오른다. */
+/** progress(0~1)에서 장막이 덮는 정도를 꺼낸다 — 빨려 듦의 끝자락에 차오른다. */
 export function veilAt(progress: number) {
   'worklet';
   return veilEase(phase(progress, VEIL));
@@ -436,10 +614,9 @@ const styles = StyleSheet.create({
     experimental_backgroundImage: pageLight('100%'),
     transform: [{ rotateY: '180deg' }],
   },
-  /** 화면을 가득 채운 빛 — 가운데가 묽고 가장자리가 짙다. */
+  /** 화면을 가득 채운 빛 — 흰빛 한 가지(LightVeil 주석). */
   veil: {
     backgroundColor: Colors.white,
-    experimental_backgroundImage: `radial-gradient(circle farthest-corner at 50% 50%, ${lightAlpha(0.3)} 0%, ${lightAlpha(0.75)} 100%)`,
   },
   white: {
     backgroundColor: Colors.white,

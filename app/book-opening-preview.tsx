@@ -35,8 +35,13 @@ import { getReadingProgress, getReadPlan } from '@/lib/progress';
 import type { BookId } from '@/types';
 
 // ── 타임라인 ─────────────────────────────────────────────────────────────
-/** 화면을 다 덮은 노란빛이 흰빛으로 바래는 시간과, 다 바랜 뒤 숨 고르는 시간. */
-const WHITEN_MS = 600;
+/**
+ * 화면을 다 덮은 빛이 흰빛으로 바래는 시간과, 다 바랜 뒤 숨 고르는 시간.
+ *
+ * 바램은 0이다 — 장막이 이제 처음부터 흰빛이라(BookOpening의 LightVeil) 바랠 노란 기가 없다.
+ * 예전 0.6초를 두면 흰 화면이 그만큼 더 머물 뿐이다.
+ */
+const WHITEN_MS = 0;
 const HOLD_MS = 200;
 /** 흰 화면이 첫페이지장(사진만)으로 바뀌는 시간. */
 const INTRO_REVEAL_MS = 1500;
