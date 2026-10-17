@@ -2,8 +2,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { BackHandler, StyleSheet, View } from 'react-native';
 
-import SplashFlow from '@/components/splash-draft/SplashFlow';
-import SplashHome from '@/components/splash-draft/SplashHome';
+import SplashFlow from '@/components/splash/SplashFlow';
+import SplashHome from '@/components/splash/SplashHome';
 import { Ink } from '@/constants/theme';
 
 /**

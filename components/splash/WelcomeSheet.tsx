@@ -5,19 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ScaleButton from '@/components/ScaleButton';
 import Confetti from '@/components/splash/Confetti';
-import { Corner, Ink, Space, Spark, Type, TypeScale } from '@/constants/theme';
+import { Corner, Ink, Space, Spark, Surface, Type, TypeScale } from '@/constants/theme';
 
 /** 창이 차지하는 화면 높이의 몫. 위로는 뒤 화면이 보일 만큼 남긴다. */
 const SHEET_RATIO = 0.57;
 /** 창이 올라오는 데 걸리는 시간. */
 const RISE_MS = 420;
-/**
- * 검정 위에 얹는 흰빛의 세기.
- *
- * 감상노트 창과 같은 값이다(components/lesson/NoteSheet). 뒤가 검은 화면이라 창도 검게
- * 두되, 완전히 같은 검정이면 어디까지가 창인지 보이지 않아 흰빛을 10%만 얹어 띄운다.
- */
-const TINT = 0.1;
 /** 무료로 열어 두는 화 수. */
 const FREE_LESSONS = 10;
 
@@ -30,7 +23,9 @@ const FREE_LESSONS = 10;
  * 창이 다 올라온 뒤에 축하 포탄이 터진다. 올라오는 중에 터뜨리면 창이 조각을 쓸고
  * 지나가서, 축하하는 그림이 아니라 어수선한 그림이 된다.
  *
- * 읽기 화면이 검으므로 이 창도 검다 — 감상노트 창과 같은 결이다.
+ * 창은 밝다 — 인트로의 가입 시트(SplashLogin)와 같은 흰 종이다. 처음엔 읽기 화면을 따라 검게
+ * 두었는데, 첫 실행에서 아래에서 올라오는 창이 둘(가입·환영)인데 색이 달라 한 흐름으로 읽히지
+ * 않았다.
  */
 export default function WelcomeSheet({ onDone }: { onDone: () => void }) {
   const insets = useSafeAreaInsets();
@@ -49,10 +44,7 @@ export default function WelcomeSheet({ onDone }: { onDone: () => void }) {
 
       <Animated.View
         entering={SlideInDown.duration(RISE_MS)}
-        style={[styles.sheet, { paddingBottom: Space[8] + insets.bottom }]}>
-        {/* 검정 위에 깔리는 흰빛 — 창이 바탕에서 한 겹 떠 보이게 한다. */}
-        <View style={styles.tint} pointerEvents="none" />
-
+        style={[styles.sheet, { paddingBottom: Space[20] + insets.bottom }]}>
         {/* 창을 쥐는 자리. 실제로 끌지는 않지만, 이것이 있어야 아래에서 올라온 창으로 읽힌다. */}
         <View style={styles.grip} />
 
@@ -123,20 +115,12 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: `${SHEET_RATIO * 100}%`,
-    paddingHorizontal: Space[8],
-    borderTopLeftRadius: Corner.card,
-    borderTopRightRadius: Corner.card,
-    backgroundColor: Ink.primary,
+    // 버튼 둘레 20 — 첫 실행의 다른 아래 버튼과 같다.
+    paddingHorizontal: Space[20],
+    borderTopLeftRadius: Corner.largeCard,
+    borderTopRightRadius: Corner.largeCard,
+    backgroundColor: Surface.canvas,
     overflow: 'hidden',
-  },
-  tint: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: Ink.onDark,
-    opacity: TINT,
   },
   grip: {
     alignSelf: 'center',
@@ -144,7 +128,7 @@ const styles = StyleSheet.create({
     height: 4,
     marginTop: Space[12],
     borderRadius: Corner.pill,
-    backgroundColor: Ink.strong,
+    backgroundColor: Surface.plate,
   },
 
   body: {
@@ -152,7 +136,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Space[16],
-    paddingHorizontal: Space[20],
   },
   eyebrow: {
     fontFamily: Type.uiMedium,
@@ -197,7 +180,7 @@ const styles = StyleSheet.create({
     // 두 줄이 붙어 보이지 않게 — 글자 크기의 160%(시안).
     lineHeight: 22 * 1.6,
     textAlign: 'center',
-    color: Ink.onDark,
+    color: Ink.primary,
   },
   /** 글월 안에서 이 대목만 주황으로 — 무엇을 받았는지 한눈에 걸리게 한다. */
   lineMark: {
@@ -211,7 +194,7 @@ const styles = StyleSheet.create({
   },
 
   cta: {
-    height: 48,
+    height: 56,
     borderRadius: Corner.pill,
     backgroundColor: Spark.ember,
   },

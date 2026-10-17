@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   demo: {
     flexDirection: 'row',
     gap: Space[8],
-    height: 52,
+    height: 56,
     borderRadius: Corner.pill,
     backgroundColor: Spark.ember,
   },
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     color: Ink.onDark,
   },
   signup: {
-    height: 52,
+    height: 56,
     borderRadius: Corner.pill,
     borderWidth: 1,
     borderColor: Colors.brown10,

@@ -130,7 +130,7 @@ export default function SplashFlow({
         <SplashChoice
           step={2}
           title="평소 책을 얼마나 자주 읽으시나요?"
-          hint="얼마나 자주 읽는지 궁금해요"
+          hint="알맞은 길이의 책을 추천해드릴게요"
           options={FREQUENCIES}
           initial={frequency}
           onNext={(picked) => {

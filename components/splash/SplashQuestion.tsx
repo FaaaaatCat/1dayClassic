@@ -105,7 +105,7 @@ export default function SplashQuestion({
         </View>
       )}
 
-      <View style={[styles.footer, { paddingBottom: Space[8] + insets.bottom }]}>
+      <View style={[styles.footer, { paddingBottom: Space[20] + insets.bottom }]}>
         <ScaleButton
           accessibilityLabel="다음"
           disabled={!canGoNext}
@@ -185,11 +185,16 @@ const styles = StyleSheet.create({
     backgroundColor: Ink.primary,
   },
 
+  /**
+   * 물음 자리 — 진행 줄 바로 아래에서 시작한다. 예전엔 위아래 48씩 두어 물음이 화면 가운데
+   * 쪽으로 처졌다. 위는 16만 두어 올리고, 아래(고를 것과의 사이)는 40으로 시안의 간격을 지킨다.
+   */
   titleBlock: {
     alignItems: 'center',
     gap: Space[8],
     paddingHorizontal: Space[20],
-    paddingVertical: Space[48],
+    paddingTop: Space[16],
+    paddingBottom: Space[40],
   },
   titleBlockLeft: {
     alignItems: 'flex-start',
@@ -224,14 +229,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: BODY_GUTTER,
   },
 
+  /** 아래 — 버튼 둘레 20씩(시안). 아래쪽은 그 20에 기기 아래 막대 높이를 더한다. */
   footer: {
-    padding: Space[8],
+    padding: Space[20],
     backgroundColor: Surface.card,
   },
   next: {
     flexDirection: 'row',
     gap: 6,
-    height: 48,
+    height: 56,
     borderRadius: Corner.pill,
     backgroundColor: Spark.ember,
   },

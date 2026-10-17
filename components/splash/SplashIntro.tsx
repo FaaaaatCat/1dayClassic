@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -36,9 +36,9 @@ const SLIDES = [
 /**
  * 첫 화면 — 이 앱이 무엇인지 세 장으로 말한다.
  *
- * 장마다 가운데에 움직이는 그림 하나와 그 아래 한 줄, 그리고 이름(하루서점). 좌우로 넘기거나
- * '다음'을 눌러 넘기고, 아래 점이 몇 번째 장인지 알린다. 마지막 장에서는 버튼이
- * '하루서점 시작하기'가 되어 회원가입 시트를 올린다.
+ * 장마다 가운데에 움직이는 그림 하나와 그 아래 한 줄, 그리고 이름(하루서점). 장은 좌우로 밀어서만
+ * 넘기고, 아래 점이 몇 번째 장인지 알린다. 버튼은 장과 상관없이 늘 '하루서점 시작하기'로 고정이다
+ * — 세 장을 다 넘겨야 시작할 수 있던 예전과 달리, 어느 장에서든 바로 시작한다.
  *
  * '하루서점 시작하기'와 '로그인하기'는 둘 다 아래에서 회원가입 시트를 올린다(SplashLogin).
  * 시트의 버튼은 아직 실제 가입을 하지 않고 그대로 다음 걸음으로 넘어간다 — MVP에는 서버가
@@ -49,26 +49,14 @@ export default function SplashIntro({ onDone }: { onDone: () => void }) {
   const { width } = useWindowDimensions();
   const [login, setLogin] = useState(false);
   const [page, setPage] = useState(0);
-  const pagerRef = useRef<ScrollView>(null);
-  const last = page === SLIDES.length - 1;
 
   const onSettle = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     setPage(Math.round(event.nativeEvent.contentOffset.x / width));
   };
 
-  const goNext = () => {
-    if (last) {
-      setLogin(true);
-      return;
-    }
-    pagerRef.current?.scrollTo({ x: (page + 1) * width, animated: true });
-    setPage(page + 1);
-  };
-
   return (
     <View style={styles.screen}>
       <ScrollView
-        ref={pagerRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -96,12 +84,12 @@ export default function SplashIntro({ onDone }: { onDone: () => void }) {
         ))}
       </View>
 
-      <View style={[styles.footer, { paddingBottom: Space[36] + insets.bottom }]}>
+      <View style={[styles.footer, { paddingBottom: Space[20] + insets.bottom }]}>
         <ScaleButton
-          accessibilityLabel={last ? '하루서점 시작하기' : '다음'}
+          accessibilityLabel="하루서점 시작하기"
           style={styles.cta}
-          onPress={goNext}>
-          <Text style={styles.ctaText}>{last ? '하루서점 시작하기' : '다음'}</Text>
+          onPress={() => setLogin(true)}>
+          <Text style={styles.ctaText}>하루서점 시작하기</Text>
         </ScaleButton>
         <View style={styles.loginRow}>
           <Text style={styles.loginHint}>이미 계정이 있나요?</Text>
@@ -168,8 +156,11 @@ function AlarmRing() {
 }
 
 /**
- * '퀴즈' 위로 말풍선 셋이 차례로 떠오른다 — 하나씩 톡 튀어나와 셋이 다 모이면 잠시 머물고,
- * 함께 사라진 뒤 다시 처음부터.
+ * 퀴즈 아이콘(시안의 hugeicons quiz-03 — 체크 둘이 그어진 클립보드) 위로 말풍선 셋이 차례로
+ * 떠오른다 — 하나씩 톡 튀어나와 셋이 다 모이면 잠시 머물고, 함께 사라진 뒤 다시 처음부터.
+ *
+ * 처음엔 '퀴즈'라는 글자를 썼는데 시안에서 아이콘으로 바뀌었다. 아이콘은 시안의 SVG를 108칸
+ * 틀에 앉힌 그대로 3배 그림으로 구운 것이다(assets/images/splash/quiz.png).
  */
 const QUIZ_CYCLE_MS = 3000;
 /** 말풍선 셋 — 자리(퀴즈 글자 가운데 위 기준)와 안의 글자, 튀어나오는 때(0~1). */
@@ -188,7 +179,7 @@ function QuizBubbles() {
       {BUBBLES.map((bubble) => (
         <Bubble key={bubble.glyph} progress={progress} {...bubble} />
       ))}
-      <Text style={styles.quizWord}>퀴즈</Text>
+      <Image source={require('@/assets/images/splash/quiz.png')} style={styles.quizIcon} />
     </View>
   );
 }
@@ -382,8 +373,9 @@ const styles = StyleSheet.create({
     gap: Space[20],
     paddingHorizontal: Space[20],
   },
+  /** 아래 버튼 — 첫 실행의 모든 아래 버튼과 같은 56(질문 화면·환영 창). */
   cta: {
-    height: 60,
+    height: 56,
     borderRadius: Corner.pill,
     backgroundColor: Spark.ember,
   },
@@ -448,21 +440,18 @@ const styles = StyleSheet.create({
     top: 52,
   },
 
-  // 퀴즈 — 글자 가운데에 말풍선 셋의 기준점을 둔다.
+  // 퀴즈 — 240×120 틀 한가운데에 아이콘, 말풍선 셋은 틀 위로 비어져 나온다(시안 그대로).
   quiz: {
     width: ART * 2,
     height: ART,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
   },
-  quizWord: {
-    fontFamily: Type.readingBold,
-    fontSize: 48,
-    lineHeight: 60,
-    letterSpacing: -1.92,
-    color: Ink.onDark,
+  quizIcon: {
+    width: 108,
+    height: 108,
   },
-  /** 말풍선 — 글자 바로 위 가운데가 제자리이고, 거기서 저마다의 자리로 옮겨 앉는다. */
+  /** 말풍선 — 틀 가운데 위가 제자리이고, 거기서 저마다의 자리로 옮겨 앉는다(시안의 자리와 같다). */
   bubble: {
     position: 'absolute',
     bottom: 40,

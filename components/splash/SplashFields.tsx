@@ -3,7 +3,29 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import SplashQuestion, { BODY_GUTTER, SplashChip } from '@/components/splash/SplashQuestion';
 import { Space } from '@/constants/theme';
-import { FIELD_NAMES } from '@/lib/tags';
+
+/**
+ * 고를 분야 — 피그마 시안 '첫 실행 — 질문 1 분야'의 열네 가지.
+ *
+ * 예전엔 서점 필터의 분야(lib/tags의 FIELD_NAMES)를 썼는데, 시안이 일반 서점의 분야로 바뀌었다.
+ * 고른 분야는 아직 책을 거르는 데 쓰지 않으므로(SplashBooks 주석) 서점 분류와 맞출 일은 없다.
+ */
+const FIELDS = [
+  '소설·시·희곡',
+  '에세이',
+  '인문학',
+  '역사·문화',
+  '사회과학',
+  '경제·경영',
+  '자기계발',
+  '과학',
+  '기술·공학',
+  '예술·대중문화',
+  '종교',
+  '건강·취미·실용',
+  '어린이·청소년',
+  '외국어·학습',
+] as const;
 
 /** 다음으로 가려면 이만큼은 골라야 한다. */
 const MIN_PICKS = 3;
@@ -15,9 +37,7 @@ const GAP = Space[12];
 /**
  * 질문 1 — 어떤 분야를 읽고 싶은지.
  *
- * 고를 것은 하루 서점의 분야 필터가 쓰는 것과 같은 목록이다(lib/tags의 FIELD_NAMES).
- * 시안에는 '분야'라는 자리표시가 잔뜩 놓여 있었지만, 실제로 있는 열세 가지를 그대로 쓴다 —
- * 없는 분야를 지어내면 흐름을 보는 데도 도움이 안 된다.
+ * 고를 것은 시안의 열네 가지다(위 FIELDS).
  *
  * 고른 것은 어디에도 저장하지 않는다(SplashPreviewScreen 주석 참고). 다만 다음 질문의 안내
  * 문구가 "골라주신 ○○, ○○을 토대로"라고 되비치므로, 고른 분야만 위로 올려 준다.
@@ -48,13 +68,13 @@ export default function SplashFields({
   return (
     <SplashQuestion
       step={1}
-      title="관심있는 책이 어떤 쪽인가요?"
-      hint={`최소 ${MIN_PICKS}개 이상의 분야를 골라주세요`}
+      title="관심있는 분야가 무엇인가요?"
+      hint={`최소 ${MIN_PICKS}개 이상 선택지를 골라주세요`}
       canGoNext={picked.length >= MIN_PICKS}
       onNext={() => onNext(picked)}
       onBack={onBack}>
       <View style={styles.grid}>
-        {FIELD_NAMES.map((name) => (
+        {FIELDS.map((name) => (
           <SplashChip
             key={name}
             label={name}

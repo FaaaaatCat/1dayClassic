@@ -358,10 +358,10 @@ const STREAK_DAYS = Number(read('components/StudyReport.tsx').match(/STREAK_DAYS
 if (!STREAK_DAYS) throw new Error('components/StudyReport.tsx의 STREAK_DAYS를 찾지 못했습니다');
 /** 다음 책 권유 — 읽을 수 있는 책 가운데 지금 읽는 책이 아닌 첫 권으로 가정한다(앱은 무작위). */
 const NEXT_BOOK = readableBooks.find((b) => b.bookId !== SELECTED);
-/** 첫 실행 고침본의 분야 — components/splash-draft/SplashFields의 FIELDS. */
-const draftFieldsSource = read('components/splash-draft/SplashFields.tsx');
+/** 첫 실행 질문 1의 분야 — components/splash/SplashFields의 FIELDS(시안의 열네 가지). */
+const draftFieldsSource = read('components/splash/SplashFields.tsx');
 const DRAFT_FIELDS = [...draftFieldsSource.slice(draftFieldsSource.indexOf('const FIELDS')).split('] as const')[0].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-if (DRAFT_FIELDS.length === 0) throw new Error('components/splash-draft/SplashFields.tsx의 FIELDS를 찾지 못했습니다');
+if (DRAFT_FIELDS.length === 0) throw new Error('components/splash/SplashFields.tsx의 FIELDS를 찾지 못했습니다');
 
 const DATA = {
   /** 화면에 날짜가 필요한 자리(공부 리포트·마지막으로 읽은 날)에 쓴다 — 만든 날이다. */

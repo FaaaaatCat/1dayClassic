@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   close: {
     alignSelf: 'stretch',
-    height: 48,
+    height: 56,
     marginTop: Space[16],
     borderRadius: Corner.pill,
     backgroundColor: Surface.plate,

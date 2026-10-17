@@ -1689,8 +1689,8 @@ function pageBreakIcon(size, tok) {
 }
 
 /**
- * 첫 실행 고침본(components/splash-draft) — 설정의 미리보기만 쓰는 판이다. DRAFT가 켜진 동안
- * 그리는 첫 실행 화면은 고침본의 치수·문구를 따른다: 인트로 버튼 고정('하루서점 시작하기'),
+ * 첫 실행 고침본 — 10월 16일 시안으로 고친 판이고, 10월 17일 그대로 앱의 첫 실행(components/splash)이
+ * 됐다. 그 전 판과 견주어 볼 수 있게 DRAFT로 갈라 둔다. DRAFT가 켜진 동안 그리는 첫 실행 화면은: 인트로 버튼 고정('하루서점 시작하기'),
  * 퀴즈 그림은 아이콘, 물음 자리를 위로, 아래 버튼 56·둘레 20, 시안의 열네 분야, 밝은 환영 창.
  */
 let DRAFT = false;
@@ -1881,7 +1881,7 @@ function buildQ1() {
     : question('첫 실행 — 질문 1 분야', 1, '관심있는 책이 어떤 쪽인가요?', '최소 3개 이상의 분야를 골라주세요');
   const grid = add(body, AL('HORIZONTAL', '격자', { gap: 12, gapY: 12, wrap: true }), 'FILL');
   const chipW = (W - 40 - 12) / 2;
-  // 고침본은 시안의 열네 분야(components/splash-draft/SplashFields).
+  // 고침본은 시안의 열네 분야(components/splash/SplashFields).
   const names = DRAFT ? DATA.draftFields : DATA.fieldNames;
   const picked = DRAFT ? names.slice(0, 3) : ['고전', '철학·사상', '음악·예술'];
   for (const name of names) {
@@ -2493,7 +2493,7 @@ const SPLASH_SCREENS = [...INTRO_SCREENS, buildIntroLogin, buildQ1, buildFrequen
 /** 마이페이지 계열 — 전부 다크다. 책 보기 > 배경음악 > TTS 순서. */
 const buildPlannedReport = () => buildReport('서재 책 상세 — 읽을 예정인 책', { title: '읽을 예정인 책', book: DATA.shelf[0] });
 const MYPAGE_SCREENS = [buildMyPage, buildPlanned, buildFinished, buildBookTheme, buildBgm, buildTts, buildPermissions, buildAccount, () => buildReport('리포트'), buildPlannedReport, buildReportMenu, buildWrongQuizzes, buildBookmarks, buildNotes].map(dark);
-/** 첫 실행 고침본 — 설정의 미리보기가 쓰는 판(components/splash-draft). */
+/** 첫 실행 — 지금 앱의 판(10월 16일 시안으로 고친 것, components/splash). */
 const DRAFT_SPLASH_SCREENS = [...INTRO_SCREENS, buildIntroLogin, buildQ1, buildFrequency, buildPurpose, buildLoading, buildQ2, buildQ3, buildQ4, buildWelcome].map(draft);
 /** 오늘의 독서 — 홈의 읽기 버튼으로 책이 펼쳐진 뒤 지나는 차례(components/reading/ReadingFlow). */
 const LAST_QUIZ = QUIZZES.length - 1;
@@ -2522,8 +2522,7 @@ const SCROLL_SCREENS = [() => buildScrollMode(true), () => buildScrollMode(false
  * 본문은 이제 늘 스크롤 보기이고, 퀴즈·리포트·구매는 '오늘의 독서' 줄의 새 화면들이 대신한다.
  */
 const ALL_BUT_STORE_GROUPS = [
-  ['첫 실행 — 지금 앱', [...SPLASH_SCREENS, buildWelcome]],
-  ['첫 실행 — 고침본 (설정의 미리보기)', DRAFT_SPLASH_SCREENS],
+  ['첫 실행', DRAFT_SPLASH_SCREENS],
   ['홈 · 알람 · 목차', [buildHome, dark(buildAlarm), dark(buildToc)]],
   ['오늘의 독서 — 첫페이지장부터 광고까지', READING_SCREENS],
   ['읽기 — 스크롤 보기 (유튜브 없음)', [() => buildScrollMode(false)]],
@@ -2533,7 +2532,7 @@ const ALL_BUT_STORE_GROUPS = [
 /** 지난번(10월 10일) 내보낸 뒤로 바뀐 화면만 — 메뉴의 '바뀐 화면만 내보내기'. */
 const UPDATED_GROUPS = [
   ['오늘의 독서 — 첫페이지장부터 광고까지 (새 화면)', READING_SCREENS],
-  ['첫 실행 — 고침본 (설정의 미리보기)', DRAFT_SPLASH_SCREENS],
+  ['첫 실행 — 시안대로 고침(문구·분야·56 버튼·밝은 환영 창)', DRAFT_SPLASH_SCREENS],
   ['마이페이지 — 책 보기 설정 · 토글 · 서재 책 상세', [dark(buildBookTheme), dark(buildPermissions), dark(buildPlannedReport)]],
   ['알람 — 토글', [dark(buildAlarm)]],
 ];
